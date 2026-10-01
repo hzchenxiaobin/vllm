@@ -3,8 +3,79 @@
 [0m
 [0m→ [0mRead prompt.md
 [0m→ [0mRead README.md
-[0m✱ [0mGlob "week1/**"[90m 5 matches[0m
-[0m✱ [0mGlob "*.md"[90m 12 matches[0m
+[0m✱ [0mGlob "week1/**/*.md"[90m 2 matches[0m
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null
+total 108
+drwxr-xr-x 14 root root  4096 Oct  1 23:58 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+-rw-r--r--  1 root root   417 Oct  1 23:52 _config.yml
+-rwxr-xr-x  1 root root  5083 Oct  1 23:58 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  1 23:58 .git
+-rw-r--r--  1 root root    39 Oct  1 23:52 .gitignore
+-rw-r--r--  1 root root  1058 Oct  1 23:58 index.md
+drwxr-xr-x  2 root root  4096 Oct  1 23:48 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+-rw-r--r--  1 root root     2 Oct  1 23:44 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  1 23:43 week1
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week2
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+total 88
+drwxr-xr-x  3 root root  4096 Oct  1 23:43 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:58 ..
+drwxr-xr-x  2 root root  4096 Oct  1 23:41 assets
+-rw-r--r--  1 root root 39365 Oct  1 23:43 day01_transformer_inference.md
+-rw-r--r--  1 root root 33208 Oct  1 23:13 README.md
+[0m
 [0m→ [0mRead week1/day01_transformer_inference.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week1/assets/
+total 64
+drwxr-xr-x 2 root root  4096 Oct  1 23:41 .
+drwxr-xr-x 3 root root  4096 Oct  1 23:43 ..
+-rw-r--r-- 1 root root 13816 Oct  1 23:41 day01_decode_iteration_tensor_flow.svg
+-rw-r--r-- 1 root root 24686 Oct  1 23:40 day01_kv_cache_lifecycle.svg
+-rw-r--r-- 1 root root 10905 Oct  1 23:39 day01_prefill_vs_decode.svg
+[0m
 [0m→ [0mRead week1/assets/day01_prefill_vs_decode.svg
-[0m→ [0mRead week1/README.md
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/vllm/ 2>/dev/null | head -30; ls /mnt/workspace/aiinfra/vllm/vllm/v1/core/ 2>/dev/null
+(no output)
+[0m
+[0m$ [0mfind /mnt/workspace/aiinfra/vllm -maxdepth 2 -type d | grep -v ".git" | head -30; pip show vllm 2>/dev/null | head -3
+/mnt/workspace/aiinfra/vllm
+/mnt/workspace/aiinfra/vllm/week7
+/mnt/workspace/aiinfra/vllm/week2
+/mnt/workspace/aiinfra/vllm/.arts
+/mnt/workspace/aiinfra/vllm/.arts/op_devtools
+/mnt/workspace/aiinfra/vllm/week6
+/mnt/workspace/aiinfra/vllm/.opencode
+/mnt/workspace/aiinfra/vllm/.opencode/node_modules
+/mnt/workspace/aiinfra/vllm/.opencode/agents
+/mnt/workspace/aiinfra/vllm/.opencode/commands
+/mnt/workspace/aiinfra/vllm/.opencode/skills
+/mnt/workspace/aiinfra/vllm/.opencode/plugins
+/mnt/workspace/aiinfra/vllm/week8
+/mnt/workspace/aiinfra/vllm/week5
+/mnt/workspace/aiinfra/vllm/week3
+/mnt/workspace/aiinfra/vllm/week4
+/mnt/workspace/aiinfra/vllm/week1
+/mnt/workspace/aiinfra/vllm/week1/assets
+/mnt/workspace/aiinfra/vllm/logs
+[0m
+[0m# [0mTodos
+[•] 编写并运行 day02 手算验证脚本，核实全部数值
+[ ] 制作 3 张 SVG 图（KV 公式解剖 / 显存预算 / 时延下界）
+[ ] 撰写 week1/day02_memory_latency_hand_calc.md
+[ ] 校验文件与 SVG 语法，输出说明
+[0m
+我已阅读 prompt.md 和 README.md，并研究了 Day 1 的教程及其 SVG 风格。现在我将规划第二天（Day 2）的工作（显存与时延的手算公式）。

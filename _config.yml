@@ -2,7 +2,6 @@ title: vLLM 推理系统优化 · 八周学习笔记
 description: LLM 推理系统优化（vLLM V1 方向）八周按天学习计划与教程笔记
 theme: jekyll-theme-cayman
 plugins:
-  - jekyll-readme-index
   - jekyll-relative-links
   - jekyll-default-layout
   - jekyll-titles-from-headings

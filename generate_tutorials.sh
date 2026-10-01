@@ -4,7 +4,8 @@
 #
 # 行为：
 #   - 每次只向 cannbot 发送「一天」的教程生成任务；
-#   - 按 JOBS 指定的并发数同时生成（默认 2），同一天只跑一个实例；
+#   - 默认单线程：前一天生成完成（产出 dayNN_*.md）后才发送下一天；
+#     需要加速时可用 JOBS=2 等开启并发；
 #   - 支持断点续跑：已生成的 Day 自动跳过；
 #   - 失败自动重试，多次失败后停止派发新任务并保留现场。
 #
@@ -12,7 +13,7 @@
 #   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
 #   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
 #   MAX_RETRIES=5 ./generate_tutorials.sh
-#   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 2）
+#   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
 #
 set -u
 
@@ -22,7 +23,7 @@ cd "$WORKDIR"
 START_DAY="${START_DAY:-1}"
 END_DAY="${END_DAY:-56}"
 MAX_RETRIES="${MAX_RETRIES:-3}"
-JOBS="${JOBS:-2}"
+JOBS="${JOBS:-1}"
 LOG_DIR="$WORKDIR/logs"
 PROGRESS_FILE="$WORKDIR/.tutorial_progress"
 mkdir -p "$LOG_DIR"
