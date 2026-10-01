@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 700" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <pattern id="hatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#e2e8f0"/><line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="2.5"/></pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="700" fill="#ffffff"/>
+  <text x="620" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">一张 H100 80GB 的显存预算账：从 80 GB 到并发上限</text>
+  <text x="620" y="54" text-anchor="middle" font-size="12.5" fill="#64748b">例：Llama-3-70B · TP=2 · ctx=4096 · gpu_memory_utilization=0.9（尺度：1000 px = 80 GB）</text>
+
+  <!-- ===== Bar A：80 GB 总显存 ===== -->
+  <text x="140" y="92" text-anchor="end" font-size="12.5" font-weight="bold" fill="#334155">物理显存</text>
+  <rect x="150" y="72" width="900" height="40" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="600" y="97" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">vLLM 管理预算 = 80 × 0.9 = 72 GB</text>
+  <rect x="1050" y="72" width="100" height="40" fill="url(#hatch)" stroke="#94a3b8"/>
+  <text x="1100" y="97" text-anchor="middle" font-size="10.5" fill="#475569">保留 8 GB</text>
+  <text x="1160" y="90" font-size="10.5" fill="#64748b">CUDA ctx / NCCL</text>
+  <text x="1160" y="104" font-size="10.5" fill="#64748b">cuBLAS / 碎片</text>
+  <text x="600" y="128" text-anchor="middle" font-size="11" fill="#64748b">util 调到 0.95 有 OOM 风险（非 torch 开销看不全）；调低则浪费 KV 容量</text>
+
+  <!-- ===== Bar B：BF16 ===== -->
+  <text x="140" y="182" text-anchor="end" font-size="12.5" font-weight="bold" fill="#9a3412">方案① BF16</text>
+  <rect x="150" y="160" width="882" height="40" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="591" y="185" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#4c1d95">权重/卡 = 141.2 GB ÷ 2 = 70.6 GB</text>
+  <rect x="1032" y="160" width="18" height="40" fill="#ffedd5" stroke="#ea580c"/>
+  <rect x="150" y="216" width="900" height="24" fill="#fef2f2" stroke="#fecaca" stroke-dasharray="5 3"/>
+  <text x="600" y="233" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#991b1b">KV 预算 = 72 − 70.6 − 激活(≈2) ≈ −0.6 GB → 装不下：并发 ≈ 0（激活算 0 也只有 ≈2 路 4K）</text>
+  <circle cx="1190" cy="180" r="14" fill="#dc2626"/>
+  <text x="1190" y="185" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">✕</text>
+  <text x="150" y="256" font-size="11" fill="#7c2d12">结论：2×H100 跑 70B BF16 是「装得下权重、装不下业务」——这正是 serving 全面转向 FP8 的原因（→ Day 22-24）</text>
+
+  <!-- ===== Bar C：FP8 ===== -->
+  <text x="140" y="312" text-anchor="end" font-size="12.5" font-weight="bold" fill="#065f46">方案② FP8</text>
+  <rect x="150" y="290" width="441" height="40" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="370" y="315" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#4c1d95">权重/卡 = 35.3 GB</text>
+  <rect x="591" y="290" width="25" height="40" fill="#ffedd5" stroke="#ea580c"/>
+  <text x="603" y="345" text-anchor="middle" font-size="10.5" fill="#c2410c">激活≈2G</text>
+  <rect x="616" y="290" width="434" height="40" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+  <text x="833" y="315" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#065f46">KV 池 ≈ 34.7 GB</text>
+  <circle cx="1190" cy="310" r="14" fill="#059669"/>
+  <text x="1190" y="315" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">✓</text>
+
+  <!-- 推导框 -->
+  <rect x="150" y="366" width="900" height="94" rx="8" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="600" y="392" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#065f46">并发上限 ≈ [ Mem × util − N·P ÷ TP − A_act ] ÷ [ ctx × KV_per_token ÷ TP ]</text>
+  <text x="600" y="416" text-anchor="middle" font-size="12" fill="#047857">TP 按 KV 头切分：每卡存 H_kv/2 个头 → 每卡 KV/token = 2·80·4·128·1B = 80 KiB</text>
+  <text x="600" y="438" text-anchor="middle" font-size="12" fill="#047857">每序列 4K = 4096 × 80 KiB ≈ 0.336 GB　→　并发 = 34.7 ÷ 0.336 ≈ 103 路</text>
+
+  <!-- ===== 底段：vLLM 启动流程四步 ===== -->
+  <rect x="20" y="486" width="1200" height="190" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="40" y="514" font-size="14" font-weight="bold" fill="#334155">vLLM V1 启动时把这道题「实测」了一遍（vllm/v1/worker/gpu_worker.py）</text>
+
+  <rect x="40" y="532" width="260" height="96" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="170" y="556" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">① load_model()</text>
+  <text x="170" y="578" text-anchor="middle" font-size="11" fill="#334155">权重显存 = N·P ÷ TP</text>
+  <text x="170" y="596" text-anchor="middle" font-size="11" fill="#334155">（手算第 1 项）</text>
+  <text x="170" y="616" text-anchor="middle" font-size="10.5" fill="#64748b">35.3 GB</text>
+
+  <line x1="300" y1="580" x2="330" y2="580" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="332" y="532" width="260" height="96" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="462" y="556" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">② profile_run()</text>
+  <text x="462" y="578" text-anchor="middle" font-size="11" fill="#334155">按 max_num_batched_tokens 跑</text>
+  <text x="462" y="596" text-anchor="middle" font-size="11" fill="#334155">dummy 前向 → 激活峰值 A_act</text>
+  <text x="462" y="616" text-anchor="middle" font-size="10.5" fill="#64748b">prefill 侧决定，≈2 GB</text>
+
+  <line x1="592" y1="580" x2="622" y2="580" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="624" y="532" width="260" height="96" rx="8" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="754" y="556" text-anchor="middle" font-size="12" font-weight="bold" fill="#065f46">③ 预算 − 已用</text>
+  <text x="754" y="578" text-anchor="middle" font-size="11" fill="#334155">72 − 35.3 − 2 − non-torch</text>
+  <text x="754" y="596" text-anchor="middle" font-size="11" fill="#334155">→ KV 池 → num_gpu_blocks</text>
+  <text x="754" y="616" text-anchor="middle" font-size="10.5" fill="#64748b">block_size 默认 16</text>
+
+  <line x1="884" y1="580" x2="914" y2="580" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="916" y="532" width="284" height="96" rx="8" fill="#fdf4ff" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="1058" y="556" text-anchor="middle" font-size="12" font-weight="bold" fill="#6b21a8">④ 启动日志对账</text>
+  <text x="1058" y="576" text-anchor="middle" font-size="10.5" font-family="monospace" fill="#334155">Maximum concurrency for</text>
+  <text x="1058" y="591" text-anchor="middle" font-size="10.5" font-family="monospace" fill="#334155">4096 tokens/seq: ~100x</text>
+  <text x="1058" y="614" text-anchor="middle" font-size="10.5" fill="#64748b">与手算的 103 路对上即通过</text>
+
+  <text x="620" y="660" text-anchor="middle" font-size="11" fill="#64748b">若 max_model_len &gt; KV 池能容纳的 token 数，vLLM 会直接报错并提示调大 util / 调小 max_model_len —— 那就是这道题算出了负数</text>
+</svg>

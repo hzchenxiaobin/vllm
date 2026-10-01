@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 660" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="660" fill="#ffffff"/>
+  <text x="620" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">KV Cache 每 token 显存公式解剖：2 × L × H_kv × d × P</text>
+
+  <!-- ===== 公式五因子 ===== -->
+  <rect x="131" y="52" width="170" height="58" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="216" y="89" text-anchor="middle" font-size="28" font-weight="bold" fill="#1e3a8a">2</text>
+  <text x="216" y="134" text-anchor="middle" font-size="11.5" fill="#1e40af">K 与 V 两份张量</text>
+  <text x="216" y="150" text-anchor="middle" font-size="11.5" fill="#1e40af">（注意力都要读）</text>
+
+  <text x="317" y="88" text-anchor="middle" font-size="22" font-weight="bold" fill="#64748b">×</text>
+
+  <rect x="333" y="52" width="170" height="58" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="418" y="89" text-anchor="middle" font-size="28" font-weight="bold" fill="#4c1d95">L</text>
+  <text x="418" y="134" text-anchor="middle" font-size="11.5" fill="#5b21b6">层数</text>
+  <text x="418" y="150" text-anchor="middle" font-size="11.5" fill="#5b21b6">每层各存一份（80 层=80 份）</text>
+
+  <text x="519" y="88" text-anchor="middle" font-size="22" font-weight="bold" fill="#64748b">×</text>
+
+  <rect x="535" y="52" width="170" height="58" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="2.5"/>
+  <text x="620" y="89" text-anchor="middle" font-size="28" font-weight="bold" fill="#991b1b">H_kv</text>
+  <text x="620" y="134" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#991b1b">KV 头数（GQA）</text>
+  <text x="620" y="150" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#dc2626">易错：不是 H_q！</text>
+
+  <text x="721" y="88" text-anchor="middle" font-size="22" font-weight="bold" fill="#64748b">×</text>
+
+  <rect x="737" y="52" width="170" height="58" rx="10" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+  <text x="822" y="89" text-anchor="middle" font-size="28" font-weight="bold" fill="#065f46">d</text>
+  <text x="822" y="134" text-anchor="middle" font-size="11.5" fill="#047857">head_dim</text>
+  <text x="822" y="150" text-anchor="middle" font-size="11.5" fill="#047857">查 config.json，勿用 H/H_q 反推</text>
+
+  <text x="923" y="88" text-anchor="middle" font-size="22" font-weight="bold" fill="#64748b">×</text>
+
+  <rect x="939" y="52" width="170" height="58" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <text x="1024" y="89" text-anchor="middle" font-size="28" font-weight="bold" fill="#92400e">P</text>
+  <text x="1024" y="134" text-anchor="middle" font-size="11.5" fill="#92400e">每元素字节数</text>
+  <text x="1024" y="150" text-anchor="middle" font-size="11.5" fill="#92400e">BF16=2 · FP8=1 · INT4=0.5</text>
+
+  <rect x="131" y="164" width="978" height="30" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="620" y="184" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">KV_per_token = 2 · L · H_kv · d · P  （字节）　→　单序列 = KV_per_token × ctx</text>
+
+  <!-- ===== 中段：一个 token 在一层里存什么 + × L 层 ===== -->
+  <rect x="20" y="212" width="600" height="212" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="40" y="238" font-size="14" font-weight="bold" fill="#334155">一个 token 在「一层」里存什么</text>
+
+  <rect x="40" y="288" width="66" height="34" rx="6" fill="#e2e8f0" stroke="#475569"/>
+  <text x="73" y="310" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">token j</text>
+  <line x1="106" y1="305" x2="140" y2="278" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="106" y1="305" x2="140" y2="336" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <text x="150" y="266" font-size="11" fill="#64748b">K 部分：H_kv 个 d 维向量</text>
+  <rect x="150" y="272" width="34" height="22" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="167" y="287" text-anchor="middle" font-size="10.5" fill="#1e3a8a">k0</text>
+  <rect x="188" y="272" width="34" height="22" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="205" y="287" text-anchor="middle" font-size="10.5" fill="#1e3a8a">k1</text>
+  <rect x="226" y="272" width="34" height="22" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="243" y="287" text-anchor="middle" font-size="10.5" fill="#1e3a8a">…</text>
+  <rect x="264" y="272" width="52" height="22" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="290" y="287" text-anchor="middle" font-size="10.5" fill="#1e3a8a">k_{Hkv-1}</text>
+
+  <text x="150" y="326" font-size="11" fill="#64748b">V 部分：H_kv 个 d 维向量</text>
+  <rect x="150" y="332" width="34" height="22" rx="3" fill="#d1fae5" stroke="#059669"/><text x="167" y="347" text-anchor="middle" font-size="10.5" fill="#065f46">v0</text>
+  <rect x="188" y="332" width="34" height="22" rx="3" fill="#d1fae5" stroke="#059669"/><text x="205" y="347" text-anchor="middle" font-size="10.5" fill="#065f46">v1</text>
+  <rect x="226" y="332" width="34" height="22" rx="3" fill="#d1fae5" stroke="#059669"/><text x="243" y="347" text-anchor="middle" font-size="10.5" fill="#065f46">…</text>
+  <rect x="264" y="332" width="52" height="22" rx="3" fill="#d1fae5" stroke="#059669"/><text x="290" y="347" text-anchor="middle" font-size="10.5" fill="#065f46">v_{Hkv-1}</text>
+
+  <path d="M 330 262 L 344 262 L 344 364 L 330 364" fill="none" stroke="#475569" stroke-width="1.5"/>
+  <line x1="344" y1="313" x2="372" y2="313" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+  <text x="380" y="300" font-size="12.5" font-weight="bold" fill="#0f172a">2 · H_kv · d 个元素</text>
+  <text x="380" y="318" font-size="12" fill="#334155">× P 字节/元素</text>
+  <text x="380" y="336" font-size="12" fill="#334155">= 该层该 token 的 KV</text>
+  <text x="380" y="360" font-size="11" fill="#94a3b8">GQA：一组 Q 头共享同一份 KV</text>
+
+  <rect x="640" y="212" width="580" height="212" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="660" y="238" font-size="14" font-weight="bold" fill="#334155">再乘 L 层：每层都有自己的一份</text>
+  <rect x="660" y="252" width="220" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="770" y="269" text-anchor="middle" font-size="11" fill="#4c1d95">Layer 0：K₀ V₀</text>
+  <rect x="660" y="282" width="220" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="770" y="299" text-anchor="middle" font-size="11" fill="#4c1d95">Layer 1：K₁ V₁</text>
+  <rect x="660" y="312" width="220" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="770" y="329" text-anchor="middle" font-size="11" fill="#4c1d95">Layer 2：K₂ V₂</text>
+  <rect x="660" y="342" width="220" height="26" rx="4" fill="#f3f0ff" stroke="#a78bfa" stroke-dasharray="4 3"/><text x="770" y="359" text-anchor="middle" font-size="11" fill="#6d28d9">…（每层独立投影，不可共享）</text>
+  <rect x="660" y="372" width="220" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="770" y="389" text-anchor="middle" font-size="11" fill="#4c1d95">Layer L−1：K_{L−1} V_{L−1}</text>
+
+  <line x1="880" y1="318" x2="920" y2="318" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#ar)"/>
+  <text x="935" y="300" font-size="22" font-weight="bold" fill="#5b21b6">× L</text>
+  <text x="935" y="322" font-size="11.5" fill="#334155">层与层的 K/V 互不相同</text>
+  <text x="935" y="338" font-size="11.5" fill="#334155">（输入逐层变换）</text>
+  <text x="935" y="360" font-size="11" fill="#94a3b8">Qwen3-8B: L=36</text>
+  <text x="935" y="376" font-size="11" fill="#94a3b8">Llama-3-70B: L=80</text>
+
+  <!-- ===== 底段：三列 ===== -->
+  <rect x="20" y="440" width="390" height="200" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="40" y="466" font-size="13.5" font-weight="bold" fill="#9a3412">四个高频踩坑点</text>
+  <text x="40" y="492" font-size="11.5" fill="#7c2d12">① H_kv ≠ H_q：Qwen3-8B 是 8 vs 32，</text>
+  <text x="52" y="508" font-size="11.5" fill="#7c2d12">　 代错直接差 4 倍</text>
+  <text x="40" y="532" font-size="11.5" fill="#7c2d12">② head_dim 必须查 config：Gemma-2 中</text>
+  <text x="52" y="548" font-size="11.5" fill="#7c2d12">　 H/H_q=224，实际 head_dim=256</text>
+  <text x="40" y="572" font-size="11.5" fill="#7c2d12">③ GB(10⁹) ≠ GiB(2³⁰)，差 7.4%</text>
+  <text x="40" y="596" font-size="11.5" fill="#7c2d12">④ HBM 带宽标称是十进制：A100=2.04、</text>
+  <text x="52" y="612" font-size="11.5" fill="#7c2d12">　 H100 SXM=3.35 TB/s</text>
+
+  <rect x="430" y="440" width="390" height="200" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="450" y="466" font-size="13.5" font-weight="bold" fill="#334155">KV/token 速查（BF16）</text>
+  <text x="450" y="494" font-size="11.5" fill="#0f172a">Qwen3-8B　　　　144 KiB</text>
+  <text x="450" y="516" font-size="11.5" fill="#0f172a">Llama-3-8B　　　128 KiB</text>
+  <text x="450" y="538" font-size="11.5" fill="#0f172a">Llama-3-70B　　　320 KiB</text>
+  <text x="450" y="560" font-size="11.5" fill="#0f172a">Qwen3-235B-A22B　188 KiB</text>
+  <text x="450" y="582" font-size="11.5" fill="#0f172a">DeepSeek-V3(MLA)　≈69 KiB</text>
+  <text x="450" y="612" font-size="11" fill="#64748b">FP8 KV 减半；INT4 KV ×0.25</text>
+
+  <rect x="840" y="440" width="380" height="200" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="860" y="466" font-size="13.5" font-weight="bold" fill="#1e3a8a">Attention 变体谱系（KV 相对大小）</text>
+  <rect x="860" y="482" width="80" height="30" rx="5" fill="#dbeafe" stroke="#2563eb"/><text x="900" y="501" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">MHA</text>
+  <line x1="940" y1="497" x2="968" y2="497" stroke="#2563eb" stroke-width="2" marker-end="url(#arB)"/>
+  <rect x="970" y="482" width="80" height="30" rx="5" fill="#bfdbfe" stroke="#2563eb"/><text x="1010" y="501" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">GQA</text>
+  <line x1="1050" y1="497" x2="1078" y2="497" stroke="#2563eb" stroke-width="2" marker-end="url(#arB)"/>
+  <rect x="1080" y="482" width="80" height="30" rx="5" fill="#93c5fd" stroke="#2563eb"/><text x="1120" y="501" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">MQA</text>
+
+  <text x="860" y="536" font-size="11.5" fill="#1e40af">MHA：H_kv = H_q（基线 ×1）</text>
+  <text x="860" y="558" font-size="11.5" fill="#1e40af">GQA：H_kv &lt; H_q（× H_kv/H_q，主流）</text>
+  <text x="860" y="580" font-size="11.5" fill="#1e40af">MQA：H_kv = 1（最小，精度有损）</text>
+  <text x="860" y="602" font-size="11.5" fill="#1e40af">MLA：latent 联合压缩（≈×1/57 for V3）</text>
+  <text x="860" y="626" font-size="10.5" fill="#64748b">细节 → Day 17 / Day 23 展开</text>
+</svg>

@@ -3,23 +3,23 @@
 [0m
 [0m→ [0mRead prompt.md
 [0m→ [0mRead README.md
-[0m✱ [0mGlob "week1/**/*.md"[90m 2 matches[0m
+[0m✱ [0mGlob "week1/**/*.md"[90m 3 matches[0m
 [0m
-[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ 2>/dev/null; ls -la /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null
 total 104
-drwxr-xr-x 14 root root  4096 Oct  1 23:53 .
+drwxr-xr-x 15 root root  4096 Oct  2 00:09 .
 drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
 drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
--rw-r--r--  1 root root   417 Oct  1 23:52 _config.yml
--rwxr-xr-x  1 root root  5011 Oct  1 23:47 generate_tutorials.sh
-drwxr-xr-x  8 root root  4096 Oct  1 23:54 .git
+-rwxr-xr-x  1 root root  5083 Oct  1 23:58 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 00:09 .git
 -rw-r--r--  1 root root    39 Oct  1 23:52 .gitignore
 drwxr-xr-x  2 root root  4096 Oct  1 23:48 logs
 drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
 -rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
 -rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
--rw-r--r--  1 root root     2 Oct  1 23:44 .tutorial_progress
-drwxr-xr-x  3 root root  4096 Oct  1 23:43 week1
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     2 Oct  2 00:10 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 00:09 week1
 drwxr-xr-x  2 root root  4096 Oct  1 23:17 week2
 drwxr-xr-x  2 root root  4096 Oct  1 23:15 week3
 drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
@@ -28,116 +28,92 @@ drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
 drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
 drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
 -rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
-total 88
-drwxr-xr-x  3 root root  4096 Oct  1 23:43 .
-drwxr-xr-x 14 root root  4096 Oct  1 23:53 ..
-drwxr-xr-x  2 root root  4096 Oct  1 23:41 assets
+total 128
+drwxr-xr-x  3 root root  4096 Oct  2 00:09 .
+drwxr-xr-x 15 root root  4096 Oct  2 00:09 ..
+drwxr-xr-x  2 root root  4096 Oct  2 00:06 assets
 -rw-r--r--  1 root root 39365 Oct  1 23:43 day01_transformer_inference.md
+-rw-r--r--  1 root root 38026 Oct  2 00:09 day02_memory_latency_hand_calc.md
 -rw-r--r--  1 root root 33208 Oct  1 23:13 README.md
 [0m
 [0m→ [0mRead week1/day01_transformer_inference.md
+[0m→ [0mRead week1/day02_memory_latency_hand_calc.md
 [0m
 [0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week1/assets/
-total 64
-drwxr-xr-x 2 root root  4096 Oct  1 23:41 .
-drwxr-xr-x 3 root root  4096 Oct  1 23:43 ..
+total 96
+drwxr-xr-x 2 root root  4096 Oct  2 00:06 .
+drwxr-xr-x 3 root root  4096 Oct  2 00:09 ..
 -rw-r--r-- 1 root root 13816 Oct  1 23:41 day01_decode_iteration_tensor_flow.svg
 -rw-r--r-- 1 root root 24686 Oct  1 23:40 day01_kv_cache_lifecycle.svg
 -rw-r--r-- 1 root root 10905 Oct  1 23:39 day01_prefill_vs_decode.svg
+-rw-r--r-- 1 root root  9610 Oct  2 00:09 day02_decode_latency_lb.svg
+-rw-r--r-- 1 root root 11706 Oct  2 00:05 day02_kv_formula_anatomy.svg
+-rw-r--r-- 1 root root  7833 Oct  2 00:06 day02_memory_budget.svg
 [0m
-[0m→ [0mRead week1/assets/day01_prefill_vs_decode.svg
-Day 1 已存在且格式清晰。我先看下已有 SVG 风格和 week1/README.md 中 Day 3 的相关内容，再检查 vLLM 源码中与 Roofline/ncu 相关的部分。
+[0m→ [0mRead week1/assets/day02_decode_latency_lb.svg
 [0m
-[0m$ [0mgrep -n -A 30 "Day 3" /mnt/workspace/aiinfra/vllm/week1/README.md | head -80
+[0m$ [0mgrep -n "Day 3" /mnt/workspace/aiinfra/vllm/week1/README.md | head -5
 14:├── 一个模型：Roofline（算力 vs 带宽的分界）                 ← Day 3
-15-├── 一个系统：PagedAttention（KV 显存管理）                  ← Day 4
-16-├── 一套指标：TTFT / TPOT / ITL / goodput                   ← Day 5
-17-└── 一次实测：环境搭建 + 压测曲线                             ← Day 6
-18-```
-19-
-20-## 本周产出物检查单
-21-
-22-| 产出物 | 对应 Day | 状态 |
-23-|---|---|---|
-24-| 笔记《prefill/decode 计算与访存量推导》 | Day 1 | [ ] |
-25-| 3 道手算题完整推导过程 | Day 2 | [ ] |
 26:| 笔记《从昇腾 bound 建模到 GPU Roofline 的映射表》 | Day 3 | [ ] |
-27-| PagedAttention 论文精读笔记（含 3 个最巧设计点） | Day 4 | [ ] |
-28-| 指标定义卡片（面试抽背版） | Day 5 | [ ] |
-29-| 第一张性能曲线图（并发 vs TTFT/TPOT p99） | Day 6 | [ ] |
-30-| 《LLM 推理性能的第一性原理》一篇 + 自测 | Day 7 | [ ] |
-31-
-32----
-33-
-34-# Day 1：Transformer 推理机制
-35-
-36-- [ ] 精读 prefill vs decode 的本质区别
-37-- [ ] 搞懂 KV cache 的生成与复用，手画一次 decode 迭代的张量流
-38-
-39-## 1.1 自回归解码的两个阶段
-40-
-41-LLM 推理 = 自回归地逐 token 生成，一次 serving 内部分成两个性质完全相反的阶段：
-42-
-43-| 维度 | Prefill（预填充） | Decode（解码） |
-44-|---|---|---|
-45-| 输入 shape | prompt 一次进来，序列长度 s（几百~几万） | 每步 1 个 token，batch 维 B |
-46-| 矩阵形态 | **GEMM**（M=s 或 s×B） | **GEMV / 窄 M 的 GEMM**（M=B，通常 1~256） |
-47-| 瓶颈 | **计算密集（compute-bound）** | **访存密集（memory-bound）** |
-48-| 每读 1 字节权重算多少 FLOP | ~s FLOP/B（s 越大越高） | ~1 FLOP/B（BF16） |
-49-| KV cache 行为 | 生成（写）整段 prompt 的 K/V | 每步追加 1 个 token 位置，读全部历史 |
-50-| 时延敏感度 | 决定 **TTFT** | 决定 **TPOT/ITL** |
-51-| 对应你的昇腾经验 | 大 M 大 N 的 GEMM，tiling 拼 Cube 利用率 | M≤256 窄 M 场景（你的 L1 全载模板正是为此设计） |
-52-
-53-**一句话本质**：prefill 把权重从 HBM 搬一次就能算 s 个 token 的活，摊销后算力是瓶颈；decode 每算 1 个 token 都要把**全部权重**从 HBM 搬一遍，带宽是瓶颈。
-54-
-55-## 1.2 KV cache：生成与复用
-56-
---
-190:- 反证计算侧只占多少：每 token FLOPs=2N=141.2 GFLOP，H100 FP8 算力 1979 TFLOPS → 若 compute bound 只需 71 µs，与 21 ms 差 **297 倍**（正好 = ridge point 591 ÷ AI 2，与 Day 3 Roofline 互验）
-191-
-192-## 2.5 例题二：2×H100 TP=2 跑 Llama-3-70B FP8，并发上限？
-193-
-194-1. 每卡权重 = 70.6/2 = 35.3 GB → 每卡可用 ≈ 80 − 35.3 − 4 = 40.7 GB → 全系统 KV 池 ≈ **81.4 GB**
-195-2. 每序列（4K ctx，FP8 KV）= 0.625 GB
-196-3. 并发 ≈ 81.4 / 0.625 ≈ **130 序列**（32K ctx 则只剩 ~16）
-197-
-198-## 2.6 例题三：batch 摊销（TPOT vs 吞吐的剪刀差）
-199-
-200-Qwen3-8B BF16（权重 16.4 GB），A100 80GB（2.04 TB/s），ctx=8K（KV/seq=1.125 GiB）：
-201-
-202-| batch | 访存量 | TPOT | 吞吐 (tok/s) |
-203-|---|---|---|---|
-204-| 1 | 16.4+1.1=17.5 GB | 8.6 ms | 116 |
-205-| 8 | 16.4+9=25.4 GB | 12.5 ms | 642 |
-206-| 32 | 16.4+36=52.4 GB | 25.7 ms | **1244** |
-207-
-208-**结论**：TPOT 只涨 3 倍，吞吐涨 10.7 倍——权重读取被 batch 摊销，这就是 continuous batching 提高吞吐的第一性原理；同时 TPOT 上涨就是用户体感的代价，SLO 决定 batch 上限（→ Day 5 goodput）。
-209-
-210:**进阶思考**（可与 Day 3 互验）：B 很大时每序列 KV 读取 `ctx·KV/BW` 与每序列计算时间 `2N/峰值算力` 谁大？H100 FP8 + ctx=4096 时：200 µs vs 71 µs → 永远访存 bound；ctx≈1500 时两者打平；**只有短上下文 + 超大 batch 才可能翻转为 compute bound**。
-211-
-212-## 2.7 练习题（做完合上答案）
-213-
-214-1. **Qwen3-8B BF16 在 A100 80GB，32K 上下文，最大并发？**（答：~13）
-215-2. **如果 Llama-3-70B 没有 GQA（64 个 KV 头），2×H100 能并发几个 4K 请求？**（答：KV/token×8=2.5 MiB → 每序列 10 GB → 仅 ~8 个；GQA 是大并发 serving 的前提）
-216-3. **4090（24GB，1.0 TB/s）跑 Qwen3-8B BF16：TPOT 下界？KV 池剩多少？**（答：16.4/1.0≈16.4 ms→~61 tok/s；KV 池≈3.6 GB→32K ctx 仅 1 条）
-217-
-218-## 2.8 面试话术模板
-219-
-220-> "任何一个 serving 容量问题我分三步：①模型字节数=参数量×精度，看几张卡放得下；②KV 池=显存−权重−预留，除以 单序列 KV=ctx×2L·H_kv·d·P 得并发；③TPOT 下界=(权重+ΣKV)/带宽，实际乘 1.3~1.8 的系数估真实值。"
-221-
-222-**产出物**：3 道手算题完整推导过程（含单位换算过程，面试白板要写的就是这个过程）
-223-
-224----
-225-
-[0m
-[0m$ [0mgrep -n "Day 3\|Day 4" /mnt/workspace/aiinfra/vllm/week1/README.md | head
-14:├── 一个模型：Roofline（算力 vs 带宽的分界）                 ← Day 3
-15:├── 一个系统：PagedAttention（KV 显存管理）                  ← Day 4
-26:| 笔记《从昇腾 bound 建模到 GPU Roofline 的映射表》 | Day 3 | [ ] |
-27:| PagedAttention 论文精读笔记（含 3 个最巧设计点） | Day 4 | [ ] |
 190:- 反证计算侧只占多少：每 token FLOPs=2N=141.2 GFLOP，H100 FP8 算力 1979 TFLOPS → 若 compute bound 只需 71 µs，与 21 ms 差 **297 倍**（正好 = ridge point 591 ÷ AI 2，与 Day 3 Roofline 互验）
 210:**进阶思考**（可与 Day 3 互验）：B 很大时每序列 KV 读取 `ctx·KV/BW` 与每序列计算时间 `2N/峰值算力` 谁大？H100 FP8 + ctx=4096 时：200 µs vs 71 µs → 永远访存 bound；ctx≈1500 时两者打平；**只有短上下文 + 超大 batch 才可能翻转为 compute bound**。
 226:# Day 3：Roofline 模型（GPU 版）
-325:# Day 4：PagedAttention 论文精读（SOSP 2023）
 [0m
-[0m→ [0mRead week1/README.md[90m [limit=100, offset=226][0m
+[0m→ [0mRead week1/README.md[90m [limit=80, offset=1][0m
+[0m→ [0mRead week1/README.md[90m [limit=130, offset=226][0m
+[0m→ [0mRead 陈斌斌简历.md
+[0m
+[0m$ [0mcat /mnt/workspace/aiinfra/vllm/.tutorial_progress; echo ---; head -50 /mnt/workspace/aiinfra/vllm/generate_tutorials.sh
+2
+---
+#!/usr/bin/env bash
+#
+# generate_tutorials.sh — 按天调用 cannbot 生成 vLLM 推理系统教程（Day 1 ~ Day 56）
+#
+# 行为：
+#   - 每次只向 cannbot 发送「一天」的教程生成任务；
+#   - 默认单线程：前一天生成完成（产出 dayNN_*.md）后才发送下一天；
+#     需要加速时可用 JOBS=2 等开启并发；
+#   - 支持断点续跑：已生成的 Day 自动跳过；
+#   - 失败自动重试，多次失败后停止派发新任务并保留现场。
+#
+# 用法：
+#   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
+#   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
+#   MAX_RETRIES=5 ./generate_tutorials.sh
+#   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
+#
+set -u
+
+WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$WORKDIR"
+
+START_DAY="${START_DAY:-1}"
+END_DAY="${END_DAY:-56}"
+MAX_RETRIES="${MAX_RETRIES:-3}"
+JOBS="${JOBS:-1}"
+LOG_DIR="$WORKDIR/logs"
+PROGRESS_FILE="$WORKDIR/.tutorial_progress"
+mkdir -p "$LOG_DIR"
+
+# cannbot 需要自动写入文件，必须跳过权限确认才能无人值守运行
+# 默认模型：cannbot/glm-5.3（可用 `cannbot models` 查看全部，用 CANNBOT_MODEL 覆盖）
+CANNBOT_MODEL="${CANNBOT_MODEL:-cannbot/glm-5.3}"
+CANNBOT_OPTS=(--dir "$WORKDIR" --dangerously-skip-permissions -m "$CANNBOT_MODEL")
+
+log() {
+  echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/run.log"
+}
+
+# 判断某一天是否已有产出文件（day01_*.md / day1_*.md 等，任意子目录）
+day_done() {
+  local day="$1"
+  local padded
+  padded="$(printf '%02d' "$day")"
+  find "$WORKDIR" -type f \
+    \( -iname "day${padded}_*.md" -o -iname "day${day}_*.md" \) \
+    ! -path '*/.git/*' | grep -q .
+}
+
+# 找出该 Day 产出文件的存放目录：按周组织（week1..week8），目录不存在则用根目录
+[0m

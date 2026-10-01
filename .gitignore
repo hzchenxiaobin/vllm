@@ -1,3 +1,6 @@
 .claude/
 .opencode/
 陈斌斌简历.md
+public/
+__pycache__/
+build/__pycache__/
