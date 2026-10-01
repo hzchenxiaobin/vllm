@@ -1,0 +1,10 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "week1/**"[90m 5 matches[0m
+[0m✱ [0mGlob "*.md"[90m 12 matches[0m
+[0m→ [0mRead week1/day01_transformer_inference.md
+[0m→ [0mRead week1/assets/day01_prefill_vs_decode.svg
+[0m→ [0mRead week1/README.md

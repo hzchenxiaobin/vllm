@@ -1,0 +1,221 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "week1/**/*.md"[90m 2 matches[0m
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null
+total 96
+drwxr-xr-x 13 root root  4096 Oct  1 23:44 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+-rwxr-xr-x  1 root root  5011 Oct  1 23:47 generate_tutorials.sh
+-rw-r--r--  1 root root    20 Oct  1 23:03 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  1 23:48 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+-rw-r--r--  1 root root     2 Oct  1 23:44 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  1 23:43 week1
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week2
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+total 88
+drwxr-xr-x  3 root root  4096 Oct  1 23:43 .
+drwxr-xr-x 13 root root  4096 Oct  1 23:44 ..
+drwxr-xr-x  2 root root  4096 Oct  1 23:41 assets
+-rw-r--r--  1 root root 39365 Oct  1 23:43 day01_transformer_inference.md
+-rw-r--r--  1 root root 33208 Oct  1 23:13 README.md
+[0m
+[0m→ [0mRead week1/day01_transformer_inference.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week1/assets/
+total 64
+drwxr-xr-x 2 root root  4096 Oct  1 23:41 .
+drwxr-xr-x 3 root root  4096 Oct  1 23:43 ..
+-rw-r--r-- 1 root root 13816 Oct  1 23:41 day01_decode_iteration_tensor_flow.svg
+-rw-r--r-- 1 root root 24686 Oct  1 23:40 day01_kv_cache_lifecycle.svg
+-rw-r--r-- 1 root root 10905 Oct  1 23:39 day01_prefill_vs_decode.svg
+[0m
+[0m→ [0mRead week1/README.md
+[0m→ [0mRead week1/assets/day01_prefill_vs_decode.svg
+[0m
+[0m$ [0mcat /mnt/workspace/aiinfra/vllm/.tutorial_progress; echo ---; cat /mnt/workspace/aiinfra/vllm/generate_tutorials.sh; echo ---; ls /mnt/workspace/aiinfra/vllm/logs/ 2>/dev/null
+1
+---
+#!/usr/bin/env bash
+#
+# generate_tutorials.sh — 按天调用 cannbot 生成 vLLM 推理系统教程（Day 1 ~ Day 56）
+#
+# 行为：
+#   - 每次只向 cannbot 发送「一天」的教程生成任务；
+#   - 按 JOBS 指定的并发数同时生成（默认 2），同一天只跑一个实例；
+#   - 支持断点续跑：已生成的 Day 自动跳过；
+#   - 失败自动重试，多次失败后停止派发新任务并保留现场。
+#
+# 用法：
+#   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
+#   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
+#   MAX_RETRIES=5 ./generate_tutorials.sh
+#   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 2）
+#
+set -u
+
+WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$WORKDIR"
+
+START_DAY="${START_DAY:-1}"
+END_DAY="${END_DAY:-56}"
+MAX_RETRIES="${MAX_RETRIES:-3}"
+JOBS="${JOBS:-2}"
+LOG_DIR="$WORKDIR/logs"
+PROGRESS_FILE="$WORKDIR/.tutorial_progress"
+mkdir -p "$LOG_DIR"
+
+# cannbot 需要自动写入文件，必须跳过权限确认才能无人值守运行
+# 默认模型：cannbot/glm-5.3（可用 `cannbot models` 查看全部，用 CANNBOT_MODEL 覆盖）
+CANNBOT_MODEL="${CANNBOT_MODEL:-cannbot/glm-5.3}"
+CANNBOT_OPTS=(--dir "$WORKDIR" --dangerously-skip-permissions -m "$CANNBOT_MODEL")
+
+log() {
+  echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/run.log"
+}
+
+# 判断某一天是否已有产出文件（day01_*.md / day1_*.md 等，任意子目录）
+day_done() {
+  local day="$1"
+  local padded
+  padded="$(printf '%02d' "$day")"
+  find "$WORKDIR" -type f \
+    \( -iname "day${padded}_*.md" -o -iname "day${day}_*.md" \) \
+    ! -path '*/.git/*' | grep -q .
+}
+
+# 找出该 Day 产出文件的存放目录：按周组织（week1..week8），目录不存在则用根目录
+day_dir() {
+  local day="$1"
+  local week=$(( (day - 1) / 7 + 1 ))
+  if [[ -d "$WORKDIR/week${week}" ]]; then
+    echo "week${week}"
+  else
+    echo "."
+  fi
+
+}
+
+# 构造发给 cannbot 的当天任务提示
+build_prompt() {
+  local day="$1"
+  local padded
+  padded="$(printf '%02d' "$day")"
+  local outdir
+  outdir="$(day_dir "$day")"
+  cat <<EOF
+请阅读当前目录下的 prompt.md 和 README.md。
+
+README.md 中是 Day 1 ~ Day 56 的学习计划，prompt.md 中是教程的格式与深度要求（一日一文、章节结构、SVG 图、vLLM V1 主线、代码与源码调用链、面试问题等），请严格遵守。
+
+本次任务：只生成 Day ${day} 这一天的教程，严格对应 README.md 中 Day ${day} 的主题、学习目标、实验和产出，不要生成其他天的内容。
+
+要求：
+- 输出一个 Markdown 文件到 ${outdir}/ 目录下，文件名形如 day${padded}_<主题英文小写下划线>.md。
+- SVG 图保存到 ${outdir}/assets/ 并引用，或直接内嵌在 Markdown 中。
+- 写作前可以浏览已存在的 day*.md 文件（如果存在），在内容上主动与前几天衔接（例如「回顾 Day X」），但不要修改已有文件。
+- 完成后请确认文件已写入，并简要说明文件路径和主要内容。
+EOF
+}
+
+run_day() {
+  local day="$1"
+  local attempt=1
+  local prompt
+  prompt="$(build_prompt "$day")"
+
+  while (( attempt <= MAX_RETRIES )); do
+    log "Day ${day}: 第 ${attempt}/${MAX_RETRIES} 次尝试，发送给 cannbot ..."
+    if cannbot run "${CANNBOT_OPTS[@]}" \
+        --title "vLLM 教程 Day ${day}" \
+        "$prompt" > "$LOG_DIR/day$(printf '%02d' "$day").log" 2>&1; then
+      if day_done "$day"; then
+        log "Day ${day}: 完成，产出文件已确认。"
+        echo "$day" > "$PROGRESS_FILE"
+        return 0
+      fi
+      log "Day ${day}: cannbot 正常退出但未找到 day 产出文件，视为失败。"
+    else
+      log "Day ${day}: cannbot 退出码非零（详见 logs/day$(printf '%02d' "$day").log）。"
+    fi
+    attempt=$(( attempt + 1 ))
+    sleep 5
+  done
+
+  log "Day ${day}: 重试 ${MAX_RETRIES} 次仍失败，停止。修复后可重新运行本脚本续跑。"
+  return 1
+}
+
+main() {
+  log "===== 教程生成开始：Day ${START_DAY} ~ Day ${END_DAY}（并发数 ${JOBS}）====="
+  local day
+  local failed=0
+  for (( day = START_DAY; day <= END_DAY; day++ )); do
+    if day_done "$day"; then
+      log "Day ${day}: 已存在产出文件，跳过。"
+      continue
+    fi
+    # 并发控制：运行中的任务达到 JOBS 上限时，等待任意一个结束
+    while (( $(jobs -rp | wc -l) >= JOBS )); do
+      wait -n || failed=1
+    done
+    if (( failed )); then
+      log "检测到失败任务，停止派发新 Day（已在运行的会跑完）。"
+      break
+    fi
+    run_day "$day" &
+    sleep 2  # 错峰启动，避免两个 cannbot 同时请求
+  done
+  # 等所有在跑的任务结束
+  while (( $(jobs -rp | wc -l) > 0 )); do
+    wait -n || failed=1
+  done
+  if (( failed )); then
+    log "===== 存在失败的 Day，请查看 logs/ 后重跑本脚本续跑 ====="
+    exit 1
+  fi
+  log "===== 全部完成：Day ${START_DAY} ~ Day ${END_DAY} ====="
+}
+
+main "$@"
+---
+day01.log
+day02.log
+day03.log
+nohup.out
+run.log
+[0m
+[0m$ [0mtail -5 /mnt/workspace/aiinfra/vllm/logs/run.log; echo ---; tail -3 /mnt/workspace/aiinfra/vllm/logs/day02.log 2>/dev/null; echo ---; ls /mnt/workspace/aiinfra/vllm/week1/ /mnt/workspace/aiinfra/vllm/week1/assets/
+[2026-10-01 23:45:32] Day 2: 第 1/3 次尝试，发送给 cannbot ...
+[2026-10-01 23:47:58] ===== 教程生成开始：Day 1 ~ Day 56（并发数 2）=====
+[2026-10-01 23:47:58] Day 1: 已存在产出文件，跳过。
+[2026-10-01 23:47:58] Day 2: 第 1/3 次尝试，发送给 cannbot ...
+[2026-10-01 23:48:00] Day 3: 第 1/3 次尝试，发送给 cannbot ...
+---
+[0m→ [0mRead week1/day01_transformer_inference.md
+[0m→ [0mRead week1/assets/day01_prefill_vs_decode.svg
+[0m→ [0mRead week1/README.md
+---
+/mnt/workspace/aiinfra/vllm/week1/:
+assets
+day01_transformer_inference.md
+README.md
+
+/mnt/workspace/aiinfra/vllm/week1/assets/:
+day01_decode_iteration_tensor_flow.svg
+day01_kv_cache_lifecycle.svg
+day01_prefill_vs_decode.svg
+[0m

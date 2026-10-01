@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 700" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="700" fill="#ffffff"/>
+  <text x="620" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">KV Cache 的生成（prefill）与复用（decode）—— 以单层 Attention 为例</text>
+
+  <!-- ============ CARD 1: PREFILL ============ -->
+  <rect x="20" y="52" width="1200" height="172" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="36" y="66" width="24" height="24" rx="6" fill="#2563eb"/>
+  <text x="48" y="83" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">1</text>
+  <text x="70" y="83" font-size="15" font-weight="bold" fill="#0f172a">Prefill：prompt 一次进来，s 个 token 的 K/V 一次性写入</text>
+
+  <text x="40" y="121" font-size="11" fill="#64748b">输入</text>
+  <rect x="70"  y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="87"  y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t1</text>
+  <rect x="108" y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="125" y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t2</text>
+  <rect x="146" y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="163" y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">…</text>
+  <rect x="184" y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="201" y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">…</text>
+  <rect x="222" y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="239" y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">…</text>
+  <rect x="260" y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="277" y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">…</text>
+  <rect x="298" y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="315" y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">…</text>
+  <rect x="336" y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="353" y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">…</text>
+  <rect x="374" y="102" width="34" height="24" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="391" y="118" text-anchor="middle" font-size="10.5" fill="#1e3a8a">ts</text>
+  <text x="416" y="118" font-size="11" fill="#64748b">（s 个）</text>
+
+  <line x1="420" y1="114" x2="446" y2="114" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="450" y="94" width="180" height="40" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="540" y="110" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">QKV 投影</text>
+  <text x="540" y="126" text-anchor="middle" font-size="10.5" fill="#334155">GEMM：s 个 token 一起算</text>
+
+  <line x1="540" y1="134" x2="540" y2="146" stroke="#2563eb" stroke-width="2" marker-end="url(#arB)"/>
+  <text x="548" y="144" font-size="9.5" fill="#2563eb">q,k,v</text>
+
+  <rect x="470" y="148" width="160" height="30" rx="15" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="550" y="167" text-anchor="middle" font-size="11" fill="#1e3a8a">Attention（causal）</text>
+
+  <text x="690" y="94" font-size="11" font-weight="bold" fill="#059669">KV Cache（本层）—— 共 36 层各一份</text>
+  <line x1="630" y1="114" x2="684" y2="114" stroke="#059669" stroke-width="2" marker-end="url(#arG)"/>
+  <text x="652" y="140" text-anchor="middle" font-size="10" fill="#059669">批量写入 s 槽</text>
+
+  <text x="660" y="144" text-anchor="end" font-size="12" font-weight="bold" fill="#059669">K</text>
+  <rect x="690"  y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="709"  y="135" text-anchor="middle" font-size="10" fill="#065f46">k0</text>
+  <rect x="731"  y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="750"  y="135" text-anchor="middle" font-size="10" fill="#065f46">k1</text>
+  <rect x="772"  y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="791"  y="135" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="813"  y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="832"  y="135" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="854"  y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="873"  y="135" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="895"  y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="914"  y="135" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="936"  y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="955"  y="135" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="977"  y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="996"  y="135" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1018" y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1037" y="135" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1059" y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1078" y="135" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1100" y="118" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1119" y="135" text-anchor="middle" font-size="10" fill="#065f46">k10</text>
+  <rect x="1141" y="118" width="38" height="26" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 3"/><text x="1160" y="135" text-anchor="middle" font-size="10" fill="#94a3b8">空</text>
+  <rect x="1182" y="118" width="38" height="26" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 3"/><text x="1201" y="135" text-anchor="middle" font-size="10" fill="#94a3b8">空</text>
+
+  <text x="660" y="182" text-anchor="end" font-size="12" font-weight="bold" fill="#059669">V</text>
+  <rect x="690"  y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="709"  y="173" text-anchor="middle" font-size="10" fill="#065f46">v0</text>
+  <rect x="731"  y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="750"  y="173" text-anchor="middle" font-size="10" fill="#065f46">v1</text>
+  <rect x="772"  y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="791"  y="173" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="813"  y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="832"  y="173" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="854"  y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="873"  y="173" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="895"  y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="914"  y="173" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="936"  y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="955"  y="173" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="977"  y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="996"  y="173" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1018" y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1037" y="173" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1059" y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1078" y="173" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1100" y="156" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1119" y="173" text-anchor="middle" font-size="10" fill="#065f46">v10</text>
+  <rect x="1141" y="156" width="38" height="26" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 3"/><text x="1160" y="173" text-anchor="middle" font-size="10" fill="#94a3b8">空</text>
+  <rect x="1182" y="156" width="38" height="26" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 3"/><text x="1201" y="173" text-anchor="middle" font-size="10" fill="#94a3b8">空</text>
+
+  <text x="40" y="212" font-size="12" fill="#334155">本步 FLOPs ≈ 2·N·s（compute-bound）；额外写出 s·KV_per_token 字节进 cache</text>
+
+  <!-- ============ CARD 2: DECODE STEP i ============ -->
+  <rect x="20" y="236" width="1200" height="172" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="36" y="250" width="24" height="24" rx="6" fill="#ea580c"/>
+  <text x="48" y="267" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">2</text>
+  <text x="70" y="267" font-size="15" font-weight="bold" fill="#0f172a">Decode 第 i 步：读全部历史 ＋ 只追加 1 个槽位</text>
+
+  <text x="40" y="305" font-size="11" fill="#64748b">输入</text>
+  <rect x="70" y="286" width="34" height="24" rx="4" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="87" y="302" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">t_i</text>
+
+  <line x1="420" y1="298" x2="446" y2="298" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="450" y="278" width="180" height="40" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="540" y="294" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">QKV 投影</text>
+  <text x="540" y="310" text-anchor="middle" font-size="10.5" fill="#334155">GEMV：只算第 i 个 token</text>
+
+  <line x1="540" y1="318" x2="540" y2="330" stroke="#2563eb" stroke-width="2" marker-end="url(#arB)"/>
+  <text x="548" y="328" font-size="9.5" fill="#2563eb">q_i</text>
+
+  <rect x="470" y="332" width="160" height="30" rx="15" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="550" y="351" text-anchor="middle" font-size="11" fill="#1e3a8a">Attention（读全部历史）</text>
+
+  <path d="M 630 298 C 760 256, 1050 256, 1150 290" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arO)"/>
+  <text x="890" y="268" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#ea580c">只追加 1 个新槽位（k_i, v_i）</text>
+
+  <text x="690" y="278" font-size="11" font-weight="bold" fill="#059669">KV Cache（本层）</text>
+  <text x="660" y="328" text-anchor="end" font-size="12" font-weight="bold" fill="#059669">K</text>
+  <rect x="690"  y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="709"  y="319" text-anchor="middle" font-size="10" fill="#065f46">k0</text>
+  <rect x="731"  y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="750"  y="319" text-anchor="middle" font-size="10" fill="#065f46">k1</text>
+  <rect x="772"  y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="791"  y="319" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="813"  y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="832"  y="319" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="854"  y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="873"  y="319" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="895"  y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="914"  y="319" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="936"  y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="955"  y="319" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="977"  y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="996"  y="319" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1018" y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1037" y="319" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1059" y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1078" y="319" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1100" y="302" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1119" y="319" text-anchor="middle" font-size="10" fill="#065f46">k10</text>
+  <rect x="1141" y="302" width="38" height="26" rx="3" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><text x="1160" y="319" text-anchor="middle" font-size="10" font-weight="bold" fill="#9a3412">k_i</text>
+  <rect x="1182" y="302" width="38" height="26" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 3"/><text x="1201" y="319" text-anchor="middle" font-size="10" fill="#94a3b8">空</text>
+  <text x="1160" y="296" text-anchor="middle" font-size="10" font-weight="bold" fill="#ea580c">追加</text>
+
+  <text x="660" y="366" text-anchor="end" font-size="12" font-weight="bold" fill="#059669">V</text>
+  <rect x="690"  y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="709"  y="357" text-anchor="middle" font-size="10" fill="#065f46">v0</text>
+  <rect x="731"  y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="750"  y="357" text-anchor="middle" font-size="10" fill="#065f46">v1</text>
+  <rect x="772"  y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="791"  y="357" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="813"  y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="832"  y="357" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="854"  y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="873"  y="357" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="895"  y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="914"  y="357" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="936"  y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="955"  y="357" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="977"  y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="996"  y="357" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1018" y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1037" y="357" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1059" y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1078" y="357" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1100" y="340" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1119" y="357" text-anchor="middle" font-size="10" fill="#065f46">v10</text>
+  <rect x="1141" y="340" width="38" height="26" rx="3" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><text x="1160" y="357" text-anchor="middle" font-size="10" font-weight="bold" fill="#9a3412">v_i</text>
+  <rect x="1182" y="340" width="38" height="26" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="3 3"/><text x="1201" y="357" text-anchor="middle" font-size="10" fill="#94a3b8">空</text>
+
+  <line x1="688" y1="327" x2="636" y2="327" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arB)"/>
+  <text x="655" y="376" text-anchor="middle" font-size="10" fill="#2563eb">读 K[0..i]、V[0..i]</text>
+
+  <text x="40" y="396" font-size="12" fill="#334155">本步 FLOPs ≈ 2·N（GEMV 为主）；读 i·KV_per_token 字节历史 ＋ 写 1 个槽位 —— 权重每步必读是访存大头</text>
+
+  <!-- ============ CARD 3: DECODE STEP i+1 ============ -->
+  <rect x="20" y="420" width="1200" height="172" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="36" y="434" width="24" height="24" rx="6" fill="#ea580c"/>
+  <text x="48" y="451" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">3</text>
+  <text x="70" y="451" font-size="15" font-weight="bold" fill="#0f172a">Decode 第 i+1 步：上一步的 K/V 直接复用，再追加 1 个</text>
+
+  <text x="40" y="489" font-size="11" fill="#64748b">输入</text>
+  <rect x="70" y="470" width="34" height="24" rx="4" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="87" y="486" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">t_i+1</text>
+
+  <line x1="420" y1="482" x2="446" y2="482" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="450" y="462" width="180" height="40" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="540" y="478" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">QKV 投影</text>
+  <text x="540" y="494" text-anchor="middle" font-size="10.5" fill="#334155">GEMV：只算第 i+1 个 token</text>
+
+  <line x1="540" y1="502" x2="540" y2="514" stroke="#2563eb" stroke-width="2" marker-end="url(#arB)"/>
+  <text x="548" y="512" font-size="9.5" fill="#2563eb">q_i+1</text>
+
+  <rect x="470" y="516" width="160" height="30" rx="15" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="550" y="535" text-anchor="middle" font-size="11" fill="#1e3a8a">Attention（读全部历史）</text>
+
+  <path d="M 630 482 C 780 440, 1080 440, 1196 474" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arO)"/>
+  <text x="910" y="452" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#ea580c">只追加 1 个新槽位（k_i+1, v_i+1）</text>
+
+  <text x="690" y="462" font-size="11" font-weight="bold" fill="#059669">KV Cache（本层）—— 历史原样保留，永不重算</text>
+  <text x="660" y="512" text-anchor="end" font-size="12" font-weight="bold" fill="#059669">K</text>
+  <rect x="690"  y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="709"  y="503" text-anchor="middle" font-size="10" fill="#065f46">k0</text>
+  <rect x="731"  y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="750"  y="503" text-anchor="middle" font-size="10" fill="#065f46">k1</text>
+  <rect x="772"  y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="791"  y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="813"  y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="832"  y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="854"  y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="873"  y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="895"  y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="914"  y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="936"  y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="955"  y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="977"  y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="996"  y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1018" y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1037" y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1059" y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1078" y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1100" y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1119" y="503" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1141" y="486" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1160" y="503" text-anchor="middle" font-size="10" fill="#065f46">k_i</text>
+  <rect x="1182" y="486" width="38" height="26" rx="3" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><text x="1201" y="503" text-anchor="middle" font-size="10" font-weight="bold" fill="#9a3412">k_i+1</text>
+  <text x="1201" y="480" text-anchor="middle" font-size="10" font-weight="bold" fill="#ea580c">追加</text>
+
+  <text x="660" y="550" text-anchor="end" font-size="12" font-weight="bold" fill="#059669">V</text>
+  <rect x="690"  y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="709"  y="541" text-anchor="middle" font-size="10" fill="#065f46">v0</text>
+  <rect x="731"  y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="750"  y="541" text-anchor="middle" font-size="10" fill="#065f46">v1</text>
+  <rect x="772"  y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="791"  y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="813"  y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="832"  y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="854"  y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="873"  y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="895"  y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="914"  y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="936"  y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="955"  y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="977"  y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="996"  y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1018" y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1037" y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1059" y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1078" y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1100" y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1119" y="541" text-anchor="middle" font-size="10" fill="#065f46">…</text>
+  <rect x="1141" y="524" width="38" height="26" rx="3" fill="#a7f3d0" stroke="#059669"/><text x="1160" y="541" text-anchor="middle" font-size="10" fill="#065f46">v_i</text>
+  <rect x="1182" y="524" width="38" height="26" rx="3" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><text x="1201" y="541" text-anchor="middle" font-size="10" font-weight="bold" fill="#9a3412">v_i+1</text>
+
+  <line x1="688" y1="511" x2="636" y2="511" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arB)"/>
+  <text x="655" y="560" text-anchor="middle" font-size="10" fill="#2563eb">读 K[0..i+1]、V[0..i+1]</text>
+
+  <text x="40" y="580" font-size="12" fill="#334155">k_i、v_i 无需重算 —— 空间换时间；若无 cache，每步都要重算整个前缀的 K/V（Θ(i) 的 GEMM）</text>
+
+  <!-- ============ BOTTOM TAKEAWAY ============ -->
+  <rect x="20" y="608" width="1200" height="76" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+  <text x="40" y="632" font-size="13" font-weight="bold" fill="#065f46">KV Cache 的本质：空间换时间（成立前提 = Attention 的因果性）</text>
+  <text x="40" y="652" font-size="12" fill="#065f46">显存代价 O(ctx)：每 token 2·L·H_kv·d·P 字节（Qwen3-8B BF16 = 144 KiB/token → Day 2 手算公式）</text>
+  <text x="40" y="670" font-size="12" fill="#065f46">换来：每步 K/V 计算从 Θ(i) → Θ(1)；历史 K/V 永不改变 → 可缓存、可跨请求共享（→ Day 4 PagedAttention / prefix caching）</text>
+</svg>
