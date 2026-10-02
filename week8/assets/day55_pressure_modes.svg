@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 590" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d55c" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0f766e"/>
+    </marker>
+    <marker id="d55r" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="d55g" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="d55s" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="960" height="590" fill="#fafbfc"/>
+  <text x="480" y="34" text-anchor="middle" font-size="23" font-weight="700" fill="#0f172a">三种加压模式：把真实面试的最坏情况搬进实验室</text>
+  <text x="480" y="58" text-anchor="middle" font-size="13" fill="#64748b">Day 54 常规追问约 3 层换题；今天由面试官随机施加，压力形态与应对锚点如下</text>
+
+  <!-- Lane A -->
+  <rect x="46" y="86" width="868" height="136" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="62" y="104" width="132" height="42" rx="8" fill="#2563eb"/>
+  <text x="128" y="123" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">模式 A</text>
+  <text x="128" y="139" text-anchor="middle" font-size="11.5" fill="#fff">追到底</text>
+  <text x="62" y="180" font-size="11.5" fill="#475569">同一主题连续 5~6 层</text>
+  <text x="62" y="198" font-size="11.5" fill="#475569">不换题，一路下探</text>
+  <g font-size="10.5" fill="#1e3a8a" text-anchor="middle">
+    <rect x="225" y="112" width="52" height="15" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="251" y="123">L1</text>
+    <rect x="283" y="125" width="52" height="15" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="309" y="136">L2</text>
+    <rect x="341" y="138" width="52" height="15" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="367" y="149">L3</text>
+    <rect x="399" y="151" width="52" height="15" rx="3" fill="#dbeafe" stroke="#2563eb"/><text x="425" y="162">L4</text>
+    <rect x="457" y="164" width="52" height="15" rx="3" fill="#bfdbfe" stroke="#2563eb"/><text x="483" y="175">L5</text>
+    <rect x="515" y="177" width="52" height="15" rx="3" fill="#93c5fd" stroke="#2563eb"/><text x="541" y="188">L6</text>
+  </g>
+  <text x="225" y="208" font-size="11.5" fill="#1e3a8a">L4 之后继续下探：L5 源码级（调用链）→ L6 失效级（先看到哪个指标动）</text>
+  <g>
+    <rect x="676" y="102" width="222" height="106" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+    <text x="787" y="124" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1e3a8a">应对原则</text>
+    <text x="688" y="146" font-size="11" fill="#334155">· 每层 30~40 秒收口</text>
+    <text x="688" y="165" font-size="11" fill="#334155">· L5 诚实给层级边界</text>
+    <text x="688" y="184" font-size="11" fill="#334155">· 立刻补调用链 / 实验证据</text>
+    <text x="688" y="203" font-size="11" fill="#334155">· 禁止编造（一票否决）</text>
+  </g>
+
+  <!-- Lane B -->
+  <rect x="46" y="232" width="868" height="136" rx="10" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
+  <rect x="62" y="250" width="132" height="42" rx="8" fill="#ca8a04"/>
+  <text x="128" y="269" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">模式 B</text>
+  <text x="128" y="285" text-anchor="middle" font-size="11.5" fill="#fff">打断跳转</text>
+  <text x="62" y="326" font-size="11.5" fill="#475569">答到一半被打断，</text>
+  <text x="62" y="344" font-size="11.5" fill="#475569">10 分钟后杀回原题</text>
+  <rect x="225" y="266" width="145" height="22" rx="4" fill="#fef3c7" stroke="#ca8a04"/>
+  <text x="297" y="281" text-anchor="middle" font-size="10.5" fill="#713f12">主题 A · 讲到一半</text>
+  <text x="385" y="281" font-size="12" font-weight="700" fill="#dc2626">✂ 打断</text>
+  <line x1="370" y1="277" x2="432" y2="257" stroke="#dc2626" stroke-width="2" marker-end="url(#d55r)"/>
+  <rect x="438" y="246" width="100" height="22" rx="4" fill="#fde68a" stroke="#ca8a04"/>
+  <text x="488" y="261" text-anchor="middle" font-size="10.5" fill="#713f12">跳问 · 主题 B</text>
+  <path d="M538,268 C556,282 546,288 553,296" fill="none" stroke="#0f766e" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#d55c)"/>
+  <rect x="545" y="300" width="112" height="22" rx="4" fill="#fef3c7" stroke="#ca8a04"/>
+  <text x="601" y="315" text-anchor="middle" font-size="10.5" fill="#713f12">杀回 A · 先复述结论</text>
+  <text x="225" y="350" font-size="11.5" fill="#713f12">锚 = 开头一句话结论；细节挂在锚上，被打断后丢了细节、捡得回主线</text>
+  <g>
+    <rect x="676" y="248" width="222" height="106" rx="8" fill="#fffbeb" stroke="#ca8a04" stroke-width="1"/>
+    <text x="787" y="270" text-anchor="middle" font-size="12.5" font-weight="700" fill="#713f12">应对原则</text>
+    <text x="688" y="292" font-size="11" fill="#334155">· 每答先立一句话结论</text>
+    <text x="688" y="311" font-size="11" fill="#334155">· 被拉回先复述结论</text>
+    <text x="688" y="330" font-size="11" fill="#334155">· 不从断点细节直接续讲</text>
+    <text x="688" y="349" font-size="11" fill="#334155">· 练的是工作记忆 + 锚点</text>
+  </g>
+
+  <!-- Lane C -->
+  <rect x="46" y="378" width="868" height="136" rx="10" fill="#ffffff" stroke="#db2777" stroke-width="1.5"/>
+  <rect x="62" y="396" width="132" height="42" rx="8" fill="#db2777"/>
+  <text x="128" y="415" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">模式 C</text>
+  <text x="128" y="431" text-anchor="middle" font-size="11.5" fill="#fff">质疑对抗</text>
+  <text x="62" y="472" font-size="11.5" fill="#475569">对答案直接质疑：</text>
+  <text x="62" y="490" font-size="11.5" fill="#475569">数字质疑 / 错误前提</text>
+  <rect x="225" y="412" width="170" height="22" rx="4" fill="#fce7f3" stroke="#db2777"/>
+  <text x="310" y="427" text-anchor="middle" font-size="10.5" fill="#9d174d">我的答案：21ms（含口径）</text>
+  <line x1="395" y1="423" x2="428" y2="423" stroke="#dc2626" stroke-width="2" marker-end="url(#d55r)"/>
+  <rect x="432" y="412" width="118" height="22" rx="4" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="491" y="427" text-anchor="middle" font-size="10.5" fill="#991b1b">"不对吧？"</text>
+  <line x1="470" y1="434" x2="360" y2="450" stroke="#16a34a" stroke-width="2" marker-end="url(#d55g)"/>
+  <rect x="225" y="454" width="212" height="22" rx="4" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="331" y="469" text-anchor="middle" font-size="10.5" fill="#14532d">口径防御：下界 vs 实测，两数都成立</text>
+  <line x1="437" y1="465" x2="453" y2="465" stroke="#64748b" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#d55s)"/>
+  <rect x="457" y="454" width="203" height="22" rx="4" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="558" y="469" text-anchor="middle" font-size="10.5" fill="#334155">认错条件：对方给出未见过的实测</text>
+  <text x="225" y="498" font-size="11.5" fill="#9d174d">先立自己的口径，再承认对方口径的成立条件——不说"您错了"</text>
+  <g>
+    <rect x="676" y="394" width="222" height="106" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="1"/>
+    <text x="787" y="416" text-anchor="middle" font-size="12.5" font-weight="700" fill="#9d174d">应对原则</text>
+    <text x="688" y="438" font-size="11" fill="#334155">· 口径防御标准句式</text>
+    <text x="688" y="457" font-size="11" fill="#334155">· 认一个具体的数</text>
+    <text x="688" y="476" font-size="11" fill="#334155">· 不推翻整条推理链</text>
+    <text x="688" y="495" font-size="11" fill="#334155">· 诚实，但不崩盘</text>
+  </g>
+
+  <!-- bottom strip -->
+  <rect x="46" y="530" width="868" height="40" rx="9" fill="#0f172a"/>
+  <text x="480" y="555" text-anchor="middle" font-size="12.5" font-weight="700" fill="#f8fafc">三种模式的共同失效模式只有一个：编造 —— 追问越长、干扰越多，编造被戳穿的概率越高；"不知道 + 相邻证据"永远优于现场编造</text>
+</svg>

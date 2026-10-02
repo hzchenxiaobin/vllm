@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">ROI 排序矩阵：七条路怎么排开工顺序</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#64748b">ROI ~ Δms × P(兑现 | 证据强度) ÷ (人日 × 回归面)——不追求精确打分，追求排序稳定：前两名怎么换都不动摇就够用</text>
+
+  <!-- plot area -->
+  <rect x="140" y="80" width="740" height="360" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <line x1="510" y1="80" x2="510" y2="440" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="5 5"/>
+  <line x1="140" y1="240" x2="880" y2="240" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="5 5"/>
+  <rect x="140" y="80" width="370" height="160" fill="#f0fdf4" fill-opacity="0.55"/>
+  <text x="325" y="100" text-anchor="middle" font-size="11" font-weight="bold" fill="#047857">先做：成本低 × 收益高</text>
+  <text x="700" y="100" text-anchor="middle" font-size="11" fill="#7f1d1d">高收益但贵 / 风险大：排期或缓办</text>
+  <text x="325" y="428" text-anchor="middle" font-size="11" fill="#64748b">零头池：顺手带走</text>
+  <text x="700" y="428" text-anchor="middle" font-size="11" fill="#64748b">调查后再定</text>
+
+  <!-- axes -->
+  <text x="510" y="464" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">成本 / 回归面 →（kernel 层局部改动 · 验收便宜 → 系统配置 / 模型结构 · 回归面大）</text>
+  <text x="116" y="260" font-size="11.5" font-weight="bold" fill="#334155" transform="rotate(-90 116 260)" text-anchor="middle">收益上限 (ms/step) →</text>
+  <text x="132" y="180" text-anchor="end" font-size="10" fill="#94a3b8">8</text>
+  <text x="132" y="246" text-anchor="end" font-size="10" fill="#94a3b8">6</text>
+  <text x="132" y="312" text-anchor="end" font-size="10" fill="#94a3b8">4</text>
+  <text x="132" y="378" text-anchor="end" font-size="10" fill="#94a3b8">2</text>
+
+  <!-- D1 -->
+  <circle cx="460" cy="278" r="30" fill="#047857" fill-opacity="0.9" stroke="#064e3b" stroke-width="2.4"/>
+  <text x="460" y="285" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">D1</text>
+  <text x="460" y="236" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#064e3b">D1 o_proj 贴顶 · 4.9ms ★第一刀</text>
+  <text x="460" y="322" text-anchor="middle" font-size="9.5" fill="#475569">置信：高（三证据交叉 + 闭合校验）· kernel 层</text>
+
+  <!-- D2 -->
+  <circle cx="420" cy="381" r="14" fill="#475569" fill-opacity="0.75"/>
+  <text x="420" y="386" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#ffffff">D2</text>
+  <text x="420" y="358" text-anchor="middle" font-size="10" font-weight="bold" fill="#334155">D2 其余GEMM贴顶 1.8ms</text>
+
+  <!-- D3 -->
+  <circle cx="510" cy="427" r="11" fill="#475569" fill-opacity="0.6"/>
+  <text x="510" y="431" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#ffffff">D3</text>
+  <text x="510" y="408" text-anchor="middle" font-size="9.5" fill="#334155">D3 attention 0.4ms</text>
+
+  <!-- D4 -->
+  <circle cx="235" cy="424" r="12" fill="#0d9488" fill-opacity="0.8"/>
+  <text x="235" y="428" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">D4</text>
+  <text x="235" y="400" text-anchor="middle" font-size="10" fill="#0f766e">D4 elementwise 融合 0.5ms</text>
+
+  <!-- D5 -->
+  <circle cx="610" cy="255" r="22" fill="#7c3aed" fill-opacity="0.85" stroke="#4c1d95" stroke-width="1.8"/>
+  <text x="610" y="261" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#ffffff">D5</text>
+  <text x="610" y="220" text-anchor="middle" font-size="11" font-weight="bold" fill="#4c1d95">D5 host+sync 消除 5.6ms</text>
+  <text x="610" y="293" text-anchor="middle" font-size="9.5" fill="#475569">置信：中 · 系统层（图模式/async）</text>
+
+  <!-- D6 -->
+  <circle cx="730" cy="301" r="20" fill="none" stroke="#b45309" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="730" y="307" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#92400e">D6</text>
+  <text x="730" y="268" text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e">D6 comm 诊断 4.2ms</text>
+  <text x="730" y="339" text-anchor="middle" font-size="9.5" fill="#b45309">置信：低（未诊断）→ 先调查 1 天再定</text>
+
+  <!-- D7 -->
+  <circle cx="800" cy="250" r="18" fill="#2563eb" fill-opacity="0.8" stroke="#1e3a5f" stroke-width="1.6"/>
+  <text x="800" y="256" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">D7</text>
+  <!-- D7 range whisker: 1.5~10ms -->
+  <line x1="800" y1="110" x2="800" y2="390" stroke="#2563eb" stroke-width="1.4"/>
+  <line x1="793" y1="110" x2="807" y2="110" stroke="#2563eb" stroke-width="1.4"/>
+  <line x1="793" y1="390" x2="807" y2="390" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="822" y="150" font-size="10" fill="#1e3a5f">D7 降界（KV FP8/W4）</text>
+  <text x="822" y="165" font-size="10" fill="#1e3a5f">1.5~10ms</text>
+  <text x="822" y="180" font-size="9.5" fill="#475569">精度验证独立战线</text>
+
+  <!-- coupling D4-D5 -->
+  <path d="M 247 415 Q 430 340 588 268" fill="none" stroke="#0d9488" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="425" y="325" font-size="9.5" fill="#0f766e" transform="rotate(-18 425 325)">耦合：图 capture 吸走 elementwise → D4+D5 合并估账</text>
+
+  <!-- ordering strip -->
+  <rect x="140" y="486" width="740" height="88" rx="8" fill="#fafafa" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="510" y="510" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">排序结论（今天报告的输出，Day 41 的开工令）：D1 第一刀 → D5（与 D4 合并估账）→ D2/D3 顺手 → D6 先调查 → D7 独立战线（W7）</text>
+  <text x="510" y="532" text-anchor="middle" font-size="10.5" fill="#475569">为什么 D5 收益更大却排第二：置信度差一级（D1 三证据交叉，D5 依赖图模式全局配置）；层次越靠下（kernel 层）改动越局部、验收越便宜</text>
+  <text x="510" y="552" text-anchor="middle" font-size="10.5" fill="#475569">低置信方向（D6）先做调查而不是优化——TP=1 下 comm 本应 ≈ 0，这 5.2ms 是异常账，诊断半天可能白捡 4ms</text>
+  <text x="510" y="578" text-anchor="middle" font-size="10" fill="#94a3b8">数字皆为示例，以你的 ledger.md 与 roi.py 输出为准；矩阵是方法，坐标随数据移动</text>
+</svg>

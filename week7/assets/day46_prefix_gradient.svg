@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="960" height="540" fill="#ffffff"/>
+  <text x="480" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">消融二：prefix 命中率梯度的构造与实测（Day 46）</text>
+
+  <!-- ============ left: construction ============ -->
+  <rect x="40" y="52" width="520" height="300" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="56" y="76" font-size="13" font-weight="bold" fill="#115e59">① 负载构造：共享前缀池 + 私有后缀</text>
+
+  <text x="56" y="100" font-size="11" fill="#0f766e">前缀池：32 个不同"文档前缀"（每个 S = 1843 token，刻意非 16 的倍数）</text>
+  <g>
+    <rect x="56" y="110" width="112" height="26" rx="4" fill="#ccfbf1" stroke="#0d9488"/><text x="112" y="127" text-anchor="middle" font-size="10" fill="#115e59">前缀 #0</text>
+    <rect x="176" y="110" width="112" height="26" rx="4" fill="#ccfbf1" stroke="#0d9488"/><text x="232" y="127" text-anchor="middle" font-size="10" fill="#115e59">前缀 #1</text>
+    <rect x="296" y="110" width="112" height="26" rx="4" fill="#ccfbf1" stroke="#0d9488"/><text x="352" y="127" text-anchor="middle" font-size="10" fill="#115e59">前缀 #2</text>
+    <rect x="416" y="110" width="112" height="26" rx="4" fill="#ccfbf1" stroke="#0d9488"/><text x="472" y="127" text-anchor="middle" font-size="10" fill="#115e59">…#31</text>
+  </g>
+
+  <text x="56" y="164" font-size="11" fill="#0f766e">每个请求：prompt = 随机取一个池前缀 + 随机私有后缀（block 视图，16 token / 块）</text>
+  <g>
+    <rect x="56" y="176" width="40" height="24" fill="#14b8a6"/><rect x="96" y="176" width="40" height="24" fill="#14b8a6"/>
+    <rect x="136" y="176" width="40" height="24" fill="#14b8a6"/><rect x="176" y="176" width="40" height="24" fill="#14b8a6"/>
+    <rect x="216" y="176" width="40" height="24" fill="#14b8a6"/><rect x="256" y="176" width="40" height="24" fill="#14b8a6"/>
+    <rect x="296" y="176" width="40" height="24" fill="#2dd4bf"/><rect x="336" y="176" width="14" height="24" fill="#fda4af"/>
+    <rect x="350" y="176" width="40" height="24" fill="#e2e8f0"/><rect x="390" y="176" width="40" height="24" fill="#e2e8f0"/>
+    <rect x="430" y="176" width="40" height="24" fill="#e2e8f0"/><rect x="470" y="176" width="40" height="24" fill="#e2e8f0"/>
+  </g>
+  <g font-size="10">
+    <text x="200" y="216" text-anchor="middle" fill="#115e59" font-weight="bold">共享前缀 S（命中，KV 直接复用）</text>
+    <text x="425" y="216" text-anchor="middle" fill="#475569">私有后缀 P（miss，需 prefill）</text>
+    <text x="343" y="231" text-anchor="middle" fill="#be123c">尾块 3 token</text>
+  </g>
+
+  <text x="56" y="258" font-size="12" font-weight="bold" fill="#115e59">构造命中率：h_constr = S / L（L = prompt 总长）</text>
+  <g font-size="11" fill="#0f766e">
+    <text x="56" y="280">hit0：全随机 prompt（S=0，L=2048）　　hit50：S=1024，L=2048</text>
+    <text x="56" y="298">hit90：S=1843，L=2048　→　1843 / 2048 = 90%（尾块 3 token 不命中 → 实测 ≈ 89.8%）</text>
+    <text x="56" y="322" fill="#475569">同池前缀被多请求复用 → block hash 相同 → BlockPool 命中（Day 16 机制）</text>
+    <text x="56" y="340" fill="#475569">warmup 一律随机 prompt，防止把 hit0 档"预热"出命中（今天最贵的坑）</text>
+  </g>
+
+  <!-- ============ right: constructed vs measured ============ -->
+  <rect x="580" y="52" width="340" height="300" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="596" y="76" font-size="13" font-weight="bold" fill="#9a3412">② 构造值 ≠ 实测值：三条缝隙</text>
+  <g font-size="11" fill="#9a3412">
+    <text x="596" y="102" font-weight="bold">1. block 对齐（永远存在）</text>
+    <text x="606" y="120" fill="#c2410c">前缀末尾不满 16 token 的部分不进 hash →</text>
+    <text x="606" y="136" fill="#c2410c">实测系统性低于构造值（hit90 → ~89.8%）</text>
+    <text x="596" y="164" font-weight="bold">2. LRU 淘汰（高载专属）</text>
+    <text x="606" y="182" fill="#c2410c">evictable 池压力大：前缀刚被换出又来请求</text>
+    <text x="606" y="198" fill="#c2410c">→ miss → 重新 prefill（hit90_hi 颠簸格）</text>
+    <text x="596" y="226" font-weight="bold">3. 池间复用（跨 seed）</text>
+    <text x="606" y="244" fill="#c2410c">seed 只换随机流不换池子 → 同池命中稳定；</text>
+    <text x="606" y="260" fill="#c2410c">每格重启服务 → 池从零开始（协议保证）</text>
+  </g>
+  <rect x="596" y="280" width="308" height="56" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="750" y="302" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">报告横轴 = 实测命中率</text>
+  <text x="750" y="322" text-anchor="middle" font-size="10.5" fill="#c2410c">sum(rate(vllm:gpu_prefix_cache_hits[30s]))</text>
+  <text x="750" y="332" text-anchor="middle" font-size="10.5" fill="#c2410c">÷ sum(rate(vllm:gpu_prefix_cache_queries[30s]))</text>
+
+  <!-- ============ bottom: TTFT model + mini chart ============ -->
+  <rect x="40" y="372" width="520" height="146" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+  <text x="56" y="396" font-size="13" font-weight="bold" fill="#065f46">③ 预测模型（写进 predictions.md）</text>
+  <g font-size="11.5" fill="#047857">
+    <text x="56" y="422">TTFT(h) ≈ (1 − h_eff) · L / R_prefill + Q(排队)</text>
+    <text x="56" y="444">· 梯度档（标准负载）：TTFT 随 h 近线性下降（R_prefill ≈ 10k tok/s）</text>
+    <text x="56" y="464">· hit90_hi：颠簸使 h_eff 掉、Q 上升 → TTFT 回升（非线性证据）</text>
+    <text x="56" y="484">· no_pc_hit90 ≈ hit0（反事实重合线，跨格 sanity）</text>
+    <text x="56" y="504">· TPOT 与吞吐：机制不作用于 decode → 预期无显著变化</text>
+  </g>
+
+  <g>
+    <rect x="580" y="372" width="340" height="146" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <line x1="620" y1="490" x2="890" y2="490" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="620" y1="490" x2="620" y2="392" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="895" y="500" font-size="9.5" fill="#475569">实测 h</text>
+    <text x="612" y="388" font-size="9.5" fill="#475569" text-anchor="end">TTFT</text>
+    <text x="620" y="506" font-size="9" fill="#64748b">0%</text>
+    <text x="855" y="506" font-size="9" fill="#64748b">90%</text>
+    <path d="M 625 470 C 700 455, 790 415, 885 402" fill="none" stroke="#0d9488" stroke-width="2.5"/>
+    <text x="800" y="412" font-size="10" fill="#115e59" font-weight="bold">标准负载（近线性↓）</text>
+    <path d="M 625 483 C 700 472, 780 448, 830 442 C 855 441, 872 452, 885 465" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-dasharray="6,4"/>
+    <circle cx="830" cy="442" r="4" fill="#ea580c"/>
+    <text x="838" y="436" font-size="10" fill="#9a3412" font-weight="bold">hit90_hi 颠簸回升</text>
+    <line x1="620" y1="470" x2="890" y2="470" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3,3"/>
+    <text x="740" y="464" font-size="9.5" fill="#64748b">hit0 ≈ no_pc_hit90 重合线</text>
+  </g>
+</svg>

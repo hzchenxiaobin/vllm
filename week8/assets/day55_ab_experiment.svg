@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d55a" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0f766e"/>
+    </marker>
+    <marker id="d55b" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="960" height="600" fill="#fafbfc"/>
+  <text x="480" y="34" text-anchor="middle" font-size="23" font-weight="700" fill="#0f172a">两场模拟面试的 A/B 对照设计：换样本，不换尺子</text>
+  <text x="480" y="58" text-anchor="middle" font-size="13" fill="#64748b">自变量（人 / 题 / 压力）刻意改变 · 控制变量（rubric / 流程）严格不变 · 因变量（三项指标）今日测量</text>
+
+  <!-- Day 54 box -->
+  <g>
+    <rect x="46" y="86" width="360" height="240" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="226" y="116" text-anchor="middle" font-size="15.5" font-weight="700" fill="#1e3a8a">Day 54 · 第一场（建立基线）</text>
+    <text x="66" y="144" font-size="12" fill="#334155">· 面试官 A（同行 / LLM 基础版）</text>
+    <text x="66" y="168" font-size="12" fill="#334155">· 题本：追问链 C1-C6 抽 2</text>
+    <text x="66" y="192" font-size="12" fill="#334155">· 项目深挖：项目 A（vllm-ascend）主线</text>
+    <text x="66" y="216" font-size="12" fill="#334155">· 场景题：客服机器人集群（Day 35 原题）</text>
+    <text x="66" y="240" font-size="12" fill="#334155">· 压力：常规追问，约 3 层换题</text>
+    <text x="66" y="264" font-size="12" fill="#334155">· 时长 ≥45 分钟</text>
+    <text x="66" y="298" font-size="12" font-weight="700" fill="#2563eb">产出：五维评分 + 卡壳点清单 → 当晚补漏</text>
+  </g>
+
+  <!-- change arrow -->
+  <line x1="410" y1="206" x2="548" y2="206" stroke="#0f766e" stroke-width="3" marker-end="url(#d55a)"/>
+  <text x="480" y="188" text-anchor="middle" font-size="14" font-weight="700" fill="#0f766e">换自变量</text>
+  <text x="480" y="232" text-anchor="middle" font-size="12" fill="#0f766e">换人 · 换题 · 加压</text>
+
+  <!-- Day 55 box -->
+  <g>
+    <rect x="554" y="86" width="360" height="240" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="734" y="116" text-anchor="middle" font-size="15.5" font-weight="700" fill="#3730a3">Day 55 · 第二场（加压复测）</text>
+    <text x="574" y="144" font-size="12" fill="#334155">· 面试官 B（换人 / LLM 严格模式）</text>
+    <text x="574" y="168" font-size="12" fill="#334155">· 题本：追问链 D1-D6 抽 2（与 C 不重叠）</text>
+    <text x="574" y="192" font-size="12" fill="#334155">· 项目深挖：项目 B（mini 引擎）/ C（消融）</text>
+    <text x="574" y="216" font-size="12" fill="#334155">· 场景题：代码补全 或 长文档摘要（新画像）</text>
+    <text x="574" y="240" font-size="12" fill="#334155">· 压力：追到底 / 打断跳转 / 质疑对抗</text>
+    <text x="574" y="264" font-size="12" fill="#334155">· 时长 ≥60 分钟</text>
+    <text x="574" y="298" font-size="12" font-weight="700" fill="#4f46e5">产出：A/B 对比表 + 终局分诊 → 移交 Day 56</text>
+  </g>
+
+  <!-- control bar -->
+  <g>
+    <rect x="46" y="356" width="868" height="58" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="480" y="380" text-anchor="middle" font-size="14" font-weight="700" fill="#14532d">控制变量（尺子不改）</text>
+    <text x="480" y="402" text-anchor="middle" font-size="12.5" fill="#334155">五维 rubric ｜ 追问梯子 L0-L4 ｜ 录音 + 回听复盘流程 ｜ 报数三件套（量级 + 口径 + 条件）</text>
+  </g>
+
+  <!-- metrics chips -->
+  <g>
+    <rect x="46" y="450" width="270" height="72" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="181" y="476" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1e3a8a">① 五维评分 Δ</text>
+    <text x="181" y="498" text-anchor="middle" font-size="11.5" fill="#475569">检验泛化性：换题后分数不掉</text>
+  </g>
+  <g>
+    <rect x="345" y="450" width="270" height="72" rx="10" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="480" y="476" text-anchor="middle" font-size="13.5" font-weight="700" fill="#713f12">② 卡壳点清零率</text>
+    <text x="480" y="498" text-anchor="middle" font-size="11.5" fill="#475569">检验保持性：昨晚补的还在</text>
+  </g>
+  <g>
+    <rect x="644" y="450" width="270" height="72" rx="10" fill="#ffffff" stroke="#db2777" stroke-width="1.5"/>
+    <text x="779" y="476" text-anchor="middle" font-size="13.5" font-weight="700" fill="#9d174d">③ 数字应答正确率</text>
+    <text x="779" y="498" text-anchor="middle" font-size="11.5" fill="#475569">检验数字基本功：30 秒 + 口径</text>
+  </g>
+
+  <!-- arrows to bottom bar -->
+  <line x1="181" y1="522" x2="181" y2="546" stroke="#475569" stroke-width="2" marker-end="url(#d55b)"/>
+  <line x1="480" y1="522" x2="480" y2="546" stroke="#475569" stroke-width="2" marker-end="url(#d55b)"/>
+  <line x1="779" y1="522" x2="779" y2="546" stroke="#475569" stroke-width="2" marker-end="url(#d55b)"/>
+
+  <!-- bottom bar -->
+  <rect x="46" y="550" width="868" height="38" rx="9" fill="#0f172a"/>
+  <text x="480" y="574" text-anchor="middle" font-size="13.5" font-weight="700" fill="#f8fafc">A/B 对比表 + 终局分诊（清零 / 兜底 / 放弃）→ 无悬项移交 Day 56 收官日</text>
+</svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">优化空间桥图：从 48 ms 到物理下界的瀑布</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#64748b">每个方向按"贴顶 / 消除"公式封顶后逐级下探——耦合方向合并估账，池子互斥不重复计数</text>
+
+  <!-- axis -->
+  <line x1="80" y1="480" x2="900" y2="480" stroke="#94a3b8" stroke-width="1.4"/>
+  <line x1="80" y1="80" x2="80" y2="480" stroke="#94a3b8" stroke-width="1.4"/>
+  <!-- gridlines: y(v)=480-8v; 40→160, 30→240, 20→320, 10→400 -->
+  <line x1="80" y1="160" x2="900" y2="160" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="80" y1="240" x2="900" y2="240" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="80" y1="320" x2="900" y2="320" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="80" y1="400" x2="900" y2="400" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="72" y="164" text-anchor="end" font-size="10" fill="#94a3b8">40</text>
+  <text x="72" y="244" text-anchor="end" font-size="10" fill="#94a3b8">30</text>
+  <text x="72" y="324" text-anchor="end" font-size="10" fill="#94a3b8">20</text>
+  <text x="72" y="404" text-anchor="end" font-size="10" fill="#94a3b8">10</text>
+  <text x="72" y="484" text-anchor="end" font-size="10" fill="#94a3b8">0</text>
+  <text x="48" y="280" font-size="11" font-weight="bold" fill="#334155" transform="rotate(-90 48 280)" text-anchor="middle">TPOT (ms)</text>
+
+  <!-- Bar 0: 现状 full 48 -> y 96..480 -->
+  <rect x="100" y="96" width="96" height="384" fill="#e2e8f0" stroke="#475569" stroke-width="1.4"/>
+  <text x="148" y="90" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#0f172a">现状 48.0</text>
+  <text x="148" y="470" text-anchor="middle" font-size="10" fill="#334155" transform="rotate(-90 148 470)">η_step = 0.48</text>
+
+  <!-- connector -->
+  <line x1="196" y1="96" x2="225" y2="96" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+  <!-- D1 floating: y 96..135.2 -->
+  <rect x="225" y="96" width="96" height="39.2" fill="#dc2626" fill-opacity="0.88"/>
+  <text x="273" y="86" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">D1 −4.9 ★第一刀</text>
+  <text x="273" y="120" text-anchor="middle" font-size="10" fill="#fff">o_proj 贴顶 0.23→0.8</text>
+  <line x1="321" y1="135.2" x2="350" y2="135.2" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+  <!-- D2-4 floating: y 135.2..156.8 -->
+  <rect x="350" y="135.2" width="96" height="21.6" fill="#f59e0b" fill-opacity="0.9"/>
+  <text x="398" y="127" text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e">D2+D3+D4 −2.7</text>
+  <text x="398" y="150" text-anchor="middle" font-size="9" fill="#fff">其余GEMM+attn+elem</text>
+  <line x1="446" y1="156.8" x2="475" y2="156.8" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+  <!-- D5 floating: y 156.8..201.6 -->
+  <rect x="475" y="156.8" width="96" height="44.8" fill="#7c3aed" fill-opacity="0.85"/>
+  <text x="523" y="148" text-anchor="middle" font-size="11" font-weight="bold" fill="#4c1d95">D5 −5.6</text>
+  <text x="523" y="182" text-anchor="middle" font-size="9.5" fill="#fff">host+sync 消除</text>
+  <text x="523" y="196" text-anchor="middle" font-size="9" fill="#f5f3ff">（图模式 / async）</text>
+  <line x1="571" y1="201.6" x2="600" y2="201.6" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+  <!-- D6 floating: y 201.6..235.2 -->
+  <rect x="600" y="201.6" width="96" height="33.6" fill="#2563eb" fill-opacity="0.85"/>
+  <text x="648" y="193" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a5f">D6 −4.2</text>
+  <text x="648" y="218" text-anchor="middle" font-size="9.5" fill="#fff">comm 异常账</text>
+  <text x="648" y="231" text-anchor="middle" font-size="9" fill="#eff6ff">（先诊断再投入）</text>
+  <line x1="696" y1="235.2" x2="725" y2="235.2" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+  <!-- 下界 full bar: 23.2 -> y 294.4..480 -->
+  <rect x="725" y="294.4" width="96" height="185.6" fill="#f1f5f9" stroke="#047857" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <text x="773" y="286" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#064e3b">物理下界 23.2</text>
+  <text x="773" y="380" text-anchor="middle" font-size="10" fill="#334155" transform="rotate(-90 773 380)">η = 1 不可达</text>
+
+  <!-- milestone value labels on axis -->
+  <text x="148" y="498" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#0f172a">48.0</text>
+  <text x="273" y="498" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#991b1b">43.1（−10.2%）</text>
+  <text x="398" y="498" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#92400e">40.4</text>
+  <text x="523" y="498" text-anchor="middle" font-size="10.5" fill="#64748b">34.8</text>
+  <text x="648" y="498" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1e3a5f">30.6（全兑现）</text>
+  <text x="773" y="498" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#064e3b">23.2</text>
+  <text x="148" y="514" text-anchor="middle" font-size="9.5" fill="#64748b">η=0.48</text>
+  <text x="273" y="514" text-anchor="middle" font-size="9.5" fill="#64748b">第一刀承诺</text>
+  <text x="398" y="514" text-anchor="middle" font-size="9.5" fill="#64748b">第一轮</text>
+  <text x="648" y="514" text-anchor="middle" font-size="9.5" fill="#64748b">η≈0.76</text>
+  <text x="773" y="514" text-anchor="middle" font-size="9.5" fill="#64748b">现实天花板按 η≈0.75~0.8 估</text>
+
+  <!-- right annotation box: 传导 -->
+  <rect x="120" y="530" width="720" height="58" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.3"/>
+  <text x="480" y="552" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1e3a5f">第一刀的传导三段（@C=16 固定档）：Δ4.9ms → TPOT 48→43.1（−10.2%）→ 吞吐 333→371 tok/s（+11.4%）</text>
+  <text x="480" y="572" text-anchor="middle" font-size="10.5" fill="#475569">显著性判据：远超 ±4% 噪声带（Day 37 §4.2），3 次方向一致即可宣称；预测给区间不给单点（η_target 0.7~0.85 → TPOT 42.7~43.8）</text>
+</svg>

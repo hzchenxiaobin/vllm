@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 640" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d53d" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="980" height="640" fill="#fafbfc"/>
+  <text x="490" y="32" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">硬件概念映射表：面试时主动画在白板上的五座桥</text>
+  <text x="490" y="54" text-anchor="middle" font-size="13" fill="#64748b">昇腾概念 → 共同本质 → GPU 对应｜按"算力 / 存储 / 搬运 / 尾部 / 静态化"五组记，外加一行观测工具——迁移的不是名词，是中间那一列</text>
+
+  <!-- Column headers -->
+  <g>
+    <rect x="70" y="72" width="200" height="26" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+    <text x="170" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#78350f">昇腾 / CANN</text>
+    <rect x="330" y="72" width="320" height="26" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="490" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#134e4a">共同本质（迁移的是这一列）</text>
+    <rect x="710" y="72" width="200" height="26" rx="6" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="810" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#134e4a">GPU / CUDA</text>
+  </g>
+
+  <!-- Row 1: compute -->
+  <g>
+    <rect x="70" y="108" width="200" height="44" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="80" y="126" font-size="11.5" fill="#334155">Cube 单元 · Vector 单元</text>
+    <text x="80" y="142" font-size="11" fill="#92400e">AI Core 多核</text>
+    <rect x="330" y="108" width="320" height="44" rx="13" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="490" y="135" text-anchor="middle" font-size="12" fill="#0f766e">算力分工：矩阵乘专用 vs 逐元素</text>
+    <rect x="710" y="108" width="200" height="44" rx="6" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.5"/>
+    <text x="720" y="126" font-size="11.5" fill="#334155">Tensor Core · CUDA Core</text>
+    <text x="720" y="142" font-size="11" fill="#115e59">SM 多卡</text>
+    <line x1="274" y1="130" x2="324" y2="130" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+    <line x1="656" y1="130" x2="706" y2="130" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+  </g>
+
+  <!-- Row 2: on-chip storage -->
+  <g>
+    <rect x="70" y="160" width="200" height="44" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="80" y="178" font-size="11.5" fill="#334155">L1 / L0A · L0B · L0C</text>
+    <text x="80" y="194" font-size="11" fill="#92400e">多级片上缓冲</text>
+    <rect x="330" y="160" width="320" height="44" rx="13" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="490" y="187" text-anchor="middle" font-size="12" fill="#0f766e">片上级联与数据复用（驻留策略的分界）</text>
+    <rect x="710" y="160" width="200" height="44" rx="6" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.5"/>
+    <text x="720" y="178" font-size="11.5" fill="#334155">shared memory</text>
+    <text x="720" y="194" font-size="11" fill="#115e59">/ 寄存器（RF）</text>
+    <line x1="274" y1="182" x2="324" y2="182" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+    <line x1="656" y1="182" x2="706" y2="182" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+  </g>
+
+  <!-- Row 3: async copy -->
+  <g>
+    <rect x="70" y="212" width="200" height="44" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="80" y="230" font-size="11.5" fill="#334155">MTE2 / MTE3</text>
+    <text x="80" y="246" font-size="11" fill="#92400e">搬运指令（in / out）</text>
+    <rect x="330" y="212" width="320" height="44" rx="13" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="490" y="239" text-anchor="middle" font-size="12" fill="#0f766e">异步搬运与预取：数据在计算前到位</text>
+    <rect x="710" y="212" width="200" height="44" rx="6" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.5"/>
+    <text x="720" y="230" font-size="11.5" fill="#334155">cp.async / TMA</text>
+    <text x="720" y="246" font-size="11" fill="#115e59">异步拷贝与张量搬运</text>
+    <line x1="274" y1="234" x2="324" y2="234" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+    <line x1="656" y1="234" x2="706" y2="234" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+  </g>
+
+  <!-- Row 4: epilogue -->
+  <g>
+    <rect x="70" y="264" width="200" height="44" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="80" y="282" font-size="11.5" fill="#334155">Fixpipe</text>
+    <text x="80" y="298" font-size="11" fill="#92400e">Cube 结果出口处理</text>
+    <rect x="330" y="264" width="320" height="44" rx="13" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="490" y="291" text-anchor="middle" font-size="12" fill="#0f766e">bias / 量化的出口融合（epilogue）</text>
+    <rect x="710" y="264" width="200" height="44" rx="6" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.5"/>
+    <text x="720" y="282" font-size="11.5" fill="#334155">GEMM epilogue</text>
+    <text x="720" y="298" font-size="11" fill="#115e59">融合 bias / 量化 / 激活</text>
+    <line x1="274" y1="286" x2="324" y2="286" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+    <line x1="656" y1="286" x2="706" y2="286" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+  </g>
+
+  <!-- Row 5: static & overlap -->
+  <g>
+    <rect x="70" y="316" width="200" height="44" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="80" y="334" font-size="11.5" fill="#334155">双 buffer 乒乓</text>
+    <text x="80" y="350" font-size="11" fill="#92400e">编译期定 tiling · CANN 算子库</text>
+    <rect x="330" y="316" width="320" height="44" rx="13" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="490" y="343" text-anchor="middle" font-size="12" fill="#0f766e">静态化：消灭运行时开销 · kernel 抽象层</text>
+    <rect x="710" y="316" width="200" height="44" rx="6" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.5"/>
+    <text x="720" y="334" font-size="11.5" fill="#334155">double buffering</text>
+    <text x="720" y="350" font-size="11" fill="#115e59">CUDA Graph · CUTLASS / Triton</text>
+    <line x1="274" y1="338" x2="324" y2="338" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+    <line x1="656" y1="338" x2="706" y2="338" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+  </g>
+
+  <!-- Row 6: observation -->
+  <g>
+    <rect x="70" y="368" width="200" height="44" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="80" y="386" font-size="11.5" fill="#334155">msprof</text>
+    <text x="80" y="402" font-size="11" fill="#92400e">CANN profiling 工具</text>
+    <rect x="330" y="368" width="320" height="44" rx="13" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="490" y="395" text-anchor="middle" font-size="12" fill="#0f766e">先归因再优化："病在哪"的取证工具（Day 39 对照表）</text>
+    <rect x="710" y="368" width="200" height="44" rx="6" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.5"/>
+    <text x="720" y="386" font-size="11.5" fill="#334155">nsys / ncu</text>
+    <text x="720" y="402" font-size="11" fill="#115e59">CUDA profiling 工具</text>
+    <line x1="274" y1="390" x2="324" y2="390" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+    <line x1="656" y1="390" x2="706" y2="390" stroke="#0f766e" stroke-width="2" marker-end="url(#d53d)"/>
+  </g>
+
+  <!-- 30s quote -->
+  <g>
+    <rect x="46" y="436" width="888" height="64" rx="8" fill="#0f766e"/>
+    <text x="490" y="456" text-anchor="middle" font-size="11.5" fill="#99f6e4">30 秒版逐字稿（README 53.2，本周 checklist 的验收线）</text>
+    <text x="490" y="474" text-anchor="middle" font-size="12.5" font-weight="700" fill="#f0fdfa">"我在昇腾上做了 3 年量化矩阵乘算子优化，核心方法论是——先建访存/计算 bound 分界模型，再据此刻意设计 tiling、流水线与精度路径。</text>
+    <text x="490" y="492" text-anchor="middle" font-size="12.5" fill="#ccfbf1">GPU 与 NPU 架构不同，但这套'第一性原理 + 定量建模'的方法是平台无关的，我用它重新推导了 vLLM 的性能边界并完成了 ▢ 优化。"</text>
+  </g>
+
+  <!-- Three evidence cards -->
+  <text x="46" y="530" font-size="13.5" font-weight="700" fill="#0f172a">三个实战证据（简历项目一）——每条都引出一个 GPU 迁移话题</text>
+  <g>
+    <rect x="46" y="540" width="286" height="84" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="189" y="562" text-anchor="middle" font-size="12.5" font-weight="700" fill="#312e81">ASW 蛇形滑窗 + L2 命中率</text>
+    <text x="189" y="582" text-anchor="middle" font-size="11" fill="#475569">→ GPU：tiling 与 L2 / SMEM</text>
+    <text x="189" y="598" text-anchor="middle" font-size="11" fill="#475569">复用策略（Swizzling）</text>
+  </g>
+  <g>
+    <rect x="347" y="540" width="286" height="84" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="490" y="562" text-anchor="middle" font-size="12.5" font-weight="700" fill="#14532d">CalRebalanceBlock 分块搜优</text>
+    <text x="490" y="582" text-anchor="middle" font-size="11" fill="#475569">→ Roofline 驱动的 kernel 参数选择</text>
+    <text x="490" y="598" text-anchor="middle" font-size="11" fill="#475569">（Day 51 诊断树的底层逻辑）</text>
+  </g>
+  <g>
+    <rect x="648" y="540" width="286" height="84" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <text x="791" y="562" text-anchor="middle" font-size="12.5" font-weight="700" fill="#78350f">无 Queue 手工流水线</text>
+    <text x="791" y="582" text-anchor="middle" font-size="11" fill="#475569">（SetFlag / WaitFlag 事件驱动）</text>
+    <text x="791" y="598" text-anchor="middle" font-size="11" fill="#475569">→ persistent kernel · CUDA Graph（Q3）</text>
+  </g>
+</svg>

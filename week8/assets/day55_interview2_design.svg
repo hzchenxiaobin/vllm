@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d55a" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="960" height="640" fill="#fafbfc"/>
+  <text x="480" y="34" text-anchor="middle" font-size="23" font-weight="700" fill="#0f172a">第二场模拟面试：换变量 · 留尺子 · 加压力</text>
+  <text x="480" y="58" text-anchor="middle" font-size="13" fill="#64748b">控制变量下的对照实验——尺子（rubric）不变才能测出 Δ；变量全换才能测出真实能力而非记忆</text>
+
+  <!-- Column 1: CHANGE -->
+  <g>
+    <rect x="46" y="86" width="280" height="380" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+    <rect x="46" y="86" width="280" height="44" rx="10" fill="#ea580c"/>
+    <text x="186" y="115" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">换什么（3 项）</text>
+    <text x="66" y="160" font-size="14" font-weight="700" fill="#9a3412">① 面试官</text>
+    <text x="66" y="182" font-size="12" fill="#334155">换一个人，或给 LLM 换加压版</text>
+    <text x="66" y="200" font-size="12" fill="#334155">system prompt（见 5.3）</text>
+    <text x="66" y="218" font-size="12" fill="#64748b">→ 消除考纲泄漏与追问习惯偏差</text>
+    <text x="66" y="258" font-size="14" font-weight="700" fill="#9a3412">② 题本</text>
+    <text x="66" y="280" font-size="12" fill="#334155">串联题 D1-D6 + 设计题变体 +</text>
+    <text x="66" y="298" font-size="12" fill="#334155">从卡壳点清单反出的题</text>
+    <text x="66" y="316" font-size="12" fill="#64748b">→ 两场重叠率 &lt; 20%，覆盖率翻倍</text>
+    <text x="66" y="356" font-size="14" font-weight="700" fill="#9a3412">③ 压力水平</text>
+    <text x="66" y="378" font-size="12" fill="#334155">常规追问 → 三种加压模式：</text>
+    <text x="66" y="396" font-size="12" fill="#334155">追到底（L5-L6）/ 打断跳跃 / 质疑对抗</text>
+    <text x="66" y="414" font-size="12" fill="#64748b">→ 压力峰值提前搬到桌面练</text>
+    <text x="66" y="450" font-size="12.5" font-weight="700" fill="#ea580c">换 = 测「换个角度还能不能调出来」</text>
+  </g>
+
+  <!-- Column 2: KEEP -->
+  <g>
+    <rect x="340" y="86" width="280" height="380" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <rect x="340" y="86" width="280" height="44" rx="10" fill="#2563eb"/>
+    <text x="480" y="115" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">留什么（3 项）</text>
+    <text x="360" y="160" font-size="14" font-weight="700" fill="#1e3a8a">① 五维评分表</text>
+    <text x="360" y="182" font-size="12" fill="#334155">结构 / 深度 / 数字 / trade-off / 诊断</text>
+    <text x="360" y="200" font-size="12" fill="#64748b">→ 最好同一个人填两次</text>
+    <text x="360" y="240" font-size="14" font-weight="700" fill="#1e3a8a">② 全程录音</text>
+    <text x="360" y="262" font-size="12" fill="#334155">两段录音是 Day 56 收官日</text>
+    <text x="360" y="280" font-size="12" fill="#334155">「只看自己材料」的核心素材</text>
+    <text x="360" y="320" font-size="14" font-weight="700" fill="#1e3a8a">③ 追问梯子 L0-L4 框架</text>
+    <text x="360" y="342" font-size="12" fill="#334155">今天在其上延伸出 L5（串联）</text>
+    <text x="360" y="360" font-size="12" fill="#334155">与 L6（开放反问）两层</text>
+    <text x="360" y="400" font-size="12" fill="#64748b">→ 框架不变，比较才有公共坐标</text>
+    <text x="360" y="450" font-size="12.5" font-weight="700" fill="#2563eb">留 = 测出可对比的 Δ 而不是新分数</text>
+  </g>
+
+  <!-- Column 3: ADD -->
+  <g>
+    <rect x="634" y="86" width="280" height="380" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+    <rect x="634" y="86" width="280" height="44" rx="10" fill="#7c3aed"/>
+    <text x="774" y="115" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">加什么（压力三模式）</text>
+    <text x="654" y="160" font-size="14" font-weight="700" fill="#4c1d95">A · 追到底</text>
+    <text x="654" y="182" font-size="12" fill="#334155">单链连续 5~6 层不换主题</text>
+    <text x="654" y="200" font-size="12" fill="#64748b">→ 考知识是否成网</text>
+    <text x="654" y="240" font-size="14" font-weight="700" fill="#4c1d95">B · 打断跳跃</text>
+    <text x="654" y="262" font-size="12" fill="#334155">答到一半切话题，稍后跳回</text>
+    <text x="654" y="280" font-size="12" fill="#64748b">→ 考多条因果链挂在工作记忆</text>
+    <text x="654" y="320" font-size="14" font-weight="700" fill="#4c1d95">C · 质疑对抗</text>
+    <text x="654" y="342" font-size="12" fill="#334155">「我不同意」「数字不对吧」</text>
+    <text x="654" y="360" font-size="12" fill="#64748b">→ 考口径防御与立场稳定</text>
+    <text x="654" y="400" font-size="12" fill="#334155">建议配比：A×1~2 链（15~20'）</text>
+    <text x="654" y="418" font-size="12" fill="#334155">B 穿插 3~5 次 · C×2~3 次</text>
+    <text x="654" y="450" font-size="12.5" font-weight="700" fill="#7c3aed">加 = 每分钟压力都落在真实场景</text>
+  </g>
+
+  <!-- Bottom: A/B comparison principle -->
+  <g>
+    <rect x="46" y="500" width="868" height="112" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="480" y="530" text-anchor="middle" font-size="15" font-weight="700" fill="#14532d">对照实验原则：一场是抽样，两场才是 test-retest</text>
+    <g>
+      <rect x="76" y="548" width="220" height="48" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+      <text x="186" y="568" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Day 54 · 第一场</text>
+      <text x="186" y="586" text-anchor="middle" font-size="11.5" fill="#64748b">常规压力 · 七问题本 · 测输出</text>
+    </g>
+    <line x1="300" y1="572" x2="368" y2="572" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55a)"/>
+    <g>
+      <rect x="372" y="548" width="216" height="48" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+      <text x="480" y="568" text-anchor="middle" font-size="13" font-weight="700" fill="#14532d">Δ = 五维评分 + 清零率</text>
+      <text x="480" y="586" text-anchor="middle" font-size="11.5" fill="#64748b">同一把尺子量两次</text>
+    </g>
+    <line x1="592" y1="572" x2="660" y2="572" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55a)"/>
+    <g>
+      <rect x="664" y="548" width="220" height="48" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+      <text x="774" y="568" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Day 55 · 第二场</text>
+      <text x="774" y="586" text-anchor="middle" font-size="11.5" fill="#64748b">加压 · 串联题本 · 测检索</text>
+    </g>
+  </g>
+</svg>

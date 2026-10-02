@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="740" viewBox="0 0 960 740" font-family="Helvetica, Arial, sans-serif">
+  <rect width="960" height="740" fill="#ffffff"/>
+  <text x="480" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">项目 C 实验矩阵总览（Day 46 冻结）：四组消融 · 28 格 × 3 seeds</text>
+
+  <!-- ============ g1 chunked prefill ============ -->
+  <rect x="40" y="52" width="440" height="252" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="56" y="76" font-size="13.5" font-weight="bold" fill="#1e3a8a">消融一 · chunked prefill（9 格）</text>
+  <g font-size="10.5" fill="#1e40af">
+    <text x="56" y="97">旋钮：开关 × budget {2048, 8192, 32768}</text>
+    <text x="56" y="114">负载：long 洪峰（90% 短 + 10% 12k）/ short 负对照 / mix 生产</text>
+    <text x="56" y="131">主指标：TPOT p99 ↔ TTFT（方向相反的旋钮）</text>
+  </g>
+  <g text-anchor="middle" font-size="10">
+    <rect x="56" y="142" width="128" height="28" rx="5" fill="#ffffff" stroke="#2563eb"/><text x="120" y="160" fill="#1e3a8a">cp_off_long</text>
+    <rect x="192" y="142" width="128" height="28" rx="5" fill="#ffffff" stroke="#2563eb"/><text x="256" y="160" fill="#1e3a8a">cp_on_b2048_long</text>
+    <rect x="328" y="142" width="128" height="28" rx="5" fill="#ffffff" stroke="#2563eb"/><text x="392" y="160" fill="#1e3a8a">cp_on_b8192_long</text>
+    <rect x="56" y="178" width="128" height="28" rx="5" fill="#ffffff" stroke="#2563eb"/><text x="120" y="196" fill="#1e3a8a">cp_on_b32768_long</text>
+    <rect x="192" y="178" width="128" height="28" rx="5" fill="#ffffff" stroke="#2563eb"/><text x="256" y="196" fill="#1e3a8a">cp_off_short</text>
+    <rect x="328" y="178" width="128" height="28" rx="5" fill="#ffffff" stroke="#2563eb"/><text x="392" y="196" fill="#1e3a8a">cp_on_b8192_short</text>
+    <rect x="56" y="214" width="128" height="28" rx="5" fill="#ffffff" stroke="#2563eb"/><text x="120" y="232" fill="#1e3a8a">cp_off_mix</text>
+    <rect x="192" y="214" width="128" height="28" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/><text x="256" y="232" fill="#5b21b6" font-weight="bold">cp_on_b8192 ★</text>
+    <rect x="328" y="214" width="128" height="28" rx="5" fill="#ffffff" stroke="#2563eb"/><text x="392" y="232" fill="#1e3a8a">cp_on_b2048_mix</text>
+  </g>
+  <text x="56" y="268" font-size="10" fill="#475569">★ = 全局基线哨兵格（3.5 节）：b32768 ≥ 12k prompt → 预期退化回巨石行为</text>
+  <text x="56" y="286" font-size="10" fill="#475569">short 两格为负对照臂：预期 ON/OFF 无显著差异（机制不在场）</text>
+
+  <!-- ============ g2 prefix caching ============ -->
+  <rect x="508" y="52" width="412" height="252" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="524" y="76" font-size="13.5" font-weight="bold" fill="#115e59">消融二 · prefix caching（6 格）</text>
+  <g font-size="10.5" fill="#0f766e">
+    <text x="524" y="97">旋钮：enable_prefix_caching（V1 默认开）</text>
+    <text x="524" y="114">负载：共享前缀梯度 0 / 50 / 90% × 标准 / 高载</text>
+    <text x="524" y="131">主指标：TTFT（横轴 = 实测命中率，非构造值）</text>
+  </g>
+  <g text-anchor="middle" font-size="10">
+    <rect x="524" y="142" width="128" height="28" rx="5" fill="#ffffff" stroke="#0d9488"/><text x="588" y="160" fill="#115e59">hit0</text>
+    <rect x="660" y="142" width="128" height="28" rx="5" fill="#ffffff" stroke="#0d9488"/><text x="724" y="160" fill="#115e59">hit50</text>
+    <rect x="796" y="142" width="108" height="28" rx="5" fill="#ffffff" stroke="#0d9488"/><text x="850" y="160" fill="#115e59">hit90</text>
+    <rect x="524" y="178" width="128" height="28" rx="5" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/><text x="588" y="196" fill="#9a3412">hit90_hi（颠簸）</text>
+    <rect x="660" y="178" width="128" height="28" rx="5" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/><text x="724" y="196" fill="#9a3412">hit0_hi（配对）</text>
+    <rect x="796" y="178" width="108" height="28" rx="5" fill="#ffffff" stroke="#0d9488"/><text x="850" y="196" fill="#115e59">no_pc_hit90</text>
+  </g>
+  <text x="524" y="234" font-size="10" fill="#475569">构造：32 个共享前缀池（S=1843）+ 私有后缀；h = S / L</text>
+  <text x="524" y="252" font-size="10" fill="#475569">_hi 格：速率 ×2 压到容量 ~85% → 观察 LRU 换手（颠簸）</text>
+  <text x="524" y="270" font-size="10" fill="#475569">no_pc_hit90 = 反事实：有共享前缀但机制关闭</text>
+  <text x="524" y="288" font-size="10" fill="#475569">预期与 hit0 重合（另一种"零"，互为 sanity）</text>
+
+  <!-- ============ g3 spec decode ============ -->
+  <rect x="40" y="322" width="440" height="252" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="56" y="346" font-size="13.5" font-weight="bold" fill="#991b1b">消融三 · 投机解码（8 格）</text>
+  <g font-size="10.5" fill="#b91c1c">
+    <text x="56" y="367">旋钮：k ∈ {2,3,4} × 草稿方法（EAGLE-3 / MTP / ngram）</text>
+    <text x="56" y="384">负载：code（高 α ≈ 0.7-0.85）/ chat（低 α ≈ 0.3-0.5）</text>
+    <text x="56" y="401">主指标：TPOT 加速比 S(k, α)，S=1 为盈亏线</text>
+  </g>
+  <g text-anchor="middle" font-size="9.5">
+    <rect x="56" y="412" width="96" height="28" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/><text x="104" y="430" fill="#5b21b6" font-weight="bold">sp_off ★</text>
+    <rect x="158" y="412" width="96" height="28" rx="5" fill="#ffffff" stroke="#dc2626"/><text x="206" y="430" fill="#991b1b">sp_off_code</text>
+    <rect x="260" y="412" width="96" height="28" rx="5" fill="#ffffff" stroke="#dc2626"/><text x="308" y="430" fill="#991b1b">sp_k2_code</text>
+    <rect x="362" y="412" width="96" height="28" rx="5" fill="#ffffff" stroke="#dc2626"/><text x="410" y="430" fill="#991b1b">sp_k3_code</text>
+    <rect x="56" y="448" width="96" height="28" rx="5" fill="#ffffff" stroke="#dc2626"/><text x="104" y="466" fill="#991b1b">sp_k4_code</text>
+    <rect x="158" y="448" width="96" height="28" rx="5" fill="#ffffff" stroke="#dc2626"/><text x="206" y="466" fill="#991b1b">sp_off_chat</text>
+    <rect x="260" y="448" width="96" height="28" rx="5" fill="#ffffff" stroke="#dc2626"/><text x="308" y="466" fill="#991b1b">sp_k2_chat</text>
+    <rect x="362" y="448" width="96" height="28" rx="5" fill="#ffffff" stroke="#dc2626"/><text x="410" y="466" fill="#991b1b">sp_k4_chat</text>
+  </g>
+  <text x="56" y="502" font-size="10" fill="#475569">双梯度：α 由负载构造（无法参数设置），k 由参数扫描</text>
+  <text x="56" y="520" font-size="10" fill="#475569">sp_k4_chat = 负收益失效模式的直接验证格（预期 S ≤ 1）</text>
+  <text x="56" y="538" font-size="10" fill="#475569">code 找收益饱和点（预测 k=3-4 处 S 平台期）</text>
+  <text x="56" y="556" font-size="10" fill="#475569">（草稿方法换挡不改矩阵：报告注明实测版本与方法）</text>
+
+  <!-- ============ g4 quantization ============ -->
+  <rect x="508" y="322" width="412" height="252" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="524" y="346" font-size="13.5" font-weight="bold" fill="#92400e">消融四 · 量化（5 格）</text>
+  <g font-size="10.5" fill="#b45309">
+    <text x="524" y="367">旋钮：权重精度档 × kv_cache_dtype</text>
+    <text x="524" y="384">负载：固定速率 mix，压容量边界（看 waiting 堆积）</text>
+    <text x="524" y="401">主指标：吞吐 / 并发上限 ↔ 精度（GSM8K + KL）</text>
+  </g>
+  <g text-anchor="middle" font-size="10">
+    <rect x="524" y="412" width="128" height="28" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/><text x="588" y="430" fill="#5b21b6" font-weight="bold">q_bf16 ★</text>
+    <rect x="660" y="412" width="128" height="28" rx="5" fill="#ffffff" stroke="#d97706"/><text x="724" y="430" fill="#92400e">q_fp8_w</text>
+    <rect x="796" y="412" width="108" height="28" rx="5" fill="#ffffff" stroke="#d97706"/><text x="850" y="430" fill="#92400e">q_fp8_kv</text>
+    <rect x="524" y="448" width="128" height="28" rx="5" fill="#ffffff" stroke="#d97706"/><text x="588" y="466" fill="#92400e">q_fp8_full</text>
+    <rect x="660" y="448" width="128" height="28" rx="5" fill="#ffffff" stroke="#d97706"/><text x="724" y="466" fill="#92400e">q_int4（AWQ）</text>
+  </g>
+  <text x="524" y="502" font-size="10" fill="#475569">部署与对拍复用 Week 4 Day 23-24（机器时间近零增量）</text>
+  <text x="524" y="520" font-size="10" fill="#475569">预测"瓶颈搬家"：FP8 KV 容量 ×2 后撞 max_num_seqs 封顶</text>
+  <text x="524" y="538" font-size="10" fill="#475569">低并发看 TPOT 下界（权重带宽），高并发看容量（KV）</text>
+  <text x="524" y="556" font-size="10" fill="#475569">精度：GSM8K 512 题 + 128 条 prompt 的 logprob KL</text>
+
+  <!-- ============ sentinel strip ============ -->
+  <rect x="40" y="588" width="880" height="62" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="56" y="610" font-size="12.5" font-weight="bold" fill="#5b21b6">全局基线哨兵格：cp_on_b8192（g1）= sp_off（g3）= q_bf16（g4）</text>
+  <text x="56" y="630" font-size="10.5" fill="#6d28d9">同配置同负载故意测三遍 × 3 seeds = 9 样本 → 免费配对数据 + 未控制变量哨兵（Day 47 sanity 关 3 直接对账）</text>
+  <text x="56" y="644" font-size="10" fill="#6d28d9">原则：哨兵格配置必须"无聊"（全默认）——任何一组挪用它，配对即断</text>
+
+  <!-- ============ engineering foundation ============ -->
+  <rect x="40" y="660" width="880" height="60" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="56" y="682" font-size="12" font-weight="bold" fill="#334155">工程底座（贯穿四组）</text>
+  <text x="56" y="700" font-size="10.5" fill="#475569">cases.yaml（单一事实源，28 格 × 3 seeds = 84 runs，每加 1 格 ≈ 30 min 机时）→ Day 43 harness 复用（冻结清单 / 轮次协议 / 统计口径）</text>
+  <text x="56" y="714" font-size="10.5" fill="#475569">Prometheus + Grafana 四面板（记录清单落地）· predictions.md（预注册：方向 + 公式 + 量级，反直觉格子 = 理解盲区）</text>
+</svg>

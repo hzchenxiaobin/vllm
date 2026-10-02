@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d55d" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="960" height="720" fill="#fafbfc"/>
+  <text x="480" y="32" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">终局分诊：两场卡壳点的合并、复测与三去向</text>
+  <text x="480" y="55" text-anchor="middle" font-size="12.5" fill="#64748b">Day 56 收官日起不再有补漏窗口——今晚必须让每一条卡壳点都有明确去向，不留悬而未决的条目</text>
+
+  <!-- Inputs -->
+  <g>
+    <rect x="60" y="78" width="280" height="74" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="200" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">Day 54 · 第一场卡壳点清单</text>
+    <text x="200" y="126" text-anchor="middle" font-size="12" fill="#334155">已按三类归因（知识缺/结构乱/数字虚）</text>
+    <text x="200" y="144" text-anchor="middle" font-size="12" fill="#334155">昨晚补漏过的 N₁ 条</text>
+  </g>
+  <g>
+    <rect x="620" y="78" width="280" height="74" rx="9" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+    <text x="760" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#9a3412">Day 55 · 第二场卡壳点清单</text>
+    <text x="760" y="126" text-anchor="middle" font-size="12" fill="#334155">加压模式下新暴露的 N₂ 条</text>
+    <text x="760" y="144" text-anchor="middle" font-size="12" fill="#334155">含第一场同点复卡（升级条目）</text>
+  </g>
+  <line x1="340" y1="115" x2="424" y2="150" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55d)"/>
+  <line x1="620" y1="115" x2="536" y2="150" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55d)"/>
+
+  <!-- Merge box -->
+  <g>
+    <rect x="330" y="154" width="300" height="58" rx="9" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="480" y="178" text-anchor="middle" font-size="13.5" font-weight="700" fill="#14532d">合并去重 → 逐条复测</text>
+    <text x="480" y="198" text-anchor="middle" font-size="12" fill="#334155">晨间口述复测 + 面试压力下再踩一次</text>
+  </g>
+  <line x1="480" y1="212" x2="480" y2="240" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55d)"/>
+
+  <!-- 2x2 matrix -->
+  <text x="480" y="262" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">分诊矩阵：面试出现频率 × 掌握成本</text>
+  <g>
+    <rect x="240" y="278" width="480" height="180" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+    <line x1="480" y1="278" x2="480" y2="458" stroke="#cbd5e1" stroke-width="1.5"/>
+    <line x1="240" y1="368" x2="720" y2="368" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="236" y="330" text-anchor="end" font-size="12.5" font-weight="700" fill="#334155">高频</text>
+    <text x="236" y="420" text-anchor="end" font-size="12.5" font-weight="700" fill="#334155">低频</text>
+    <text x="360" y="272" text-anchor="middle" font-size="12.5" font-weight="700" fill="#334155">成本低（≤30'）</text>
+    <text x="600" y="272" text-anchor="middle" font-size="12.5" font-weight="700" fill="#334155">成本高（≥半天）</text>
+
+    <rect x="252" y="288" width="216" height="72" rx="7" fill="#ecfdf5" stroke="#059669" stroke-width="1.8"/>
+    <text x="360" y="312" text-anchor="middle" font-size="13.5" font-weight="700" fill="#065f46">必须清零</text>
+    <text x="360" y="332" text-anchor="middle" font-size="11.5" fill="#334155">今晚补 + 复测通过</text>
+    <text x="360" y="349" text-anchor="middle" font-size="11.5" fill="#334155">例：显存五步法、budget 依据</text>
+
+    <rect x="492" y="288" width="216" height="72" rx="7" fill="#fefce8" stroke="#ca8a04" stroke-width="1.8"/>
+    <text x="600" y="312" text-anchor="middle" font-size="13.5" font-weight="700" fill="#713f12">兜底口径</text>
+    <text x="600" y="332" text-anchor="middle" font-size="11.5" fill="#334155">一句话答案 + 边界声明</text>
+    <text x="600" y="349" text-anchor="middle" font-size="11.5" fill="#334155">例：draft 模型训练侧细节</text>
+
+    <rect x="252" y="378" width="216" height="72" rx="7" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+    <text x="360" y="402" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1e3a8a">顺手清零</text>
+    <text x="360" y="422" text-anchor="middle" font-size="11.5" fill="#334155">成本不高就别留债</text>
+    <text x="360" y="439" text-anchor="middle" font-size="11.5" fill="#334155">例：某个指标定义记混</text>
+
+    <rect x="492" y="378" width="216" height="72" rx="7" fill="#fdf2f8" stroke="#db2777" stroke-width="1.8"/>
+    <text x="600" y="402" text-anchor="middle" font-size="13.5" font-weight="700" fill="#9d174d">明确放弃</text>
+    <text x="600" y="422" text-anchor="middle" font-size="11.5" fill="#334155">低频 + 补不起</text>
+    <text x="600" y="439" text-anchor="middle" font-size="11.5" fill="#334155">例：训练侧/多模态细节</text>
+  </g>
+
+  <!-- Arrows to destinations -->
+  <line x1="360" y1="460" x2="200" y2="496" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55d)"/>
+  <line x1="600" y1="460" x2="470" y2="496" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55d)"/>
+  <line x1="600" y1="460" x2="740" y2="496" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55d)"/>
+
+  <!-- Destinations -->
+  <g>
+    <rect x="56" y="500" width="288" height="128" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="200" y="526" text-anchor="middle" font-size="14" font-weight="700" fill="#14532d">去向 ① 清零 → 归档</text>
+    <text x="200" y="550" text-anchor="middle" font-size="12" fill="#334155">口述复测通过 → 写 30 秒索引卡</text>
+    <text x="200" y="570" text-anchor="middle" font-size="12" fill="#334155">（只写锚点关键词，不写全文）</text>
+    <text x="200" y="596" text-anchor="middle" font-size="12" fill="#64748b">进 Day 56 面试工具包索引卡区</text>
+  </g>
+  <g>
+    <rect x="336" y="500" width="288" height="128" rx="10" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+    <text x="480" y="526" text-anchor="middle" font-size="14" font-weight="700" fill="#713f12">去向 ② 兜底 → 口径卡</text>
+    <text x="480" y="550" text-anchor="middle" font-size="12" fill="#334155">「这块我不深入，但我知道 X——</text>
+    <text x="480" y="570" text-anchor="middle" font-size="12" fill="#334155">我的实践在 Y，收益/代价是 Z」</text>
+    <text x="480" y="596" text-anchor="middle" font-size="12" fill="#64748b">主动声明边界，把战场拉回熟区</text>
+  </g>
+  <g>
+    <rect x="616" y="500" width="288" height="128" rx="10" fill="#fdf2f8" stroke="#db2777" stroke-width="2"/>
+    <text x="760" y="526" text-anchor="middle" font-size="14" font-weight="700" fill="#9d174d">去向 ③ 放弃 → 诚实脚本</text>
+    <text x="760" y="550" text-anchor="middle" font-size="12" fill="#334155">「这个我没有实践过；按第一性原理</text>
+    <text x="760" y="570" text-anchor="middle" font-size="12" fill="#334155">我会从……入手，但这是推测」</text>
+    <text x="760" y="596" text-anchor="middle" font-size="12" fill="#64748b">兜底=知道边界在哪；放弃=没进过门</text>
+  </g>
+
+  <!-- Handoff -->
+  <line x1="480" y1="628" x2="480" y2="656" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d55d)"/>
+  <g>
+    <rect x="200" y="660" width="560" height="44" rx="9" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="480" y="688" text-anchor="middle" font-size="14" font-weight="700" fill="#312e81">移交 Day 56 收官日：三张清单全部入 kit/，不留悬项</text>
+  </g>
+</svg>

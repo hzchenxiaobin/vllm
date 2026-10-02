@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 800" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d51t" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1120" height="800" fill="#fafbfc"/>
+  <text x="560" y="30" text-anchor="middle" font-size="21" font-weight="700" fill="#0f172a">Day 51 性能诊断树：三主征 + 利用率分支</text>
+  <text x="560" y="52" text-anchor="middle" font-size="12" fill="#64748b">用法：先看指标组合【分诊】到主征 → 沿 证据 → 根因 → 处方 展开；每片叶子都要能讲成一段调度推演（见 1.3）</text>
+
+  <!-- root -->
+  <rect x="430" y="64" width="260" height="40" rx="10" fill="#0f172a"/>
+  <text x="560" y="89" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">指标异变（/metrics · 日志 · nsys）</text>
+  <line x1="500" y1="104" x2="170" y2="152" stroke="#94a3b8" stroke-width="1.6"/>
+  <line x1="530" y1="104" x2="170" y2="295" stroke="#94a3b8" stroke-width="1.6"/>
+  <line x1="590" y1="104" x2="170" y2="500" stroke="#94a3b8" stroke-width="1.6"/>
+  <line x1="620" y1="104" x2="170" y2="635" stroke="#94a3b8" stroke-width="1.6"/>
+
+  <!-- column headers -->
+  <g font-size="12.5" font-weight="700" fill="#475569" text-anchor="middle">
+    <text x="160" y="134">症状（分诊入口）</text>
+    <text x="455" y="134">证据：看什么</text>
+    <text x="730" y="134">根因：为什么</text>
+    <text x="975" y="134">处方：怎么办</text>
+  </g>
+
+  <!-- Row 1: TTFT up -->
+  <g>
+    <rect x="40" y="152" width="240" height="128" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.8"/>
+    <text x="160" y="180" text-anchor="middle" font-size="14" font-weight="700" fill="#854d0e">① TTFT ↑ / ITL 稳</text>
+    <text x="160" y="202" text-anchor="middle" font-size="11" fill="#854d0e">排队时间涨，decode 本身没问题</text>
+    <text x="160" y="222" text-anchor="middle" font-size="11" fill="#854d0e">→ 队列与 prefill 拥塞</text>
+    <rect x="310" y="152" width="290" height="128" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="322" y="174" font-size="10.5" fill="#334155">· waiting 深度持续增长（vllm:num_requests_waiting）</text>
+    <text x="322" y="196" font-size="10.5" fill="#334155">· queue_time 直方图右移（vllm:request_queue_time_seconds）</text>
+    <text x="322" y="218" font-size="10.5" fill="#334155">· prefill token 打满 budget（长 prompt 洪峰）</text>
+    <text x="322" y="240" font-size="10.5" fill="#334155">· TTFT p99 ↑ 而 p50 稳 → 长尾在排队</text>
+    <rect x="630" y="152" width="220" height="128" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="646" y="180" font-size="11.5" font-weight="700" fill="#334155">到达率 &gt; prefill 服务率</text>
+    <text x="646" y="202" font-size="11" fill="#334155">λ_pre &gt; μ_pre，排队持续堆积</text>
+    <text x="646" y="224" font-size="11" fill="#334155">（GEMM 吞吐不足 / 长请求独占）</text>
+    <text x="646" y="250" font-size="10.5" fill="#94a3b8">Little's Law: L = λ·W</text>
+    <rect x="880" y="152" width="210" height="128" rx="8" fill="#fffbeb" stroke="#ca8a04"/>
+    <text x="892" y="176" font-size="10.5" fill="#713f12">1. 扩 prefill 吞吐：P/D 分离、</text>
+    <text x="892" y="192" font-size="10.5" fill="#713f12">   副本扩容（Day 29-31）</text>
+    <text x="892" y="214" font-size="10.5" fill="#713f12">2. budget ↑：prefill 排空快</text>
+    <text x="892" y="230" font-size="10.5" fill="#713f12">   （代价：ITL 尖峰 ↑，Day 11）</text>
+    <text x="892" y="252" font-size="10.5" fill="#713f12">3. prefix caching / 长短分流</text>
+    <line x1="282" y1="216" x2="306" y2="216" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+    <line x1="602" y1="216" x2="626" y2="216" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+    <line x1="852" y1="216" x2="876" y2="216" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+  </g>
+
+  <!-- Row 2: ITL up -->
+  <g>
+    <rect x="40" y="292" width="240" height="150" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.8"/>
+    <text x="160" y="320" text-anchor="middle" font-size="14" font-weight="700" fill="#1e40af">② ITL / TPOT ↑</text>
+    <text x="160" y="342" text-anchor="middle" font-size="11" fill="#1e40af">decode step 变慢</text>
+    <text x="160" y="362" text-anchor="middle" font-size="11" fill="#1e40af">→ batch 过大或通信瓶颈</text>
+    <rect x="310" y="292" width="290" height="150" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="322" y="314" font-size="10.5" fill="#334155">· TPOT vs running 散点：线性？突变？</text>
+    <text x="322" y="336" font-size="10.5" fill="#334155">· 尖刺（阵发）vs 平台抬升（持续）分型</text>
+    <text x="322" y="358" font-size="10.5" fill="#334155">· nsys：NCCL 时间占比 / CPU 空泡</text>
+    <text x="322" y="380" font-size="10.5" fill="#334155">· CUDA Graph 覆盖的 batch 桶（Day 18）</text>
+    <text x="322" y="402" font-size="10.5" fill="#334155">· 尖刺 + preemption 同步涨 → 转 ③</text>
+    <g>
+      <rect x="630" y="296" width="220" height="33" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+      <text x="640" y="317" font-size="10.5" fill="#1e3a8a">2a batch 过大：KV 读 ∝ b（64×2K×144KB ≈ 19GB &gt; 权重 16GB）</text>
+      <rect x="630" y="333" width="220" height="33" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+      <text x="640" y="347" font-size="10.5" fill="#1e3a8a">2b 大 chunk 混排：</text><text x="716" y="347" font-size="10.5" fill="#1e3a8a">decode step 被拉长 → 阵发尖刺</text>
+      <rect x="630" y="370" width="220" height="33" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+      <text x="640" y="391" font-size="10.5" fill="#1e3a8a">2c TP 通信：all-reduce 时间不随 batch 摊薄</text>
+      <rect x="630" y="407" width="220" height="33" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+      <text x="640" y="421" font-size="10.5" fill="#1e3a8a">2d CUDA Graph miss /</text><text x="728" y="421" font-size="10.5" fill="#1e3a8a">CPU 调度开销（Day 19）</text>
+    </g>
+    <rect x="880" y="292" width="210" height="150" rx="8" fill="#eff6ff" stroke="#2563eb"/>
+    <text x="892" y="314" font-size="10.5" fill="#1e3a8a">2a → max_num_seqs ↓（按 TPOT-</text>
+    <text x="892" y="330" font-size="10.5" fill="#1e3a8a">      SLO 拐点）/ KV FP8</text>
+    <text x="892" y="352" font-size="10.5" fill="#1e3a8a">2b → budget ↓（Day 11 / 52-Q4）</text>
+    <text x="892" y="374" font-size="10.5" fill="#1e3a8a">2c → 查 NVLink 拓扑、降 TP</text>
+    <text x="892" y="396" font-size="10.5" fill="#1e3a8a">2d → 补 capture sizes、</text>
+    <text x="892" y="412" font-size="10.5" fill="#1e3a8a">      开 async scheduling</text>
+    <line x1="282" y1="366" x2="306" y2="366" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+    <line x1="602" y1="366" x2="626" y2="366" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+    <line x1="852" y1="366" x2="876" y2="366" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+  </g>
+
+  <!-- Row 3: preemption up -->
+  <g>
+    <rect x="40" y="456" width="240" height="150" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="1.8"/>
+    <text x="160" y="484" text-anchor="middle" font-size="14" font-weight="700" fill="#991b1b">③ preemption ↑</text>
+    <text x="160" y="506" text-anchor="middle" font-size="11" fill="#991b1b">KV 供不应求 → 重算挤占</text>
+    <text x="160" y="526" text-anchor="middle" font-size="11" fill="#991b1b">→ KV 超配，调 max_num_seqs</text>
+    <rect x="310" y="456" width="290" height="150" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="322" y="478" font-size="10.5" fill="#334155">· 抢占计数增长（/metrics；指标名随版本，</text>
+    <text x="322" y="494" font-size="10.5" fill="#334155">  grep -i preempt 确认）</text>
+    <text x="322" y="516" font-size="10.5" fill="#334155">· gpu_cache_usage → 1 常驻</text>
+    <text x="322" y="538" font-size="10.5" fill="#334155">· ITL 尖刺（重算 prefill 混排 decode step）</text>
+    <text x="322" y="560" font-size="10.5" fill="#334155">· TTFT p99 双峰：被抢请求等效排两次队</text>
+    <text x="322" y="582" font-size="10.5" fill="#334155">· 日志：Preempted ... recompute</text>
+    <rect x="630" y="456" width="220" height="150" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="646" y="480" font-size="11.5" font-weight="700" fill="#334155">准入超配</text>
+    <text x="646" y="502" font-size="11" fill="#334155">Σ(P + G + 预期输出) &gt; N</text>
+    <text x="646" y="524" font-size="11" fill="#334155">准入只看「当下装得下」，</text>
+    <text x="646" y="542" font-size="11" fill="#334155">不看「长大后装不装得下」</text>
+    <text x="646" y="568" font-size="10.5" fill="#94a3b8">推演链接：88 块需求 &gt; 66 块池</text>
+    <text x="646" y="586" font-size="10.5" fill="#94a3b8">→ step 17/18 阵发抢占（1.3）</text>
+    <rect x="880" y="456" width="210" height="150" rx="8" fill="#fef2f2" stroke="#dc2626"/>
+    <text x="892" y="480" font-size="10.5" fill="#7f1d1d">1. max_num_seqs ↓（直接限制</text>
+    <text x="892" y="496" font-size="10.5" fill="#7f1d1d">   准入）★ 推演变体 B：0 抢占</text>
+    <text x="892" y="518" font-size="10.5" fill="#7f1d1d">2. KV cache FP8：N × 2（Day 23）</text>
+    <text x="892" y="540" font-size="10.5" fill="#7f1d1d">3. gpu_memory_utilization ↑</text>
+    <text x="892" y="556" font-size="10.5" fill="#7f1d1d">   / max_model_len ↓（Day 50）</text>
+    <text x="892" y="578" font-size="10.5" fill="#7f1d1d">4. prefix caching 降有效需求</text>
+    <line x1="282" y1="530" x2="306" y2="530" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+    <line x1="602" y1="530" x2="626" y2="530" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+    <line x1="852" y1="530" x2="876" y2="530" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+  </g>
+
+  <!-- Row 4: throughput low -->
+  <g>
+    <rect x="40" y="620" width="240" height="100" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.8"/>
+    <text x="160" y="648" text-anchor="middle" font-size="14" font-weight="700" fill="#334155">④ 吞吐低 / 延迟达标</text>
+    <text x="160" y="670" text-anchor="middle" font-size="11" fill="#475569">SLO 全绿但成本高</text>
+    <text x="160" y="690" text-anchor="middle" font-size="11" fill="#475569">→ 利用率问题（goodput 视角）</text>
+    <rect x="310" y="620" width="290" height="100" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="322" y="644" font-size="10.5" fill="#334155">· running 均值低、waiting 常空</text>
+    <text x="322" y="666" font-size="10.5" fill="#334155">· goodput &lt;&lt; raw throughput（Day 5）</text>
+    <text x="322" y="688" font-size="10.5" fill="#334155">· 副本间 QPS / cache 命中率不均</text>
+    <rect x="630" y="620" width="220" height="100" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="646" y="648" font-size="11.5" font-weight="700" fill="#334155">利用率不足 / 路由不均</text>
+    <text x="646" y="670" font-size="11" fill="#334155">batch 上不去 → 权重读摊不平</text>
+    <text x="646" y="692" font-size="11" fill="#334155">（decode 的批间红利没吃到）</text>
+    <rect x="880" y="620" width="210" height="100" rx="8" fill="#f8fafc" stroke="#94a3b8"/>
+    <text x="892" y="644" font-size="10.5" fill="#334155">· 提压探测容量上限</text>
+    <text x="892" y="666" font-size="10.5" fill="#334155">· cache-aware 路由（Day 34）</text>
+    <text x="892" y="688" font-size="10.5" fill="#334155">· 缩副本降成本（Day 5/29）</text>
+    <line x1="282" y1="670" x2="306" y2="670" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+    <line x1="602" y1="670" x2="626" y2="670" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+    <line x1="852" y1="670" x2="876" y2="670" stroke="#475569" stroke-width="1.6" marker-end="url(#d51t)"/>
+  </g>
+
+  <!-- footer -->
+  <rect x="40" y="738" width="1050" height="44" rx="8" fill="#0f172a"/>
+  <text x="565" y="757" text-anchor="middle" font-size="12" font-weight="700" fill="#f8fafc">背熟口径：TTFT 升 / ITL 稳 → 队列与 prefill 拥塞 ｜ ITL 升 → batch 过大或通信瓶颈 ｜ preemption 增长 → KV 超配调 max_num_seqs</text>
+  <text x="565" y="774" text-anchor="middle" font-size="10.5" fill="#94a3b8">单变量改动 → 四指标前后对照（preemption / TTFT p99 / TPOT p99 / goodput）→ 复测 3 次取均值</text>
+</svg>

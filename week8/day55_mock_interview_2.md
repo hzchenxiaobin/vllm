@@ -1,164 +1,125 @@
-[0m
-> build · glm-5.3
-[0m
-[0m→ [0mRead prompt.md
-[0m→ [0mRead README.md
-[0m
-[0m$ [0mls week8/ 2>/dev/null && ls week8/assets/ 2>/dev/null
-assets
-day50_memory_estimation_block_table.md
-day51_schedule_drill_diagnosis_tree.md
-day52_interview_question_drill.md
-day53_project_storytelling_star.md
-day54_mock_interview_1.md
-day55_mock_interview_2.md
-day56_final_materials_review.md
-README.md
-day50_block_table_prefix_hit.svg
-day50_cow_split.svg
-day51_diagnosis_tree.svg
-day51_preempt_cycle.svg
-day51_schedule_steps.svg
-day52_chunked_prefill_budget.svg
-day52_tp_scaling_curve.svg
-day53_npu_gpu_concept_map.svg
-day54_followup_ladder.svg
-day54_mock_interview_flow.svg
-day54_stuck_point_loop.svg
-day55_final_triage.svg
-day55_first_principles_chain.svg
-day55_interview2_design.svg
-day56_final_24h_timeline.svg
-day56_gap_triage.svg
-day56_kit_map.svg
-[0m
-day55 文件已存在，先检查现有内容是否完整。
-[0m$ [0mwc -l week8/day55_mock_interview_2.md && tail -20 week8/day55_mock_interview_2.md
-317 week8/day55_mock_interview_2.md
+# Day 55：模拟面试（二）——加压复测、A/B 对照与终局分诊
 
-1. 不看笔记：完整口述根链 L0→L6，每层 ≤40 秒，L5 至少串出 4 个优化方向，L6 说全三个失效条件。
-2. 30 秒内：decode 的 arithmetic intensity 约是多少（BF16 与 FP8 各一）？它与 H100 平衡点差几个数量级？单位口径是什么？
-3. 30 秒内：70B 模型 decode 从 memory-bound 翻转到 compute-bound 的 batch 大约是多少？写出你用的两个时间表达式。
-4. 口述：面试官说"你这个 21ms 不对吧"，用口径防御完整接一遍（≤60 秒），然后说明什么时候应该认错、怎么认。
-5. 口述：卡壳点终局分诊的 2×2 矩阵和三个去向各是什么？"兜底"和"放弃"的话术差异在哪？
-6. 自评：两场 A/B 对比里你最低的维度是哪个？它已经清零 / 兜底 / 放弃了吗？
+> **Week 8 · 面试冲刺 · Day 5**
+> 前置知识：Day 50-51（白板四件套）、Day 52（七问 × 3 分钟录音过堂）、Day 53（项目 STAR 讲稿）、**Day 54（第一场模拟面试：追问梯子 L0-L4、五维评分、卡壳点三归类与当晚补漏——今天的弹药全部来自昨天的清单）**
+> 今日用时：3~4 小时，其中 **≥2.5 小时在"加压面试 + A/B 复盘 + 终局分诊"**——今天是八周里最后一次高强度实战日
+> 今日定位：倒数第二天。Day 54 证明"能打"，今天要证明"**稳定地能打**"；今晚补漏结束后，56 天的知识输入正式收官，明天进入"只看自己材料"的收官模式
 
-## 今日产出物
+---
 
-| # | 产出物 | 用途 |
+## 今日学习目标
+
+| # | 目标 | 验收标准 |
 |---|---|---|
-| 1 | **第二次模拟面试录音**（≥60 分钟，加压版） | 与 Day 54 录音一起构成 Day 56 收官日"只看自己材料"的核心复习素材 |
-| 2 | **A/B 对比表**（五维 + 清零率 + 数字应答正确率） | 量化两场进步；Δ<0 的维度今夜优先处理 |
-| 3 | **根链口述稿**（L0→L6，含全部数字与口径） | 面试主场武器；Day 56 索引卡区的头条 |
-| 4 | **终局分诊清单**（两场全部卡壳点 × 三去向） | 直接移交 Day 56 收官日汇总，不留悬项 |
-| 5 | **兜底口径卡 + 诚实应对脚本**（每条一句话） | 面试遇到边界外问题的标准应对 |
-| 6 | 今晚最后一次补漏的记录 | 56 天知识输入的最后一笔 |
+| 1 | 完成第二场全真模拟面试（**加压版**） | **≥60 分钟连续面试**，题本与 Day 54 重叠 <20%，三种加压模式至少各真实触发一次 |
+| 2 | 验证 Day 54 卡壳点**清零** | 复测清单上每个点，同类追问 **30 秒内**接住且带数字与口径 |
+| 3 | 量化两场进步（A/B 对照） | 五维评分逐维对比成表；**Δ<0 的维度当场定位原因**（题变难 or 真退步） |
+| 4 | 终局分诊 | 两场**全部**卡壳点归入三个去向（清零 / 兜底 / 放弃），**无悬项**移交 Day 56 |
+| 5 | 最后一次补漏 | 只补分诊产物，**≤60 分钟、22:30 硬截止**——睡眠优先于补漏（面试状态也是训练项） |
 
-> 📌 **明天预告（Day 56 · 收官日）**：把 8 周全部产出物归档成**面试工具包**（`kit/` 目录 + 30 秒索引卡），汇总 Day 50-55 的分诊清单做最后收敛，然后用**只有自己材料**的 60 分钟收官过堂检验检索强度，最后产出《面试当天执行手册》。铁律从今晚 24 点开始生效：**不再看任何新东西，只看自己写的总结**。今晚照常睡好——八周训练的最后一项，是把状态也调到峰值。
-[0m
-[0m$ [0mgrep -n "^#\|^##" week8/day55_mock_interview_2.md | head -40 && grep -c "svg" week8/day55_mock_interview_2.md
-1:# Day 55：模拟面试（二）——复测加压、第一性原理串联与终局分诊
-10:## 今日学习目标
-20:## 核心概念：为什么第二场不是"再来一遍"
-34:## 一、第二场实验设计：换什么、留什么、加什么
-55:## 二、三种加压模式：把压力峰值提前搬到桌面
-59:### 模式 A：追到底（连续 5~6 层不换主题）
-67:### 模式 B：打断与跳跃（context switch 抗干扰）
-75:### 模式 C：质疑对抗（立场稳定性）
-85:### 2.1 加压模式的评分锚点（叠加在 Day 54 五维 rubric 上）
-95:## 三、深钻链示范：一条第一性原理，从 L0 串到 L6
-101:### 3.1 完整六层对话（跟读材料，每层 ≤40 秒口述）
-123:### 3.2 这条链为什么值得背下来（但不要背答案，背结构）
-133:## 四、量化两场进步：A/B 对比与"覆盖率"的统计直觉
-135:### 4.1 为什么两场题本必须不重叠：一个抽样视角
-144:### 4.2 A/B 对比表（今天复盘的主产出，模板）
-163:## 五、动手实验：第二场全流程（今日主实验）
-175:### 5.1 步骤①：卡壳点复测清单（伪代码）
-178:# test_day54_stuck_points.py —— 不是真跑，是照着执行
-190:# 面试结束后回来填第二列：
-191:#   面试中再次被踩且接住 → "清零"
-192:#   面试中再次被踩且仍卡 → "升级"
-193:#   面试中没被踩到       → 以晨间复测结果为准
-198:### 5.2 步骤②：题本构成（与第一场重叠率 <20%）
-207:### 5.3 步骤③：加压版 LLM 面试官（无同行时的兜底，在 Day 54 版上叠加三模式）
-235:### 5.4 步骤④：复盘（75 分钟，流程与 Day 54 相同，产物不同）
-244:### 5.5 步骤⑤：当晚补漏（最后一次）
-251:## 六、终局分诊：两场卡壳点的最后去向
-272:## 面试高频问题：串联题题库（第二场抽题用，D1-D6）
-289:## 今日总结
-297:## 今日自测题（复盘时口头回答，录音）
-306:## 今日产出物
-3
-[0m
-[0m$ [0mgit log --oneline -8 -- week8/ 2>/dev/null; git status --short week8/ | head
-24d163a Add Day 27, 37-56 tutorial notes (weeks 4-8) with assets and logs
-eceab39 Initial commit: vLLM 推理系统优化八周学习笔记
-?? week8/assets/day51_diagnosis_tree.svg
-?? week8/assets/day51_preempt_cycle.svg
-?? week8/assets/day51_schedule_steps.svg
-?? week8/assets/day53_npu_gpu_concept_map.svg
-?? week8/assets/day55_final_triage.svg
-?? week8/assets/day55_first_principles_chain.svg
-?? week8/assets/day55_interview2_design.svg
-?? week8/day51_schedule_drill_diagnosis_tree.md
-?? week8/day53_project_storytelling_star.md
-?? week8/day55_mock_interview_2.md
-[0m
-[0m$ [0mgrep -n "Day 55\|day55" week8/day56_final_materials_review.md | head -20
-(no output)
-[0m
-day55 文件已存在（未提交的旧版本）。用户明确要求生成 Day 55，我将重新生成并覆盖。先快速浏览本周前几天内容以保持衔接。
-[0m→ [0mRead week8/day54_mock_interview_1.md[90m [limit=80][0m
-[0m→ [0mRead week8/day54_mock_interview_1.md[90m [offset=240][0m
-[0m→ [0mRead week8/day50_memory_estimation_block_table.md[90m [limit=25][0m
-[0m→ [0mRead week8/day51_schedule_drill_diagnosis_tree.md[90m [limit=25][0m
-[0m→ [0mRead week8/day52_interview_question_drill.md[90m [limit=25][0m
-现在快速浏览 Day 50-53 开头，了解衔接点。
-[0m→ [0mRead week8/day53_project_storytelling_star.md[90m [limit=25][0m
-查看 Day 54 的 SVG 风格以保持视觉统一。
-[0m→ [0mRead week8/assets/day54_stuck_point_loop.svg
-内容设计已清晰。先快速核实 vLLM V1 的两个默认参数，确保数字准确。
-[0m
-[0m$ [0mrg -n "MAX_NUM_BATCHED_TOKENS|max_num_batched_tokens.*=.*8|\"max_num_seqs\"|max_num_seqs.*default" vllm/config.py | head -10; rg -n "max_num_seqs" vllm/config.py | head -5
-rg: vllm/config.py: IO error for operation on vllm/config.py: No such file or directory (os error 2)
-rg: vllm/config.py: IO error for operation on vllm/config.py: No such file or directory (os error 2)
-[0m
-[0m$ [0mls && rg -n "max_num_batched_tokens" --type py -g '*config*' | head -8
-build
-build.py
-generate_tutorials.sh
-logs
-prompt.md
-public
-README.md
-static
-week0
-week1
-week2
-week3
-week4
-week5
-week6
-week7
-week8
-陈斌斌简历.md
-rg: No files were searched, which means ripgrep probably applied a filter you didn't expect.
-Running with --debug will show why files are being skipped.
-[0m
-这是笔记仓库而非 vLLM 源码，版本相关默认值将标注口径。现在开始写作，先写入正文前半部分。
-[0m← [0mWrite week8/day55_mock_interview_2.md
-Wrote file successfully.
-[0m
-正文前半已写入。现在创建第一张 SVG（A/B 实验设计图）。
-[0m← [0mWrite week8/assets/day55_ab_experiment.svg
-Wrote file successfully.
-[0m
-第二张 SVG：三种加压模式图。
-[0m← [0mWrite week8/assets/day55_pressure_modes.svg
-Wrote file successfully.
-[0m
-现在追加正文第二部分（第三、四节）。
-[0m$ [0mcat >> week8/day55_mock_interview_2.md << 'DAY55PART2'
+## 核心概念：一场好是运气，两场稳才是能力
+
+先建立一个面试官视角的判断标准：**单场表现的可信度很低**。状态、题序、面试官风格、甚至当天的网速，都会让同一个候选人的两场面试差出一个档位。所以资深面试官真正看的不是"你最好能打成什么样"，而是"**你的下限在哪**"。对候选人来说，这翻译成一句话：
+
+> **一场好是运气，两场稳才是能力。**
+
+回顾 Day 54：第一场模拟面试建立了基线（五维评分 + 卡壳点清单），当晚做了定点补漏。今天的关键认知是——**第二场不是"再来一遍"，而是一次对照实验**。用实验设计的语言描述：
+
+| 实验要素 | 内容 |
+|---|---|
+| **自变量**（刻意改变） | 面试官人设、题本、项目深挖路线、压力模式（三种加压） |
+| **控制变量**（保持不变） | 五维 rubric、追问梯子 L0-L4、录音复盘流程、报数三件套 |
+| **因变量**（测量） | 五维评分、卡壳点清零率、数字应答正确率 |
+
+只有第二场才能测出三件事，它们恰好是"稳定"的三个组成部分：
+
+1. **保持性（retention）**：昨晚补的东西，今天还在吗？——靠**卡壳点复测**验证；
+2. **泛化性（generalization）**：换一套不重叠的题，结构还稳吗？——靠**题本 <20% 重叠**验证；
+3. **抗压性（robustness）**：压力升级（追到底 / 打断 / 质疑）后，逻辑散不散？——靠**三种加压模式**验证。
+
+> 💡 **今天的核心认知**：Day 54 练的是"在追问下不乱"，今天练的是"在**更狠的追问、更强的干扰、直接的质疑**下依然不乱"。真实面试的最坏情况一定比第一场难——今天主动把它搬进实验室。
+
+---
+
+## 一、实验设计：换什么、控什么、测什么
+
+### 1.1 两场对照表
+
+| 维度 | Day 54（第一场） | Day 55（第二场） | 为什么换 |
+|---|---|---|---|
+| 面试官 | 同行 / LLM 基础版 | **换一位同行** / LLM 加压版（严格模式） | 消除"适应了同一个面试官"的假象 |
+| 题本 | 追问链 C1-C6 抽 2 | **追问链 D1-D6 抽 2**（见第六节，与 C1-C6 不重叠） | 测泛化，不是测记忆 |
+| 项目深挖 | 项目 A（vllm-ascend 优化）主线 | **项目 B（mini 引擎）或 C（消融实验）**主线 | 三个项目都要经得起深挖，不能只有一件武器 |
+| 场景设计题 | 客服机器人集群（Day 35 原题） | 换一题：**代码补全服务**（高前缀重复 + 流式）或**长文档摘要**（长 prefill + 短输出） | 不同负载画像逼你重推容量估算，而不是背上一题的答案 |
+| 压力模式 | 常规追问（约 3 层换题） | **三种加压模式**（见第二节），随机施加 | 把压力峰值提前搬到桌面 |
+| 时长 | ≥45 分钟 | **≥60 分钟** | 真实技术面常见时长；注意力也是被测项 |
+| 复盘产物 | 五维评分 + 卡壳点清单 | **A/B 对比表 + 终局分诊清单** | 量化进步 + 收敛悬项 |
+
+### 1.2 为什么题本必须不重叠：一个抽样直觉
+
+把八周知识域想象成一个考纲，每条追问链是一次**抽样**。两场共 12 条链（C1-C6 + D1-D6）：若互相不重叠，覆盖 12 个知识域，任何一条链上暴露的卡壳都指向独立的知识缺口；若第二场重复第一场的题，你测到的只是"对同一道题的第二次记忆"，会**系统性高估**自己的掌握度——就像单元测验和期末考不能用同一张卷子。
+
+同理，"数字应答正确率"只有在**新数字题**上统计才有意义。今天所有统计口径都遵循一个原则：**换样本，不换尺子**（题本换，rubric 不换）。
+
+![两场模拟面试的 A/B 对照设计](assets/day55_ab_experiment.svg)
+
+---
+
+## 二、三种加压模式：把真实面试的最坏情况搬进实验室
+
+Day 54 的追问梯子止步于 L4（反例 / 迁移），且每条链大约 3 层就换题。真实面试的杀伤力主要来自三种"超纲"行为，今天的面试官（或 LLM 加压脚本）必须随机施加上来：
+
+### 模式 A：追到底（连续 5~6 层不换主题）
+
+梯子在 L4 之后不收手，继续下探两层：
+
+| 层 | 问法示例（以 chunked prefill 为例） | 检验 |
+|---|---|---|
+| L5 源码级 | "这个混排在 V1 里具体是哪个函数组织的？token budget 在哪判？" | 调用链是否真读过 |
+| L6 失效级 | "假设这个机制某天失效了，线上你会先看到哪个指标动？" | 机制 → 指标的映射 |
+
+**应对原则**：
+- 每层回答压在 **30~40 秒**，越深越要回到"机制 + 一个数字锚点"，不给发散空间；
+- L5 是诚实的分水岭：掌握到函数级就说函数级（如 scheduler 的 `schedule()` 主循环组织 running 队列），**不确定行级细节时直接说**"这块我记到函数级，行级实现要翻代码"——然后立刻补一层你能拿出的证据（调用链上层、实验观察到的行为、对应 `/metrics` 指标）；
+- **失效模式只有一个：编造**。追问链越长，编造被戳穿的概率越高，而"编造"在面试里是一票否决项，比"不知道"严重一个数量级。
+
+### 模式 B：打断与跳转（context switch 抗干扰）
+
+你答到一半，面试官打断："这个先放着，我问另一个。"10 分钟后再杀回来："刚才那个你说到哪了？"
+
+**应对原则**：
+- 每个回答**开头先立一句话结论**（金字塔尖），后面所有细节都挂在它上面——被打断时丢的只是细节，锚还在；
+- 被拉回原话题时，先花 5 秒**复述自己的结论**再继续，不要从断点细节直接续讲（听众早已丢上下文）；
+- 训练价值：真实面试里 multitasking 的面试官很常见，这一项练的是**工作记忆 + 结构锚点**，Day 52 的录音自答练不到它（没人打断录音笔）。
+
+### 模式 C：质疑对抗（立场稳定性）
+
+面试官对你的答案直接质疑，分两类：
+
+1. **数字质疑**："你这个 21ms 不对吧？我记得 70B 至少要 60ms。"
+2. **错误前提**（面试官故意说错）："chunked prefill 不就是为了降 TTFT 吗？你怎么说它可能升 TTFT？"
+
+**应对原则——口径防御**：报数三件套（Day 54）的"条件"字段就是为这一刻准备的。标准句式：
+
+```text
+"我报的是 <口径> 下的数：70GB 权重 ÷ 3.35TB/s 峰值带宽 ≈ 21ms，
+这是纯权重访存的理论下界，不含 KV 访存、激活和 CPU 开销；
+如果您指的是实测 TPOT，那是另一个口径，会大 2~3 倍——
+您说的 60ms 大概率是实测口径，两个数都成立，口径不同。"
+```
+
+- **不直接说"您错了"**。错误前提用"两个口径都存在"的框架接：先立自己的口径，再承认对方口径在什么条件下成立——这既保住了立场，又不显得对抗；
+- **什么时候认错**：对方给出你未见过的实测数据或版本行为时——"这个口径我没测过，您说的可能是对的，我回去验证"。**诚实但不崩盘**：认一个具体的数，不推翻整条推理链。
+
+![三种加压模式：压力形态与应对锚点](assets/day55_pressure_modes.svg)
+
+### 2.1 加压模式的评分锚点（叠加在 Day 54 五维 rubric 上）
+
+| 模式 | 1 分 | 3 分 | 5 分 |
+|---|---|---|---|
+| A 追到底 | L3 之后开始编造 | 到 L5 说"不知道"但不给替代证据 | 到 L5 给出层级边界 + 调用链/实验证据，L6 指标映射张口就来 |
+| B 打断跳转 | 回不来，整段重讲 | 能回来但重讲细节 | 5 秒复述结论后从断点续讲 |
+| C 质疑对抗 | 立刻改口顺从 | 坚持但说不清口径 | 口径防御完整，并承认对方口径的成立条件 |
 
 ---
 
@@ -263,16 +224,6 @@ kernel 内部的 tiling 与向量化我类比昇腾 FlashAttention 的经验理�
 例：被问 NCCL 拓扑探测的 ring 构造算法细节——"没深入过；我在昇腾侧做的是 HCCS 对链路带宽的手工建模与 all-reduce 分桶（Day 32 的经验），ring 构造算法本身没读过源码，如果您感兴趣我可以展开通信量建模那部分。"
 
 > 💡 **面试考察的是深度上限，不是知识全集**。对边界外问题给出"诚实 + 相邻能力"的回答，得分高于现场编造——因为编造在追问下必然崩塌，而诚实不会。
-DAY55PART2
-echo "part2 appended, total lines: $(wc -l < week8/day55_mock_interview_2.md)"
-part2 appended, total lines: 226
-[0m
-创建第三张 SVG：终局分诊决策图。
-[0m← [0mWrite week8/assets/day55_final_convergence.svg
-Wrote file successfully.
-[0m
-追加正文最后一部分（实验流程、题库、总结）。
-[0m$ [0mcat >> week8/day55_mock_interview_2.md << 'DAY55PART3'
 
 ---
 
@@ -437,44 +388,3 @@ for point in day54_stuck_points:          # 昨晚补漏过的清单
 | 6 | **今晚最后一次补漏记录**（≤60 分钟） | 56 天知识输入的最后一笔，之后封笔 |
 
 > 📌 **明天预告（Day 56 · 收官日）**：把八周全部产出物归档成**面试工具包**——架构图、诊断树、四份 A4 专题总结、项目讲稿、今天的终局分诊清单；用 30 秒索引卡把兜底类压缩到"扫一眼"的粒度；然后做一次**只看自己材料**的 60 分钟收官过堂，检验检索强度而非知识量；最后产出《面试当天执行手册》。从今晚 24 点起铁律生效：**不看任何新东西，只看自己写的总结**。今晚照常睡好——八周训练的最后一项，是把状态调到峰值。
-DAY55PART3
-echo "done, total lines: $(wc -l < week8/day55_mock_interview_2.md)"
-done, total lines: 390
-[0m
-验证文件完整性和 SVG 引用。
-[0m$ [0mgrep -n "^## \|^# " week8/day55_mock_interview_2.md && grep -n "assets/" week8/day55_mock_interview_2.md && for f in week8/assets/day55_ab_experiment.svg week8/assets/day55_pressure_modes.svg week8/assets/day55_final_convergence.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('OK: $f')"; done
-1:# Day 55：模拟面试（二）——加压复测、A/B 对照与终局分诊
-10:## 今日学习目标
-20:## 核心概念：一场好是运气，两场稳才是能力
-44:## 一、实验设计：换什么、控什么、测什么
-68:## 二、三种加压模式：把真实面试的最坏情况搬进实验室
-126:## 三、数字敏感度：第二场的"数字关"
-181:## 四、终局分诊：两场卡壳点的最后去向
-230:## 五、动手实验：第二场全流程（今日主实验）
-248:# test_day54_stuck_points.py —— 不是真跑，是照着执行
-344:## 六、面试高频问题：第二场题本（D1-D6 追问链）
-361:## 今日总结
-370:## 今日自测题（复盘时口头回答，录音）
-379:## 今日产出物
-64:![两场模拟面试的 A/B 对照设计](assets/day55_ab_experiment.svg)
-114:![三种加压模式：压力形态与应对锚点](assets/day55_pressure_modes.svg)
-197:![终局分诊：每个卡壳点的最后去向](assets/day55_final_convergence.svg)
-OK: week8/assets/day55_ab_experiment.svg
-OK: week8/assets/day55_pressure_modes.svg
-OK: week8/assets/day55_final_convergence.svg
-[0m
-Day 55 已完成并写入。
-
-**文件**：`week8/day55_mock_interview_2.md`（390 行，覆盖了之前的旧版本）
-
-**内容**：严格对应 README Day 54-55「模拟面试 × 2」的第二场，与本周前几天全程衔接（回顾 Day 50-54）：
-- **A/B 对照实验设计**：换面试官/题本（D1-D6 与 Day 54 的 C1-C6 不重叠）/项目线，控住五维 rubric，测保持性、泛化性、抗压性
-- **三种加压模式**：追到底（L5 源码级/L6 失效级）、打断跳转、质疑对抗，各配应对原则与评分锚点
-- **数字敏感度**：12 条可手推的核心数字卡 + 口径防御示范（H100 平衡点 295 FLOP/B 的单位推导攻防）
-- **终局分诊**：清零/兜底/放弃三去向判据树，无悬项移交 Day 56
-- **动手实验**：晨间复测 → 60 分钟加压面试（含加压版 LLM 面试官 prompt）→ A/B 复盘 → 分诊 → 22:30 硬截止的最后一次补漏
-- 产出物 6 项 + Day 56 收官预告
-
-**SVG**（3 张，已验证 XML 合法）：`week8/assets/day55_ab_experiment.svg`、`day55_pressure_modes.svg`、`day55_final_convergence.svg`
-
-提示：assets/ 下旧的 `day55_first_principles_chain.svg` 和 `day55_interview2_design.svg` 已不被引用（属被替换的旧版），可自行删除。
