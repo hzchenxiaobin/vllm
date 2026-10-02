@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 760" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="carrow" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+    <marker id="garrow" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect width="960" height="760" fill="#fafbfc"/>
+  <text x="480" y="36" text-anchor="middle" font-size="23" font-weight="700" fill="#0f172a">COW（copy-on-write）分裂：n=2 并行采样共享未满块</text>
+  <text x="480" y="60" text-anchor="middle" font-size="13" fill="#64748b">场景：prompt 90 tok（Block10/11 满块 + Block12 只有 10/16 tok），采样参数 n=2 → fork 出 Child1 / Child2</text>
+
+  <!-- ===== t0 panel ===== -->
+  <rect x="30" y="78" width="900" height="270" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="50" y="106" font-size="16" font-weight="700" fill="#0f172a">t0：fork 时刻</text>
+  <text x="210" y="106" font-size="12" fill="#64748b">两请求共享全部 prompt 块；满块直接 ref+1，未满块 Block12 也被共享（ref=2）</text>
+
+  <!-- pool blocks t0 -->
+  <g font-family="Consolas, monospace">
+    <rect x="60" y="122" width="130" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="125" y="144" text-anchor="middle" font-size="13" font-weight="700" fill="#166534" font-family="'Segoe UI', sans-serif">Block 10</text>
+    <text x="125" y="166" text-anchor="middle" font-size="12" fill="#334155">tok 0–15 满</text>
+    <text x="125" y="188" text-anchor="middle" font-size="12" fill="#334155">hash h_a, ref=2</text>
+
+    <rect x="210" y="122" width="130" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="275" y="144" text-anchor="middle" font-size="13" font-weight="700" fill="#166534" font-family="'Segoe UI', sans-serif">Block 11</text>
+    <text x="275" y="166" text-anchor="middle" font-size="12" fill="#334155">tok 16–31 满</text>
+    <text x="275" y="188" text-anchor="middle" font-size="12" fill="#334155">hash h_b, ref=2</text>
+
+    <rect x="360" y="122" width="150" height="86" rx="8" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+    <text x="435" y="144" text-anchor="middle" font-size="13" font-weight="700" fill="#854d0e" font-family="'Segoe UI', sans-serif">Block 12</text>
+    <text x="435" y="166" text-anchor="middle" font-size="12" fill="#334155">tok 80–89</text>
+    <text x="435" y="188" text-anchor="middle" font-size="12" fill="#334155">10/16 未满, ref=2</text>
+  </g>
+  <path d="M 360 212 L 360 226 L 510 226 L 510 212" fill="none" stroke="#ca8a04" stroke-width="2"/>
+  <text x="435" y="244" text-anchor="middle" font-size="12" font-weight="700" fill="#854d0e">未满块：无哈希、不入缓存，但可共享</text>
+
+  <!-- child tables t0 -->
+  <g font-family="Consolas, monospace" font-size="14" font-weight="700">
+    <text x="600" y="140" font-size="14" font-weight="700" fill="#0f172a" font-family="'Segoe UI', sans-serif">Child1</text>
+    <rect x="600" y="150" width="50" height="30" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="625" y="170" text-anchor="middle" fill="#166534">10</text>
+    <rect x="658" y="150" width="50" height="30" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="683" y="170" text-anchor="middle" fill="#166534">11</text>
+    <rect x="716" y="150" width="50" height="30" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/><text x="741" y="170" text-anchor="middle" fill="#854d0e">12</text>
+
+    <text x="600" y="208" font-size="14" font-weight="700" fill="#0f172a" font-family="'Segoe UI', sans-serif">Child2</text>
+    <rect x="600" y="218" width="50" height="30" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="625" y="238" text-anchor="middle" fill="#166534">10</text>
+    <rect x="658" y="218" width="50" height="30" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="683" y="238" text-anchor="middle" fill="#166534">11</text>
+    <rect x="716" y="218" width="50" height="30" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/><text x="741" y="238" text-anchor="middle" fill="#854d0e">12</text>
+  </g>
+  <text x="640" y="290" font-size="12" fill="#64748b">两个 child 的 block table 完全相同（fork 复制页表），</text>
+  <text x="640" y="308" font-size="12" fill="#64748b">ref 计数防止任何一方 free 时误回收共享块</text>
+
+  <!-- trigger arrow -->
+  <line x1="480" y1="352" x2="480" y2="396" stroke="#dc2626" stroke-width="3" marker-end="url(#garrow)"/>
+  <rect x="510" y="356" width="380" height="36" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="700" y="380" text-anchor="middle" font-size="13" font-weight="700" fill="#b91c1c">双方各自 decode 第 1 个 token → 都要往 Block 12 追加写入</text>
+
+  <!-- ===== t1 panel ===== -->
+  <rect x="30" y="404" width="900" height="300" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="50" y="432" font-size="16" font-weight="700" fill="#0f172a">t1：追加写入触发 COW 分裂</text>
+  <text x="250" y="432" font-size="12" fill="#64748b">规则：ref_cnt &gt; 1 且要在该块追加 → 写入方拿到新块、拷贝旧块内容、旧块 ref−1</text>
+
+  <!-- pool blocks t1 -->
+  <g font-family="Consolas, monospace">
+    <rect x="60" y="448" width="130" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="125" y="470" text-anchor="middle" font-size="13" font-weight="700" fill="#166534" font-family="'Segoe UI', sans-serif">Block 10</text>
+    <text x="125" y="492" text-anchor="middle" font-size="12" fill="#334155">不变</text>
+    <text x="125" y="514" text-anchor="middle" font-size="12" fill="#334155">ref=2</text>
+
+    <rect x="210" y="448" width="130" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="275" y="470" text-anchor="middle" font-size="13" font-weight="700" fill="#166534" font-family="'Segoe UI', sans-serif">Block 11</text>
+    <text x="275" y="492" text-anchor="middle" font-size="12" fill="#334155">不变</text>
+    <text x="275" y="514" text-anchor="middle" font-size="12" fill="#334155">ref=2</text>
+
+    <rect x="360" y="448" width="150" height="86" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+    <text x="435" y="470" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412" font-family="'Segoe UI', sans-serif">Block 12（旧）</text>
+    <text x="435" y="492" text-anchor="middle" font-size="12" fill="#334155">归 Child2 独占</text>
+    <text x="435" y="514" text-anchor="middle" font-size="12" fill="#334155">ref 2→1，原位追加</text>
+
+    <rect x="530" y="448" width="160" height="86" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5"/>
+    <text x="610" y="470" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af" font-family="'Segoe UI', sans-serif">Block 13（新）</text>
+    <text x="610" y="492" text-anchor="middle" font-size="12" fill="#334155">拷贝 10 tok + 新 token</text>
+    <text x="610" y="514" text-anchor="middle" font-size="12" fill="#334155">ref=1，归 Child1</text>
+  </g>
+  <path d="M 512 491 L 522 491" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#carrow)"/>
+  <text x="435" y="560" text-anchor="middle" font-size="12" fill="#64748b">COW 成本 = 拷贝一个块的 KV</text>
+  <text x="435" y="578" text-anchor="middle" font-size="12" fill="#64748b" font-family="Consolas, monospace">≈ 16 tok × 144 KB = 2.25 MB（Qwen3-8B）</text>
+
+  <!-- child tables t1 -->
+  <g font-family="Consolas, monospace" font-size="14" font-weight="700">
+    <text x="730" y="466" font-size="14" font-weight="700" fill="#0f172a" font-family="'Segoe UI', sans-serif">Child1</text>
+    <rect x="730" y="476" width="50" height="30" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="755" y="496" text-anchor="middle" fill="#166534">10</text>
+    <rect x="788" y="476" width="50" height="30" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="813" y="496" text-anchor="middle" fill="#166534">11</text>
+    <rect x="846" y="476" width="50" height="30" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5"/><text x="871" y="496" text-anchor="middle" fill="#1e40af">13</text>
+
+    <text x="730" y="534" font-size="14" font-weight="700" fill="#0f172a" font-family="'Segoe UI', sans-serif">Child2</text>
+    <rect x="730" y="544" width="50" height="30" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="755" y="564" text-anchor="middle" fill="#166534">10</text>
+    <rect x="788" y="544" width="50" height="30" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="813" y="564" text-anchor="middle" fill="#166534">11</text>
+    <rect x="846" y="544" width="50" height="30" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/><text x="871" y="564" text-anchor="middle" fill="#9a3412">12</text>
+  </g>
+  <line x1="871" y1="474" x2="610" y2="536" stroke="#2563eb" stroke-width="1.8" stroke-dasharray="5,4" marker-end="url(#carrow)"/>
+  <line x1="871" y1="542" x2="435" y2="536" stroke="#ea580c" stroke-width="1.8" stroke-dasharray="5,4" marker-end="url(#carrow)"/>
+
+  <rect x="60" y="600" width="850" height="84" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="80" y="626" font-size="13" font-weight="700" fill="#0f172a">为什么满块永远不需要 COW？</text>
+  <text x="80" y="650" font-size="13" fill="#334155">满块内容寻址且不可变（immutable）：哈希相同 = 内容相同 = 只读共享，谁也不会往里写；</text>
+  <text x="80" y="670" font-size="13" fill="#334155">只有未满块会被追加 → 只有未满块的共享才可能触发 COW。这正是"满块哈希入缓存、未满块不入"的设计闭环。</text>
+</svg>

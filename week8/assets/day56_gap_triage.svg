@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 620" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d56c" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0f766e"/>
+    </marker>
+    <marker id="d56d" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  <rect width="980" height="620" fill="#fafbfc"/>
+  <text x="490" y="32" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Day 56 查漏补缺协议：卡壳点清单 → 分诊 → 当日收敛</text>
+  <text x="490" y="56" text-anchor="middle" font-size="13" fill="#64748b">输入：Day 50 / 51 / 52 / 54 / 55 五份卡壳点记录｜输出：stuck_points_final.md（清零或明确放弃，无悬置条目）</text>
+
+  <!-- Stage 1: collect -->
+  <g>
+    <rect x="40" y="80" width="250" height="150" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="165" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="#1e3a8a">STEP 1 汇总（20 分钟）</text>
+    <text x="58" y="134" font-size="12.5" fill="#334155">· 五份卡壳记录合并去重</text>
+    <text x="58" y="156" font-size="12.5" fill="#334155">· 按"材料 ⑧⑦⑥⑤④③②①"归类</text>
+    <text x="58" y="178" font-size="12.5" fill="#334155">· 出现 ≥2 次的条目标 ★ 高危</text>
+    <text x="58" y="200" font-size="12.5" fill="#334155">· 预期总量：15~30 条</text>
+  </g>
+
+  <!-- Stage 2: triage -->
+  <g>
+    <rect x="360" y="80" width="260" height="150" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="490" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="#312e81">STEP 2 分诊（30 分钟）</text>
+    <text x="378" y="134" font-size="12.5" fill="#334155">每条按 Day 54 三类卡壳 + 修复成本打标：</text>
+    <text x="378" y="158" font-size="12.5" fill="#334155">· 知识缺（不知道）→ 可当日补</text>
+    <text x="378" y="180" font-size="12.5" fill="#334155">· 结构乱（讲不圆）→ 重写追问链可修</text>
+    <text x="378" y="202" font-size="12.5" fill="#334155">· 数字虚（量级模糊）→ 重刷锚点可修</text>
+  </g>
+
+  <!-- Stage 3: fix (three lanes) -->
+  <g>
+    <rect x="40" y="300" width="280" height="130" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="180" y="326" text-anchor="middle" font-size="14.5" font-weight="700" fill="#14532d">车道 A：当日清零（≤90 分钟）</text>
+    <text x="58" y="352" font-size="12.5" fill="#334155">· ★ 高危 + 修复成本 &lt; 30 分钟</text>
+    <text x="58" y="374" font-size="12.5" fill="#334155">· 动作：回读对应 Day 的章节</text>
+    <text x="58" y="396" font-size="12.5" fill="#334155">· 补法录音 60 秒验证，写"下次这样说"</text>
+
+    <rect x="350" y="300" width="280" height="130" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <text x="490" y="326" text-anchor="middle" font-size="14.5" font-weight="700" fill="#78350f">车道 B：压缩成卡（≤30 分钟）</text>
+    <text x="368" y="352" font-size="12.5" fill="#334155">· 中危：概念对但讲不稳</text>
+    <text x="368" y="374" font-size="12.5" fill="#334155">· 动作：压成 5 行索引卡进 INDEX.md</text>
+    <text x="368" y="396" font-size="12.5" fill="#334155">· 明日只重读卡，不重读原文</text>
+
+    <rect x="660" y="300" width="280" height="130" rx="10" fill="#fdf2f8" stroke="#db2777" stroke-width="2"/>
+    <text x="800" y="326" text-anchor="middle" font-size="14.5" font-weight="700" fill="#831843">车道 C：明确放弃（≤10 分钟）</text>
+    <text x="678" y="352" font-size="12.5" fill="#334155">· 低频 + 修复成本 &gt; 1 小时</text>
+    <text x="678" y="374" font-size="12.5" fill="#334155">· 动作：写一句话兜底口径</text>
+    <text x="678" y="396" font-size="12.5" fill="#334155">· 例："这块我没深入，我的理解是…"</text>
+  </g>
+
+  <!-- Stage 4: convergence bar -->
+  <g>
+    <rect x="40" y="470" width="900" height="120" rx="10" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+    <text x="490" y="498" text-anchor="middle" font-size="15" font-weight="700" fill="#134e4a">STEP 3 收敛验收（当日 20:00 前）</text>
+    <text x="490" y="526" text-anchor="middle" font-size="12.5" fill="#334155">① ★ 高危条目 100% 进入车道 A 且验收通过（录音 60 秒不卡）　② 车道 B 全部落成索引卡　③ 车道 C 全部有兜底口径</text>
+    <text x="490" y="552" text-anchor="middle" font-size="12.5" fill="#334155">④ stuck_points_final.md 每条状态 ∈ {清零, 成卡, 放弃}，无"待办"　⑤ 20:00 后停止一切补漏 —— 剩余时间只做低强度检索</text>
+    <text x="490" y="578" text-anchor="middle" font-size="12.5" font-weight="700" fill="#0f766e">查漏的目的是"消除不确定性"，不是"补完全部知识"——带着 3 个已知的洞比带着 30 个未知的洞上考场强</text>
+  </g>
+
+  <!-- Arrows -->
+  <line x1="290" y1="155" x2="356" y2="155" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d56c)"/>
+  <line x1="440" y1="230" x2="180" y2="296" stroke="#0f766e" stroke-width="2" marker-end="url(#d56c)"/>
+  <line x1="490" y1="230" x2="490" y2="296" stroke="#0f766e" stroke-width="2" marker-end="url(#d56c)"/>
+  <line x1="540" y1="230" x2="800" y2="296" stroke="#0f766e" stroke-width="2" marker-end="url(#d56c)"/>
+  <line x1="180" y1="430" x2="330" y2="468" stroke="#94a3b8" stroke-width="2" marker-end="url(#d56d)"/>
+  <line x1="490" y1="430" x2="490" y2="466" stroke="#94a3b8" stroke-width="2" marker-end="url(#d56d)"/>
+  <line x1="800" y1="430" x2="650" y2="468" stroke="#94a3b8" stroke-width="2" marker-end="url(#d56d)"/>
+</svg>

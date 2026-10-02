@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">Day 39 下钻流水线：从四本账到 kernel 级精确指控</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#64748b">纪律：先裁决 Day 38 的假设清单，再做补充扫描——不是漫无目的地"看热点"</text>
+
+  <!-- ===== Row 1 ===== -->
+  <!-- Box 1 -->
+  <rect x="40" y="70" width="200" height="120" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="140" y="94" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a5f">① 输入（Day 38 产出）</text>
+  <text x="52" y="116" font-size="10.5" fill="#475569">· step_decomposition.md</text>
+  <text x="60" y="132" font-size="10.5" fill="#475569">Top kernel 表（名字/次数/shape）</text>
+  <text x="52" y="152" font-size="10.5" fill="#475569">· hypotheses.md（按 ROI 排序）</text>
+  <text x="60" y="168" font-size="10.5" fill="#475569">每条都指定了"看什么指标"</text>
+
+  <!-- Box 2 -->
+  <rect x="280" y="70" width="200" height="120" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="1.5"/>
+  <text x="380" y="94" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#064e3b">② kernel 级采集（三选一）</text>
+  <text x="292" y="116" font-size="10.5" fill="#475569">A 在线 start/stop：便捷但难注入</text>
+  <text x="296" y="132" font-size="10.5" fill="#475569">pipe 指标（experimental_config）</text>
+  <text x="292" y="152" font-size="10.5" font-weight="bold" fill="#047857">B 离线 torch_npu.profiler ★主推</text>
+  <text x="292" y="168" font-size="10.5" fill="#475569">C msprof CLI 全量，交叉验证</text>
+
+  <!-- Box 3 -->
+  <rect x="520" y="70" width="200" height="120" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="1.5"/>
+  <text x="620" y="94" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#064e3b">③ Top-N 热点表</text>
+  <text x="532" y="116" font-size="10.5" fill="#475569">· kernel_details.csv 按 Name 聚合</text>
+  <text x="532" y="132" font-size="10.5" fill="#475569">· 次数 / 单次 p50·p99 / 总占比</text>
+  <text x="532" y="152" font-size="10.5" fill="#475569">· Block Dim / shape / Ratio 摘要</text>
+  <text x="532" y="168" font-size="10.5" fill="#475569">→ 落表 kernel_topn.md</text>
+
+  <!-- Box 4 -->
+  <rect x="760" y="70" width="170" height="120" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="845" y="94" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a5f">④ 选中目标 kernel</text>
+  <text x="772" y="116" font-size="10.5" fill="#475569">ROI = 占比 × 差距</text>
+  <text x="776" y="132" font-size="10.5" fill="#475569">× 可改性 × 可验证</text>
+  <text x="772" y="152" font-size="10.5" fill="#475569">· 与 Day 36 选题对齐</text>
+  <text x="772" y="168" font-size="10.5" fill="#475569">· 通常 1 个，最多 2 个</text>
+
+  <!-- Arrows row 1 -->
+  <line x1="240" y1="130" x2="272" y2="130" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="278,130 268,125 268,135" fill="#475569"/>
+  <line x1="480" y1="130" x2="512" y2="130" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="518,130 508,125 508,135" fill="#475569"/>
+  <line x1="720" y1="130" x2="752" y2="130" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="758,130 748,125 748,135" fill="#475569"/>
+
+  <!-- Down arrow from box4 to row 2 -->
+  <line x1="845" y1="190" x2="845" y2="242" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="845,248 840,238 850,238" fill="#475569"/>
+
+  <!-- ===== Row 2 (right to left) ===== -->
+  <!-- Box 5 rightmost under box4 -->
+  <rect x="760" y="250" width="170" height="120" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="1.5"/>
+  <text x="845" y="274" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#064e3b">⑤ pipe 指标深挖</text>
+  <text x="772" y="296" font-size="10.5" fill="#475569">· Cube/Vector/MTE 组合</text>
+  <text x="772" y="312" font-size="10.5" fill="#475569">· 逐条裁决 hypotheses</text>
+  <text x="776" y="328" font-size="10.5" fill="#475569">（已证实/证伪/待定）</text>
+  <text x="772" y="348" font-size="10.5" fill="#475569">· 证据 = CSV 行号</text>
+
+  <!-- Box 6 -->
+  <rect x="520" y="250" width="200" height="120" rx="8" fill="#fefce8" stroke="#b45309" stroke-width="1.5"/>
+  <text x="620" y="274" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#78350f">⑥ 达芬奇数据流图</text>
+  <text x="532" y="296" font-size="10.5" fill="#475569">· HBM→L2→L1→L0→Cube→写回</text>
+  <text x="532" y="312" font-size="10.5" fill="#475569">· 逐段标 bytes 与理论耗时</text>
+  <text x="532" y="332" font-size="10.5" fill="#475569">· 串行Σ / 全重叠max / 实测</text>
+  <text x="532" y="348" font-size="10.5" fill="#475569">三列对比 → 差距=组织开销</text>
+
+  <!-- Box 7 -->
+  <rect x="280" y="250" width="200" height="120" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="380" y="274" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#4c1d95">⑦ bound 判定（三证据）</text>
+  <text x="292" y="296" font-size="10.5" fill="#475569">· AI vs ridge（手算先验）</text>
+  <text x="292" y="312" font-size="10.5" fill="#475569">· η_mem（实测效率）</text>
+  <text x="292" y="328" font-size="10.5" fill="#475569">· Block Dim vs AI Core 数</text>
+  <text x="292" y="348" font-size="10.5" fill="#475569">→ 落表 kernel_bound.md</text>
+
+  <!-- Box 8 -->
+  <rect x="40" y="250" width="200" height="120" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="140" y="274" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a5f">⑧ 交给 Day 40</text>
+  <text x="52" y="296" font-size="10.5" fill="#475569">· bound 建模收口（η 分解）</text>
+  <text x="52" y="312" font-size="10.5" fill="#475569">· 汇总《瓶颈分析报告》：</text>
+  <text x="58" y="328" font-size="10.5" fill="#475569">现状数据 → 理论上限 → 优化空间</text>
+  <text x="52" y="348" font-size="10.5" fill="#475569">· 优化方向按 ROI 排序</text>
+
+  <!-- Arrows row 2 (right to left) -->
+  <line x1="752" y1="310" x2="728" y2="310" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="722,310 732,305 732,315" fill="#475569"/>
+  <line x1="512" y1="310" x2="488" y2="310" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="482,310 492,305 492,315" fill="#475569"/>
+  <line x1="272" y1="310" x2="248" y2="310" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="242,310 252,305 252,315" fill="#475569"/>
+
+  <!-- Bottom discipline strip -->
+  <rect x="40" y="400" width="890" height="72" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.3"/>
+  <text x="56" y="424" font-size="12" font-weight="bold" fill="#78350f">两条防坑纪律</text>
+  <text x="56" y="444" font-size="11.5" fill="#475569">① Ratio 是"时间占比"不是"效率"：判定必须 AI 手算、Ratio 组合、多核均衡三证据交叉，单指标下结论 = 误诊</text>
+  <text x="56" y="462" font-size="11.5" fill="#475569">② 版本敏感项（列名/文件名/参数集）以你机器的实际产物为准——本篇所有 CSV 列名均为"典型列"示意</text>
+</svg>

@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d54c" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="960" height="560" fill="#fafbfc"/>
+  <text x="480" y="34" text-anchor="middle" font-size="23" font-weight="700" fill="#0f172a">卡壳点闭环：当天记录 → 归类 → 补漏 → 次日复测</text>
+  <text x="480" y="58" text-anchor="middle" font-size="13" fill="#64748b">README 要求"记录卡壳点，当晚补漏"——闭环的意义：不带知识债进入 Day 55 第二场</text>
+
+  <!-- Step 1: top-left -->
+  <g>
+    <rect x="56" y="82" width="350" height="130" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <circle cx="88" cy="114" r="16" fill="#2563eb"/>
+    <text x="88" y="120" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">1</text>
+    <text x="116" y="120" font-size="15" font-weight="700" fill="#0f172a">面试中：当场标记</text>
+    <text x="76" y="150" font-size="12" fill="#334155">· 卡壳时间点直接记在草稿纸上</text>
+    <text x="76" y="170" font-size="12" fill="#334155">· 只记关键词（"FP8 outlier 卡住"）</text>
+    <text x="76" y="190" font-size="12" fill="#334155">· 不当场翻资料，保持面试真实感</text>
+  </g>
+  <!-- Step 2: top-right -->
+  <g>
+    <rect x="554" y="82" width="350" height="130" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+    <circle cx="586" cy="114" r="16" fill="#4f46e5"/>
+    <text x="586" y="120" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">2</text>
+    <text x="614" y="120" font-size="15" font-weight="700" fill="#0f172a">复盘时：回听归类</text>
+    <text x="574" y="150" font-size="12" fill="#334155">· 回听录音，逐条对号三类卡壳</text>
+    <text x="574" y="170" font-size="12" fill="#334155">· 同时检查：超时 / 绕路 / 忘结论</text>
+    <text x="574" y="190" font-size="12" fill="#334155">· 15 分钟内完成，不恋战</text>
+  </g>
+  <!-- Step 3: bottom-right -->
+  <g>
+    <rect x="554" y="252" width="350" height="130" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <circle cx="586" cy="284" r="16" fill="#16a34a"/>
+    <text x="586" y="290" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">3</text>
+    <text x="614" y="290" font-size="15" font-weight="700" fill="#0f172a">当晚：定点补漏</text>
+    <text x="574" y="320" font-size="12" fill="#334155">· 只补清单上的点，不发散读新东西</text>
+    <text x="574" y="340" font-size="12" fill="#334155">· 每点补法见下方三类对照</text>
+    <text x="574" y="360" font-size="12" fill="#334155">· 补完写一句"下次这样说"</text>
+  </g>
+  <!-- Step 4: bottom-left -->
+  <g>
+    <rect x="56" y="252" width="350" height="130" rx="10" fill="#fdf2f8" stroke="#db2777" stroke-width="2"/>
+    <circle cx="88" cy="284" r="16" fill="#db2777"/>
+    <text x="88" y="290" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">4</text>
+    <text x="116" y="290" font-size="15" font-weight="700" fill="#0f172a">Day 55：第二场复测</text>
+    <text x="76" y="320" font-size="12" fill="#334155">· 第二场模拟面试特意再踩这些点</text>
+    <text x="76" y="340" font-size="12" fill="#334155">· 同类追问不卡 = 闭环完成</text>
+    <text x="76" y="360" font-size="12" fill="#334155">· 仍卡 = 升级为 Day 56 收官重点</text>
+  </g>
+
+  <!-- Cycle arrows -->
+  <line x1="406" y1="147" x2="548" y2="147" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d54c)"/>
+  <line x1="729" y1="212" x2="729" y2="246" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d54c)"/>
+  <line x1="554" y1="317" x2="412" y2="317" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d54c)"/>
+  <line x1="231" y1="246" x2="231" y2="218" stroke="#0f766e" stroke-width="2.5" marker-end="url(#d54c)"/>
+
+  <!-- Center label -->
+  <text x="480" y="222" text-anchor="middle" font-size="14" font-weight="700" fill="#0f766e">卡壳点闭环</text>
+  <text x="480" y="244" text-anchor="middle" font-size="12" fill="#64748b">当天消化 · 不带债过夜</text>
+
+  <!-- Classification strip -->
+  <text x="480" y="418" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">三类卡壳 × 对应补法（复盘归类的对照表）</text>
+  <g>
+    <rect x="40" y="434" width="286" height="106" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="183" y="460" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1e3a8a">知识缺：根本不知道</text>
+    <text x="183" y="486" text-anchor="middle" font-size="12" fill="#334155">回读对应 Day 的章节</text>
+    <text x="183" y="508" text-anchor="middle" font-size="12" fill="#334155">并把该实验重跑一遍</text>
+  </g>
+  <g>
+    <rect x="337" y="434" width="286" height="106" rx="10" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="480" y="460" text-anchor="middle" font-size="13.5" font-weight="700" fill="#713f12">结构乱：知道但讲乱</text>
+    <text x="480" y="486" text-anchor="middle" font-size="12" fill="#334155">写成 L0-L4 追问链</text>
+    <text x="480" y="508" text-anchor="middle" font-size="12" fill="#334155">再录音一遍直到 3 分钟讲完</text>
+  </g>
+  <g>
+    <rect x="634" y="434" width="286" height="106" rx="10" fill="#ffffff" stroke="#db2777" stroke-width="1.5"/>
+    <text x="777" y="460" text-anchor="middle" font-size="13.5" font-weight="700" fill="#9d174d">数字虚：量级模糊</text>
+    <text x="777" y="486" text-anchor="middle" font-size="12" fill="#334155">重刷 Day 50 手算五题</text>
+    <text x="777" y="508" text-anchor="middle" font-size="12" fill="#334155">随身数字卡再过一遍</text>
+  </g>
+</svg>

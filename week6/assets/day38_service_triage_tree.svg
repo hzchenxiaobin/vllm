@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 600" font-family="Helvetica, Arial, sans-serif">
+  <text x="470" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">服务级分诊决策树（L1）：症状 → 归因 → 出口</text>
+
+  <!-- Root -->
+  <rect x="330" y="48" width="280" height="46" rx="8" fill="#1e3a5f"/>
+  <text x="470" y="76" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">输入：baseline 结果表 + /metrics 稳态快照</text>
+
+  <!-- Level 1 question -->
+  <rect x="350" y="122" width="240" height="40" rx="8" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+  <text x="470" y="147" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0f172a">差距在 TTFT 还是 TPOT？</text>
+  <line x1="470" y1="94" x2="470" y2="118" stroke="#475569" stroke-width="2"/>
+
+  <!-- Branch A: TTFT -->
+  <line x1="470" y1="162" x2="200" y2="196" stroke="#475569" stroke-width="2"/>
+  <text x="300" y="172" font-size="12" font-weight="bold" fill="#b45309">TTFT p99 高</text>
+  <rect x="60" y="198" width="280" height="108" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.8"/>
+  <text x="74" y="222" font-size="12.5" font-weight="bold" fill="#78350f">查排队与 prefill 拥塞</text>
+  <text x="74" y="244" font-size="11.5" fill="#334155">· queue time 是否随并发陡增</text>
+  <text x="74" y="263" font-size="11.5" fill="#334155">· token budget / chunked prefill 配置</text>
+  <text x="74" y="282" font-size="11.5" fill="#334155">· prefix cache hit rate、cache_salt</text>
+  <text x="74" y="300" font-size="11.5" fill="#334155">· p50 vs p99 的分离度（长尾来源）</text>
+
+  <!-- Branch B: TPOT -->
+  <line x1="470" y1="162" x2="470" y2="196" stroke="#475569" stroke-width="2"/>
+  <text x="492" y="182" font-size="12" font-weight="bold" fill="#1d4ed8">TPOT 高</text>
+  <rect x="390" y="198" width="300" height="108" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="404" y="222" font-size="12.5" font-weight="bold" fill="#1e3a5f">先排除调度层干扰</text>
+  <text x="404" y="244" font-size="11.5" fill="#334155">· preemption 计数增长？→ KV 超配，先调参</text>
+  <text x="404" y="263" font-size="11.5" fill="#334155">· running 数波动大？→ 稳态化后再剖析</text>
+  <text x="404" y="282" font-size="11.5" fill="#334155">· 混排 step 占比？→ TPOT 尖刺来自谁</text>
+  <text x="404" y="300" font-size="11.5" fill="#334155">· 全部排除 → decode step 本身慢</text>
+
+  <!-- Branch C: latency vs throughput -->
+  <line x1="470" y1="162" x2="740" y2="196" stroke="#475569" stroke-width="2"/>
+  <text x="640" y="172" font-size="12" font-weight="bold" fill="#047857">时延 OK 吞吐低</text>
+  <rect x="600" y="198" width="280" height="108" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="614" y="222" font-size="12.5" font-weight="bold" fill="#14532d">查 batch 上限（goodput 视角）</text>
+  <text x="614" y="244" font-size="11.5" fill="#334155">· running 数是否远低于 max_num_seqs</text>
+  <text x="614" y="263" font-size="11.5" fill="#334155">· KV 显存余量（Day 2 手算复核）</text>
+  <text x="614" y="282" font-size="11.5" fill="#334155">· AICore util 高但吞吐低 → "假忙"</text>
+  <text x="614" y="300" font-size="11.5" fill="#334155">· SLO 视角：goodput 而非 raw 吞吐</text>
+
+  <!-- Outputs from A -->
+  <line x1="200" y1="306" x2="200" y2="352" stroke="#d97706" stroke-width="2"/>
+  <rect x="80" y="354" width="240" height="56" rx="8" fill="#ffffff" stroke="#d97706" stroke-width="1.6"/>
+  <text x="200" y="376" text-anchor="middle" font-size="12" font-weight="bold" fill="#78350f">出口①：调度/配置问题</text>
+  <text x="200" y="396" text-anchor="middle" font-size="11" fill="#475569">终点就在 L1：改参数即见效，不必下钻</text>
+
+  <!-- Outputs from B -->
+  <line x1="540" y1="306" x2="540" y2="352" stroke="#2563eb" stroke-width="2"/>
+  <rect x="430" y="354" width="220" height="56" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="540" y="376" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a5f">出口②：进入 L2（step 级）</text>
+  <text x="540" y="396" text-anchor="middle" font-size="11" fill="#475569">今天下午：trace 四本账分解</text>
+
+  <!-- Outputs from C -->
+  <line x1="740" y1="306" x2="740" y2="352" stroke="#16a34a" stroke-width="2"/>
+  <rect x="620" y="354" width="240" height="56" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="740" y="376" text-anchor="middle" font-size="12" font-weight="bold" fill="#14532d">出口③：容量/并行问题</text>
+  <text x="740" y="396" text-anchor="middle" font-size="11" fill="#475569">KV 预算、TP/并发策略（Day 32-33）</text>
+
+  <!-- L2 internal split -->
+  <rect x="380" y="440" width="320" height="88" rx="8" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+  <text x="540" y="464" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">L2 出口（今天下午的结论）</text>
+  <text x="396" y="486" font-size="11.5" fill="#334155">· device busy β &lt; 0.7 → 出口②a：host/同步主导</text>
+  <text x="396" y="506" font-size="11.5" fill="#334155">· β &gt; 0.85 且 TPOT 高 → 出口②b：kernel 主导</text>
+  <text x="396" y="524" font-size="11.5" fill="#334155">  （②b → Day 39 msprof 下钻；②a → 图模式/异步调度）</text>
+  <line x1="540" y1="410" x2="540" y2="436" stroke="#475569" stroke-width="2" stroke-dasharray="5 3"/>
+
+  <!-- bottom note -->
+  <text x="470" y="570" text-anchor="middle" font-size="11.5" fill="#64748b">纪律：分诊单上每个出口都要有至少一条 /metrics 数据作为证据，不允许"感觉是 kernel 问题"</text>
+</svg>

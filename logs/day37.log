@@ -8,3 +8,417 @@
 [0m→ [0mRead week6/README.md
 [0m→ [0mRead week6/day36_topic_selection_and_research.md[90m [offset=330][0m
 [0m✱ [0mGrep "^#{2,3} "[90m in week6/day36_topic_selection_and_research.md · 66 matches[0m
+已了解 Day 36 的结构与本周衔接点。现在开始写 Day 37（环境打通 + 基线量化），先写正文前半部分。
+[0m
+[0m← [0mWrite week6/day37_env_setup_and_baseline.md
+Wrote file successfully.
+[0m
+正文前半部分已写入。现在创建第一张 SVG（依赖栈 × 冒烟漏斗）。
+[0m← [0mWrite week6/assets/day37_env_stack_funnel.svg
+Wrote file successfully.
+[0m
+SVG 1 完成。追加正文中间部分（§4 测量学 + §5 命令脚本）。
+[0m← [0mEdit week6/day37_env_setup_and_baseline.md
+Index: /mnt/workspace/aiinfra/vllm/week6/day37_env_setup_and_baseline.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week6/day37_env_setup_and_baseline.md
++++ /mnt/workspace/aiinfra/vllm/week6/day37_env_setup_and_baseline.md
+@@ -147,4 +147,198 @@
+ | attention backend 选型 | 直接关联选题方向（方向 1/2 的入口） |
+ | V1 默认参数：`max_num_seqs`、`max_num_batched_tokens`、`block_size` 等 | NPU 侧默认值可能与 GPU 不同（以启动日志为准）；这是前后对比必须一致的变量（Day 10-11） |
+ | KV cache 可用 blocks 数 | 显存预算的实测量——对照 Day 2 手算，能发现预留参数的差异 |
+ | 任何 `WARNING` / `fallback` / `not support` | **Day 38 剖析的免费线索**：这正是 Day 36 渠道④"自己跑出来的坑" |
++
++---
++
++## 4. 基线测量学：让数字站得住
++
++### 4.1 观测模型：你的数字里混了什么
++
++把一次压测测得的 TPOT 写成观测模型：
++
++$$X_{\text{obs}} = \mu + \varepsilon_{\text{sched}} + \varepsilon_{\text{host}} + \varepsilon_{\text{thermal}} + \varepsilon_{\text{data}} \;(+\, \varepsilon_{\text{comm}})$$
++
++| 噪声源 | 来源 | 控制手段 |
++|---|---|---|
++| $\varepsilon_{\text{sched}}$ | continuous batching 的批组成逐 step 波动（哪些请求被混进同一 step，Day 10-11） | 请求数足够多 + 固定 seed 的数据顺序 |
++| $\varepsilon_{\text{host}}$ | Python/CPU 抖动、内存拷贝、GC | 关注 EngineCore 进程独占性；避免同机跑重任务 |
++| $\varepsilon_{\text{thermal}}$ | 长时间压测后降频 | 每轮压测限时，轮间留冷却间隔；记录功耗列 |
++| $\varepsilon_{\text{data}}$ | 数据集采样顺序、输出长度分布 | `--seed` 固定；同一份 ShareGPT 副本 |
++| $\varepsilon_{\text{comm}}$ | 多卡 TP 时 HCCL 抖动（Day 32-33） | 基线先跑单卡；TP 作为单独配置记录 |
++
++经验规律：**TTFT 的波动天然大于 TPOT**（排队队长会放大一切扰动，Day 51 诊断树的伏笔）。所以两者的"可信提升门槛"不同，见下节。
++
++### 4.2 噪声带与显著性判据（今天就要定死）
++
++![噪声带与显著性判据](assets/day37_noise_band.svg)
++
++定义变异系数与噪声带：
++
++$$CV = \frac{\sigma}{\mu}, \qquad \text{噪声带} = \mu \pm 2 \cdot CV \cdot \mu$$
++
++**判据**：声称"优化有效"必须同时满足——① 变化幅度 $|\Delta| > 2 \cdot CV \cdot \mu$（粗略的 95% 置信）；② ≥3 次重复方向一致。示例（经验数量级，以你机器实测为准）：
++
++| 指标 | 典型 CV（示例） | 噪声带 | 声称提升需要 |
++|---|---|---|---|
++| TPOT p50 | ~2% | ±4% | > 4% 的改善 |
++| 输出吞吐 | ~3% | ±6% | > 6% |
++| TTFT p99 | ~10% | ±20% | > 20% |
++
++> **推论**：如果你预期的优化收益是 5%，就**不能**拿 TTFT p99 当唯一证据——要么换 TPOT/吞吐这种低噪声指标，要么先把 p99 的测量方差降下来（加请求数、固定负载形态）。今天标定噪声带，就是提前知道自己"最小可检测效应"有多大。
++
++### 4.3 理论下界：给基线做 sanity check（复用 Day 2）
++
++Day 2 的 decode 下界公式在 NPU 上的形式（也即 week6 README Day 40 的 $t_{\text{theory}}$ 雏形）：
++
++$$t_{\text{decode,lb}} \approx \frac{W + KV_{\text{active}}}{BW_{\text{HBM}}}$$
++
++- $W$：每 step 必读的权重字节（decode 每 step 全量权重过一遍 Cube/Vector，与 batch 无关）
++- $KV_{\text{active}}$：$\sum_i 2 \times \text{layers} \times \text{kv\_heads} \times \text{head\_dim} \times \text{dtype\_bytes} \times \text{len}_i$（每 step 都要读全部上下文的 KV，**不随 batch 摊薄**）
++
++**手算示例**（Qwen3-8B，36 层 / 8 KV heads / head_dim 128，W8A8 权重 ≈ 8.2 GB，KV 每 token BF16 ≈ 2×36×8×128×2 B ≈ 144 KB；单卡 HBM 带宽按 **392 GB/s 示例值——不同 Atlas A2 SKU 不同，以手册为准**）：
++
++| 场景 | $KV_{\text{active}}$ | $t_{\text{lb}}$ |
++|---|---|---|
++| C=1，ctx≈512 | ~0.07 GB | (8.2+0.07)/392 ≈ **21 ms** |
++| C=64，ctx≈1k | 64×1024×144 KB ≈ 9.4 GB | (8.2+9.4)/392 ≈ **45 ms** |
++
++三个直接结论：
++
++1. **batch 增大只摊薄权重、不摊薄 KV** → TPOT 随 C×ctx 上升，但吞吐 = C/TPOT 仍大赚（示例：C=64 吞吐下界 ≈ 64/0.045 ≈ 1400 tok/s，是 C=1 的 ~30 倍）——Day 1"memory-bound 系统的 batching 经济学"今天有了具体数字。
++2. **实测与下界定义了效率** $\eta = t_{\text{lb}} / t_{\text{measured}}$。示例：若实测 TPOT p50@C=1 为 42 ms（**示例数字**），则 η ≈ 50%——另外 50% 就是 Day 38-40 要分解的对象（kernel 内 / host / 通信 / 调度）。
++3. **sanity check 双向有效**：实测明显低于 $t_{\text{lb}}$ → 测量方法有 bug（prefix caching 命中、输出 token 统计口径错、请求没打满）；实测远高于 → 优化空间已被量化。两种情况都有信息量，**唯独"没算过理论值"没有**。
++
++### 4.4 资源指标解读的三个陷阱（AICore util / HBM）
++
++1. **util 高 ≠ 健康**：可能是搬运空转（Vector 忙着搬数据、Cube 饿着）——是否如此要等 Day 38-39 的 trace/msprof 拆解，今天只记录不结论。
++2. **util 低 ≠ 没救**：可能是 host-bound（图模式未生效、每 step Python 开销）——那恰好是 Day 36 方向 3 的主场。
++3. **采样纪律**：压测中途手动 `watch` 不可靠 → 用脚本周期采样落盘（实验 4），并保证采样窗口与压测窗口对齐，否则"峰值 util"与"平均 util"会打架。
++
++顺带建立跨平台工具对照（强化"方法论迁移"叙事，面试可讲）：
++
++| GPU 侧（W1-W5 用过） | NPU 侧对应 | 用途 |
++|---|---|---|
++| `nvidia-smi` | `npu-smi info`（`-t usages`） | 利用率 / 显存 |
++| `nsys` profile | `msprof` + MindStudio Insight | timeline / kernel 详情 |
++| `ncu` | msprof kernel 统计 | roofline / 热点下钻（Day 39） |
++
++---
++
++## 5. 关键命令与脚本
++
++### 5.1 安装（容器优先 + editable）
++
++```bash
++# 0) 官方镜像起容器（版本矩阵已由社区锁好，省驱动/CANN 纠错）
++#    镜像地址与启动参数以 vllm-ascend 文档为准（quay.io/ascend/vllm-ascend / ascendhub）
++
++# 1) Python 环境与配套版本（数字以官方 Version Compatibility 表为准）
++conda create -n va python=3.10 -y && conda activate va
++pip install torch==<配套> torch-npu==<配套> vllm==<配套>
++
++# 2) 源码 editable 安装
++git clone https://github.com/vllm-project/vllm-ascend.git
++cd vllm-ascend && git checkout main && git pull
++pip uninstall -y vllm-ascend        # 若装过正式版，先清干净（可能要执行两次）
++pip install -e .
++
++# 3) 每个 shell 都必须（写进 bashrc）
++source /usr/local/Ascend/ascend-toolkit/set_env.sh
++
++# 4) 验证 editable 生效（§3.2 检查 1）
++python -c "import vllm_ascend; print(vllm_ascend.__file__)"
++```
++
++### 5.2 分层冒烟命令
++
++```bash
++# L0
++npu-smi info
++python -c "import torch, torch_npu; print(torch.npu.is_available())"   # 期望 True
++
++# L1 离线推理（小模型，验证执行链）
++python - <<'EOF'
++from vllm import LLM
++llm = LLM(model="Qwen/Qwen2.5-0.5B-Instruct", max_model_len=2048)
++out = llm.generate(["请用一句话介绍 vLLM。"])
++print(out[0].outputs[0].text)
++EOF
++
++# L2 服务链路（启动日志 tee 存档，按 §3.3 清单逐项检查）
++VLLM_USE_MODELSCOPE=true vllm serve Qwen/Qwen2.5-0.5B-Instruct \
++  --max-model-len 2048 --port 8000 2>&1 | tee smoke_serve.log
++curl http://localhost:8000/v1/completions -H "Content-Type: application/json" \
++  -d '{"model":"Qwen/Qwen2.5-0.5B-Instruct","prompt":"你好","max_tokens":16}'
++```
++
++### 5.3 最小回归集
++
++```bash
++# 单测（快，优先）——按选题挑子目录，示例为量化方向
++pytest ut/ -x -q                       # 或 ut/vllm_ascend/<子模块>
++# e2e 子集：tests/ 下与选题对应的场景（部分依赖 docker/CI，先跑通一条最小链路即可）
++pytest tests/e2e/<相关case> -x -q
++# 记录：哪些本地全绿、哪些标"依赖 CI"——写进 baseline.md 环境栏
++```
++
++### 5.4 基线采集：脚本 + 落表模板
++
++![基线采集闭环](assets/day37_baseline_pipeline.svg)
++
++```bash
++# ① 服务端：参数固定，命令原文一字不改地贴进 baseline.md
++vllm serve <MODEL> --max-model-len 4096 --max-num-seqs 64 ... 2>&1 | tee serve_baseline.log
++
++# ② warmup：先打 10~20 条请求丢弃（权重加载/编译/图 capture 都在这一段）
++
++# ③ 压测：并发梯度逐档跑（每档独立落日志；ShareGPT 提前下好，固定 seed）
++for C in 1 4 16 64; do
++  vllm bench serve --model <MODEL> --dataset-name sharegpt \
++    --dataset-path <ShareGPT_V3_unfiltered_cleaned_split.json> \
++    --max-concurrency $C --num-prompts 200 --seed 42 \
++    2>&1 | tee bench_c${C}.log
++done
++
++# ④ 资源采样（另开终端，压测窗口内持续运行；输出格式随驱动版本略有差异）
++while sleep 2; do
++  echo "$(date +%s) $(npu-smi info -t usages -i 0 | tr -s ' ')" >> npu_usage.log
++done
++```
++
++`baseline.md` 模板（今日核心产出，路径 `week6/baseline.md`）：
++
++```markdown
++# 基线记录 baseline.md（Day 37）
++## 1. 环境（可比性的根）
++- 五元组：vllm-ascend <commit hash> / vllm <ver> / torch <ver> / torch-npu <ver>
++  / CANN <ver> / 驱动固件 <ver>
++- server 启动命令（原文）：vllm serve ...
++- 数据集 + seed + num-prompts：...
++## 2. 结果表（每档并发一行）
++| C | TTFT p50/p99 (ms) | TPOT p50/p99 (ms) | 输出吞吐 (tok/s) | AICore util | HBM 占用 |
++|---|---|---|---|---|---|
++## 3. 重复与噪声带（TPOT p50 为例）
++| C | run1/run2/run3 | median | 极差 | CV | 噪声带 ±2CV |
++|---|---|---|---|---|---|
++## 4. 冒烟与回归状态
++- L0~L2 通过证据（命令 + 一行关键输出）
++- 最小回归集清单及结果（哪些绿 / 哪些依赖 CI）
++## 5. 已知异常（Day 38 的免费线索）
++- 启动日志中的 WARNING / fallback 摘录
++## 6. 理论对照（§4.3）
++- t_lb @C=1：...；实测：...；η：...
++```
++
++### 5.5 常见坑速查
++
++| 症状 | 病因 | 处置 |
++|---|---|---|
++| 找不到 NPU / 算子库 | 新 shell 忘 `source set_env.sh` | 写进 bashrc |
++| 各种诡异报错 | 五元组错配 | 先对表（§3.1），再排查 |
++| 跑到别的卡上 | 未设 `ASCEND_RT_VISIBLE_DEVICES` | `=0` 选卡；多卡 `=0,1` |
++| 改了代码没生效 | 双版本打架 / 改错目录 | §3.2 检查 1+2 重做 |
++| 疑似异步问题难定位 | launch 异步 | `ASCEND_LAUNCH_BLOCKING=1`（仅调试，会拖慢） |
++| 深层报错没细节 | plog 未看 | `~/ascend/log/`（plog）先翻一遍 |
++| 模型下载慢/失败 | 网络 | `VLLM_USE_MODELSCOPE=true`，提前下好 |
++| attention 性能异常 | 环境变量类 known-issue | 查官方 known-issues（如 TASK_QUEUE_ENABLE 类建议），**以文档为准，别盲调** |
+
+[0m
+正文中间部分已追加。现在创建第二张 SVG（噪声带与显著性判据）。
+[0m← [0mWrite week6/assets/day37_noise_band.svg
+Wrote file successfully.
+[0m
+第二张 SVG 完成。创建第三张 SVG（基线采集闭环流水线）。
+[0m← [0mWrite week6/assets/day37_baseline_pipeline.svg
+Wrote file successfully.
+[0m
+三张 SVG 完成。追加正文后半部分（实验、面试题、总结、产出物）。
+[0m← [0mEdit week6/day37_env_setup_and_baseline.md
+Index: /mnt/workspace/aiinfra/vllm/week6/day37_env_setup_and_baseline.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week6/day37_env_setup_and_baseline.md
++++ /mnt/workspace/aiinfra/vllm/week6/day37_env_setup_and_baseline.md
+@@ -341,4 +341,121 @@
+ | 疑似异步问题难定位 | launch 异步 | `ASCEND_LAUNCH_BLOCKING=1`（仅调试，会拖慢） |
+ | 深层报错没细节 | plog 未看 | `~/ascend/log/`（plog）先翻一遍 |
+ | 模型下载慢/失败 | 网络 | `VLLM_USE_MODELSCOPE=true`，提前下好 |
+ | attention 性能异常 | 环境变量类 known-issue | 查官方 known-issues（如 TASK_QUEUE_ENABLE 类建议），**以文档为准，别盲调** |
++
++---
++
++## 6. 动手实验（今日主线）
++
++> 时间盒原则：每个实验超时未通 → 记录现象 → 跳下一节先做能做的 → 晚上集中排障。**总止损线：全部环境问题 >1 天 → 触发 §0 的降级预案。**
++
++### 实验 1：安装 + 版本五元组核对 + editable 验证（约 40 min）
++
++1. 按 §5.1 完成：容器/conda → pip 配套版本 → clone → `pip install -e .` → `set_env.sh`；
++2. 逐条执行 §2.2 表中五个查询命令，**把输出原样粘进 baseline.md 环境栏**；
++3. 打开官方 Version Compatibility 表逐项打勾（任何一项对不上 → 先解决再往下走）；
++4. 生效性验证：在 clone 里给 `vllm_ascend/__init__.py`（或任一启动路径必经模块）加一行 `print("DAY37-EDIT-CHECK")` → 重新 `vllm serve` → 日志里看得到 → **删掉这行**。
++
++**预期产出**：五元组落表 + editable 双检查通过。
++**高频坑**：双版本打架（§5.5 第 4 行）；clone 放在被容器重启清掉的目录里。
++
++### 实验 2：分层冒烟 L0 → L2 + 启动日志存档（约 40 min）
++
++1. L0 / L1 / L2 依次执行 §5.2 的命令，**任何一层挂了就停在这一层排障**，不要带病往下冲；
++2. L2 通过后，按 §3.3 清单逐项 grep 启动日志：平台识别、backend 选型、`max_num_seqs` / `max_num_batched_tokens` / `block_size` 等默认值、KV blocks 数、全部 WARNING/fallback 行；
++3. 把以上摘录成"启动日志摘要"一节，附进 baseline.md。
++
++**预期产出**：冒烟三连绿 + 日志摘要。
++**高频坑**：L1 能跑 L2 挂 → 八成是 V1 配置或端口/模型名问题，看 serve 日志尾部第一 traceback。
++
++### 实验 3：最小回归集圈定（约 30 min）
++
++1. `pytest ut/ -x -q` 先跑单测层（快的先绿）；
++2. 按 Day 36 备忘录的主选方向，在 `tests/e2e/` 里挑 1~2 条最相关用例本地跑（例如量化方向找 w8a8/w4a16 相关场景，**以实际目录为准**）；
++3. 依赖 docker/CI 跑不了的，记为"依赖 CI"并找到仓库 CI workflow 里对应 job 名——**这决定了你的 PR 最终由哪些检查把关**。
++
++**预期产出**：回归入口清单（命令 + 状态：本地绿 / 依赖 CI）。
++
++### 实验 4：基线采集（约 60 min，今日核心）
++
++1. 起正式基线服务：模型/量化按备忘录主选方向定（如量化 GEMM 方向就用目标量化模型），启动参数**从此刻起冻结**，命令原文落表；
++2. warmup 10~20 条请求并丢弃；
++3. 按 §5.4 脚本跑并发梯度 C = 1 / 4 / 16 / 64（`max_num_seqs` 决定上限，档位按机器调整），每档 `tee` 独立日志；
++4. 另开终端跑 npu-smi 周期采样；
++5. 用 §4.3 公式手算 C=1 与最高档的 $t_{\text{lb}}$，与实测对照——**量级不合理先查测量，再谈其他**。
++
++**预期产出**：bench_c{1,4,16,64}.log + npu_usage.log + 理论对照两行数字。
++
++### 实验 5：复测、噪声带标定、baseline.md 定稿（约 40 min）
++
++1. 对 C=1 和一个中档并发各复测 2 次（共 3 次），填 §5.4 模板第 3 节：median / 极差 / CV / 噪声带；
++2. 写下"最小可检测效应"：每个指标需要多大改善才算数（§4.2）；
++3. 检查 baseline.md 六节齐全（环境 / 结果 / 噪声带 / 冒烟回归 / 异常 / 理论对照）——它就是明天的输入。
++
++**预期产出**：**`week6/baseline.md` 定稿（今日核心产出）**。
++
++---
++
++## 7. 面试高频问题
++
++**Q1：为什么改代码之前必须先跑基线？基线怎么设计？**
++> 三重身份：剖析的现状数据、优化的对照组、PR 的 before 列——本质是**把"可比性"提前锁死**。设计四要素：①版本五元组与全部启动参数冻结；②warmup 剥离非稳态；③并发梯度覆盖低/中/高负载；④复测 ≥3 次标定噪声带，得出最小可检测效应。没有误差棒的数字进不了 PR。
++
++**Q2：你的优化收益 5%，怎么证明它真的存在？**
++> 先看指标的 CV：TPOT p50 的噪声带若为 ±4%，则 5% 勉强显著（还需 3 次方向一致）；若只能拿 TTFT p99（噪声带 ±20%）做证据，就不可信——要么换低噪声指标，要么增加请求数/固定负载把方差压下来。**答案的核心是把统计判据前置，而不是事后凑数。**
++
++**Q3：环境问题（版本错配）的排查方法论？**
++> 五层依赖栈（vllm-ascend → vllm → torch/torch_npu → CANN → 驱动）每层版本可独立观测：先"对表"官方兼容矩阵，再用分层冒烟（L0 import → L1 离线 → L2 服务 → L3 测试）把失败定位到一层，最后看 plog/启动日志。反模式是拿着报错字符串全网搜——报错出现的库常常是受害者不是肇事者。
++
++**Q4：AICore 利用率 90%，能说明这条链路性能健康吗？**
++> 不能。利用率高只说明计算单元在忙，**忙的可能是有效 GEMM，也可能是搬运空转**（Vector 搬数据、Cube 饿着）；反过来 util 低可能是 host-bound 而非"没救"。资源指标只记现象不下结论，结论要靠 trace/msprof 拆 step 时间构成（下一阶段的活）。
++
++**Q5：为什么开发环境用 editable 安装而不是 pip 装正式包？**
++> editable 在 site-packages 放的是指路文件而非代码副本，import 解析到源码目录，改一行即时生效（含 EngineCore 子进程）；正式包是拷贝，改了不生效且容易和源码版本打架。这是"贡献者视角"和"用户视角"的分水岭。
++
++**Q6：实测 TPOT 是理论下界的 2 倍，接下来怎么办？**
++> η = t_lb/t_meas = 50%，剩下 50% 是待分解空间：自顶向下三层剖析（服务级 metrics → step 级 trace → kernel 级 msprof），把差距归因到 kernel 内 / host 开销 / 通信 / 调度四类，再按 ROI 排序动手——这正是接下来三天（Day 38-40）的日程。
++
++---
++
++## 8. 今日总结
++
++| # | 今天建立的认识 | 一句话 |
++|---|---|---|
++| 1 | 基线 = 可比性的保险 | 版本五元组 + 冻结配置 + 噪声带，三样锁死才有 before/after |
++| 2 | 环境问题 = 依赖链断裂 | 五层栈各自可观测；先对表，再分层冒烟，绝不盲搜报错 |
++| 3 | editable 是贡献者门槛 | import 指向 clone、双检查、改一行验证一次 |
++| 4 | 测量先于优化 | 最小可检测效应今天就算出来：收益小于噪声带的改动不配谈"提升" |
++| 5 | 理论下界双向使用 | 实测低于 t_lb → 测量有 bug；远高于 → 优化空间被量化 |
++| 6 | 日志是免费线索 | 今天逐行读的启动日志（含 WARNING/fallback），就是明天的剖析入口 |
++
++**与项目 A 后续的衔接**：baseline.md 六节分别喂给 Day 38（现状 + 异常线索）、Day 40（η 的分子分母）、Day 41-45（对照组）、W7（PR before 列 + 可复现环境）。
++
++---
++
++## 9. 今日自测题（不看笔记作答）
++
++1. 版本五元组是哪五层？每层的查询命令是什么？为什么说"报错里出现的库往往是受害者"？
++2. 分层冒烟 L0~L4 各验证什么？L1 通过但 L2 挂掉，你的排查顺序是什么？
++3. `pip install -e .` 之后 `import vllm_ascend` 发生了什么？怎么用一行命令证明 editable 生效？
++4. TPOT p50 的 CV 是 2%，你的优化测得 3.5% 改善——能不能写进 PR？不能的话有哪些补救办法？
++5. 手算：Qwen3-8B W8A8、C=32、平均上下文 2k、KV BF16、HBM 带宽 392 GB/s（示例值），decode 的 $t_{\text{lb}}$ 是多少？（答案 ≈ (8.2 + 32×2048×144KB/10^6)/392 ≈ 40ms 量级，注意 KV 项的算法）
++6. 口头 3 分钟：向 reviewer 解释"为什么你的 before/after 数据可信"。
++
++---
++
++## 10. 今日产出物清单
++
++- [ ] **`week6/baseline.md`**：环境五元组 + 结果表 + 噪声带 + 冒烟/回归状态 + 已知异常 + 理论对照 —— **今日核心产出**
++- [ ] editable 双检查记录（import 路径 + 改一行生效验证）
++- [ ] 分层冒烟证据（L0~L2 命令与一行关键输出）
++- [ ] 最小回归集清单（本地绿 / 依赖 CI 两栏）
++- [ ] bench 与采样脚本（C 梯度日志 + npu_usage.log，W7 Day 43-45 原样复用）
++- [ ] $t_{\text{lb}}$ 手算过程与 η 初值（进 Day 40 的 bound 建模）
++
++---
++
++## 明日预告（Day 38-40：性能剖析定位瓶颈）
++
++基线在手，进入"现状数据 → 理论上限 → 优化空间"的剖析三天：先服务级分诊（TTFT 还是 TPOT、时延还是吞吐），再 step 级拆时间构成（trace 里找 kernel/host/通信/gap），最后 kernel 级 msprof 下钻 Top-N 热点，套用你的昇腾 bound 建模算理论上限。**今天 baseline.md 里的"已知异常"一节，就是明天第一个要验证的假设。**
++
+
+[0m
+验证文件完整性与引用一致性。
+[0m$ [0mwc -l week6/day37_env_setup_and_baseline.md week6/assets/day37_*.svg && grep -n "assets/day37" week6/day37_env_setup_and_baseline.md && grep -n "^## " week6/day37_env_setup_and_baseline.md
+461 week6/day37_env_setup_and_baseline.md
+   67 week6/assets/day37_baseline_pipeline.svg
+  102 week6/assets/day37_env_stack_funnel.svg
+   92 week6/assets/day37_noise_band.svg
+  722 total
+94:![版本五元组依赖栈与分层冒烟漏斗](assets/day37_env_stack_funnel.svg)
+174:![噪声带与显著性判据](assets/day37_noise_band.svg)
+287:![基线采集闭环](assets/day37_baseline_pipeline.svg)
+10:## 0. 前情回顾与今日位置
+28:## 1. 今日学习目标
+40:## 2. 核心概念
+90:## 3. 原理深入
+154:## 4. 基线测量学：让数字站得住
+228:## 5. 关键命令与脚本
+313:## 1. 环境（可比性的根）
+318:## 2. 结果表（每档并发一行）
+321:## 3. 重复与噪声带（TPOT p50 为例）
+324:## 4. 冒烟与回归状态
+327:## 5. 已知异常（Day 38 的免费线索）
+329:## 6. 理论对照（§4.3）
+348:## 6. 动手实验（今日主线）
+399:## 7. 面试高频问题
+421:## 8. 今日总结
+436:## 9. 今日自测题（不看笔记作答）
+447:## 10. 今日产出物清单
+458:## 明日预告（Day 38-40：性能剖析定位瓶颈）
+[0m
+[0m$ [0mpython3 -c "
+import xml.etree.ElementTree as ET
+for f in ['week6/assets/day37_env_stack_funnel.svg','week6/assets/day37_noise_band.svg','week6/assets/day37_baseline_pipeline.svg']:
+    ET.parse(f); print(f, 'OK')
+" && sed -n '308,312p;330,336p' week6/day37_env_setup_and_baseline.md
+week6/assets/day37_env_stack_funnel.svg OK
+week6/assets/day37_noise_band.svg OK
+week6/assets/day37_baseline_pipeline.svg OK
+
+`baseline.md` 模板（今日核心产出，路径 `week6/baseline.md`）：
+
+```markdown
+# 基线记录 baseline.md（Day 37）
+- t_lb @C=1：...；实测：...；η：...
+```
+
+### 5.5 常见坑速查
+
+| 症状 | 病因 | 处置 |
+|---|---|---|
+[0m
+Day 37 教程已完成并写入。
+
+**文件**：`week6/day37_env_setup_and_baseline.md`（461 行）+ 3 张 SVG 于 `week6/assets/`
+
+**内容**（严格对应 README 中 Day 37“环境打通：搭好 vllm-ascend 开发环境、跑通单测与 benchmark 基线、记录基线数据”）：
+- **核心概念**：基线的三重身份、版本五元组、L0–L4 分层冒烟、测量三原则（固定变量/warmup/噪声带）
+- **原理深入**：五层依赖链错配传导（SVG：依赖栈×冒烟漏斗）、`pip install -e .` 机制与 editable 双检查、L2 冒烟全链路与启动日志存档清单
+- **测量学数学**：观测噪声模型、±2CV 显著性判据（SVG：噪声带图）、Qwen3-8B decode 理论下界 $t_{lb}$ 手算与 η 效率、AICore/HBM 解读陷阱 + GPU↔NPU 工具对照
+- **实验 1–5**：安装核对 → 分层冒烟 → 最小回归集 → 并发梯度基线采集 → 复测定稿 `baseline.md`（含模板与常见坑速查）
+- 面试 6 问、总结、自测 6 题、产出物清单、明日预告（衔接 Day 36 备忘录与 Day 38–40 剖析）

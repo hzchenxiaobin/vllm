@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">Day 42 中期复盘叙事弧：把 logbook 编成"能对外讲述"的一条线</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#64748b">验收标准：不看 logbook，3 分钟讲完六段——每段一个机制一句话 + 一个数字（STAR 映射见底栏）</text>
+
+  <!-- ===== Arc line ===== -->
+  <path d="M 80 130 C 200 90, 300 90, 400 110 S 620 150, 880 120" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="7 5"/>
+
+  <!-- ===== Stage 1: background ===== -->
+  <rect x="30" y="140" width="135" height="104" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="97" y="162" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a5f">① 背景</text>
+  <text x="42" y="182" font-size="10" fill="#475569">Day 36：选题＝量化</text>
+  <text x="42" y="196" font-size="10" fill="#475569">GEMM decode 小 M</text>
+  <text x="42" y="210" font-size="10" fill="#475569">边界：vllm_ascend 侧</text>
+  <text x="42" y="224" font-size="10" fill="#475569">优势：昇腾算子经验</text>
+  <text x="42" y="238" font-size="10" font-weight="bold" fill="#2563eb">数字：o_proj 190µs</text>
+
+  <!-- ===== Stage 2: accusation ===== -->
+  <rect x="185" y="140" width="135" height="104" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="252" y="162" text-anchor="middle" font-size="12" font-weight="bold" fill="#991b1b">② 指控</text>
+  <text x="197" y="182" font-size="10" fill="#475569">Day 38-40 三层剖析：</text>
+  <text x="197" y="196" font-size="10" fill="#475569">kernel 账占 62%</text>
+  <text x="197" y="210" font-size="10" fill="#475569">量化 GEMM 占 70%</text>
+  <text x="197" y="224" font-size="10" fill="#475569">一句话：搬运组织问题</text>
+  <text x="197" y="238" font-size="10" font-weight="bold" fill="#dc2626">数字：η=0.23</text>
+
+  <!-- ===== Stage 3: cut 1 ===== -->
+  <rect x="340" y="140" width="135" height="104" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="1.5"/>
+  <text x="407" y="162" text-anchor="middle" font-size="12" font-weight="bold" fill="#064e3b">③ 第一刀</text>
+  <text x="352" y="182" font-size="10" fill="#475569">小 M dispatch 到融</text>
+  <text x="352" y="196" font-size="10" fill="#475569">合量化 matmul</text>
+  <text x="352" y="210" font-size="10" fill="#475569">门禁先行 + SMV</text>
+  <text x="352" y="224" font-size="10" fill="#475569">机制：消除 bf16 临时</text>
+  <text x="352" y="238" font-size="10" font-weight="bold" fill="#047857">数字：TPOT -5.4%</text>
+
+  <!-- ===== Stage 4: mystery ===== -->
+  <rect x="495" y="140" width="135" height="104" rx="8" fill="#fefce8" stroke="#b45309" stroke-width="1.5"/>
+  <text x="562" y="162" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">④ 疑点</text>
+  <text x="507" y="182" font-size="10" fill="#475569">实测=单族预测</text>
+  <text x="507" y="196" font-size="10" fill="#475569">κ=0.33 两种世界</text>
+  <text x="507" y="210" font-size="10" fill="#475569">数次数裁决：</text>
+  <text x="507" y="224" font-size="10" fill="#475569">融合 36/144 次</text>
+  <text x="507" y="238" font-size="10" font-weight="bold" fill="#b45309">根因：静默回退</text>
+
+  <!-- ===== Stage 5: cut 2 ===== -->
+  <rect x="650" y="140" width="135" height="104" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="1.5"/>
+  <text x="717" y="162" text-anchor="middle" font-size="12" font-weight="bold" fill="#064e3b">⑤ 第二刀</text>
+  <text x="662" y="182" font-size="10" fill="#475569">探测矩阵化 + 加载</text>
+  <text x="662" y="196" font-size="10" fill="#475569">期布局适配</text>
+  <text x="662" y="210" font-size="10" fill="#475569">判定表：qkv/down 放</text>
+  <text x="662" y="224" font-size="10" fill="#475569">开，gate_up 暂缓</text>
+  <text x="662" y="238" font-size="10" font-weight="bold" fill="#047857">数字：累计 -12.7%</text>
+
+  <!-- ===== Stage 6: next ===== -->
+  <rect x="805" y="140" width="135" height="104" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="872" y="162" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a5f">⑥ 下一步</text>
+  <text x="817" y="182" font-size="10" fill="#475569">gate_up p99 数据 →</text>
+  <text x="817" y="196" font-size="10" fill="#475569">上游 issue</text>
+  <text x="817" y="210" font-size="10" fill="#475569">W7：完整 benchmark</text>
+  <text x="817" y="224" font-size="10" fill="#475569">矩阵 + 边界 case</text>
+  <text x="817" y="238" font-size="10" font-weight="bold" fill="#2563eb">产出：PR + 对比表</text>
+
+  <!-- Arrows between stages -->
+  <line x1="165" y1="192" x2="181" y2="192" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="184,192 176,187 176,197" fill="#475569"/>
+  <line x1="320" y1="192" x2="336" y2="192" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="339,192 331,187 331,197" fill="#475569"/>
+  <line x1="475" y1="192" x2="491" y2="192" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="494,192 486,187 486,197" fill="#475569"/>
+  <line x1="630" y1="192" x2="646" y2="192" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="649,192 641,187 641,197" fill="#475569"/>
+  <line x1="785" y1="192" x2="801" y2="192" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="804,192 796,187 796,197" fill="#475569"/>
+
+  <!-- ===== Middle: logbook vs narrative ===== -->
+  <rect x="60" y="286" width="390" height="96" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="255" y="310" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">logbook.md（给未来的自己）</text>
+  <text x="76" y="332" font-size="10.5" fill="#475569">· 按刀组织：Cut #N 一段，数字密集、字段固定</text>
+  <text x="76" y="350" font-size="10.5" fill="#475569">· 价值：可追溯、可复盘、可回填（失败也是数据）</text>
+  <text x="76" y="368" font-size="10.5" fill="#475569">· 弱点：外人读不懂因果，只有自己能查</text>
+
+  <line x1="450" y1="334" x2="505" y2="334" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="511,334 501,329 501,339" fill="#475569"/>
+  <text x="480" y="322" text-anchor="middle" font-size="10" fill="#64748b">编</text>
+
+  <rect x="515" y="286" width="390" height="96" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="710" y="310" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a5f">midreview.md（给外人：reviewer / 面试官）</text>
+  <text x="531" y="332" font-size="10.5" fill="#475569">· 按因果组织：叙事弧六段，每段机制一句话 + 数字</text>
+  <text x="531" y="350" font-size="10.5" fill="#475569">· 价值：3 分钟可讲述 → PR 描述 / issue / 讲稿三用</text>
+  <text x="531" y="368" font-size="10.5" fill="#475569">· 检验：不看档案讲一遍，卡壳处 = 理解缺口</text>
+
+  <!-- ===== Bottom: STAR mapping + ammo box ===== -->
+  <rect x="60" y="404" width="845" height="190" rx="8" fill="#fefce8" stroke="#b45309" stroke-width="1.5"/>
+  <text x="480" y="430" text-anchor="middle" font-size="13" font-weight="bold" fill="#92400e">STAR 映射 + 数字弹药箱（面试与 PR 共用）</text>
+
+  <text x="84" y="458" font-size="11" font-weight="bold" fill="#92400e">S（情境）</text>
+  <text x="160" y="458" font-size="10.5" fill="#475569">vllm-ascend w8a8 decode 小 M 路径，微基准与理论下界差 4 倍（η=0.23）</text>
+  <text x="84" y="482" font-size="11" font-weight="bold" fill="#92400e">T（任务）</text>
+  <text x="160" y="482" font-size="10.5" fill="#475569">在不触碰闭源算子内部的前提下，把搬运组织开销吃掉，且每步可测试、可回滚</text>
+  <text x="84" y="506" font-size="11" font-weight="bold" fill="#92400e">A（行动）</text>
+  <text x="160" y="506" font-size="10.5" fill="#475569">两刀：融合 dispatch（+46 行）→ 数次数裁决静默回退 → 探测矩阵 + 加载期布局适配</text>
+  <text x="84" y="530" font-size="11" font-weight="bold" fill="#92400e">R（结果）</text>
+  <text x="160" y="530" font-size="10.5" fill="#475569">TPOT 累计 -12.7%、吞吐 +18%、精度阈内；gate_up 暂缓 + 上游 issue（含数据）</text>
+
+  <line x1="84" y1="546" x2="881" y2="546" stroke="#d97706" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="84" y="568" font-size="10.5" fill="#475569">必背数字：48.2→42.1ms ｜ 融合覆盖 0→108/144 次/step ｜ κ=0.33=6.8/20.9 ｜ gate_up Δp50 -19% 但 Δp99 +8% → 一票否决</text>
+  <text x="84" y="586" font-size="10.5" fill="#475569">失败也值钱：Cut #3 证据门控未过而暂缓（host 账不归因量化分支）——"为什么不做 X"的答案就在这行</text>
+</svg>

@@ -1,0 +1,1177 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls week7/ 2>/dev/null && ls week7/assets/ 2>/dev/null
+assets
+day43_benchmark_before_after.md
+day44_boundary_cases_accuracy.md
+day45_pr_submission.md
+README.md
+day43_benchmark_pipeline.svg
+day43_round_protocol.svg
+day43_significance_errorbar.svg
+day44_cudagraph_bucket_boundary.svg
+day44_diff_testing_flow.svg
+day44_test_space.svg
+day45_pr_anatomy.svg
+day45_pr_lifecycle.svg
+day45_pr_split_strategy.svg
+[0m
+[0m→ [0mRead week7/README.md
+[0m
+[0m$ [0mhead -80 week7/day43_benchmark_before_after.md; echo "=====DAY44====="; head -80 week7/day44_boundary_cases_accuracy.md; echo "=====DAY45====="; head -80 week7/day45_pr_submission.md
+# Day 43：优化迭代与验证（一）——完整 Benchmark 前后对比
+
+> **系列进度**：第 7 周 · Day 43 / 56 · 项目 A（vllm-ascend / vLLM 源码贡献）收尾阶段
+> **前置**：Day 37 基线数据 → Day 38-39 瓶颈分析报告 → Day 41-42 两轮优化实现
+> **今日定位**：Day 43-45「优化迭代 + 验证」的第一天。代码已经写完，今天只回答一个问题——**这个优化到底有没有用、有多大用、在什么场景下有用**。产出是一张带误差与显著性标注的前后对比表：它是 Day 45 PR 的核心证据，也是简历上那行数字的唯一出处。
+
+性能优化圈有一句老话：**没有 benchmark 的优化等于没有优化**。而 benchmark 最大的坑不是"跑不出来"，而是**跑出来了却不可信**——面试官一句"你这个提升是不是抖动？"就能让六周的工作失去说服力。今天我们把"证明优化有效"这件事本身工程化。
+
+---
+
+## 一、今日学习目标
+
+1. **区分偏差与噪声**：理解系统性偏差（bias）与随机噪声（noise）以不同方式毁掉对比实验，各自的对策完全不同
+2. **掌握可复现 benchmark 的控制变量设计**：冻结清单、随机化对象、轮次协议（warmup / 冷却 / 重启）
+3. **掌握统计口径**：均值 ± σ、p50/p99、Welch t 检验与配对设计，能当场手算"这个提升是否显著"
+4. **搭好一条命令跑完的 benchmark harness**：`run_suite.sh` + `aggregate.py`——Day 46 的四组消融实验将**直接复用**这套流水线
+5. **产出**：项目 A 前后性能对比表（含环境指纹、均值 ± σ、提升百分比、显著性标注）
+
+---
+
+## 二、核心概念
+
+### 2.1 偏差 vs 噪声：今天最重要的一个区分
+
+把每次测量写成：
+
+$$X = \mu + \underbrace{b}_{\text{偏差（系统项）}} + \underbrace{\varepsilon}_{\text{噪声（随机项）}}$$
+
+| | 噪声（noise） | 偏差（bias） |
+|---|---|---|
+| 行为 | 轮与轮之间随机波动 | 所有轮**朝同一方向**倾斜 |
+| 多轮取均值 | $\varepsilon$ 以 $1/\sqrt{n}$ 收缩，**可消** | $b$ 原样保留，**轮数越多越"稳定地错"** |
+| 典型例子 | 请求到达顺序不同 → batch 组成不同 | baseline 跑在冷机上午、optim 跑在热机下午；warmup 不足导致前几轮系统性偏慢 |
+| 对策 | 多轮 + 报方差 + 显著性检验 | **实验设计**：冻结环境、warmup、锁频、baseline/optim 交替跑 |
+
+> **记住这个优先级**：先消灭偏差（设计问题），再压缩噪声（统计问题）。一个带偏差的实验，统计做得再漂亮也是错的。
+
+### 2.2 可复现性的三个层次
+
+面试官评估你的数据时，实际在问三层问题：
+
+1. **统计复现**：同机同配置重跑，数字是否落在 ±σ 内？→ 靠轮次协议与统计口径
+2. **环境复现**：换台机器按你的记录能否重建相同条件？→ 靠环境指纹（commit hash、启动命令、锁频状态、驱动版本）
+3. **流程复现**：陌生人按你仓库里的 README 能否一条命令跑出来？→ 靠 harness 进版本控制
+
+今天的目标是三层全部达成。**对比表上没有环境说明的数字，等于没有数字。**
+
+### 2.3 统计口径：报什么数字
+
+| 口径 | 用途 | 备注 |
+|---|---|---|
+| 均值 ± 标准差（轮间，n=3~5） | 提升百分比的计算基础 | σ 是"轮间波动"，不是单轮内请求间波动 |
+| p50 / p99 分位数 | TPOT、TTFT 的**主口径** | 回顾 Day 5：尾延迟才是用户感知；chunked prefill 的收益主要在 p99 |
+| goodput（SLO 达标吞吐） | 混合场景的终极指标 | 回顾 Day 5：如 TPOT p99 < 200 ms 约束下的有效吞吐 |
+| Welch t 统计量 | 显著性 | 粗判据：$\Delta < 3\times$ SEM 或 $\sigma > \Delta/3$ → 结论必须写"不显著" |
+
+> **坑位提示**：只报均值不报分位数，会得出"chunked prefill 没提升"的错误结论——它的收益集中在尾延迟（Day 11、Day 13 已经见过）。
+
+### 2.4 场景矩阵：三个场景，三个主指标
+
+回顾 Day 1 的第一性原理：prefill 计算密集（compute-bound），decode 访存密集（memory-bound）。你的优化（下文统称"优化 X"，典型代表是 paged attention decode kernel 或量化 GEMM tiling）大概率只作用于其中一边，所以**必须在三个场景里分别测量**，防止"只在对己有利的场景测"：
+
+| 场景 | 负载形状 | 主指标 | 机制依据 |
+|---|---|---|---|
+| decode 密集 | 短 prompt（128-512）+ 长输出（≥1024） | **TPOT p99** | decode 访存 bound → 优化 kernel 访存效率直接体现在 TPOT |
+| prefill 密集 | 长 prompt（8k-16k）+ 短输出（32-64） | **TTFT p99** | prefill 计算 bound → 访存类优化对 TTFT 通常无感甚至劣化 |
+| 混合 | ShareGPT / sonnet + 泊松到达 | **goodput @ SLO** | 生产真实形态；检验两类负载互相干扰下的净效果 |
+
+第三列的"机制预期"在跑之前就要写下来（存 `predictions.md`，Day 46 会正式用这个方法）——**预测错的地方就是你理解不到位的地方**。
+
+---
+
+## 三、原理深入讲解
+
+先看全景图，再逐层拆解：
+
+![Day 43 前后对比 Benchmark 总体流水线](assets/day43_benchmark_pipeline.svg)
+
+整个流水线分四层：**环境冻结层**（决定有没有偏差）→ **版本 × 场景矩阵**（baseline commit 与 optim 分支各跑一遍三场景）→ **轮次协议**（决定噪声有多大）→ **统计聚合层**（决定结论可不可信）。
+
+=====DAY44=====
+# Day 44：优化迭代与验证（二）——边界 Case 与精度验证
+
+> **系列进度**：第 7 周 · Day 44 / 56 · 项目 A（vllm-ascend / vLLM 源码贡献）收尾阶段
+> **前置**：Day 43 已产出带误差与显著性标注的前后对比表 → 本日输入还包括 Day 41-42 的优化实现
+> **今日定位**：Day 43 回答了"快了多少"，今天回答"**算得对不对**"。性能数据只有建立在正确性之上才有意义——一个算错但更快的 kernel，在 reviewer 眼里是负资产。今天的产出（测试记录 + 精度对拍数据）将原样成为 Day 45 PR 的 **Test Plan** 章节。
+
+性能优化圈还有第二句老话：**一个只测过"平均 batch"的优化等于没测过**。你在昇腾做 WeightQuantBatchMatmulV2 时就知道：kernel 不死在典型 shape 上，死在 M=1、N=257、尾块不整除这些"难命中区域"。今天把这套边界思维系统化地迁移到项目 A，并补上 GPU 推理栈特有的两类边界（CUDA Graph bucket、prefix caching 交互），再加上数值改动的三层精度对拍。
+
+---
+
+## 一、今日学习目标
+
+1. **给改动定类**：判断自己的优化属于"位级等价 / 同数学不同顺序 / 近似数学"三类中的哪一类，据此确定验证强度——强度错配是白费功夫的主要来源
+2. **构建边界 case 矩阵**：从代码分支的"大小关系"出发枚举 shape / dtype / 动态 shape / 缓存交互 / 极端负载 / 回归测试六个维度
+3. **理解 GPU 栈特有的边界**：CUDA Graph capture bucket 边界与 padded replay、spec decode 导致的 q_len>1 decode、prefix caching 与 KV 路径改动的交互
+4. **掌握数值误差的量化语言**：舍入模型、reduction 顺序误差界、量化扰动传播、top-1 一致率所需的样本量——能用公式回答"多大的差异算不可接受"
+5. **搭建三层精度对拍**：tensor 级（kernel 进出）→ logits 级（cosine / top-1 / KL）→ 端到端（固定 seed greedy diff），并复用 Day 43 的 harness 风格
+6. **产出**：测试记录（case 清单 × pass/fail + 精度对拍数据）+ bug 清单（带分诊）；若有 bug，**当天修完再进 Day 45**
+
+---
+
+## 二、核心概念
+
+### 2.1 第一个问题：你的优化动了数学吗？
+
+所有性能改动按"对数值结果的影响"分为三类，验证强度依次升级：
+
+| 类别 | 典型改动 | 输出关系 | 验证强度 | 验证手段 |
+|---|---|---|---|---|
+| ① 位级等价 | 调度顺序、block table 数据结构、CPU 侧元数据布局、分配器策略 | 输出**逐位相同** | 功能等价 | 回归测试 + 固定 seed 输出 diff（应零 diff） |
+| ② 同数学不同顺序 | kernel 融合、re-tiling、reduction 顺序变化、GEMM 切分方式、split-K | 输出满足浮点舍入误差界 | 数值对拍（有界） | tensor 级 assert_close + logits 级指标 |
+| ③ 近似数学 | 量化（FP8/INT8/W4A16）、低精度累加、去 softmax 中的 max 项等近似 | 输出有**任务可接受**的偏差 | 任务级评估 | 全链路对拍 + 下游指标（困惑度 / 抽检生成质量） |
+
+> **强度错配的两种浪费**：给纯调度改动跑全套精度对拍（浪费一天）；给量化改动只做功能等价测试（漏掉精度回归，review 阶段被打回）。先花 10 分钟定类，再决定测什么。
+
+**注意**：类别 ② 最容易被人轻视。"只是换了个累加顺序"在 BF16 + 长 reduction 下足以翻转低概率 token 的 top-1——数学上等价，浮点上不等价（第四节给出误差界公式）。
+
+### 2.2 边界思维：从昇腾算子测试空间迁移
+
+你在昇腾的经验：**kernel 的正确性风险集中在"代码里 if 分支所依赖的大小关系"的取值组合上**。把一个 GEMM 类 kernel 的分支维度列出来：
+
+- `M`（行数 / batch 维）：`M == 1`（单 token decode）、`M` 落在某个小 batch 区间（走单核/小 tile 路径）、`M` 超过阈值（走切分路径）
+- `N`（列数）：窄 N（tile 装不满）、尾块（`N % tile_n != 0`）
+- `K`（reduction 维）：非对齐（`K % align != 0`）、跨多个 block 的累加链
+- dtype：BF16 / FP16 / INT8 / FP8 各是一条独立的编译与数值路径
+
+GPU 推理栈在此之上**追加三类**昇腾上不典型（或不完全相同）的边界：
+
+1. **CUDA Graph bucket 边界**：同一个数学操作，在 graph 内以 padding 后的 shape 静态执行，在 graph 外以真实 shape 动态执行——同一段 kernel 代码跑在两套 shape 假设下（Day 18 讲过 capture/replay 机制，今天从**测试**视角重新审视）
+2. **q_len > 1 的 decode**：投机解码开启时，decode 阶段的 query 长度是 `1 + num_speculative_tokens` 而非 1（Day 25-26）——任何"假设 decode 时 q_len==1"写死的 kernel 会在此处悄悄算错或崩溃
+3. **调度器与 KV 管理的交互边界**：preemption 重算、prefix caching 跨请求复用、请求 abort——这些生命周期事件会把 KV / batch 拉进你没想到的中间状态（Day 11-12、Day 16）
+
+### 2.3 差分测试（Differential Testing）：今天的核心方法
+
+**定义**：同一份输入喂给参考实现（reference）与优化实现（optimized），逐层比较输出。参考实现取"已知正确"的最简版本——PyTorch eager 原算子、vLLM 主干代码、或数学等价的朴素实现。
+
+三层漏斗，**从便宜到昂贵、从敏感到不敏感**：
+
+| 层级 | 比较对象 | 灵敏度 | 成本 | 定位能力 |
+|---|---|---|---|---|
+| L1 tensor 级 | 单 kernel 输入输出张量 | 极高（一个元素错就能抓到） | 极低（毫秒级，可暴力枚举 shape） | 直接定位到 kernel 与输入组合 |
+| L2 logits 级 | 每层 / 最终 hidden states / logits | 高（误差在层间放大或衰减，可量化） | 中（跑一次 forward） | 定位到层，需再下钻 |
+| L3 token / 文本级 | 生成 token 序列 | 低（top-1 翻转大多不改变文本语义） | 高（完整生成） | 只能回答"用户可感知吗" |
+
+> **不要跳层**：只做 L3 会把 kernel bug 淹没在采样随机性里；只做 L1 会高估严重性（tensor 级 1e-3 的偏差经过 32 层可能被完全冲掉）。正确的顺序是 L1 划定"有没有错"，L2/L3 判定"要不要紧"。
+
+### 2.4 验收标准先行
+
+**容差必须在跑测试之前写进文档**，否则你会不自觉地"看着结果定标准"。例如（示例格式，数值以你的改动定类为准）：
+
+```
+L1: torch.testing.assert_close(opt, ref, rtol=2e-2, atol=2e-3)   # BF16 同序改动
+L2: cosine(z_ref, z_opt) >= 0.999;  top-1 一致率 >= 99.5%;  KL <= 0.02 nats
+L3: 固定 seed greedy，前 256 token 内首分歧位置 >= 95 分位（即 ≥95% 请求无分歧）
+```
+
+FP8 量化的 top-1 一致率参考线 **≥99.5%** 来自社区大量实践的经验值（Day 23 也用过这个数）——**以具体模型与任务的 baseline 为准**：先测"主干 vs 主干自己换个 seed"的自然波动率，优化实现的退化不应显著高于该自然波动。
+
+### 2.5 今日全景图
+
+=====DAY45=====
+# Day 45：优化迭代与验证（三）——整理为 PR 提交
+
+> **系列进度**：第 7 周 · Day 45 / 56 · 项目 A（vllm-ascend / vLLM 源码贡献）收官日
+> **前置**：Day 43 前后对比表（含误差与显著性）→ Day 44 边界测试记录 + 精度对拍数据（已确认"不带病"）
+> **今日定位**：Day 43 回答了"快了多少"，Day 44 回答了"算得对不对"，今天回答"**能不能让陌生人在 10 分钟内相信这件事**"。载体就是 Pull Request——它是代码、数据、测试记录三件套的包装工程。产出：**PR + 前后性能数据对比表**，这是 README 第 7 周给项目 A 定义的最终交付物。
+
+项目 A 到今天为止，技术工作其实已经结束。今天的全部内容是**沟通工程**：把六周的工作压缩进一个几百行的 diff、一段几百字的描述、几张数据表，然后交给一群不认识你、没有义务帮你、每周要看几十个 PR 的 maintainer。开源圈有一句比 Day 43 那句更狠的话：**reviewer 花在你 PR 上的每一分钟，都是从他自己项目里挤出来的**。你今天做的所有事，本质都是在降低 reviewer 理解你改动的成本——这个视角一旦建立，下面每一条规则都不再是"规矩"，而是必然推论。
+
+---
+
+## 一、今日学习目标
+
+1. **建立"PR = 证据链载体"的模型**：代码（What）、动机与机制（Why）、性能数据（Benchmarks）、正确性数据（Test Plan）四位一体，缺一角 reviewer 就要靠猜
+2. **掌握 PR 大小的经济学**：为什么 200~400 行 diff 是甜点区；大 PR 如何用"拆分序列"降维
+3. **把 commit history 整理成叙事**：interactive rebase / fixup / squash 的操作与取舍，commit message 的规范写法
+4. **走完上游提交的机械流程**：fork → branch → pre-commit → DCO sign-off → push → `gh pr create` → CI → review 循环
+5. **掌握 review 应对的礼仪与策略**：逐条闭环、分歧处理、"意见-回复-新 commit"的追踪结构
+6. **产出**：提交到 vllm-ascend（或 vLLM 主仓）的 PR + PR 描述中的前后性能数据对比表；即使未合并，形成一份可复述的 review 应对记录（Day 49 讲稿素材）
+
+---
+
+## 二、核心概念
+
+### 2.1 PR 不是"提交代码"，是"提交证据链"
+
+回顾这两天做的事：Day 43 产出了一张带环境指纹、误差棒、显著性标注的对比表；Day 44 产出了六维边界 case 矩阵和三层精度对拍数据。这些如果只躺在你的本地目录里，对上游仓库的价值是零。PR 的本质是**把证据链和代码 diff 绑定成一个原子单元**提交审查：
+
+| 证据 | 来源 | 在 PR 中的位置 |
+|---|---|---|
+| 为什么改（瓶颈 + 理论上限） | Day 38-39 瓶颈分析报告 | 描述 WHY 段 |
+| 改了什么（机制） | Day 41-42 优化实现 | diff 本身 + WHAT 段 |
+| 快了多少（可信） | Day 43 对比表 | 描述 BENCHMARKS 段 |
+| 算得对不对 | Day 44 测试记录 | 描述 TEST PLAN 段 |
+
+> **检验标准**：reviewer 只看 PR 页面（不看你的本地文件、不问你本人），能否在 10 分钟内完成三件事——看懂改动、相信数据、确认正确性。任何需要"私聊补充"的信息都算证据链断裂。
+
+### 2.2 PR 大小的经济学：review 精力是稀缺资源
+
+review 不是免费的，而且** review 成本随 diff 大小超线性增长**。原因很机械：
+
+- 行数翻倍 → 阅读时间至少翻倍（线性项）
+- 改动涉及的模块数增加 → reviewer 需要**在脑中加载的上下文**按模块数组合增长（超线性项）
+- diff 超过一屏 → 阅读策略从"逐行验证"退化为"抽样扫描"（质量塌陷项）
+
+社区大量贡献数据反复指向同一个经验区间：**~200 行级 diff 的 review 深度和周转速度远好于 ~2000 行级**。这不是教条，而是上面三个机制的结果。由此推出今天的两条实操纪律：
+
+1. **一个 PR 一个主题**：kernel 优化、配套的单测、CI 适配可以是三个 PR 的序列，而不是一个三合一的大 PR
+2. **机械改动与语义改动分离**：格式化/重命名产生的"噪声 diff"会把真正的语义变化淹没——这正是 pre-commit 钩子存在的意义（保证你 push 的东西至少不撞格式规则）
+
+> **与昇腾经验的对接**：你在公司内部提 MR 时大概也有体感——评审人看到 3000 行 diff 时的第一反应是"先放一放"。内部 MR 的评审人有绩效约束会回来看，开源 reviewer 没有。所以开源场景对 PR 尺寸的惩罚更陡。
+
+### 2.3 commit history 是给 reviewer 讲的第二遍故事
+
+PR 描述讲一遍（静态、俯视），commit history 再讲一遍（动态、时间顺序）。reviewer 里有一派专门按 commit 逐个看，因为**好的 commit 序列能让每一步都小到"显然正确"**：
+
+| commit 序列风格 | reviewer 体验 |
+|---|---|
+| `fix`、`update`、`final`、`really final` × 17 个 | 完全无法增量审查，只能整体看 diff（等于退化成一个大 commit） |
+| ① 重构出可复用 helper（无行为变化）→ ② 核心优化 → ③ 配套单测 | 每个 commit 独立可验证：① 是纯移动，② 可以单独对拍，③ 锁住回归 |
+
+操作上，本地开发期的脏历史在 push 前用 `git rebase -i` / `git commit --fixup` + `--autosquash` 整理。**注意纪律**：整理只发生在 push 之前的私有分支上；PR 建立后，新增改动建议用独立 commit 追加（`fix: address review comment about xxx`），让 reviewer 能增量 diff——除非 maintainer 明确要求 squash。
+
+### 2.4 review 是免费的专家反馈：换一个心态
+
+README 里那句话值得原样抄一遍：**"即使不合并，review 过程本身就是材料"**。给推理系统写 kernel 的 maintainer，在外面的咨询价格是每小时几百美元起。你的 PR 哪怕收到一句"这里为什么不按 flash-decoding 的做法切 K 维？"，都是一次定向的免费教学。由此推出应对 review 的心态基调：
+
+- **默认 reviewer 是对的，但用数据说话**：他质疑你的 benchmark，你补环境指纹和轮次协议（Day 43 的产出正好用上）；他质疑精度，你补对拍数据（Day 44 的产出正好用上）
+- **不同意时，回复结构 = 复述对方观点 + 你的证据 + 你的结论**，而不是 "I think this is fine"
+- **每条意见必须闭环**：要么改（附 commit 链接），要么给出不改的理由。静默跳过是开源协作里最伤信任的行为
+
+### 2.5 今日全景图
+
+![Day 45 PR 生命周期](assets/day45_pr_lifecycle.svg)
+
+整个流程分本地与上游两段：本地的每一步（单分支、整理 commit、pre-commit、本地单测）都在**降低远端循环的次数**；远端的两个循环——CI 红修循环、review 迭代循环——的**目标周转时间分别是"当天"和"24 小时"**。记住这条时间线，第五节的实验步骤就按它展开。
+
+---
+
+## 三、原理深入讲解
+[0m
+[0m$ [0mgrep -n "^#" week7/day43_benchmark_before_after.md | head -40; echo "====DAY45===="; grep -n "^#" week7/day45_pr_submission.md | head -40
+1:# Day 43：优化迭代与验证（一）——完整 Benchmark 前后对比
+11:## 一、今日学习目标
+21:## 二、核心概念
+23:### 2.1 偏差 vs 噪声：今天最重要的一个区分
+38:### 2.2 可复现性的三个层次
+48:### 2.3 统计口径：报什么数字
+59:### 2.4 场景矩阵：三个场景，三个主指标
+73:## 三、原理深入讲解
+81:### 3.1 测量噪声与偏差的分层模型
+100:### 3.2 轮次协议：warmup、重启、冷却
+124:### 3.3 锁频：把硬件从变量变成常量
+129:# 锁定 SM 时钟到固定值（示例：A100 锁 1410 MHz；具体值用 nvidia-smi -q -d CLOCK 查询后选）
+131:# 验证：确认 Current 时钟 == 固定值、无 throttling reasons
+133:# 实验结束恢复
+140:### 3.4 场景设计的第一性原理：你的优化动了哪个 bound？
+149:### 3.5 显著性初判：Δ 与 σ 的关系
+160:## 四、数学推导：从数字到结论
+162:### 4.1 记号与基本量
+172:### 4.2 显著性：Welch t 检验
+187:### 4.3 需要几轮？把"3~5 轮"变成公式
+204:### 4.4 相对提升的误差传播（delta method）
+216:### 4.5 配对设计：同样的轮数，更强的检验
+226:## 五、关键代码：一条命令跑完的 benchmark harness
+228:### 5.1 目录结构（全部进版本控制——这本身就是"可复现"的证据）
+241:### 5.2 run_suite.sh（核心脚本）
+244:#!/usr/bin/env bash
+245:# 用法: bash run_suite.sh baseline|optim
+255:# ---- 0. 环境指纹：对比表的一部分，别人问环境时直接甩出来 ----
+261:# ---- 1. 锁频（A100 示例值；用 nvidia-smi -q -d CLOCK 查后自选）----
+264:# 每场景的正式采集请求量（p99 至少由 ~10 个最慢请求支撑 → ≥1000；
+265:# prefill 8k×200 已是 1.6M 输入 token，单轮足够长）
+316:#!/usr/bin/env bash
+326:### 5.3 aggregate.py（汇总与对比表生成）
+329:#!/usr/bin/env python3
+336:# 场景 -> 主指标（JSON 字段名以你版本的 bench 输出为准，先 cat 一个 JSON 确认）
+376:### 5.4 三个场景的对照产出（示例格式）
+390:## 六、与 vLLM V1 的实际联系
+392:### 6.1 `vllm bench serve` 的内部链路（client 侧）
+410:### 6.2 服务端 `/metrics`：V1 引擎的内部视角
+434:### 6.3 为什么 TTFT/TPOT 以 client 侧为准，还要留服务端指标？
+====DAY45====
+1:# Day 45：优化迭代与验证（三）——整理为 PR 提交
+11:## 一、今日学习目标
+22:## 二、核心概念
+24:### 2.1 PR 不是"提交代码"，是"提交证据链"
+37:### 2.2 PR 大小的经济学：review 精力是稀缺资源
+52:### 2.3 commit history 是给 reviewer 讲的第二遍故事
+63:### 2.4 review 是免费的专家反馈：换一个心态
+71:### 2.5 今日全景图
+79:## 三、原理深入讲解
+81:### 3.1 上游与下游：你的 PR 落在哪
+91:### 3.2 提交前检查的"三角验证"
+104:### 3.3 CI 矩阵：你的 PR 会触发什么
+117:### 3.4 review 轮次的周期模型
+128:## 四、关键操作：从本地分支到 PR 页面
+130:### 4.1 PR 描述：四段式模板
+137:## WHY（瓶颈与上限）
+143:## WHAT（改动机制）
+149:## BENCHMARKS（前后对比）
+162:## TEST PLAN（正确性）
+173:### 4.2 git 工作流：命令级序列
+176:# 0. 同步上游（永远从最新 main 切分支，减少后面 rebase 冲突）
+180:# ...开发与提交（Day 41-42 已完成）...
+182:# 1. 私有分支整理历史（只对未 push 的 commit 做）
+186:# 2. 本地过 pre-commit（CI lint 的镜像，本地不过别 push）
+188:# 常见钩子：ruff / black / isort / clang-format / trailing-whitespace / check-yaml
+190:# 3. 本地跑相关单测（别等 CI 才发现）
+193:# 4. DCO sign-off（vllm-project 系仓库要求每个 commit 带 Signed-off-by）
+196:# 5. push 到你的 fork，创建 PR
+214:### 4.3 review 应对的操作模式
+233:## 五、动手实验步骤
+237:### 步骤 1：Go / No-Go 自检（15 min）
+253:### 步骤 2：整理历史 + 本地三关（45 min）
+264:### 步骤 3：写四段式描述（30 min）
+274:### 步骤 4：创建 PR 并盯完 CI（30 min + 观察期）
+284:### 步骤 5：主动触发 review + 归档（30 min）
+290:### 步骤 6：模拟"reviewer 视角"自审（15 min）
+296:## 六、面试高频问题
+332:## 七、今日总结
+344:## 八、今日自测题
+364:## 九、今日产出物
+[0m
+Day 47 的主题是「项目 C：跑实验 + 盯异常」（Day 47-48 第一天）。先快速了解本周已有文件的结构和 vLLM V1 源码中的指标定义，确保源码引用准确。
+[0m$ [0mgrep -n "class\|def \|_metric\|Gauge\|Counter\|Histogram" vllm/v1/metrics.py | head -80
+grep: vllm/v1/metrics.py: No such file or directory
+[0m
+[0m$ [0mls vllm/v1/ 2>/dev/null | head -30; ls vllm/v1/engine/ 2>/dev/null; ls vllm/v1/metrics/ 2>/dev/null
+(no output)
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/ | head -30; git -C /mnt/workspace/aiinfra/vllm log --oneline -3 2>/dev/null
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+f1da259 Add Day 20-36 tutorial notes (weeks 3-6) with logs
+9b87999 Add Day 10-21 tutorial notes (weeks 2-3) with assets and logs; update generator and progress
+9f00707 Add Day 03-19 tutorial notes (weeks 1-3) with logs; improve generator (cooldown, no-retry, low thinking variant)
+[0m
+[0m$ [0msed -n '390,460p' week7/day43_benchmark_before_after.md
+## 六、与 vLLM V1 的实际联系
+
+### 6.1 `vllm bench serve` 的内部链路（client 侧）
+
+```text
+vllm bench serve（CLI）
+  └─ vllm/entrypoints/cli/benchmark.py      # 子命令分发：serve / latency / throughput
+      └─ vllm/benchmarks/serve.py           # 主流程：构造负载 → 异步发请求 → 逐请求计时
+          ├─ vllm/benchmarks/datasets.py    # random / sharegpt / sonnet 负载采样（seed 固定可复现）
+          └─ vllm/benchmarks/lib/           # 各 backend 的请求函数；TTFT = 首 token 时刻 - 发送时刻
+```
+
+要点：
+
+- **TTFT/TPOT 是 client 端计时的端到端口径**（含排队与网络），不是引擎内部口径
+- 数据集采样由 `--seed` 控制——这是"随机化的量"的落点：同 seed 重放得到同序列，不同 seed 得到不同到达顺序
+- 汇总输出（mean/p50/p99 × ttft/itl/tpot/e2el、`request_throughput`、`output_throughput`）写入 JSON，即 `aggregate.py` 的输入
+
+> **版本提示**：以上目录结构对应较新的 vLLM（统一 `vllm bench` CLI 之后）；老版本对应仓库顶层 `benchmarks/bench_serve.py`。模块名可能随版本微调，以你安装版本的 `pip show -f vllm | grep benchmarks` / `--help` 实测为准。
+
+### 6.2 服务端 `/metrics`：V1 引擎的内部视角
+
+回顾 Day 8 的 V1 进程结构，指标链路是**跨进程**的：
+
+```text
+EngineCore 进程（vllm/v1/engine/core.py）
+  └─ 每个 step 从 Scheduler 收集统计，按 stats_interval_s 周期打包
+     └─ 经 IPC 随 EngineCoreOutputs 发往前端进程
+         └─ 前端 OutputProcessor 交给 StatLoggerManager
+             └─ PrometheusStatLogger（vllm/v1/engine/metrics.py）→ 暴露在 /metrics
+```
+
+今天用得上的关键指标（**名字以 `curl /metrics` 实测为准**，随版本演进）：
+
+| 指标 | 用途 |
+|---|---|
+| `vllm:num_requests_running` / `vllm:num_requests_waiting` | 看拥塞：waiting 堆积 → TTFT 飙高的机制解释 |
+| `vllm:gpu_prefix_cache_hits` / `queries` | 验证每轮重启后 cache 从零累积（没有跨轮污染） |
+| `vllm:time_to_first_token_seconds`（histogram） | 与 client 侧 TTFT 交叉验证 |
+| `vllm:time_per_output_token_seconds`（histogram） | 同上，TPOT 口径 |
+| `vllm:gpu_cache_usage_perc` | KV 占用，解释 decode 后期的 batch 收缩 |
+
+**用法**：每轮落一份 `_metrics.txt` 快照。它不是对比表的数据源（口径以 client 端为准），而是**解释异常轮**的证据——例如某轮 TPOT p99 突然翻倍，翻快照发现 waiting 尖峰 + cache 命中异常，就能把"坏轮"归因到引擎事件而不是你的优化。这正是 Day 51 性能诊断树的预演。
+
+### 6.3 为什么 TTFT/TPOT 以 client 侧为准，还要留服务端指标？
+
+两边口径对得上 → 数据可信；对不上 → **先查测量链路再下结论**。典型分歧源：服务端 histogram 的 bucket 粒度、采样周期（`stats_interval_s`）、网络与 client 事件循环延迟。交叉验证是零成本的 sanity check，Day 47-48 跑消融时你会天天用它。
+
+### 6.4 vllm-ascend 场景的差异点
+
+- **benchmark 工具链完全相同**：`vllm bench serve` 打的是 HTTP 接口，与后端硬件无关
+- **锁频与监控换成 `npu-smi`**（见 3.3），环境指纹里记 vllm-ascend 与 vLLM **两个仓**的 commit——这是 NPU 生态特有的版本耦合点，PR 描述里必须写清
+- profile 证据链（Day 38-39 的瓶颈报告）用昇腾工具产出，但**结论的表达方式（bound 判定、roofline）与 GPU 完全同构**——这正是你"跨平台方法论"叙事的一部分
+
+---
+
+## 七、动手实验步骤（约 2.5 小时）
+
+### Step 0：前置检查（10 min）
+
+- [ ] Day 42 的优化分支干净、可运行、相关单测通过
+- [ ] 给基线打标签：`git tag bench-baseline <baseline-commit>`（Day 37 记录的那个 commit）
+- [ ] 磁盘余量：15 轮 × (bench JSON + metrics 快照) ≈ 几十 MB，无压力但别忘归档
+
+### Step 1：搭 harness 并跑通一格（30 min）
+
+1. 建 `benchmark/` 目录，放入 5.2 / 5.3 的三个脚本，`chmod +x`
+2. `vllm bench serve --help` 核对参数名（重点：结果落盘参数），实际用的参数抄进 `env.txt`
+3. **只用 seed=1 跑通 decode_dense 一格**：确认脚本全链路（启动 → 健康检查 → warmup → 采集 → 快照 → 停服 → 冷却）不报错
+4. `cat` 一个结果 JSON，核对字段名与 `aggregate.py` 里 `METRICS` 的映射——**字段名对不上是第一天的头号故障**
+[0m
+这不是 vLLM 源码仓，而是教程仓库。为确保指标名与源码引用与前几天一致，快速查看 Day 43 的 /metrics 章节和 Day 46（若已生成）中用到的指标名。
+[0m$ [0mgrep -rn "prefix_cache\|preemption\|spec_decode\|num_requests_waiting\|gpu_cache_usage" week4/*.md week7/*.md 2>/dev/null | grep -i "vllm:" | sort -u | head -30; echo ====; ls week4/ 2>/dev/null
+week4/day25_speculative_decoding.md:223:| 1 | **负载接受率低** | $\beta$ 低 → $E[\tau] \to 1$，$kc$ 变纯开销 | `vllm:spec_decode_acceptance_rate` 持续 < 0.4 | 关闭投机，或换 ngram/EAGLE-3 等更贴负载的路线 |
+week4/day25_speculative_decoding.md:325:| `vllm:spec_decode_acceptance_rate` | accepted / draft 总数 | **第一健康指标**：持续 < 0.4 → 失效模式 #1 |
+week4/day25_speculative_decoding.md:326:| `vllm:spec_decode_draft_acceptance_rate` | 按**草稿深度**分位的接受率 | 直接看 $\beta_1 > \beta_2 > \cdots$ 的位置衰减（3.2 节）——决定 k 该砍到几 |
+week4/day25_speculative_decoding.md:327:| `vllm:spec_decode_num_accepted_tokens_total` / `num_draft_tokens_total` | 累计量 | 除一下即可交叉验证 acceptance_rate |
+week4/day25_speculative_decoding.md:328:| `vllm:spec_decode_force_rejected_total`（如版本提供） | 因 batch 超限等原因被强制拒绝 | 配合 `speculative_disable_by_batch_size` 观察熔断触发 |
+week4/day25_speculative_decoding.md:454:# 重点看 vllm:spec_decode_acceptance_rate 与 draft_acceptance_rate（按深度）
+week4/day26_speculative_decoding_experiments.md:97:指标名沿用 Day 25 §4.4 的表（`vllm:spec_decode_acceptance_rate`、`vllm:spec_decode_draft_acceptance_rate`、`vllm:spec_decode_num_accepted_tokens_total` / `num_draft_tokens_total`）。**注意**：指标名与 gauge/counter 类型随版本有变动，动手前先 `grep spec_decode` 看一眼你版本实际暴露了什么，以实际输出为准——不要照抄本页。
+week4/README.md:171:1. **显存与容量**：启动日志中 "GPU KV cache size: N tokens"（应×2）；`vllm:gpu_cache_usage` 曲线
+week4/README.md:351:- **接受率**：`/metrics` 中 `vllm:spec_decode_*` 系列（accepted / drafted tokens 计数），acceptance = accepted/drafted；版本无指标时从 engine 日志自行打点
+week7/day43_benchmark_before_after.md:426:| `vllm:num_requests_running` / `vllm:num_requests_waiting` | 看拥塞：waiting 堆积 → TTFT 飙高的机制解释 |
+week7/day43_benchmark_before_after.md:427:| `vllm:gpu_prefix_cache_hits` / `queries` | 验证每轮重启后 cache 从零累积（没有跨轮污染） |
+week7/day43_benchmark_before_after.md:430:| `vllm:gpu_cache_usage_perc` | KV 占用，解释 decode 后期的 batch 收缩 |
+====
+assets
+day22_quantization_basics.md
+day23_kv_cache_quantization.md
+day24_quantization_hands_on.md
+day25_speculative_decoding.md
+day26_speculative_decoding_experiments.md
+day28_speculative_decoding_review.md
+README.md
+[0m
+[0m$ [0mgrep -n "^## " week7/day43_benchmark_before_after.md; echo ====TAIL====; tail -60 week7/day45_pr_submission.md
+11:## 一、今日学习目标
+21:## 二、核心概念
+73:## 三、原理深入讲解
+160:## 四、数学推导：从数字到结论
+226:## 五、关键代码：一条命令跑完的 benchmark harness
+390:## 六、与 vLLM V1 的实际联系
+446:## 七、动手实验步骤（约 2.5 小时）
+511:## 八、面试高频问题
+539:## 九、今日总结
+548:## 十、今日自测题
+569:## 十一、今日产出物
+====TAIL====
+> 答：PR 描述是静态俯视图（Why/What/Benchmarks/Test Plan 四段），commit history 是时间顺序的第二遍叙事。好的 commit 序列让每步小到"显然正确"：纯重构 commit 可以被位级等价验证直接放行，语义 commit 单独对拍。标题公式 `[perf] 机制短语 + 量化结果 + 场景`——reviewer 扫 inbox 只看标题。
+
+**Q6：DCO 的 `Signed-off-by` 是什么？和 CLA 有什么区别？**
+
+> 答：DCO（Developer Certificate of Origin）是 commit 级声明："我有权提交这段代码并以该许可证贡献"，用 `git commit -s` 在 footer 加 `Signed-off-by: Name <email>`。CLA 是项目级法律协议，签一次覆盖全部贡献。vllm-project 系仓库要求 DCO，CI 会检查每个 commit 是否带 sign-off，漏了直接红。这是机械流程，但漏了会浪费一轮 CI 周期。
+
+**Q7：CI 红了但本地是绿的，你的排查顺序？**
+
+> 答：先读日志分类：① 环境差异（CI 镜像的依赖版本、真机 job 的硬件行为与本地不同）；② 抖动（超时类 flaky test，看历史成功率）；③ 竞态（本地单线程过、CI 并发挂——比如测试间共享了状态）。在 PR comment 贴日志分析结论再行动：抖动可申请重跑，真失败本地构造同环境复现修复。**禁止不读日志盲 push 重跑三连**——那是在浪费 CI 资源和 reviewer 耐心。
+
+**Q8：你的 PR 里哪一部分最重要？**
+
+> 答：BENCHMARKS 表，因为它同时约束了其他三部分：WHY 段的优化空间推导要与它量级一致；diff 应该恰好服务于表中的 Δ%；TEST PLAN 保证表中的性能不是用精度换的。如果只能说一句话，就是"TPOT p99 从 X±σ 到 Y±σ，显著性 p<0.01，prefill 场景无感（符合机制预期）"——这句里有效应量、误差、显著性、边界，是完整故事。
+
+---
+
+## 七、今日总结
+
+- **PR = 证据链载体**：Why（瓶颈与上限）+ What（机制）+ Benchmarks（Day 43 对比表）+ Test Plan（Day 44 记录）四位一体，标准是"reviewer 10 分钟内独立看懂并相信"
+- **大小经济学**：review 成本超线性，一个 PR 一个主题；超标按**验证强度**拆序列（重构 → 语义 → 测试），不按目录拆
+- **commit history 是第二遍叙事**：push 前用 rebase/fixup 整理，1 commit = 1 逻辑单元；PR 后新增改动用独立 commit 便于增量审查
+- **机械流程零失误**：pre-commit 本地过、`-s` 签 DCO、本地先跑相关单测——这些不是技术问题，但每一项失误都烧掉一轮 CI 周期
+- **两条时间线**：CI 红当天修（先读日志再动手）；review 意见 24h 内逐条闭环（同意即改，不同意给数据）
+- **不合并也有价值**：review 是免费专家反馈，`review_log.md` 直接变成 Day 49 项目讲稿的"被挑战与回应"素材
+- 项目 A 至此收官：选题（Day 36）→ 基线（Day 37）→ 定位（Day 38-39）→ 实现（Day 41-42）→ 验证（Day 43-44）→ 上游提交（今天），**全链路可复述、全数据可追溯**
+
+---
+
+## 八、今日自测题
+
+1. 你的 diff 是 1500 行：700 行 kernel 语义改动 + 500 行纯重构 helper 提取 + 300 行测试。给出拆分方案、每个 PR 的验证手段和依赖标注方式。
+2. PR 标题 `perf: improve performance` 有什么问题？写出你的版本（含公式）。
+3. maintainer 说："你这个 -18% 是不是就在挑对你有利的场景？"——写出你的完整回复（结构 + 内容要点）。
+4. 为什么 push 之后不建议再 rebase 整理历史？什么时候例外（提示：与 maintainer 的交互）？
+5. 列出你 push 前的"三关"，以及每一关分别在拦截什么类别的 CI 失败。
+
+<details>
+<summary>参考答案（先自己答再看）</summary>
+
+1. 三个 PR 序列：PR#1 refactor（500 行，位级等价，验证 = 回归测试 + 固定 seed 零 diff，可快速合入）→ PR#2 perf（700 行，语义核心，验证 = Day 43 对比表 + Day 44 类别②对拍，描述注明 based on #PR#1）→ PR#3 test（300 行，边界矩阵，独立价值，即使 PR#2 搁置也不浪费）。按验证强度切，每环用最便宜的验证手段。
+2. 无机制、无量化、无场景。改写：`perf(xxx): eliminate tail-block redundant copy in decode kernel (-18% TPOT p99 on sonnet-4k)`——类型 + 机制短语 + 量化结果 + 场景。
+3. 结构：① 承认关切合理（场景选择偏差是 benchmark 常见问题）；② 交代场景矩阵覆盖（decode 密集 / prefill 密集 / 混合三场景，机制预期是访存类优化只在 decode 生效）；③ 主动给出 prefill 不显著的数据行与机制解释；④ 提供完整协议与环境指纹供复现，欢迎指定任何场景补测。核心：用矩阵设计与机制预期回应"挑数据"质疑，而不是辩护。
+4. push 后 rebase 改写历史会使远端与本地分叉，force push 会**作废已有 review 的 line comment 锚点**（行号对不上），打乱增量审查。例外：maintainer 明确要求 squash-and-merge 前的整理，或 PR 仍无人 review。
+5. 第一关 pre-commit：拦格式/lint/yaml 类失败（CI 最便宜的 job）；第二关模块相关单测：拦代码逻辑回归（CPU 可跑部分）；第三关本地边界矩阵脚本：拦真机 job 才会暴露的 shape/精度问题——把最贵的失败类别在本地提前拦截。
+</details>
+
+---
+
+## 九、今日产出物
+
+| 产出物 | 验收标准 |
+|---|---|
+| **已提交的 PR**（vllm-ascend / vLLM 主仓） | 四段式描述完整；CI 状态已处理；@ 了对应 maintainer |
+| **PR 内的前后性能数据对比表** | 环境指纹四件套 + 均值±σ + p99 + 显著性 + 无收益场景行 |
+| 整理后的 commit 序列 | 每条可独立描述；全部带 Signed-off-by |
+| `review_log.md` | 每条意见 + 回应（或回应计划）；Day 49 讲稿素材 |
+| 项目 README 归档 | PR 链接 + 对比表快照 + 环境指纹，面试可直接打开 |
+| 拆分方案（若 diff 超标） | 按 PR#1/2/3 序列提交并标注依赖 |
+
+> **明日预告（Day 46）**：项目 C 启动——实验设计。四组消融（chunked prefill × prompt 长度 / prefix caching 命中率梯度 / 投机解码接受率-收益曲线 / 量化吞吐-精度权衡）的假设、变量与指标矩阵，压测脚本与 Prometheus + Grafana 采集。好消息：**Day 43 的 benchmark harness 将被整套复用**——你今天已经把"消融实验"最难的那部分（可信的测量协议）做完了。
+[0m
+再看一眼已有 SVG 的风格，保持统一：
+[0m→ [0mRead week7/assets/day43_benchmark_pipeline.svg
+设计已明确：Day 47 主题是「批量执行 + 盯异常」。现在开始分批写入 Markdown，先写前半部分（标题、学习目标、核心概念）。
+[0m
+[0m← [0mWrite week7/day47_batch_run_anomaly_watch.md
+Wrote file successfully.
+[0m
+前半部分已写入。现在创建第一张 SVG：批量执行总控图。
+[0m← [0mWrite week7/assets/day47_batch_run_dashboard.svg
+Wrote file successfully.
+[0m
+第一张 SVG 完成。现在追加第二部分：原理深入讲解、数学推导、关键代码。
+[0m← [0mEdit week7/day47_batch_run_anomaly_watch.md
+Index: /mnt/workspace/aiinfra/vllm/week7/day47_batch_run_anomaly_watch.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/day47_batch_run_anomaly_watch.md
++++ /mnt/workspace/aiinfra/vllm/week7/day47_batch_run_anomaly_watch.md
+@@ -78,4 +78,352 @@
+ 
+ 整张图的骨架：**左**边是 Day 46 冻结的实验矩阵；**中**间是批量执行状态机，两个橙色的旁路（失败隔离、幂等跳过）保证夜里挂机安全；**右上**是自动落盘的数据流；**右下**是你今天的注意力所在——Grafana 盯防与 anomaly log；**底部**是每格跑完后的 sanity 三道关与重跑循环。记住一个原则：**上半部分（机器的事）尽量自动化，下半部分（人的事）寸土不让**。
+ 
+ ---
++
++## 三、原理深入讲解
++
++### 3.1 状态机的故障模式：每一步会怎么死
++
++Day 46 你跑通一格时，每一步都"正常发生"了；批量跑 84 次后，**每一步都必然以某种方式失败过**。提前知道死法，才能写出正确的检测与处置：
++
++| 步骤 | 主要故障 | 检测信号 | 处置 |
++|---|---|---|---|
++| 载参 | `cases.yaml` 参数名不被当前版本支持 | serve 启动即退出 | 第一格前先 dry-run 一遍全矩阵参数（只启动不压测） |
++| 启动 | OOM（量化档 KV 配置过大）、端口残留占用 | 健康检查超时 + 进程退出 | 健康超时 ≥ 10 min（首次加载权重慢）；失败标记 → 跳格 |
++| 健康检查 | 误判（服务将起未起） | 探测间隔 5 s × 上限 120 次 | 实际就绪耗时记入 env 指纹（也是"环境指纹"的一部分） |
++| warmup | **污染 prefix 命中率梯度**：warmup 请求若用共享前缀，会把 0% 档"预热"出命中 | 0% 档的 metrics 里 prefix hits > 0 | warmup 一律用随机 prompt；这是消融二最容易踩的坑 |
++| 正式采集 | client 崩溃 / 部分请求失败 | bench JSON 里 completed < expected | failed > 0 → 该轮标记 tainted → 重跑 |
++| metrics 快照 | 抓太晚（停服后 `/metrics` 已不可达） | curl 失败 | 快照必须在**停服之前**（脚本顺序问题，一次配对终身受用） |
++| 停服 | 进程残留 → 下一格端口冲突 + 显存残留 | 启动前 `nvidia-smi` 检查 | 优雅停 + 10 s 后强杀 + 启动前显存 < 2 GB 双保险 |
++| 冷却 | 热节流累积 | `nvidia-smi` 温度/频率 | 30 s 起步；连续量化大 KV 格子后加长 |
++
++> **一个反直觉的经验**：批量实验里"卡死"的概率远大于"崩溃"。崩溃会被健康检查抓到；卡死（进程活着、永远不 ready）才烧机器时间——所以健康检查循环里要同时探测**进程还活着**和**端口 ready** 两个条件。
++
++### 3.2 四类异常的机制深挖
++
++![四类异常的曲线签名与机制链](assets/day47_anomaly_signatures.svg)
++
++#### ① TPOT 周期性尖刺：巨石 step 的排队论
++
++chunked prefill 关闭时，一个 8k~16k token 的 prompt **独占整个 engine step**。设该 step 耗时 $T_P$（数百 ms 量级），正常 decode step 耗时 $T_D$（数十 ms），长 prompt 平均每 $K$ 个 decode step 到达一次，则受影响请求的 ITL 分布是**双峰**的：大多在 $T_D$ 附近，被巨石 step 挡住的那些跳到 $T_D + T_P$。p99 完全由巨石峰决定，均值几乎不动——这正是"只看均值会得出 chunked prefill 无收益的错误结论"（Day 11、Day 13 反复见过）的数学根源。
++
++开启 chunked prefill 后，`max_num_batched_tokens = B` 把巨石切成每步 ≤ B 的碎块，ITL 上界变为：
++
++$$\text{ITL}_{max} \approx \underbrace{B \cdot t_{prefill/tok}}_{\text{本步被切的 prefill}} + \underbrace{T_D}_{\text{本步 decode}}$$
++
++$B$ 越小 ITL 上界越紧（TPOT p99 越好），但 prefill 总步数变多、调度开销与 TTFT 恶化——Day 46 消融一要画的就是这条 trade-off 曲线。
++
++#### ② preemption 风暴：重算的正反馈
++
++V1 的抢占调用链（模块/函数名以你版本源码为准）：
++
++```text
++vllm/v1/core/scheduler.py
++  Scheduler.schedule()
++    └─ _schedule_running()
++         ├─ 逐 running 请求向 KVCacheManager 申请新 block（decode 每 token 一块）
++         ├─ 申请失败（free + evictable 都不够）
++         │    └─ 抢占 running 尾部请求（牺牲最近加入/优先级最低者）
++         │         ├─ 释放其全部 KV block
++         │         ├─ num_computed_tokens 清零（V1 只走 recompute 路径）
++         │         └─ 请求回 waiting 队首，等待全量重新 prefill
++         └─ 抢占释放的 block 立即被本轮 prefill/其他请求占用
++```
++
++**风暴的正反馈**在最后一行：抢占释放的 block 被新请求立刻吃掉，KV 依然紧张 → 再抢占。于是 `num_requests_running` 呈锯齿、waiting 尖峰、日志里 preemption 行连续刷屏。曲线形态见 4.2 的稳态模型——它有一个容量悬崖，悬崖位置可以用 Day 2 的手算公式预测。
++
++> **版本提示**：swap 抢占（KV 换出到 CPU）是 V0 时代的机制，V1 未实现（只保留 recompute）。如果你 grep 到 `PreemptionMode` 相关代码，以你安装版本的源码为准。识别信号在两个版本下一致：running 骤降 + waiting 尖峰。
++
++#### ③ prefix 颠簸：LRU 换手
++
++V1 的 block 池（`vllm/v1/core/kv_cache_manager.py` 的 `BlockPool`）里每个 block 有三种状态：**allocated**（被运行中请求引用）/ **evictable**（cached 但引用数为 0，可被淘汰）/ **free**。命中的 block 被 `touch()` 移到 LRU 尾部；新分配需要 block 时从 LRU 头部 evict。
++
++颠簸 = **命中 → 引用归零（evictable）→ 被淘汰 → 下个请求 miss → 重新 prefill 写回**的循环。它有两个隐蔽后果：
++
++1. **实测命中率 ≠ 构造命中率**：你构造了 90% 命中率梯度，高并发档实际可能只有 60%——Day 48 画图必须用 `/metrics` 实测值作横轴，否则"收益-命中率"曲线整体右移、结论失真
++2. **部分命中**：block 对齐（默认 16 token/block）使非整数倍的前缀只能命中整数块部分（Day 16 讲过）——2k 前缀实际命中 $\lfloor 2048/16 \rfloor \times 16$，其余仍要算
++
++#### ④ waiting 堆积：容量边界的读数
++
++请求进不来只有两个闸门：token budget（`max_num_batched_tokens`）被占满，或 KV 无力接纳。waiting 深度单调爬升 + TTFT 同步恶化 = 当前配置在该负载下的**实际容量已被越过**。消融四的"量化档位 → 并发上限变化"就用它测：固定 request rate，看哪档先堆积——堆积起点右移多少，就是该档位买来的容量。
++
++### 3.3 异常分诊三分法：环境 / 脚本 / 机制
++
++![异常分诊决策树](assets/day47_anomaly_triage_tree.svg)
++
++抓到异常后的第一件事不是重跑，是**分诊**——三类异常的去向完全不同：
++
++| 类别 | 判据（例） | 去向 |
++|---|---|---|
++| **环境类** | 所有格子同时变慢；`nvidia-smi` 显示降频/高温/有别的进程；网络抖动 | 修环境 → **重跑**，不进报告 |
++| **脚本类** | 0% 命中率档 metrics 有 hits；bench completed < expected；参数没生效（启动日志回显） | 修脚本 → **重跑**，不进报告 |
++| **机制类** | 单格出现、可复现、与该格配置有因果解释 | 抓快照 → **原样保留** → Day 48 报告的"机制解释"素材 |
++
++> **原则**：只有机制类异常才配进报告——环境和脚本问题产生的数字是**伪数据**，混进去会污染整组结论。但反过来，被你确认为机制类的异常一个都别放过：它们是矩阵数字之间的"因果胶水"。
++
++### 3.4 时间预算与降级：把"跑不完"变成设计决策
++
++用 4.1 的公式估算总时长后，大概率结论是"一天跑不完全矩阵"。收缩顺序不是随意的：
++
++1. **组间排程**：白天跑**需要盯的组**（消融一、二——异常信号最丰富），夜里挂**机械组**（消融四——量化档位对比，曲线行为可预期）
++2. **格间收缩**：保端点砍中间——单调或 U 型关系用三个点就能讲清故事（如 budget 档 2048 / 8192 / 32768 砍成 2048 / 32768 + 机制解释插值）
++3. **永不砍 seeds**：3 seeds → 2 seeds 是统计效力的悬崖（$\sigma_{\bar{x}} = \sigma/\sqrt{n}$，n=2 时置信区间宽度只比 n=1 缩 29%），且 Day 43 4.3 的轮数公式就是按 3 起步设计的
++4. **环境降级**：EAGLE-3 权重拿不到 → 换 MTP 或 ngram 草稿 → 或退化为"开关 × 负载"两维（README 兜底方案）——消融三的核心论点（接受率决定收益）在两维下依然成立
++5. 消融四直接复用 Week 4 Day 23-24 的部署与脚本，机器时间几乎为零增量
++
++---
++
++## 四、数学推导：从排程到判定
++
++### 4.1 矩阵总时长：先算再跑
++
++单格（单 seed 一轮）时长：
++
++$$T_{run} = T_{load} + T_{ready} + T_{warm} + T_{bench} + T_{snap} + T_{stop} + T_{cool}$$
++
++$T_{bench}$ 主导，用 Day 1 的量纲粗估（串行下界，并发下用聚合吞吐修正）：
++
++$$T_{bench} \approx \frac{N_{req} \cdot L_p}{\Pi_p} + \frac{N_{req} \cdot L_o}{\Pi_d}$$
++
++**数值例子**（消融一，Qwen3-8B / A100 量级）：9 格 × 3 seeds = 27 runs；每 run = 启动加载 2.5 min + 健康与 warmup 1 min + bench 6 min + 快照/停服/冷却 1 min ≈ **10.5 min** → 消融一 ≈ 4.7 h。全矩阵 84 runs ≈ **14.7 h**——一天跑不完，且要留失败补跑余量：
++
++$$T_{plan} = T_{total} \cdot (1 + \rho_{fail}) + T_{human}$$
++
++取 $\rho_{fail} = 20\%$（首日经验值），总机时 ≈ 17.6 h → **白天 + 夜里两班制**。这个数字必须今天上午就算出来，它决定你敢不敢"先把全矩阵挂上再睡"。
++
++### 4.2 preemption 的重算放大与容量悬崖
++
++设请求 prompt 长 $L_p$、被抢占时已生成 $g$ 个 token，则一次抢占作废的计算量为 $c = L_p + g$。若平均每请求被抢占 $\bar{v}$ 次，prefill 总计算量放大 $(1 + \bar{v})$ 倍，有效吞吐：
++
++$$\Pi_{eff} = \frac{\Pi_{nominal}}{1 + \bar{v}}$$
++
++$\bar{v} = 0.5$ 就已经损失 33% 吞吐；$\bar{v} \geq 1$ 时系统一半以上算力在重算。而 $\bar{v}$ 随负载不是线性增长，是**悬崖**：用 Day 2 的手算公式先算容量点——
++
++$$n^* = \left\lfloor \frac{C_{KV}}{(L_p + L_o) \cdot s_{tok}} \right\rfloor$$
++
++以 Qwen3-8B BF16 为例（36 层、8 KV 头、head_dim 128）：$s_{tok} = 2 \times 36 \times 8 \times 128 \times 2\,\text{B} = 144\,\text{KiB/token}$。A100-80G 上权重占 ~16 GB，KV 池约 60 GB → 容量 ≈ 43.5 万 token → 若每请求 $L_p + L_o = 2304$，则 $n^* \approx 189 < \text{max\_num\_seqs}=256$。**并发上限由 KV 容量而非 `max_num_seqs` 决定**——这就是消融四里"FP8/INT4 KV 量化买容量"的基准线：KV 每 token 字节减半，$n^*$ 翻倍。
++
++负载低于 $n^*$ 时 $\bar{v} \approx 0$；刚越过 $n^*$，抢占-占用-再抢占的正反馈启动，$\bar{v}$ 迅速超过 1 → goodput 崩塌。**消融实验的价值**：把这条悬崖在不同配置下的位置实测出来，而不是只知道它存在。
++
++### 4.3 离群判定与当天重跑协议
++
++n = 3 时普通 z 分数不可用（σ 由含离群点的样本估计，严重有偏），用 **leave-one-out**：
++
++$$z_i = \frac{x_i - \bar{x}_{(-i)}}{s_{(-i)}}, \qquad s_{(-i)} = \frac{|x_j - x_k|}{\sqrt{2}} \;(\text{两点样本标准差})$$
++
++$|z_i| > 3$ 判可疑 → **当天补跑 2 次**：
++
++- 补跑值落回其余点区间 → **偶发**：5 个点全保留，报告可取中位数并披露
++- 补跑值复现离群 → **系统性**：这不是坏数据，是**机制证据**——去 anomaly_log 找当时的快照，八成对应一次未记录的引擎事件
++
++> **数据伦理**：任何剔除必须写明标准并披露剔除数量。"悄悄删掉不喜欢的数据点"是实验报告的第一大忌——Day 48 的报告里要有一句"我们按 |z|>3 且复现标准剔除了 N 个点"，这句话本身就是可信度。
++
++### 4.4 采样粒度 vs 测量口径：监控只用于发现，不用于定量
++
++服务端 stats 是**周期性聚合**（V1 按 `stats_interval_s` 级别周期从 EngineCore 打包，默认秒级、随版本与配置变化）——Grafana 曲线是采样后的：持续短于采样间隔的毛刺会被平滑掉。而 client 侧 `vllm bench serve` 是**逐请求计时**，p99 不受服务端采样周期影响。由此三条推论：
++
++1. "Grafana 曲线很平" **不能**推出"没有毛刺"（可能是采样平滑了）
++2. "Grafana 有齿形" **一定能**推出"有事件"（存在性证明成立）
++3. 所以定量一律用 client 侧 JSON，服务端快照只做**归因**——这正是 Day 43 6.3"两边都存、交叉验证"的原因，今天它从建议变成纪律
++
++---
++
++## 五、关键代码：批量执行器 + 快照 + 三道关
++
++### 5.1 目录结构（在 Day 46 的 `ablation/` 上增量）
++
++```text
++ablation/
++├── cases.yaml            # Day 46 交付：全矩阵定义（今天零改动）
++├── expand_cases.py       # cases.yaml → manifest.tsv（一行一个 run）
++├── run_matrix.sh         # 批量执行器（今天的主角）
++├── snapshot.sh           # /metrics + 环境快照（停服前调用）
++├── sanity_check.py       # 三道关 + 离群判定
++├── warmup.py             # 随机前缀小负载（防梯度污染）
++├── predictions.md        # Day 46 交付：每格机制预测
++└── results/
++    ├── g1_chunked/cp_off_long/seed1.json
++    ├── g1_chunked/cp_off_long/metrics_seed1_1423.txt
++    └── failed/           # 失败清单 + 日志尾
++```
++
++### 5.2 expand_cases.py：矩阵展开
++
++```python
++#!/usr/bin/env python3
++"""cases.yaml -> manifest.tsv：每行 = 组 / case / seed / serve 参数 / bench 参数"""
++import yaml
++
++CASES = yaml.safe_load(open("cases.yaml"))
++GLOBAL = CASES.pop("global")           # 模型、seeds、共享 bench 参数
++
++with open("manifest.tsv", "w") as f:
++    for group, cases in CASES.items():
++        for case, cfg in cases.items():
++            for seed in GLOBAL["seeds"]:               # [1, 2, 3]
++                f.write("\t".join([
++                    group, case, str(seed),
++                    " ".join(cfg["serve_args"]),       # 该格专属 serve 参数
++                    " ".join(cfg["bench_args"]),       # 该格专属 bench 参数
++                ]) + "\n")
++print(sum(1 for _ in open("manifest.tsv")), "runs -> manifest.tsv")
++```
++
++### 5.3 run_matrix.sh：批量执行器
++
++```bash
++#!/usr/bin/env bash
++# 批量执行器：幂等续跑 + 失败隔离；用法: nohup bash run_matrix.sh &
++set -u
++PORT=8199; MODEL="Qwen/Qwen3-8B"; LOG=results
++mkdir -p "$LOG/failed"
++
++python3 expand_cases.py
++
++while IFS=$'\t' read -r group case seed serve_args bench_args; do
++  tag="${group}/${case}/seed${seed}"
++  out="$LOG/${group}/${case}/seed${seed}.json"
++  slog="$LOG/serve_${group}_${case}_${seed}.log"
++  mkdir -p "$(dirname "$out")"
++
++  # ---- 幂等：已有「完整」结果则跳过（半截 JSON 不算数）----
++  if [[ -f "$out" ]] && jq -e '.metrics.request_throughput' "$out" >/dev/null 2>&1; then
++    echo "[skip] $tag"; continue
++  fi
++  echo "=== [run] $tag  $(date +%T) ==="
++
++  # ---- 启动 ----
++  vllm serve "$MODEL" $serve_args --port "$PORT" >"$slog" 2>&1 &
++  serve_pid=$!
++
++  # ---- 健康检查：ready 或进程死亡，二者先到者赢（防“卡死烧整晚”）----
++  ready=0
++  for i in $(seq 1 120); do            # 5s x 120 = 10 min 上限
++    curl -sf "http://127.0.0.1:$PORT/health" >/dev/null && { ready=1; break; }
++    kill -0 "$serve_pid" 2>/dev/null || break
++    sleep 5
++  done
++  if [[ $ready -ne 1 ]]; then
++    echo "[FAIL:serve] $tag" | tee -a "$LOG/failed/list.txt"
++    { echo "--- $tag ---"; tail -30 "$slog"; } >> "$LOG/failed/serve.log"
++    kill -9 "$serve_pid" 2>/dev/null; sleep 30; continue
++  fi
++
++  # ---- warmup：随机前缀（防止污染 prefix 命中率梯度）----
++  python3 warmup.py --port "$PORT" --n 8 --random-prefix
++
++  # ---- 正式采集 ----
++  if ! vllm bench serve --url "http://127.0.0.1:$PORT" --seed "$seed" \
++        $bench_args --output-json "$out"; then
++    echo "[FAIL:bench] $tag" | tee -a "$LOG/failed/list.txt"
++  fi
++
++  # ---- 快照：必须停服之前 ----
++  bash snapshot.sh "$tag" "$PORT" "$LOG/${group}/${case}" "$seed" "$slog"
++
++  # ---- 停服：优雅 -> 强杀 -> 确认显存干净 ----
++  kill "$serve_pid" 2>/dev/null; sleep 10; kill -9 "$serve_pid" 2>/dev/null
++  for i in $(seq 1 12); do
++    used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits \
++           | head -1 | tr -d ' ')
++    [[ "$used" -lt 2000 ]] && break
++    sleep 5
++  done
++  sleep 30                             # 轮间冷却（协议同 Day 43）
++done < manifest.tsv
++echo "=== 结束：$(find "$LOG" -name 'seed*.json' | wc -l) 个结果文件 ==="
++```
++
++> **为什么 `kill -0` 那行不能省**：健康检查循环里若只探测端口，一个启动即崩溃的进程会让循环傻等 10 分钟 × 84 runs = 半夜的机器全在等尸体。`kill -0` 探测进程存活，死了立刻走失败隔离。
++
++### 5.4 snapshot.sh：现场取证
++
++```bash
++#!/usr/bin/env bash
++# 用法: snapshot.sh <tag> <port> <outdir> <seed> <serve_log>
++tag=$1; port=$2; outdir=$3; seed=$4; slog=$5; ts=$(date +%H%M%S)
++f="$outdir/metrics_seed${seed}_${ts}.txt"
++{
++  echo "# $tag  $(date -Is)"
++  curl -s "http://127.0.0.1:$port/metrics"
++  echo "# --- GPU 状态（降频/热节流的证据）---"
++  nvidia-smi --query-gpu=clocks.sm,temperature.gpu,memory.used,power.draw \
++             --format=csv
++  echo "# --- 引擎关键事件（preemption / eviction / graph capture）---"
++  grep -iE "preempt|evict|recompute|cuda graph" "$slog" | tail -50
++} > "$f"
++echo "snapshot -> $f"
++```
++
++### 5.5 sanity_check.py：三道关 + 离群判定
++
++```python
++#!/usr/bin/env python3
++"""读 results/ 全部 JSON：量级常识 / 单调性 / 离群（leave-one-out z）"""
++import json, math, glob
++import collections as C
++
++def load():
++    rows = []
++    for f in glob.glob("results/*/*/seed*.json"):
++        g, case, seed = f.split("/")[1:4]
++        m = json.load(open(f))["metrics"]     # 字段名以你的 bench 版本实测为准
++        rows.append(dict(group=g, case=case, seed=int(seed[4:]),
++                         tpot_p99=m["tpot_p99_ms"], ttft_p99=m["ttft_p99_ms"],
++                         thr=m["request_throughput"]))
++    return rows
++
++mean = lambda xs: sum(xs) / len(xs)
++def sd(xs):
++    m = mean(xs)
++    return math.sqrt(sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) if len(xs) > 1 else 0.0
++
++agg = C.defaultdict(list)
++for r in load():
++    agg[(r["group"], r["case"])].append(r)
++
++print("== 关 2：量级常识（阈值按模型/硬件校准，此为 Qwen3-8B/A100 示例）==")
++for (g, c), rs in sorted(agg.items()):
++    for r in rs:
++        if not (5 < r["tpot_p99"] < 300): print(f"  [!] {g}/{c}/s{r['seed']} tpot_p99={r['tpot_p99']:.0f}")
++        if not (10 < r["ttft_p99"] < 60000): print(f"  [!] {g}/{c}/s{r['seed']} ttft_p99={r['ttft_p99']:.0f}")
++
++print("== 关 1：单调性（case 顺序与方向按 Day 46 设计声明）==")
++RULES = {"g2_prefix": [(["hit0", "hit50", "hit90"], "ttft_p99", "down")]}
++for g, rules in RULES.items():
++    for order, key, d in rules:
++        vals = [mean([r[key] for r in agg[(g, c)]]) for c in order if (g, c) in agg]
++        ok = all((a >= b) if d == "down" else (a <= b)
++                 for a, b in zip(vals, vals[1:]))
++        print(f"  {g}.{key}: {[round(v, 1) for v in vals]} -> "
++              f"{'OK' if ok else '!! 不单调：先查梯度构造，再怀疑机制'}")
++
++print("== 离群判定（|z|>3 -> 当天重跑 2 次复现判定）==")
++for (g, c), rs in sorted(agg.items()):
++    for k in ("tpot_p99", "ttft_p99", "thr"):
++        xs = [r[k] for r in rs]
++        if len(xs) < 3: continue
++        for i, x in enumerate(xs):
++            rest = xs[:i] + xs[i + 1:]
++            m, s = mean(rest), sd(rest)
++            if s > 0 and abs((x - m) / s) > 3:
++                print(f"  [?] {g}/{c}/s{rs[i]['seed']} {k}={x:.1f}"
++                      f"（其余 {m:.1f}±{s:.1f}）")
++```
++
++**关 3（跨格一致性）**的手工做法：把多组中配置相同的基线格（如消融一的 `cp_on_b8192` 与消融三的 spec-off 基线，bench 负载相同）的 TPOT 并排列出，彼此应落在 ±σ 内——不一致说明存在未控制变量，**这比对不齐更严重，必须当天查明**。
++
++### 5.6 anomaly_log.md：异常记录格式
++
++每条异常一条记录，字段固定，Day 48 写报告时按图索骥：
++
++```markdown
++## [14:23] g2_prefix / hit90 / seed2 — 疑似 prefix 颠簸（机制类）
++- 现象：Grafana 命中率从 ~88% 震荡回落至 ~61%；gpu_cache_usage 高位锯齿
++- 当时负载：并发 256，运行第 4 分钟；waiting 无堆积，无 preemption 行
++- 快照：results/g2_prefix/hit90/metrics_seed2_1423.txt
++- 初步归因：共享前缀池 LRU 换手（BlockPool evictable 高换手）
++- 处置：保留数据；Day 48 用实测命中率作横轴重新对齐
++```
++
++---
+
+[0m
+第二部分已写入。创建第二张 SVG：四类异常的曲线签名四联图。
+[0m← [0mWrite week7/assets/day47_anomaly_signatures.svg
+Wrote file successfully.
+[0m
+创建第三张 SVG：异常分诊决策树。
+[0m← [0mWrite week7/assets/day47_anomaly_triage_tree.svg
+Wrote file successfully.
+[0m
+三张 SVG 全部完成。现在写入最后一部分：vLLM V1 联系、实验步骤、面试问题、总结、自测与产出物。
+[0m← [0mEdit week7/day47_batch_run_anomaly_watch.md
+Index: /mnt/workspace/aiinfra/vllm/week7/day47_batch_run_anomaly_watch.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/day47_batch_run_anomaly_watch.md
++++ /mnt/workspace/aiinfra/vllm/week7/day47_batch_run_anomaly_watch.md
+@@ -426,4 +426,191 @@
+ - 处置：保留数据；Day 48 用实测命中率作横轴重新对齐
+ ```
+ 
+ ---
++
++## 六、与 vLLM V1 的实际联系
++
++### 6.1 指标链路：你盯的曲线从哪来
++
++回顾 Day 43 §6.2 的跨进程链路（模块名随版本有拆分调整——较新版本 metrics 相关代码集中在 `vllm/v1/metrics/` 下，以你安装版本的源码为准）：
++
++```text
++EngineCore 进程（vllm/v1/engine/core.py）
++  └─ 每个 step 从 Scheduler 收集统计，按固定周期（秒级，stats_interval_s）打包
++     └─ 经 IPC 随 EngineCoreOutputs 发往前端进程
++         └─ OutputProcessor（vllm/v1/engine/output_processor.py）→ StatLoggerManager
++             └─ PrometheusStatLogger → 暴露在 /metrics → Prometheus 抓取 → Grafana
++```
++
++今天真正用得上的指标（**名字以 `curl /metrics` 实测为准**，先跑一遍再写进看板查询）：
++
++| 指标 | 今天怎么用 |
++|---|---|
++| `vllm:num_requests_running` / `vllm:num_requests_waiting` | 异常 ② 锯齿读数、异常 ④ 堆积读数 |
++| `vllm:gpu_cache_usage`（部分版本带 `_perc` 后缀） | KV 占用高位震荡 → 异常 ③ 颠簸的旁证 |
++| `vllm:gpu_prefix_cache_hits` / `vllm:gpu_prefix_cache_queries` | **实测命中率 = 消融二的横轴**（不是构造值！） |
++| `vllm:spec_decode_acceptance_rate` 等（沿用 Day 25 §4.4 的表） | 消融三验证接受率梯度构造成功 |
++| preemption 计数 | 若你的版本未暴露对应指标，用日志 grep + running/waiting 齿形推断 |
++
++一条命令把今天要的指标全部确认一遍：
++
++```bash
++curl -s http://127.0.0.1:8199/metrics | grep -E "^(vllm:num_requests|vllm:gpu_prefix|vllm:gpu_cache|vllm:spec_decode|vllm:preempt)"
++```
++
++### 6.2 抢占的证据在哪：从指标到日志
++
++3.2 ② 给了 scheduler 的调用链，运行时的**直接证据在引擎日志里**：
++
++```bash
++grep -iE "preempt|recompute" results/serve_*.log | sort | uniq -c | sort -rn
++```
++
++日志措辞随版本变化（如 "Preempted request ..."），但语义稳定：**每次抢占都对应一次 `num_computed_tokens` 清零的全量重算**。把日志行的时间戳与 Grafana 上 running 骤降的时刻对齐——这个"日志行 ↔ 曲线齿形"的对齐动作，就是 Day 48 报告里"机制解释"段落的标准写法（指标表现 → 源码机制 → 日志证据三环闭合）。
++
++### 6.3 前缀命中的落点：调度时的 `get_computed_blocks`
++
++请求被调度时，`KVCacheManager.get_computed_blocks()` 对 prompt 逐 block 计算 hash、查缓存、`touch()` 更新 LRU，返回已命中的 block 列表——这决定了本次 prefill **从第几个 token 开始算**（命中部分跳过计算但 KV 已就位）。你观察到的"实测命中率低于构造值"，机制就发生在这条链路的 evictable 池换手里；而"部分命中"来自 block 对齐取整。消融二的所有现象最终都能落到这条链路的某一步——这就是"盯着曲线时脑中要有源码"的含义。
++
++### 6.4 client 侧：TPOT 尖刺的定量来源
++
++监控曲线被采样周期平滑（4.4），而 `vllm bench serve` 的 ITL 是**逐请求、逐 token 计时**（Day 43 §6.1 的链路），落盘 JSON 里的 ITL 分位数是尖刺的唯一可信定量来源。两套口径的价值分工：**Grafana 发现、日志归因、JSON 定量**。
++
++### 6.5 vllm-ascend 场景的差异点
++
++- HTTP 接口与 `/metrics` 完全一致，`run_matrix.sh` / `snapshot.sh` 零改动
++- `nvidia-smi` 换 `npu-smi`（频率/温度/显存查询），健康检查逻辑不变
++- env 指纹记 **vllm-ascend + vLLM 两个仓**的 commit（Day 43 §6.4 的版本耦合点）
++
++---
++
++## 七、动手实验步骤（约 3 小时 + 机时）
++
++### Step 0：前置检查（10 min）
++
++- [ ] Day 46 晚间三项检查点已完成：`cases.yaml` 全矩阵、一格流水线跑通、`predictions.md` 写好
++- [ ] 锁频脚本执行，`nvidia-smi -q -d CLOCK` 确认无降频
++- [ ] Grafana 四面板打开：TPOT/ITL 时序、running/waiting、gpu_cache_usage 与命中率、preemption/queue
++- [ ] 磁盘余量确认（84 runs × JSON+快照+日志 ≈ 数百 MB）
++
++### Step 1：全矩阵 dry-run（20 min）
++
++- 只启动不压测：把 `manifest.tsv` 里出现过的**每一组不同 serve 参数**各启动一次，确认当前 vLLM 版本全部接受（参数名不被支持 = 夜里整批挂掉的头号原因）
++- `cat manifest.tsv` 人工扫一遍：每组 case 数、seeds、参数拼写
++
++### Step 2：首批三格全程人工盯（40 min）
++
++- 跑每组第一格 × seed1（消融一关 chunk、消融二 0% 档、消融三 spec-off 基线）
++- **眼睛在 Grafana，手放在 snapshot 上**：每格至少主动抓一次快照；出现齿形立刻按 5.6 格式记 anomaly_log
++- 这一步的隐性产出：你在练习"看见现象 → 说出机制"的反射（对着 3.2 的四类签名表练）
++
++### Step 3：挂白天批次 + 巡检（20 min + 每半小时 2 min）
++
++```bash
++nohup bash run_matrix.sh > run_day.log 2>&1 &     # 或 tmux，防 SSH 断连杀全家
++```
++
++巡检清单（每次 2 分钟，闹钟每 30 分钟）：
++
++- [ ] `tail run_day.log`：manifest 在推进，无连续 FAIL
++- [ ] `nvidia-smi`：频率锁定、温度 < 80°C、无陌生进程
++- [ ] Grafana 四面板：新齿形都记进 anomaly_log 了吗
++- [ ] 最新格结果文件完整（`jq` 能解析）
++- [ ] 磁盘增速正常
++
++### Step 4：滚动 sanity + 当天重跑（穿插进行，40 min）
++
++- 每跑完一组（该组全部格子 3 seeds 齐）立刻 `python3 sanity_check.py`
++- 离群点（|z|>3）**当场**补跑 2 次，按 4.3 协议分流：偶发保留 / 系统性归因
++- 跨格一致性手工核对：把各组中配置相同的基线格 TPOT 并排看
++
++### Step 5：傍晚"预测 vs 实际"预对照（30 min）
++
++- 对着 `predictions.md` 逐格打 ✔（符合预期）/ ✘（反直觉）
++- ✘ 的格子排序：**反直觉 = 理解盲区**，Day 48 优先深挖的就是它们
++- 提前看一眼明天的报告结构（README Day 48 模板），确认数据字段都够画图——发现缺维度今晚还来得及补
++
++### Step 6：夜批挂机 + 归档（20 min）
++
++- 夜里跑机械组（消融四：复用 Week 4 部署，曲线行为可预期，异常概率低）
++- `git add results/ anomaly_log.md rerun.md && git commit`——原始数据进版本控制，这是 Day 48 报告可信度的地基
++
++---
++
++## 八、面试高频问题
++
++**Q1：大规模 benchmark 为什么强调"人不要离开"？全自动化不是更高效吗？**
++
++> 答：自动化负责**可复现性**（矩阵、协议、落盘），但有两类信息只有人在场才能拿到：一是转瞬即逝的异常现场——服务端指标按秒级周期聚合，短毛刺被采样平滑后**不可恢复**；二是计划外现象的即时归因——当时的负载形态、与哪个配置的关联，事后只能靠快照猜。正确分工是：机器的事全自动，人的注意力按**素材的不可再生性**分配。
++
++**Q2：描述一次 preemption 风暴的现象、机制和解法。**
++
++> 答：现象：`num_requests_running` 锯齿骤降 + waiting 同步尖峰 + 日志 preemption 行连刷。机制：KV block 不足 → scheduler 抢占 running 尾部请求 → `num_computed_tokens` 清零回 waiting → 全量重算，且抢占释放的 block 立即被新请求占用形成正反馈；有效吞吐 ≈ 名义吞吐 / (1 + 平均抢占次数)。解法：降并发或 `max_num_seqs`、开 KV 量化扩容量（$n^* = C_{KV}/((L_p+L_o)\,s_{tok})$ 翻倍）；这在 Day 51 诊断树里就是"preemption 增长 → KV 超配"那条枝。
++
++**Q3：prefix caching 的收益为什么和命中率不成线性？你的实验怎么处理？**
++
++> 答：三个机制：① block 对齐（16 token/block）导致部分命中；② 高并发下 LRU 换手使实测命中率低于构造值（颠簸）；③ 命中省的是 prefill 计算与 KV 写入，主要改善 TTFT，对 TPOT 几乎无感。处理：横轴一律用 `/metrics` 实测命中率（hits/queries），报告里专门讨论构造值 vs 实测值的偏差及原因——这个偏差本身就是"容量与管理开销"的一课。
++
++**Q4：实验里发现一个离群数据点，你会删掉它吗？**
++
++> 答：不会直接删。流程：leave-one-out z 判定（|z|>3，n=3 时普通 z 有偏）→ 当天重跑 2 次（隔天环境不可比）→ 复现则系统性：查快照归因，它很可能是机制证据；不复现则偶发：保留全部点，报告中位数并披露。任何剔除必须写明标准和数量——"悄悄删数据"是实验报告第一大忌，也是 review 一眼能看穿的地方。
++
++**Q5：矩阵跑不完时，为什么"砍格子"优先于"砍重复次数"？**
++
++> 答：砍格子砍的是信息冗余维度：单调或 U 型关系用三个点就能讲清故事，中间档可以由机制解释插值补足。砍 seeds 砍的是统计效力：$\sigma_{\bar{x}} = \sigma/\sqrt{n}$，n 从 3 降到 2 置信区间只多缩 29%（相比 n=1），而且方差是所有显著性结论（Day 43 的 Welch t、Δ vs σ/3 判据）的地基。先牺牲可推理补充的，不牺牲不可恢复的。
++
++**Q6：Grafana 上 TPOT 曲线很平，能说明没有毛刺吗？**
++
++> 答：不能。服务端 stats 按秒级周期聚合，短于采样间隔的尖刺会被平滑掉；client 侧 bench 是逐请求计时，p99 不受采样影响。所以纪律是：**监控只用于发现（存在性证明），定量一律用 client 侧 JSON**——两边数据都存，交叉验证（Day 43 §6.3 的口径分歧检查今天每天都在做）。
++
++**Q7：矩阵估算要 15 小时，但你只有一天，怎么排？**
++
++> 答：先按"异常丰富度"分组：需要盯的组（chunked prefill、prefix——异常信号最多）白天人肉盯跑；机械组（量化档位）夜里挂机。预算加 20% 失败率；环境受限的组降级为"开关 × 负载"两维（保核心论点）；格间收缩保端点砍中间，seeds 一个不砍。本质是把有限的注意力与机时做联合调度——机时便宜，注意力贵。
++
++---
++
++## 九、今日总结
++
++- **批量执行三性质**：状态机（每步有成功判据）、失败隔离（一格失败不烧整晚）、幂等续跑（`组/case/seed` 为幂等键，半截 JSON 不算数）
++- **健康检查双探测**：端口 ready + 进程存活同时探测——卡死比崩溃更烧机器时间
++- **四类异常签名**：TPOT 周期尖刺（巨石 step）｜preemption 风暴（重算正反馈）｜prefix 颠簸（LRU 换手）｜waiting 堆积（容量边界）——每类都能落到一条 V1 源码链路上
++- **分诊三分法**：环境类/脚本类是伪数据（修完重跑，不进报告）；机制类是宝贝（抓快照原样保留，Day 48 机制解释的弹药）
++- **口径纪律**：Grafana 发现、日志归因、bench JSON 定量；实测命中率 ≠ 构造命中率，横轴用前者
++- **重跑协议**：离群 |z|>3 当天重跑 2 次——复现是机制证据，消失是偶发噪声；数据只披露、不悄悄删
++- **收缩优先级**：组间按异常丰富度排班（白天盯跑/夜里挂机）；砍格保端点；**永不砍 seeds**
++- 今天的角色是值班员 + 记录员：**数字说明"是什么"，异常现场说明"为什么"**——后者明天就补不回来了
++
++---
++
++## 十、今日自测题
++
++1. 健康检查循环为什么必须同时探测"端口 ready"和"进程存活"？只探测端口，最坏会发生什么？
++2. 0% 命中率档的 metrics 里发现 `gpu_prefix_cache_hits > 0`，给出两个可能原因和对应修复。
++3. 手算：Qwen3-8B BF16（36 层 / 8 KV 头 / head_dim 128），A100-80G 划 60 GB 给 KV 池，每请求 2048 prompt + 256 输出。并发上限是多少？KV cache 换 FP8 后上限变成多少？什么条件下会触发 preemption 风暴？
++4. 某格 TPOT p99 三个 seed 测得 21.2 / 20.8 / 38.5 ms，写出完整处置流程。
++5. 为什么 `snapshot.sh` 必须在停服之前调用？停服之后还能拿到什么、拿不到什么？
++
++<details>
++<summary>参考答案（先自己答再看）</summary>
++
++1. 进程死亡后端口永远不 ready，只探测端口会傻等满 10 分钟超时；84 runs 里每次启动失败都浪费 10 min，一夜机时全在等尸体。`kill -0 $pid` 探测进程存活，死了立即退出走失败隔离——崩溃可控，**卡死才最贵**。
++2. ① warmup 请求用了共享/相同前缀，把缓存"预热"出命中 → warmup 改用随机前缀（`warmup.py --random-prefix`）；② 上一 seed 轮的服务没停干净或幂等跳过误判，跨轮残留缓存 → 确认每轮重启服务、停服后显存检查 < 2 GB 再进下一格。（第三种低概率：hash 碰撞，量级上可排除。）修复后该格重跑。
++3. $s_{tok} = 2 \times 36 \times 8 \times 128 \times 2\,\text{B} = 144\,\text{KiB/token}$；容量 $= 60\,\text{GiB} / 144\,\text{KiB} \approx 43.5$ 万 token；$n^* = \lfloor 435000 / 2304 \rfloor \approx 189$（低于 `max_num_seqs=256`，说明上限由 KV 决定）。FP8 KV 使 $s_{tok}$ 减半 → $n^* \approx 379$，但被 `max_num_seqs=256` 封顶（此时瓶颈转移，量化收益体现在 KV 余量而非并发）。负载越过 $n^*$（free + evictable 不足以推进 decode 分配）时触发抢占-重算-再抢占循环。
++4. leave-one-out：剔除 38.5 后另两点 21.2/20.8 → $\bar{x}=21.0$，$s = |21.2-20.8|/\sqrt{2} \approx 0.28$，$z = (38.5-21.0)/0.28 \approx 62$，严重离群 → 当天重跑 2 次：复现 → 系统性，查 anomaly_log 与快照找机制（大概率 preemption 或热节流事件）；不复现 → 偶发，5 个点全保留，报告中位数并披露。任何情况下不直接删除。
++5. 停服后 `/metrics` endpoint 随进程消失，实时值（gauge/counter/histogram）一个都抓不到；能拿到的只剩 serve 日志文件和已落盘的 JSON。所以顺序必须是：bench 结束 → snapshot → 停服。这也是"快照是停服前最后一步"写进状态机的原因。
++</details>
++
++---
++
++## 十一、今日产出物
++
++| 产出物 | 验收标准 |
++|---|---|
++| **`results/` 全矩阵原始数据** | ~84 个 bench JSON + 每轮 metrics 快照 + env 指纹；`failed/` 有失败清单与日志尾 |
++| **`anomaly_log.md`** | 每条含：时间戳 / 格子标识 / 现象 / 当时负载 / 快照路径 / 分诊结论 / 处置；机制类单独标记 |
++| **重跑记录（`rerun.md`）** | 每个离群点：z 值 → 重跑结果 → 分流去向（偶发保留 / 系统性归因） |
++| **`predictions.md` 预对照标注** | 每格 ✔/✘ 已标；✘（反直觉）格子排好 Day 48 深挖优先级 |
++| **sanity 三道关输出** | 量级 / 单调性 / 跨格一致性的检查记录，异常项均有处置 |
++| **原始数据已 commit** | results/ + 日志进版本控制——Day 48 报告里每个数字都可追溯 |
++
++> **明日预告（Day 48）**：数据分析 + 写报告。把今天的原始数据聚合出图（误差棒、每图一句话结论），按四段式结构（设计 → 图表 → 机制解释 → 实践建议）组织四组消融，附上"预测 vs 实际"对照表与跨组"负载-配置决策表"，产出《vLLM 性能消融实验报告》——求职作品集的核心件。今天抓到的每一个机制类异常现场，都将在"机制解释"段落里兑现价值。
+
+[0m
+[0m$ [0mgrep -n "^## \|^# " week7/day47_batch_run_anomaly_watch.md; echo; wc -l week7/day47_batch_run_anomaly_watch.md; echo; grep -n "assets/day47" week7/day47_batch_run_anomaly_watch.md
+1:# Day 47：项目 C（二）——批量执行与异常盯防
+15:## 一、今日学习目标
+26:## 二、核心概念
+83:## 三、原理深入讲解
+176:## 四、数学推导：从排程到判定
+231:## 五、关键代码：批量执行器 + 快照 + 三道关
+276:# 批量执行器：幂等续跑 + 失败隔离；用法: nohup bash run_matrix.sh &
+343:# 用法: snapshot.sh <tag> <port> <outdir> <seed> <serve_log>
+421:## [14:23] g2_prefix / hit90 / seed2 — 疑似 prefix 颠簸（机制类）
+431:## 六、与 vLLM V1 的实际联系
+487:## 七、动手实验步骤（约 3 小时 + 机时）
+540:## 八、面试高频问题
+572:## 九、今日总结
+585:## 十、今日自测题
+605:## 十一、今日产出物
+
+616 week7/day47_batch_run_anomaly_watch.md
+
+77:![Day 47 批量执行与异常盯防总控图](assets/day47_batch_run_dashboard.svg)
+104:![四类异常的曲线签名与机制链](assets/day47_anomaly_signatures.svg)
+152:![异常分诊决策树](assets/day47_anomaly_triage_tree.svg)
+[0m
+文件已全部写入。做最终校验：结构完整性、SVG 引用与 XML 有效性。
+[0m$ [0mcd week7/assets && for f in day47_*.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('$f OK')"; done
+day47_anomaly_signatures.svg OK
+day47_anomaly_triage_tree.svg OK
+day47_batch_run_dashboard.svg OK
+[0m
+[0m$ [0mgrep -c '^```' week7/day47_batch_run_anomaly_watch.md; ls -la week7/day47_batch_run_anomaly_watch.md week7/assets/day47_*.svg
+22
+-rw-r--r-- 1 root root  7265 Oct  2 17:39 week7/assets/day47_anomaly_signatures.svg
+-rw-r--r-- 1 root root  4414 Oct  2 17:40 week7/assets/day47_anomaly_triage_tree.svg
+-rw-r--r-- 1 root root 12504 Oct  2 17:33 week7/assets/day47_batch_run_dashboard.svg
+-rw-r--r-- 1 root root 44705 Oct  2 17:42 week7/day47_batch_run_anomaly_watch.md
+[0m
+Day 47 教程已完成并通过校验（标题结构、代码围栏配对、SVG XML 均正常）。
+
+**文件路径与内容**：
+
+| 文件 | 内容 |
+|---|---|
+| `week7/day47_batch_run_anomaly_watch.md`（616 行） | Day 47「项目 C：批量执行 + 盯异常」完整教程 |
+| `week7/assets/day47_batch_run_dashboard.svg` | 批量执行总控图（矩阵 → 状态机 → 落盘/盯防 → sanity 三道关） |
+| `week7/assets/day47_anomaly_signatures.svg` | 四类异常曲线签名四联图（TPOT 尖刺 / preemption 风暴 / prefix 颠簸 / waiting 堆积） |
+| `week7/assets/day47_anomaly_triage_tree.svg` | 异常分诊决策树（环境 / 脚本 / 机制三分法） |
+
+**主要内容**：严格对应 README 中 Day 47-48 第一天的任务——批量执行 + 盯异常。含：run_matrix.sh 批量执行器（幂等续跑、失败隔离、双探测健康检查）、snapshot.sh 取证脚本、sanity_check.py 三道关（单调性/量级/跨格一致）+ leave-one-out 离群判定、四类异常的 V1 源码机制链（scheduler 抢占、BlockPool LRU 换手等）、数学推导（矩阵时长估算、重算放大与容量悬崖、离群重跑协议）、时间预算与降级策略（砍格不砍 seeds）。内容衔接 Day 43（harness 复用）、Day 46（cases.yaml/predictions.md）并预告 Day 48（报告写作），指标名均标注「以实测为准」。

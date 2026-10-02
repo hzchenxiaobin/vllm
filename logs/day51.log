@@ -1,0 +1,74 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la week8/ 2>/dev/null && ls week8/assets/ 2>/dev/null
+total 72
+drwxr-xr-x  3 root root  4096 Oct  2 18:27 .
+drwxr-xr-x 19 root root  4096 Oct  2 17:58 ..
+drwxr-xr-x  2 root root  4096 Oct  2 18:28 assets
+-rw-r--r--  1 root root 32573 Oct  2 18:31 day50_memory_estimation_block_table.md
+-rw-r--r--  1 root root 27278 Oct  1 23:17 README.md
+day50_block_table_prefix_hit.svg
+day50_cow_split.svg
+[0m
+[0m→ [0mRead week8/day50_memory_estimation_block_table.md[90m [limit=80][0m
+[0m→ [0mRead week8/day50_memory_estimation_block_table.md[90m [offset=440][0m
+[0m→ [0mRead week8/assets/day50_block_table_prefix_hit.svg[90m [limit=40][0m
+[0m
+[0m$ [0mls vllm/v1/core/ vllm/v1/engine/ 2>/dev/null
+(no output)
+[0m
+现在我先查看 vLLM V1 的调度器源代码，以确保教程中所引用的内容准确无误。
+[0m✗ [0mGrep "def schedule|def _schedule_|PREEMPTION|preempt" failed[90m in vllm/v1/core/scheduler.py[0m
+[91m[1mError: [0mripgrep execution failed
+[0m
+[0m$ [0mls; git log --oneline -3 2>/dev/null; find . -maxdepth 2 -name "scheduler.py" -path "*v1*" 2>/dev/null
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week0
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+9cce07e Add week0 interview-sprint notes to the Pages site
+f1da259 Add Day 20-36 tutorial notes (weeks 3-6) with logs
+9b87999 Add Day 10-21 tutorial notes (weeks 2-3) with assets and logs; update generator and progress
+[0m
+[0m$ [0mls public/ 2>/dev/null; find public -maxdepth 3 -name "scheduler.py" 2>/dev/null | head
+css
+index.html
+js
+plan.html
+prompt.html
+week0
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+[0m
+教程仓库中没有 vLLM 源码。我先检查一下本地是否安装了 vLLM，以便获取准确的函数名。
+[0m$ [0mpython -c "import vllm, os; print(vllm.__version__, os.path.dirname(vllm.__file__))" 2>/dev/null; pip show vllm 2>/dev/null | head -3; ls /usr/lib/python3*/site-packages 2>/dev/null | head
+(no output)
+[0m
+[0m$ [0mgrep -rn "class Scheduler\b" week8/ 2>/dev/null | head -3; grep -rln "scheduler" week8/ | head
+week8/day50_memory_estimation_block_table.md
+week8/README.md
+[0m

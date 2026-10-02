@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/>
+    </marker>
+    <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#C53030"/>
+    </marker>
+    <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F855A"/>
+    </marker>
+  </defs>
+  <rect width="960" height="560" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">Day 27 · preemption（recompute 模式）全生命周期：请求状态机 × KV 池占用联动</text>
+
+  <!-- ================= state machine ================= -->
+  <text x="60" y="66" font-size="13" font-weight="bold" fill="#2D3748">① 请求状态机（mini v3 与 vLLM V1 同构）</text>
+
+  <rect x="60" y="86" width="150" height="52" rx="10" fill="#E2E8F0" stroke="#718096" stroke-width="1.4"/>
+  <text x="135" y="108" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2D3748">WAITING</text>
+  <text x="135" y="126" text-anchor="middle" font-size="9.5" fill="#4A5568">FCFS；抢占者插队首</text>
+
+  <rect x="310" y="86" width="190" height="52" rx="10" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.4"/>
+  <text x="405" y="108" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#7B341E">PREFILLING（切块）</text>
+  <text x="405" y="126" text-anchor="middle" font-size="9.5" fill="#7B341E">喂不完留 running 续喂</text>
+
+  <rect x="600" y="86" width="170" height="52" rx="10" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.4"/>
+  <text x="685" y="108" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2A4365">DECODING</text>
+  <text x="685" y="126" text-anchor="middle" font-size="9.5" fill="#2A4365">每 step +1 token +1 KV 位</text>
+
+  <rect x="830" y="86" width="100" height="52" rx="10" fill="#C6F6D5" stroke="#2F855A" stroke-width="1.4"/>
+  <text x="880" y="108" text-anchor="middle" font-size="12" font-weight="bold" fill="#22543D">FINISHED</text>
+  <text x="880" y="126" text-anchor="middle" font-size="9.5" fill="#22543D">释放全部 block</text>
+
+  <g stroke="#718096" stroke-width="1.5" fill="none" marker-end="url(#arr)">
+    <line x1="210" y1="112" x2="306" y2="112"/>
+    <line x1="500" y1="112" x2="596" y2="112"/>
+    <line x1="770" y1="112" x2="826" y2="112"/>
+  </g>
+  <text x="258" y="100" text-anchor="middle" font-size="9.5" fill="#4A5568">准入：首块+watermark</text>
+  <text x="548" y="100" text-anchor="middle" font-size="9.5" fill="#4A5568">初始 prefill 完成</text>
+  <text x="798" y="100" text-anchor="middle" font-size="9.5" fill="#4A5568">达到目标长度</text>
+
+  <!-- preemption arc -->
+  <path d="M 685 138 C 685 208 405 208 405 214 C 405 190 135 208 135 142" fill="none"
+        stroke="#C53030" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arrR)"/>
+  <text x="410" y="196" text-anchor="middle" font-size="11" font-weight="bold" fill="#C53030">preempt（KV 不足，抢 running 尾部）：释放全部 block · num_computed_tokens = 0 · 回 WAITING 队首</text>
+  <text x="410" y="214" text-anchor="middle" font-size="10" fill="#C53030">代价 = C × 0.25 ms（C = prompt + 已生成 token 数，全部重算）</text>
+
+  <!-- recovery arc from PREFILLING side (chunked request can also be preempted) -->
+  <path d="M 405 138 C 300 170 190 170 135 142" fill="none"
+        stroke="#C53030" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrR)"/>
+  <text x="270" y="164" text-anchor="middle" font-size="9" fill="#9B2C2C">半 prefill 请求同样可被抢占</text>
+
+  <!-- ================= timeline ================= -->
+  <text x="60" y="266" font-size="13" font-weight="bold" fill="#2D3748">② 一次真实事件的轨迹（E4 实验日志的抽象，R7 为最新准入请求）</text>
+
+  <!-- lane 1: R7 state -->
+  <text x="60" y="296" font-size="10.5" fill="#4A5568">R7 状态：</text>
+  <g font-size="9">
+    <rect x="130" y="282" width="90"  height="22" fill="#E2E8F0" stroke="#718096"/><text x="175" y="296" text-anchor="middle" fill="#2D3748">waiting</text>
+    <rect x="222" y="282" width="130" height="22" fill="#FEEBC8" stroke="#DD6B20"/><text x="287" y="296" text-anchor="middle" fill="#7B341E">prefill（5×512 切块）</text>
+    <rect x="354" y="282" width="150" height="22" fill="#BEE3F8" stroke="#2B6CB0"/><text x="429" y="296" text-anchor="middle" fill="#2A4365">decode（每步 +1 KV 位）</text>
+    <rect x="506" y="282" width="70"  height="22" fill="#FED7D7" stroke="#C53030" stroke-width="1.5"/><text x="541" y="296" text-anchor="middle" fill="#742A2A" font-weight="bold">preempt!</text>
+    <rect x="578" y="282" width="60"  height="22" fill="#E2E8F0" stroke="#718096"/><text x="608" y="296" text-anchor="middle" fill="#2D3748">队首等待</text>
+    <rect x="640" y="282" width="140" height="22" fill="#FEEBC8" stroke="#DD6B20"/><text x="710" y="296" text-anchor="middle" fill="#7B341E">重算 prefill（ctx 更长）</text>
+    <rect x="782" y="282" width="120" height="22" fill="#BEE3F8" stroke="#2B6CB0"/><text x="842" y="296" text-anchor="middle" fill="#2A4365">decode → 完成</text>
+  </g>
+
+  <!-- lane 2: KV pool free level -->
+  <text x="60" y="342" font-size="10.5" fill="#4A5568">KV 池 free blocks：</text>
+  <line x1="128" y1="330" x2="912" y2="330" stroke="#A0AEC0" stroke-width="1"/>
+  <text x="918" y="334" font-size="9" fill="#718096">step →</text>
+  <!-- watermark dashed line -->
+  <line x1="128" y1="470" x2="912" y2="470" stroke="#C53030" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="132" y="464" font-size="9" fill="#C53030">watermark（准入线）</text>
+  <!-- free level step line: high, drops, gradual, jump at preempt, drop, gradual -->
+  <polyline points="128,352 222,352 222,392 284,392 284,398 346,398 346,404 418,404 418,412 490,412 490,420 504,420 504,480 514,480 514,388 578,388 578,430 660,430 660,436 730,436 730,442 800,442 800,450 860,450 860,456 902,456"
+            fill="none" stroke="#2B6CB0" stroke-width="2.2"/>
+  <!-- annotations on the polyline -->
+  <g font-size="9" fill="#4A5568">
+    <text x="228" y="342">准入 R7：付 5 块</text>
+    <text x="470" y="436">decode 增长：每 16 步/请求 -1 块</text>
+  </g>
+  <line x1="509" y1="425" x2="509" y2="378" stroke="#C53030" stroke-width="1.6" marker-end="url(#arrR)"/>
+  <text x="541" y="330" text-anchor="middle" font-size="10" font-weight="bold" fill="#C53030">free 触底 → 抢占 R7</text>
+  <text x="541" y="372" text-anchor="middle" font-size="9.5" fill="#C53030">一次性 +32 块（全部归还）</text>
+  <line x1="622" y1="440" x2="622" y2="416" stroke="#DD6B20" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="700" y="404" font-size="9.5" fill="#7B341E">R7 队首恢复：重新要回（更长的）块</text>
+
+  <!-- cost box -->
+  <rect x="640" y="486" width="300" height="56" rx="8" fill="#FFF5F5" stroke="#C53030" stroke-width="1.2"/>
+  <g font-size="10" fill="#742A2A">
+    <text x="656" y="506">浪费账：recomputed_tokens += C（R7 已计算的全部 token）</text>
+    <text x="656" y="524">= C × 0.25 ms 纯重算，且窗口内该请求零产出</text>
+  </g>
+  <text x="60" y="530" font-size="10" fill="#718096">三个旋钮：调小 max_num_seqs（准入） · 扩 KV 池/降 watermark（容量） · prefix caching（重算变重读，Day 16）</text>
+</svg>

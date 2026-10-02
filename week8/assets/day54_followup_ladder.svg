@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 760" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d54l" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+    <marker id="d54lb" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#db2777"/>
+    </marker>
+  </defs>
+  <rect width="980" height="760" fill="#fafbfc"/>
+  <text x="490" y="34" text-anchor="middle" font-size="23" font-weight="700" fill="#0f172a">追问梯子：一条追问链的五层（示例：chunked prefill）</text>
+  <text x="490" y="58" text-anchor="middle" font-size="13" fill="#64748b">左：面试官逐层下探 ｜ 中：合格答案锚点 ｜ 右：每层的"主动封口"策略</text>
+
+  <!-- L0 -->
+  <g>
+    <circle cx="66" cy="106" r="18" fill="#2563eb"/>
+    <text x="66" y="112" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">L0</text>
+    <rect x="100" y="82" width="380" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="116" y="103" font-size="13.5" font-weight="700" fill="#1e3a8a">"chunked prefill 是干什么的？"</text>
+    <text x="116" y="121" font-size="11.5" fill="#64748b">检验：有没有观点（结论层）</text>
+    <rect x="506" y="82" width="440" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="522" y="103" font-size="12.5" fill="#0f172a">答：长 prompt 切块分 step 做，避免把同 step 的 decode 挤出去</text>
+    <text x="522" y="121" font-size="11.5" font-weight="700" fill="#db2777">封口 →"代价是 TTFT 变长"</text>
+  </g>
+  <line x1="66" y1="126" x2="66" y2="164" stroke="#475569" stroke-width="2" marker-end="url(#d54l)"/>
+
+  <!-- L1 -->
+  <g>
+    <circle cx="66" cy="188" r="18" fill="#4f46e5"/>
+    <text x="66" y="194" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">L1</text>
+    <rect x="100" y="164" width="380" height="48" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="116" y="185" font-size="13.5" font-weight="700" fill="#312e81">"为什么切块就能消除 ITL 尖刺？"</text>
+    <text x="116" y="203" font-size="11.5" fill="#64748b">检验：因果链是否成立（机制层）</text>
+    <rect x="506" y="164" width="440" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="522" y="185" font-size="12.5" fill="#0f172a">答：prefill/decode 共享 max_num_batched_tokens 预算 → 单 step 计算量封顶</text>
+    <text x="522" y="203" font-size="11.5" font-weight="700" fill="#db2777">封口 →"预算默认 8192，依据是……"</text>
+  </g>
+  <line x1="66" y1="208" x2="66" y2="246" stroke="#475569" stroke-width="2" marker-end="url(#d54l)"/>
+
+  <!-- L2 -->
+  <g>
+    <circle cx="66" cy="270" r="18" fill="#0d9488"/>
+    <text x="66" y="276" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">L2</text>
+    <rect x="100" y="246" width="380" height="48" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="116" y="267" font-size="13.5" font-weight="700" fill="#134e4a">"budget 具体设多少？怎么定？"</text>
+    <text x="116" y="285" font-size="11.5" fill="#64748b">检验：因果链可否量化（数字层）</text>
+    <rect x="506" y="246" width="440" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="522" y="267" font-size="12.5" fill="#0f172a">答：夹在 GEMM 饱和点（上界）与 ITL SLO（下界）之间，口算给出两侧依据</text>
+    <text x="522" y="285" font-size="11.5" font-weight="700" fill="#db2777">封口 →"这个数在 BF16 口径下成立"</text>
+  </g>
+  <line x1="66" y1="290" x2="66" y2="328" stroke="#475569" stroke-width="2" marker-end="url(#d54l)"/>
+
+  <!-- L3 -->
+  <g>
+    <circle cx="66" cy="352" r="18" fill="#ca8a04"/>
+    <text x="66" y="358" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">L3</text>
+    <rect x="100" y="328" width="380" height="48" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="116" y="349" font-size="13.5" font-weight="700" fill="#713f12">"什么场景下它没有收益？"</text>
+    <text x="116" y="367" font-size="11.5" fill="#64748b">检验：是否知道适用边界（边界层）</text>
+    <rect x="506" y="328" width="440" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="522" y="349" font-size="12.5" fill="#0f172a">答：prompt ≪ budget 时无收益；prefix 命中率高时 prefill 本来就少</text>
+    <text x="522" y="367" font-size="11.5" font-weight="700" fill="#db2777">封口 →"反过来说，budget 太小会……"</text>
+  </g>
+  <line x1="66" y1="372" x2="66" y2="410" stroke="#475569" stroke-width="2" marker-end="url(#d54l)"/>
+
+  <!-- L4 -->
+  <g>
+    <circle cx="66" cy="434" r="18" fill="#db2777"/>
+    <text x="66" y="440" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">L4</text>
+    <rect x="100" y="410" width="380" height="48" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5"/>
+    <text x="116" y="431" font-size="13.5" font-weight="700" fill="#9d174d">"budget 设 512 会怎样？换昇腾呢？"</text>
+    <text x="116" y="449" font-size="11.5" fill="#64748b">检验：反向思考 + 跨域迁移（专家区分度）</text>
+    <rect x="506" y="410" width="440" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="522" y="431" font-size="12.5" fill="#0f172a">答：GEMM 掉出饱和区 → 收益反转；昇腾同理，用 tiling 扫描找拐点</text>
+    <text x="522" y="449" font-size="11.5" font-weight="700" fill="#db2777">封口 → 拉回自己的实证经验（项目 A）</text>
+  </g>
+
+  <!-- Summary panel -->
+  <g>
+    <rect x="60" y="500" width="860" height="222" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="490" y="532" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">五层能力模型与"过面线"</text>
+    <line x1="90" y1="548" x2="890" y2="548" stroke="#e2e8f0" stroke-width="1.5"/>
+    <text x="100" y="576" font-size="13" font-weight="700" fill="#1e3a8a">L0 结论 + L1 机制</text>
+    <text x="330" y="576" font-size="12.5" fill="#334155">＝ 及格线：大多数认真准备的人都能到</text>
+    <text x="100" y="606" font-size="13" font-weight="700" fill="#0f766e">L2 数字</text>
+    <text x="330" y="606" font-size="12.5" fill="#334155">＝ 背题者与实践者的分水岭：数字必须张口即来且口径清晰</text>
+    <text x="100" y="636" font-size="13" font-weight="700" fill="#a16207">L3 边界</text>
+    <text x="330" y="636" font-size="12.5" fill="#334155">＝ 工程成熟度：知道结论在哪里失效，才证明真的用过</text>
+    <text x="100" y="666" font-size="13" font-weight="700" fill="#be185d">L4 反例 / 迁移</text>
+    <text x="330" y="666" font-size="12.5" fill="#334155">＝ 专家岗区分度：反向推导 + 跨平台方法论（昇腾 → GPU 叙事）</text>
+    <line x1="90" y1="684" x2="890" y2="684" stroke="#e2e8f0" stroke-width="1.5"/>
+    <text x="490" y="710" text-anchor="middle" font-size="13" font-weight="700" fill="#db2777">训练法：每答一层，自问"面试官下一步会问什么"——把追问变成你铺好的路</text>
+  </g>
+</svg>

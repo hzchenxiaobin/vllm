@@ -1,0 +1,698 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls week7/ 2>/dev/null && ls week7/assets/ 2>/dev/null
+assets
+day43_benchmark_before_after.md
+README.md
+day43_benchmark_pipeline.svg
+day43_round_protocol.svg
+day43_significance_errorbar.svg
+[0m
+[0m→ [0mRead week7/day43_benchmark_before_after.md[90m [limit=80][0m
+[0m
+[0m$ [0mls week7/README.md 2>/dev/null && head -30 week7/README.md
+week7/README.md
+# 第 7 周：项目 A（下）+ 项目 C 消融实验
+
+> **本周定位**：从"会做优化"到"能证明优化"。前三天把项目 A 的优化做成可复现、可验证、可提交的 PR；后四天用严格的消融实验把前六周学的所有机制（chunked prefill / prefix caching / 投机解码 / 量化）跑出"开关 × 负载"的量化结论，形成求职作品集的核心材料。
+>
+> **本周前置检查**（Week 6 结束时应已具备，缺了先补）：
+> - [ ] 项目 A 已有一轮可运行的优化实现，且每步可测试
+> - [ ] 已记录优化前的基线性能数据（改之前先量化，否则"提升"无从谈起）
+> - [ ] 有一台稳定可用的 GPU 机器（或昇腾环境），vLLM 最新版可用
+> - [ ] Prometheus + Grafana 已部署（Week 1 Day 6 搭的环境）
+
+**本周总产出物**：
+
+| 产出物 | 验收标准 |
+|---|---|
+| 项目 A：PR + 前后性能对比表 | PR 已提交；对比表含均值±方差、提升百分比、测试环境说明 |
+| 项目 C：压测脚本 + 指标采集流水线 | 一条命令跑完一组实验并自动落盘 |
+| 《vLLM 性能消融实验报告》 | 4 组消融 × 图表 + 机制解释，能让没跑过实验的人看懂因果 |
+| 简历 bullet + 面试讲稿（项目 A/B/C） | 每个项目 STAR 结构 + 量化结果，3 分钟版可脱稿讲 |
+
+---
+
+## Day 43：完整 Benchmark 前后对比
+
+### 上午：设计可复现的 benchmark 方案
+
+性能对比最大的坑是**不可复现**——面试官一句"你这个提升是不是抖动？"就答不上来。对比实验必须控制变量：
+
+- **固定不变的量**：
+  - vLLM 版本（commit hash 记录进对比表）、模型与 checkpoint、量化配置
+  - 服务器启动参数（完整 `vllm serve` 命令原样保存为脚本）
+[0m
+[0m$ [0mgrep -n "Day 4[3-6]" week7/README.md | head; wc -l week7/README.md
+22:## Day 43：完整 Benchmark 前后对比
+71:## Day 44：边界 Case 与精度验证
+95:- 若发现 bug：当天修完再进 Day 45，**不要带着已知问题提 PR**
+99:## Day 45：整理为 PR 提交
+107:  3. **Benchmarks**：Day 43 的对比表 + 环境说明
+108:  4. **Test Plan**：Day 44 的 case 清单结果 + 精度数据
+124:## Day 46：项目 C 启动——实验设计
+256:- "你这个提升怎么排除是抖动？"（→ 统计口径答案，Day 43 的设计）
+257:- "为什么这个优化在那个场景不 work？"（→ 机制失效边界，Day 43-44 的诚实记录）
+258:- "消融实验的自变量怎么控制的？命中率梯度怎么构造的？"（→ Day 46 的设计细节）
+277 week7/README.md
+[0m
+[0m→ [0mRead week7/README.md[90m [limit=55, offset=71][0m
+Day 44 主题确认：**边界 Case 与精度验证**。先看 Day 43 的整体结构以保持一致，再看 vLLM 源码中相关测试机制。
+[0m
+[0m$ [0mgrep -n "^#\|^##" week7/day43_benchmark_before_after.md
+1:# Day 43：优化迭代与验证（一）——完整 Benchmark 前后对比
+11:## 一、今日学习目标
+21:## 二、核心概念
+23:### 2.1 偏差 vs 噪声：今天最重要的一个区分
+38:### 2.2 可复现性的三个层次
+48:### 2.3 统计口径：报什么数字
+59:### 2.4 场景矩阵：三个场景，三个主指标
+73:## 三、原理深入讲解
+81:### 3.1 测量噪声与偏差的分层模型
+100:### 3.2 轮次协议：warmup、重启、冷却
+124:### 3.3 锁频：把硬件从变量变成常量
+129:# 锁定 SM 时钟到固定值（示例：A100 锁 1410 MHz；具体值用 nvidia-smi -q -d CLOCK 查询后选）
+131:# 验证：确认 Current 时钟 == 固定值、无 throttling reasons
+133:# 实验结束恢复
+140:### 3.4 场景设计的第一性原理：你的优化动了哪个 bound？
+149:### 3.5 显著性初判：Δ 与 σ 的关系
+160:## 四、数学推导：从数字到结论
+162:### 4.1 记号与基本量
+172:### 4.2 显著性：Welch t 检验
+187:### 4.3 需要几轮？把"3~5 轮"变成公式
+204:### 4.4 相对提升的误差传播（delta method）
+216:### 4.5 配对设计：同样的轮数，更强的检验
+226:## 五、关键代码：一条命令跑完的 benchmark harness
+228:### 5.1 目录结构（全部进版本控制——这本身就是"可复现"的证据）
+241:### 5.2 run_suite.sh（核心脚本）
+244:#!/usr/bin/env bash
+245:# 用法: bash run_suite.sh baseline|optim
+255:# ---- 0. 环境指纹：对比表的一部分，别人问环境时直接甩出来 ----
+261:# ---- 1. 锁频（A100 示例值；用 nvidia-smi -q -d CLOCK 查后自选）----
+264:# 每场景的正式采集请求量（p99 至少由 ~10 个最慢请求支撑 → ≥1000；
+265:# prefill 8k×200 已是 1.6M 输入 token，单轮足够长）
+316:#!/usr/bin/env bash
+326:### 5.3 aggregate.py（汇总与对比表生成）
+329:#!/usr/bin/env python3
+336:# 场景 -> 主指标（JSON 字段名以你版本的 bench 输出为准，先 cat 一个 JSON 确认）
+376:### 5.4 三个场景的对照产出（示例格式）
+390:## 六、与 vLLM V1 的实际联系
+392:### 6.1 `vllm bench serve` 的内部链路（client 侧）
+410:### 6.2 服务端 `/metrics`：V1 引擎的内部视角
+434:### 6.3 为什么 TTFT/TPOT 以 client 侧为准，还要留服务端指标？
+438:### 6.4 vllm-ascend 场景的差异点
+446:## 七、动手实验步骤（约 2.5 小时）
+448:### Step 0：前置检查（10 min）
+454:### Step 1：搭 harness 并跑通一格（30 min）
+461:### Step 2：pilot 估 σ（15 min）
+468:### Step 3：跑全矩阵（60~80 min，挂机）
+478:### Step 4：汇总出表（20 min）
+486:### Step 5：写机制解释（15 min）
+493:### 晚间检查点
+500:### 常见故障排查
+511:## 八、面试高频问题
+539:## 九、今日总结
+548:## 十、今日自测题
+569:## 十一、今日产出物
+[0m
+[0m$ [0mls tests/v1/ 2>/dev/null; ls tests/ | head -30
+ls: cannot access 'tests/': No such file or directory
+[0m
+[0m$ [0mgrep -n "capture_bs\|batch_size_buckets\|cudagraph_capture_sizes\|get_batch_size_buckets\|capture_batch_size" vllm/v1/worker/gpu_model_runner.py | head -20
+grep: vllm/v1/worker/gpu_model_runner.py: No such file or directory
+[0m
+[0m$ [0mls; git log --oneline -3 2>/dev/null
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+f1da259 Add Day 20-36 tutorial notes (weeks 3-6) with logs
+9b87999 Add Day 10-21 tutorial notes (weeks 2-3) with assets and logs; update generator and progress
+9f00707 Add Day 03-19 tutorial notes (weeks 1-3) with logs; improve generator (cooldown, no-retry, low thinking variant)
+[0m
+[0m$ [0mls public/ 2>/dev/null | head; find . -maxdepth 2 -name "gpu_model_runner.py" 2>/dev/null | head -3
+css
+index.html
+js
+plan.html
+prompt.html
+week1
+week2
+week3
+week4
+week5
+[0m
+[0m$ [0mhead -50 week7/assets/day43_round_protocol.svg
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="980" height="430" fill="#ffffff"/>
+  <text x="490" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#0f172a">单轮 Benchmark 时间线：每个阶段在消灭什么偏差</text>
+  <text x="490" y="52" text-anchor="middle" font-size="12" fill="#64748b">单轮 = 一个 seed；共 3~5 轮；每轮重启服务，把 prefix cache / block pool / 分配器拉回同一初始状态</text>
+
+  <!-- badges -->
+  <rect x="262" y="76" width="76" height="20" rx="10" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="300" y="90" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">消偏差</text>
+  <rect x="480" y="76" width="120" height="20" rx="10" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="540" y="90" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">统计对象（噪声）</text>
+  <rect x="852" y="76" width="76" height="20" rx="10" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="890" y="90" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">消偏差</text>
+
+  <!-- phase blocks -->
+  <g text-anchor="middle">
+    <rect x="30"  y="104" width="110" height="58" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="85"  y="128" font-size="12.5" font-weight="bold" fill="#334155">启动服务</text>
+    <text x="85"  y="147" font-size="10.5" fill="#64748b">权重加载 ~1 min</text>
+
+    <rect x="160" y="104" width="90" height="58" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="205" y="128" font-size="12.5" font-weight="bold" fill="#334155">健康检查</text>
+    <text x="205" y="147" font-size="10.5" fill="#64748b">轮询 /health</text>
+
+    <rect x="270" y="104" width="150" height="58" rx="8" fill="#e2e8f0" stroke="#64748b" stroke-width="1.5"/>
+    <text x="345" y="128" font-size="12.5" font-weight="bold" fill="#334155">warmup（丢弃）</text>
+    <text x="345" y="147" font-size="10.5" fill="#475569">~32 请求，不计入统计</text>
+
+    <rect x="440" y="104" width="280" height="58" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="580" y="128" font-size="13" font-weight="bold" fill="#1e3a8a">正式采集（vllm bench serve）</text>
+    <text x="580" y="147" font-size="10.5" fill="#1e40af">~1000 请求 · --seed S · 输出 JSON</text>
+
+    <rect x="740" y="104" width="90" height="58" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="785" y="128" font-size="12.5" font-weight="bold" fill="#334155">metrics 快照</text>
+    <text x="785" y="147" font-size="10.5" fill="#64748b">curl /metrics</text>
+
+    <rect x="850" y="104" width="60" height="58" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="880" y="128" font-size="12.5" font-weight="bold" fill="#334155">停服</text>
+    <text x="880" y="147" font-size="10.5" fill="#64748b">kill</text>
+
+  </g>
+  <g stroke="#475569" stroke-width="1.5">
+    <line x1="140" y1="133" x2="156" y2="133" marker-end="url(#arr2)"/>
+    <line x1="250" y1="133" x2="266" y2="133" marker-end="url(#arr2)"/>
+    <line x1="420" y1="133" x2="436" y2="133" marker-end="url(#arr2)"/>
+    <line x1="720" y1="133" x2="736" y2="133" marker-end="url(#arr2)"/>
+[0m
+结构清楚了。Day 44 主题：**边界 Case 与精度验证**（Day 43 证明了"更快"，Day 44 证明"没算错"，产出 feeding Day 45 PR 的 Test Plan）。开始分批写入。
+[0m← [0mWrite week7/day44_boundary_cases_accuracy.md
+Wrote file successfully.
+[0m
+正文前半部分已写入。现在逐张创建 SVG 图。第一张：测试空间全景图。
+[0m← [0mWrite week7/assets/day44_test_space.svg
+Wrote file successfully.
+[0m
+第二张：三层精度对拍流水线。
+[0m← [0mWrite week7/assets/day44_diff_testing_flow.svg
+Wrote file successfully.
+[0m
+第三张：CUDA Graph bucket 边界图。
+[0m← [0mWrite week7/assets/day44_cudagraph_bucket_boundary.svg
+Wrote file successfully.
+[0m
+三张 SVG 完成。现在追加正文后半部分（第五~七节：关键代码、vLLM V1 联系、动手实验）。
+[0m← [0mEdit week7/day44_boundary_cases_accuracy.md
+Index: /mnt/workspace/aiinfra/vllm/week7/day44_boundary_cases_accuracy.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/day44_boundary_cases_accuracy.md
++++ /mnt/workspace/aiinfra/vllm/week7/day44_boundary_cases_accuracy.md
+@@ -243,4 +243,324 @@
+ - **截断重归一化**：用 top-20 logprobs 对拍时，两侧都要 softmax 重归一化并加 $\epsilon$（如 1e-9）防 log(0)
+ - **量级锚点**（经验数量级，随模型/任务浮动，仅作 sanity check）：同序改动的舍入噪声通常 1e-4~1e-3 nats/token；FP8 权重量化常见 1e-2~1e-1 nats/token。**超出锚点一个量级 = 回去查 bug，而不是改阈值**
+ 
+ ---
++
++## 五、关键代码：把测试空间变成可重跑的脚本
++
++### 5.1 目录结构（延续 Day 43 的项目布局，全部进版本控制）
++
++```
++proj-a/
++├── run_suite.sh              # Day 43：性能采集
++├── aggregate.py              # Day 43：性能汇总
++├── diff_serve.py             # 今日新增：L2/L3 两端口对拍
++├── fixed_prompts.jsonl       # 对拍固定语料（长/短/中英/代码各留一组）
++├── test_plan.md              # 今日新增：定类结论 + 阈值 + case 清单（PR Test Plan 的底稿）
++└── tests_proj/
++    ├── test_kernel_boundaries.py   # L1：shape × dtype 参数化对拍
++    └── test_adversarial.py         # L1：对抗输入（极值/抵消/全零）
++```
++
++### 5.2 L1：参数化边界测试（pytest）
++
++```python
++# tests_proj/test_kernel_boundaries.py
++# 以"量化 GEMM"类改动为例；导入与签名以你的项目为准
++import pytest
++import torch
++
++# from my_opt import fused_quant_matmul   # 你的实现
++
++# 容差表写在这里 = 阈值先行；数值依据见 4.2 节（BF16 输入 + FP32 累加的顺序差 ~1e-4 量级）
++DTYPES = [
++    (torch.bfloat16, 2e-2, 2e-3),   # (dtype, rtol, atol)
++    (torch.float16,  1e-3, 1e-3),
++]
++
++# 每行注释 = 这个 shape 对应 V1 里的哪个真实来源（见 3.1 维度 1 的表）
++SHAPES = [
++    (1,    256,  4096),   # M=1：单 token decode，最稀疏路径
++    (1,    257,  4096),   # N=257：尾块余 1，mask/越界写高发
++    (2,     64,  4096),   # 窄 N：tile 装不满
++    (37,   256,  4096),   # bucket 40 - 3：padding replay 的真实 shape
++    (40,   256,  4096),   # 恰好命中 bucket：off-by-one 高发
++    (256,  256,  4096),   # 常见 bucket 值
++    (1024, 256,  4096),   # max_num_seqs 量级（默认值随版本，以启动日志为准）
++    (8,    512, 11008),   # K 非对齐（LLM FFN 维度量级）
++]
++
++def ref_impl(a, b, scale):
++    # 参考实现 = 数学等价的 PyTorch eager 组合（"已知正确"的朴素写法）
++    return (a.float() @ (b.float() * scale)).to(a.dtype)
++
++@pytest.mark.parametrize("M,N,K", SHAPES,
++                         ids=[f"M{m}_N{n}_K{k}" for m, n, k in SHAPES])
++@pytest.mark.parametrize("dtype,rtol,atol", DTYPES, ids=["bf16", "fp16"])
++def test_boundary(M, N, K, dtype, rtol, atol):
++    torch.manual_seed(0)
++    a = torch.randn(M, K, device="cuda", dtype=dtype)
++    b = torch.randn(K, N, device="cuda", dtype=dtype)
++    scale = torch.tensor(0.03, device="cuda")
++
++    out_opt = fused_quant_matmul(a, b, scale)
++    out_ref = ref_impl(a, b, scale)
++
++    torch.testing.assert_close(out_opt, out_ref, rtol=rtol, atol=atol)
++    assert not torch.isnan(out_opt).any() and not torch.isinf(out_opt).any()
++```
++
++```python
++# tests_proj/test_adversarial.py
++import torch
++
++def test_cancellation_and_extremes():
++    """抵消（相对误差最坏场景）+ 极值：比随机高斯更接近真实 bug 模式"""
++    torch.manual_seed(0)
++    K = 4096
++    cases = {
++        "cancel":  torch.randn(8, K, device="cuda", dtype=torch.bfloat16),       # 符号对半 → 求和抵消
++        "extreme": torch.randn(8, K, device="cuda", dtype=torch.bfloat16) * 1e3, # 大动态范围
++        "tiny":    torch.randn(8, K, device="cuda", dtype=torch.bfloat16) * 1e-3,# 接近下溢
++        "zeros":   torch.zeros(8, K, device="cuda", dtype=torch.bfloat16),       # 全零
++    }
++    for name, a in cases.items():
++        b = torch.randn(K, 256, device="cuda", dtype=torch.bfloat16)
++        out = fused_quant_matmul(a, b, torch.tensor(0.03, device="cuda"))
++        assert torch.isfinite(out).all(), f"{name}: 出现非有限值"
++```
++
++> **为什么"全零/极值"这类输入重要**：随机高斯输入下 99% 的 bug 藏在 mask 与尾块逻辑里不会触发；而全零会暴露未初始化的累加器、极值会暴露 FP16 上溢与 scale 计算的除零。这是把 4.1 节的误差模型"用输入主动踩"。
++
++### 5.3 L2/L3：两端口服务级对拍（复用 Day 43 的启动框架）
++
++前置：用 Day 43 的启动脚本分别起 baseline commit 与 optim commit 两个端口（`--port 8000/8001`），**参数除端口外逐字相同**，各自从空缓存起步。
++
++```python
++#!/usr/bin/env python3
++# diff_serve.py —— L2（logits 级）+ L3（greedy diff）
++# 用法: python diff_serve.py --ref http://127.0.0.1:8000 \
++#                             --opt http://127.0.0.1:8001 --prompts fixed_prompts.jsonl
++import argparse, json, math, urllib.request
++
++def completions(ep, prompt, max_tokens=64):
++    body = {"model": "default", "prompt": prompt, "temperature": 0.0,
++            "seed": 42, "max_tokens": max_tokens, "logprobs": 20}
++    req = urllib.request.Request(f"{ep}/v1/completions",
++                                 data=json.dumps(body).encode(),
++                                 headers={"Content-Type": "application/json"})
++    with urllib.request.urlopen(req, timeout=600) as r:
++        d = json.loads(r.read())
++    ch = d["choices"][0]
++    # 每步: {token_str: prob}（top-20 截断分布；两侧 API 行为一致才可比）
++    steps = [{t: math.exp(lp) for t, lp in step.items()}
++             for step in ch["logprobs"]["top_logprobs"]]
++    return ch["text"], steps
++
++def l2_metrics(ref_steps, opt_steps):
++    agree = n = 0
++    kl_sum = cos_num = cos_dr = 0.0
++    for rs, os_ in zip(ref_steps, opt_steps):
++        rt, ot = max(rs, key=rs.get), max(os_, key=os_.get)
++        agree += (rt == ot); n += 1
++        # KL：截断后两侧各自重归一化 + eps 兜底（方向: ref || opt）
++        zr, zo = sum(rs.values()), sum(os_.values())
++        for t, p_raw in rs.items():
++            p = p_raw / zr
++            q = os_.get(t, 0.0) / zo + 1e-9
++            kl_sum += p * math.log(p / q)
++        # cosine：union top-k 概率向量（严格版需 logits 原值，走离线 forward）
++        union = set(rs) | set(os_)
++        vr = [rs.get(t, 0.0) for t in union]; vo = [os_.get(t, 0.0) for t in union]
++        cos_num += sum(x * y for x, y in zip(vr, vo))
++        cos_dr += math.sqrt(sum(x * x for x in vr) * sum(y * y for y in vo))
++    return {"top1_rate": agree / max(n, 1), "kl_per_tok": kl_sum / max(n, 1),
++            "cosine": cos_num / max(cos_dr, 1e-12), "n_tok": n}
++
++def main():
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--ref", required=True); ap.add_argument("--opt", required=True)
++    ap.add_argument("--prompts", default="fixed_prompts.jsonl")
++    args = ap.parse_args()
++
++    prompts = [json.loads(l)["prompt"] for l in open(args.prompts)]
++    all_ref, all_opt = [], []
++    first_div = []
++    for p in prompts:
++        t_ref, s_ref = completions(args.ref, p)
++        t_opt, s_opt = completions(args.opt, p)
++        m = l2_metrics(s_ref, s_opt)
++        all_ref.append(s_ref); all_opt.append(s_opt)
++        # L3：greedy 文本首分歧位置（无分歧记为 max_tokens）
++        pos = next((i for i, (a, b) in enumerate(zip(t_ref, t_opt)) if a != b),
++                   min(len(t_ref), len(t_opt), 64))
++        first_div.append(pos)
++        print(f"top1={m['top1_rate']:.4f} kl={m['kl_per_tok']:.5f} "
++              f"cos={m['cosine']:.6f} first_div={pos}")
++
++    flat_r = [s for steps in all_ref for s in steps]
++    flat_o = [s for steps in all_opt for s in steps]
++    total = l2_metrics(flat_r, flat_o)
++    print("\n== TOTAL ==")
++    print(f"top-1 一致率 = {total['top1_rate']:.4f}  (N = {total['n_tok']} tokens)")
++    print(f"KL(ref||opt) = {total['kl_per_tok']:.5f} nats/token")
++    print(f"cosine       = {total['cosine']:.6f}")
++    print(f"L3 首分歧位置: {[p for p in first_div]}")
++    # 阈值判定（与 test_plan.md 中先写好的标准一致）
++    ok = (total['top1_rate'] >= 0.995 and total['kl_per_tok'] <= 0.02
++          and total['cosine'] >= 0.999)
++    print(f"验收: {'PASS' if ok else 'FAIL'}  ← 阈值见 test_plan.md，勿事后调整")
++
++if __name__ == "__main__":
++    main()
++```
++
++实现说明（版本敏感处）：
++
++- `logprobs` / `top_logprobs` 的字段层级在 OpenAI 兼容 API 的 vLLM 实现中随版本有微调，**先发一条请求 `cat` 出原始 JSON 再写解析**（Day 43 同款忠告：先看真实输出再写聚合）
++- 严格的 logits cosine 需要张量原值：离线 `LLM` + `ask_for_logprobs` 的 forward 路径，或对拍单层 forward；对拍脚本里用 top-20 概率向量做 union 对齐是**廉价近似**，报告时注明口径
++- **prefix caching 必须同状态**：两个端口都从空缓存起步、对拍期间不重复发送同前缀请求，否则一侧命中缓存一侧不命中，测的是缓存而不是你的改动
++
++### 5.4 测试记录模板（`test_plan.md` 的产出形态）
++
++```markdown
++## Test Record — Day 44（项目 A：<改动名>）
++环境指纹: <commit ref> / <commit opt> · <GPU/驱动> · vLLM <版本> · 完整启动命令见 run_suite.sh
++
++### 定类
++类别 ②（同数学不同顺序：reduction 重排 + 融合）→ 走功能等价 + 三层对拍
++
++### 边界矩阵（L1 + 极端负载）
++| 维度 | case | 结果 | 备注 |
++|---|---|---|---|
++| shape | M=1 / N=257 / 窄N / bucket40-3 / 恰好40 / max_num_seqs | PASS ×6 | rtol 2e-2 / atol 2e-3 |
++| dtype | bf16 / fp16 | PASS / PASS | |
++| 动态 shape | --enforce-eager A/B（bucket 值 ±1，max+1） | PASS | diff 全零 |
++| prefix caching | off / on(高命中负载) | PASS / FAIL | on 高命中时 top1=0.71 → bug#2 |
++| 极端负载 | max-len / abort / 空 prompt / preemption | PASS / PASS / 预期拒绝 / PASS | |
++| 回归 | pytest tests/v1/ -k <关键词> | PASS（0 failed） | |
++
++### 精度对拍（L2/L3）
++top-1 = 99.87%（N=12,480 tok）· KL = 0.0031 nats/tok · cosine = 0.9998
++L3 首分歧：18/20 条请求无分歧，2 条分歧位置 = 152 / 203（低概率 token）
++
++### bug 清单
++| # | 现象 | 影响面 | 根因层 | 状态 |
++|---|---|---|---|---|
++| 1 | ... | ... | ... | 已修复，全量重跑通过 |
++| 2 | prefix caching 高命中时输出乱码 | 默认配置 | kernel 读旧布局 | 已修复（bump block hash）|
++```
++
++---
++
++## 六、与 vLLM V1 的实际联系
++
++### 6.1 你的测试点在源码里的"出处"
++
++边界 case 不是凭空想象的，每个都能在 V1 源码里找到产生它的机制：
++
++| 边界 case | 源码出处（模块级，具体行号随版本） | 机制回顾 |
++|---|---|---|
++| M=1 ~ max_num_seqs | `vllm/v1/core/scheduler.py`：`Scheduler.schedule()` 对 running/waiting 的预算裁剪 | Day 10-11：token budget 与 seq 数上限共同决定每步 batch |
++| 尾块 / 混合 batch 的不规则 M | 同上 + chunked prefill 的切块逻辑 | Day 11：`max_num_batched_tokens` 减去已排入后的剩余就是尾块 |
++| CUDA Graph bucket | `vllm/config.py`（CUDAGraph 配置，`--cudagraph-capture-sizes`）+ `vllm/v1/worker/gpu_model_runner.py` 的 capture/replay | Day 18；bucket 生成策略随版本演进，以启动日志为准 |
++| padding 后的 M | `vllm/v1/worker/gpu_model_runner.py`：replay 前把 batch pad 到 bucket | padding 元素是假输入，kernel 必须安全 |
++| q_len > 1 的 decode | `vllm/v1/spec_decode/`：draft tokens 拼进 decode step | Day 25：q_len = 1 + num_speculative_tokens |
++| prefix caching 交互 | `vllm/v1/core/kv_cache_utils.py`（block hash）+ `kv_cache_manager.py` | Day 16：hash = 父前缀 + token ids + ... |
++| abort / 生命周期 | `AsyncLLM.abort_request` → `EngineCore` → `Scheduler` 移除 + block 归还 free 队列 | HTTP 侧触发方式随版本有差异 |
++
++**把这张表读反**：当你不知道该测什么时，沿着"哪些源码路径会构造出我的 kernel 的输入"倒推——调度器、graph padding、spec decode、缓存管理，每个机制贡献一类 shape。
++
++### 6.2 学 vLLM 自己怎么测（借仓库的测试手法）
++
++- **kernel 层**（`tests/kernels/`，目录结构以你版本为准）：vLLM 测自定义 kernel 的标准手法就是本篇 L1——**eager PyTorch 参考实现 + `torch.testing.assert_close` + 参数化 shape**。读两三个你改动相邻的测试文件，直接抄它的参数化与容差风格，reviewer 看到熟悉的测试模式会显著降低 review 摩擦
++- **引擎层**（`tests/v1/`）：core / engine / worker 分层，大量用轻量 mock（如假 model runner）把 GPU 依赖隔离掉——**调度与 KV 改动的功能等价测试**可以照这个模式写进你的 PR
++- **接口契约**：Day 17 整理过的 attention backend 接口清单，天然就是"新后端必须全过"的 case 列表——每个接口方法一个最小 case，防止"只实现了 happy path"
++- **vllm-ascend**：跑仓库自带测试套件中与你改动模块直接相关的子集（环境受限时）；全量交给 PR 后的 CI
++
++### 6.3 版本敏感性清单（写进 PR 的"在哪个版本验证过"）
++
++以下内容随版本变化较快，**PR 里注明验证版本，教程里的描述都只是方法论**：
++
++1. CUDA Graph bucket 生成策略（小段密集/大段步长的具体参数）
++2. `max_num_seqs` 等默认值（由显存与配置推导，启动日志可查）
++3. 空 prompt 的处理（部分版本直接报错——属预期行为而非 bug）
++4. abort 的 HTTP 触发面（client 断连的语义在各 entrypoints 中的实现细节）
++5. `logprobs` 返回的 JSON 结构
++
++---
++
++## 七、动手实验步骤（约 2.5~3 小时）
++
++> 输入：Day 41-42 的优化实现 + Day 43 的 benchmark 环境。输出：`test_plan.md`（含测试记录与 bug 清单）。
++
++### Step 0：定类 + 阈值先行（15 min）
++
++1. 打开你的 diff（`git diff main...HEAD --stat`），把每处改动映射到 ①/②/③ 类别
++2. 在 `test_plan.md` 写下：定类结论、L1 容差（引用 4.2 节推导）、L2/L3 阈值、case 清单骨架
++3. **此刻不跑任何测试**——先有标准，后有数据
++
++### Step 1：L1 边界矩阵 + 对抗输入（45 min）
++
++1. 把 5.2 的 pytest 模板适配到你的 kernel：先跑通一个 shape，再放开参数化
++2. `pytest tests_proj/ -v` 全绿后，**故意改坏一处 mask 重跑**（变异测试的简化版：确认你的测试真的能抓 bug——一个抓不到 bug 的测试套件比没有更糟，它制造虚假信心）
++3. 记录每档 dtype 的实测最大相对误差（不只是 pass/fail，这个数字 Day 45 写 PR 有用）
++
++### Step 2：极端负载与生命周期（30 min）
++
++用脚本依次构造（对照 3.1 维度 5 的表）：
++
++```bash
++# max-length：输出顶满 max_model_len（构造 KV 写满尾 block）
++# abort：发 20 个长输出请求，100ms 后批量取消，观察 /metrics 的 block 计数回落
++# 空 prompt：curl 一条空字符串，记录行为（预期拒绝 or 正常处理，与版本对照）
++# preemption：Day 12-13 的手法——并发压到 KV 不足，观察 recompute 后输出正确性
++# prefix caching on：高重复前缀（同 system prompt × 50 请求），命中率 >80% 后检查输出
++```
++
++每项在 `test_plan.md` 记一行：现象 / 是否符合预期 / 依据。
++
++### Step 3：回归测试（30 min）
++
++```bash
++# vLLM 主仓（关键词换成你改动涉及的模块）
++pytest tests/v1/core/ -x -q -k "prefix or scheduler or kv"
++pytest tests/v1/worker/ -x -q
++pytest tests/kernels/ -x -q -k "<你的 kernel 相邻的关键词>"
++# vllm-ascend：跑你改动模块对应的子集（路径以你克隆版本为准）
++```
++
++记录：套件名 / 用例数 / 通过数 / 跳过原因（环境缺依赖的 skip 单独列出，Day 45 要在 PR 里说明）。
++
++### Step 4：L2/L3 对拍（45 min）
++
++1. 用 Day 43 的启动脚本起两个端口（baseline commit / optim commit），参数除端口逐字相同
++2. `python diff_serve.py --ref ... --opt ... --prompts fixed_prompts.jsonl`
++3. 检查 N：总 token 数 ≥ 10k（4.4 节的置信区间要求）；不够就加 prompt 或加 `max_tokens`
++4. 把 TOTAL 三指标 + L3 首分歧位置抄进 `test_plan.md`
++
++### Step 5：汇总 + bug 分诊（20 min）
++
++1. 补全 5.4 模板的全部表格
++2. 对每个 bug 过 3.4 节四问；当天修复的**全量重跑相关维度**（不是只重跑失败 case）
++3. 若有修不完的：回滚该子改动或收窄 PR 范围，并在文档里写明"已知问题与计划"
++
++### 晚间检查点
++
++- [ ] 定类结论与验证强度匹配（没有白费功或漏测）
++- [ ] L1 全绿，且做过一次"故意改坏"的自检
++- [ ] prefix caching 开/关、eager/graph、全部 dtype 各有记录
++- [ ] 对拍样本量 N ≥ 10k，阈值在跑测试前就已写下
++- [ ] bug 清单零"未分诊"项；已知问题零"带病进 Day 45"
++- [ ] `test_plan.md` 可以直接粘进 Day 45 的 PR 描述
++
++### 常见故障排查
++
++| 症状 | 可能原因 | 定位手段 |
++|---|---|---|
++| eager 全对，graph 模式偶发错 | padding 元素进入 kernel 未被 mask / capture 时绑定了动态值 | `--enforce-eager` A/B 收窄；bucket±1 单测 |
++| 只在 bf16 翻车 | fp16 容差给到了 bf16 上 / 累加器精度不足 | 逐 dtype 跑 L1 看实测误差量级 |
++| prefix caching on 时乱码 | 新旧 KV 布局混用 / hash 未包含布局标识 | 关缓存复测对照；检查 block hash 组成 |
++| 概率性 fail（同 seed 不可复现） | 竞态（stream 同步缺失）/ 未初始化内存 | 记录触发条件；`compute-sanitizer`（GPU）/ 昇腾对应内存检测工具 |
++| CI 挂而本地过 | CI 机器 bucket 列表不同（显存推导差异）/ 小显存 capture OOM | 拿 CI 的启动日志对照 bucket 列表 |
++
++---
+
+[0m
+最后追加第八~十一节（面试问题、总结、自测、产出物）。
+[0m← [0mEdit week7/day44_boundary_cases_accuracy.md
+Index: /mnt/workspace/aiinfra/vllm/week7/day44_boundary_cases_accuracy.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/day44_boundary_cases_accuracy.md
++++ /mnt/workspace/aiinfra/vllm/week7/day44_boundary_cases_accuracy.md
+@@ -563,4 +563,79 @@
+ | 概率性 fail（同 seed 不可复现） | 竞态（stream 同步缺失）/ 未初始化内存 | 记录触发条件；`compute-sanitizer`（GPU）/ 昇腾对应内存检测工具 |
+ | CI 挂而本地过 | CI 机器 bucket 列表不同（显存推导差异）/ 小显存 capture OOM | 拿 CI 的启动日志对照 bucket 列表 |
+ 
+ ---
++
++## 八、面试高频问题
++
++**Q1：你做了一个 kernel 融合/量化优化，怎么验证它没有算错？**
++
++> 答：先定类——位级等价 / 同数学不同顺序 / 近似数学，验证强度随类别升级。然后三层漏斗：L1 tensor 级用 eager 参考实现 + assert_close，暴力枚举边界 shape（M=1、尾块、窄 N、bucket±1）；L2 logits 级对拍 cosine / top-1 一致率 / KL，样本量按置信区间算（99.5% 至少 1 万 token）；L3 固定 seed greedy 看首分歧位置分布。不跳层：L1 划定"有没有错"，L3 回答"用户可感知吗"。（可以补充：我还做过变异自检——故意改坏 mask 确认测试真能抓 bug。）
++
++**Q2：只是换了 reduction 顺序，数学上等价，为什么会变结果？差多少？**
++
++> 答：浮点舍入不结合。顺序求和误差界 $\gamma_n \approx nu$（相对绝对值和），树形归约降到 $\log_2 n \cdot u$。BF16 输入 FP32 累加、K=4096 时不同切分顺序之间 1e-4 量级差异是预期的；但有 cancellation 时相对误差可以放大很多——所以 L1 容差要对着误差界设，而不是拍 1e-6。
++
++**Q3：你报 top-1 一致率 99.5%，怎么让人信这个数字？**
++
++> 答：给样本量和置信区间。伯努利 Wald 区间：N=10k、p=0.995 时半宽 ±0.14%；只测两三百 token 的话，99.5% 和 98.5% 在统计上分不开。另外阈值是**跑测试之前**写下的，参考线（如 FP8 ≥99.5%）要对照"主干自身的自然波动"校准，而不是事后看结果定标准。
++
++**Q4：kernel 在 eager 下全对，开了 CUDA Graph 偶发算错，你会怀疑什么？**
++
++> 答：三类：① padding 元素进入了 kernel 且没被安全处理（replay 时 batch 被 pad 到 bucket，假输入的读越界/NaN 传播）；② capture 时把动态值（shape、指针、host 侧变量）烧进了图；③ 静态 buffer 地址假设被别处打破。定位手法：`--enforce-eager` A/B 收窄到 graph 语义，再按 bucket 值 / bucket+1 / 最大值+1 单测，启动日志里拿真实 bucket 列表。
++
++**Q5：给你一个 M×N×K 的 kernel，说出你必须测的 shape。**
++
++> 答：M=1（最稀疏路径）、M 到 max_num_seqs 量级（最满 tile）、N 或 K 的尾块（对齐余量，如 N=257 对 256）、窄 N（tile 装不满）、K 非对齐；推理栈特有的：CUDA Graph bucket±1、spec decode 开启后的 q_len=1+k、chunked prefill 尾 token。方法论是"测试空间 = 代码分支依赖的大小关系的取值组合"——grep kernel 里每个 if / % / min / max。
++
++**Q6：精度退化到什么程度可以接受？**
++
++> 答：分层回答：tensor 级看误差界（对 dtype 推导）；logits 级看 top-1/KL 是否显著超出"同实现换 seed"的自然波动；最终看任务级指标（困惑度 / 下游抽检）和业务 SLO。量化类改动的参考线 top-1 ≥99.5% 是社区经验值，**必须以具体模型任务的 baseline 校准**。原则：退化可接受的前提是可度量、可复现、有机制解释（比如误差集中在低概率 token）。
++
++**Q7：PR 提交前一天发现边界 case 挂了，怎么办？**
++
++> 答：四问分诊：复现稳定吗、影响面多大、根因在哪层、今天能修吗。能修就修完全量重跑相关维度；修不动就回滚该子改动或收窄 PR 范围（拆成两个 PR）。底线是**不带已知问题提 PR**——reviewer 自己踩到已知 bug 会严重损害整个 PR 的可信度。
++
++---
++
++## 九、今日总结
++
++- **先定类再测试**：位级等价 / 同数学不同顺序 / 近似数学三类别对应三档验证强度，强度错配是浪费或漏测
++- **边界空间 = 分支条件的取值组合**：昇腾算子的 M=1 / 尾块 / 窄 N 思维直接迁移，GPU 栈追加 CUDA Graph bucket、q_len>1（spec decode）、prefix caching 交互三类
++- **三层对拍漏斗不跳层**：L1 tensor（assert_close + 对抗输入）→ L2 logits（cos / top-1 / KL，样本量按置信区间）→ L3 greedy 首分歧分布
++- **数值误差有公式可依**：$\gamma_n$ 界决定 L1 容差；FP8 的 $u=6.25\%$ 决定了量化改动必须用任务级指标
++- **阈值先行 + bug 当天闭环**：容差写进文档再跑测试；分诊四问；修完全量重跑；不带病进 Day 45
++- 今天的 `test_plan.md` 就是明天 PR 的 **Test Plan** 章节——Day 43 的对比表 + 今天的测试记录，构成 PR 的全部证据链
++
++---
++
++## 十、今日自测题
++
++1. 你的改动是"把 split-K 的切分点从 4 改到 8"，属于哪个类别？L1 容差该按什么依据设？
++2. 服务日志显示 capture 了 `[1,2,4,8,16,24,32,40,...,256]`。列出你必须构造的至少 5 个 batch size 测试点，并说明每个考验什么。
++3. 对拍测得 top-1 一致率 99.7%（N=300 token）。这个数字能区分 99.5% 和 99.9% 吗？需要多少样本？
++4. prefix caching 关闭时全对、开启且命中率 85% 时部分请求乱码。给出你的排查路线（提示：block hash 与新旧布局）。
++5. 投机解码开启后你的 decode attention kernel 输出错了。最可能违反了哪个隐含假设？
++
++<details>
++<summary>参考答案（先自己答再看）</summary>
++
++1. 类别 ②（同数学不同顺序）。容差依据 4.2 节：累加器 FP32、K 维长度下顺序差的理论量级（$u$ 为 FP32 的 $6\times10^{-8}$，深度差 $\log_2 8 - \log_2 4$ 级别，实测通常远小于界），设 rtol/atol 留出该量级余量而非拍 1e-6。
++2. 至少：`1`（最稀疏）、`40`（恰好命中 bucket，off-by-one）、`41`（落到下一 bucket，padding 最多档）、`256`（最大 capture，满 tile）、`257`（超界 → eager fallback，另一条执行路径）；再加 `--enforce-eager` 的 A/B 对照。
++3. 不能。N=300、p≈0.997 时 Wald 半宽 $1.96\sqrt{0.997\times0.003/300}\approx 0.62\%$，置信区间横跨 99.1%~100.3%。区分 99.5% vs 99.9%（ε=0.2%）约需 $N \ge 3.84\times0.005/0.0004 \approx 48$……注意此处 p(1-p) 取 0.995×0.005≈0.005，得 N≥48 是"区分两个已知比例"的样本量；而**估计**单个比例到 ±0.2% 需要 N≈9,600。答出"半宽与 $\sqrt{N}$ 反比、需近万 token"即算对。
++4. ① 复现：固定 seed + 固定命中序列；② 对照：关缓存复跑同请求应恢复 → 锁定缓存路径；③ 机制：block hash 复用了旧请求写入的 KV，而你的改动改了写入布局 → 新代码读到旧布局数据；④ 修复方向：让布局/版本进入 hash 组成（或升级时失效缓存），高命中负载复测。
++5. "decode 时 q_len==1"。投机解码下 query 长度 = 1 + num_speculative_tokens，kernel 若按单 query 写死（如把 q 维当作不存在、K/V 偏移按单 token 计算）就会算错或越界。
++</details>
++
++---
++
++## 十一、今日产出物
++
++| 产出物 | 验收标准 |
++|---|---|
++| `test_plan.md`：定类 + 阈值 + case 清单 | 阈值在测试前写下、每项有出处（公式 / 版本日志） |
++| 测试记录（边界矩阵 × pass/fail） | 六维度全覆盖，含 prefix caching 开/关、eager/graph、全 dtype |
++| 精度对拍数据 | top-1（含 N）/ KL / cosine / L3 首分歧分布；N ≥ 10k token |
++| `tests_proj/` 测试脚本 | 可重跑（一条命令）；做过"故意改坏"自检 |
++| bug 清单 | 每项过四问分诊；已修复项全量重跑；无"带病进 Day 45"项 |
++
++> **明日预告（Day 45）**：把 Day 43 的对比表与今天的测试记录组装成 PR——Why / What / Benchmarks / Test Plan 四段式描述、pre-commit 与 commit history 整理、提交后 CI 红了当天修、review 意见 24 小时内响应。PR 不合并也值：review 是免费的专家反馈。
+
+[0m
+[0m$ [0mwc -l week7/day44_boundary_cases_accuracy.md week7/assets/day44_*.svg && grep -n "^## " week7/day44_boundary_cases_accuracy.md && grep -c "assets/day44" week7/day44_boundary_cases_accuracy.md
+641 week7/day44_boundary_cases_accuracy.md
+  111 week7/assets/day44_cudagraph_bucket_boundary.svg
+  110 week7/assets/day44_diff_testing_flow.svg
+  128 week7/assets/day44_test_space.svg
+  990 total
+11:## 一、今日学习目标
+22:## 二、核心概念
+87:## 三、原理深入讲解
+188:## 四、数学推导：多大的差异算"错"
+248:## 五、关键代码：把测试空间变成可重跑的脚本
+426:## Test Record — Day 44（项目 A：<改动名>）
+455:## 六、与 vLLM V1 的实际联系
+492:## 七、动手实验步骤（约 2.5~3 小时）
+568:## 八、面试高频问题
+600:## 九、今日总结
+611:## 十、今日自测题
+631:## 十一、今日产出物
+3
+[0m
+验证文件完整性与 SVG 语法。
+[0m$ [0mfor f in week7/assets/day44_*.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('$f OK')"; done
+week7/assets/day44_cudagraph_bucket_boundary.svg OK
+week7/assets/day44_diff_testing_flow.svg OK
+week7/assets/day44_test_space.svg OK
+[0m
+[0m$ [0msed -n '420,430p' week7/day44_boundary_cases_accuracy.md
+- 严格的 logits cosine 需要张量原值：离线 `LLM` + `ask_for_logprobs` 的 forward 路径，或对拍单层 forward；对拍脚本里用 top-20 概率向量做 union 对齐是**廉价近似**，报告时注明口径
+- **prefix caching 必须同状态**：两个端口都从空缓存起步、对拍期间不重复发送同前缀请求，否则一侧命中缓存一侧不命中，测的是缓存而不是你的改动
+
+### 5.4 测试记录模板（`test_plan.md` 的产出形态）
+
+```markdown
+## Test Record — Day 44（项目 A：<改动名>）
+环境指纹: <commit ref> / <commit opt> · <GPU/驱动> · vLLM <版本> · 完整启动命令见 run_suite.sh
+
+### 定类
+类别 ②（同数学不同顺序：reduction 重排 + 融合）→ 走功能等价 + 三层对拍
+[0m
+完成。文件已写入并验证：
+
+**`week7/day44_boundary_cases_accuracy.md`**（641 行，结构对齐 Day 43，衔接 Day 43 对比表 → Day 45 PR Test Plan）：
+
+- **核心内容**：改动三分类（位级等价 / 同数学不同顺序 / 近似数学）→ 六维边界矩阵（shape / dtype / CUDA Graph bucket / prefix caching 交互 / 极端负载与 abort / 回归测试）→ 三层精度对拍漏斗（tensor 级 assert_close → logits 级 cosine/top-1/KL → 端到端 greedy 首分歧分布）
+- **数学推导**：各 dtype 舍入误差单位（FP8 E4M3 达 6.25%）、reduction 顺序误差界 $\gamma_n$、量化扰动传播、top-1 一致率样本量公式（N=10k → ±0.14%）
+- **代码**：L1 参数化边界 pytest + 对抗输入、L2/L3 两端口 `diff_serve.py`（复用 Day 43 harness）、测试记录/bug 分诊模板
+- **3 张 SVG**（已通过 XML 校验）：`assets/day44_test_space.svg`（测试空间全景）、`assets/day44_diff_testing_flow.svg`（三层对拍流水线）、`assets/day44_cudagraph_bucket_boundary.svg`（bucket 边界与 padded replay）
+- 严格覆盖 README Day 44 全部要求，含面试 7 问、自测 5 题（带答案）、产出物清单

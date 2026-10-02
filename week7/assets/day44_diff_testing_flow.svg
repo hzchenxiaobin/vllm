@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrD" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="arrG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#16a34a"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="640" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#0f172a">三层精度对拍流水线：漏斗不跳层，阈值先行</text>
+  <text x="500" y="50" text-anchor="middle" font-size="11.5" fill="#64748b">L1 划定"有没有错"，L2 判定"要不要紧"，L3 回答"用户可感知吗"——顺序不能倒</text>
+
+  <!-- input prep -->
+  <rect x="300" y="64" width="400" height="40" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+  <text x="500" y="89" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">输入准备：同 prompt 集 · 同 commit / 参数 / seed · 独立端口空缓存起步</text>
+
+  <g stroke="#475569" stroke-width="1.5" fill="none">
+    <path d="M430,104 L430,128" marker-end="url(#arrD)"/>
+    <path d="M570,104 L570,128" marker-end="url(#arrD)"/>
+  </g>
+
+  <!-- two implementations -->
+  <g text-anchor="middle">
+    <rect x="240" y="132" width="240" height="48" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8"/>
+    <text x="360" y="152" font-size="13" font-weight="bold" fill="#14532d">参考实现（reference）</text>
+    <text x="360" y="170" font-size="10.5" fill="#166534">PyTorch eager 等价算子 / 主干代码</text>
+
+    <rect x="520" y="132" width="240" height="48" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+    <text x="640" y="152" font-size="13" font-weight="bold" fill="#1e3a8a">优化实现（optimized）</text>
+    <text x="640" y="170" font-size="10.5" fill="#1e40af">你的 kernel / 融合 / 量化路径</text>
+  </g>
+
+  <!-- fail rail -->
+  <rect x="800" y="204" width="180" height="330" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="890" y="228" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#991b1b">fail 处理（右轨）</text>
+  <text x="814" y="254" font-size="10.5" fill="#7f1d1d">• L1 fail → 禁止进 L2</text>
+  <text x="814" y="276" font-size="10.5" fill="#7f1d1d">• 记录 seed / 输入组合</text>
+  <text x="814" y="298" font-size="10.5" fill="#7f1d1d">• 定位：kernel × 分支</text>
+  <text x="814" y="336" font-size="10.5" fill="#7f1d1d">• 修复后从 L1</text>
+  <text x="814" y="354" font-size="10.5" fill="#7f1d1d">  全量重跑</text>
+  <text x="814" y="392" font-size="10.5" fill="#7f1d1d">• L2 指标超锚点一个</text>
+  <text x="814" y="410" font-size="10.5" fill="#7f1d1d">  量级 → 回去查 bug，</text>
+  <text x="814" y="428" font-size="10.5" fill="#7f1d1d">  不是改阈值</text>
+  <text x="814" y="466" font-size="10.5" fill="#7f1d1d">• L3 高频早期分歧</text>
+  <text x="814" y="484" font-size="10.5" fill="#7f1d1d">  = 系统性 bug，</text>
+  <text x="814" y="502" font-size="10.5" fill="#7f1d1d">  下钻到 L2/L1</text>
+
+  <!-- L1 -->
+  <g>
+    <rect x="60" y="204" width="720" height="96" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="1.8"/>
+    <rect x="60" y="204" width="120" height="96" rx="10" fill="#dbeafe" stroke="none"/>
+    <text x="120" y="240" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e3a8a">L1</text>
+    <text x="120" y="262" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">tensor 级</text>
+    <text x="120" y="282" text-anchor="middle" font-size="10" fill="#1e40af">毫秒级 · 可暴力枚举</text>
+    <text x="196" y="230" font-size="11.5" fill="#334155">• shape 边界矩阵全枚举：M=1 / 尾块（N=257→256 余 1）/ 窄 N / q_len&gt;1 / max_num_seqs 上限</text>
+    <text x="196" y="252" font-size="11.5" fill="#334155">• 输入：随机 + 对抗张量（极值 / 抵消 / 全零 / inf-nan 边界）</text>
+    <text x="196" y="274" font-size="11.5" fill="#334155">• 判定：torch.testing.assert_close(opt, ref, rtol, atol)——容差按 dtype 与类别推导（4.2 节）</text>
+    <text x="196" y="293" font-size="10.5" fill="#64748b">同时打印中间张量 max / inf 计数，不只看最终误差（混合精度链路的累加器溢出）</text>
+  </g>
+
+  <g stroke="#16a34a" stroke-width="1.8" fill="none">
+    <path d="M420,300 L420,328" marker-end="url(#arrG)"/>
+  </g>
+  <text x="440" y="320" font-size="10.5" fill="#166534" font-weight="bold">pass（误差有界）</text>
+  <path d="M780,252 L796,252" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arrR)"/>
+
+  <!-- L2 -->
+  <g>
+    <rect x="60" y="332" width="720" height="96" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="1.8"/>
+    <rect x="60" y="332" width="120" height="96" rx="10" fill="#dbeafe" stroke="none"/>
+    <text x="120" y="368" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e3a8a">L2</text>
+    <text x="120" y="390" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">logits 级</text>
+    <text x="120" y="410" text-anchor="middle" font-size="10" fill="#1e40af">一次 forward</text>
+    <text x="196" y="358" font-size="11.5" fill="#334155">• temperature=0 同输入 forward，取每步 logits（logprobs=20 走 API 最方便）</text>
+    <text x="196" y="380" font-size="11.5" fill="#334155">• cosine(z_ref, z_opt) ≥ 0.999（对缩放不敏感 → 需与下面两个互补）</text>
+    <text x="196" y="402" font-size="11.5" fill="#334155">• top-1 一致率 ≥ 99.5%，样本量 N ≥ 10k token（4.4 节：±0.14% 置信半宽）</text>
+    <text x="196" y="421" font-size="10.5" fill="#64748b">KL(p_ref‖p_opt)：top-20 截断后两侧重归一化 + ε 兜底；方向要写清（不对称）</text>
+  </g>
+
+  <g stroke="#16a34a" stroke-width="1.8" fill="none">
+    <path d="M420,428 L420,456" marker-end="url(#arrG)"/>
+  </g>
+  <text x="440" y="448" font-size="10.5" fill="#166534" font-weight="bold">pass</text>
+  <path d="M780,380 L796,380" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arrR)"/>
+
+  <!-- L3 -->
+  <g>
+    <rect x="60" y="460" width="720" height="96" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="1.8"/>
+    <rect x="60" y="460" width="120" height="96" rx="10" fill="#dbeafe" stroke="none"/>
+    <text x="120" y="496" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e3a8a">L3</text>
+    <text x="120" y="518" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">端到端</text>
+    <text x="120" y="538" text-anchor="middle" font-size="10" fill="#1e40af">完整生成</text>
+    <text x="196" y="486" font-size="11.5" fill="#334155">• 固定 seed + greedy（temperature=0），对比生成文本 diff</text>
+    <text x="196" y="508" font-size="11.5" fill="#334155">• 记录首分歧位置分布，而非只记"一样 / 不一样"</text>
+    <text x="196" y="530" font-size="11.5" fill="#334155">• 分歧集中在低概率 token = 正常舍入噪声；高频早期分歧 = 系统性 bug</text>
+    <text x="196" y="549" font-size="10.5" fill="#64748b">长 prompt（8k+）+ 短 prompt + 中英 / 代码各留一组固定语料，进版本控制</text>
+  </g>
+  <path d="M780,508 L796,508" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arrR)"/>
+
+  <!-- bottom -->
+  <g stroke="#475569" stroke-width="1.5" fill="none">
+    <path d="M420,556 L420,584" marker-end="url(#arrD)"/>
+  </g>
+  <rect x="230" y="588" width="540" height="40" rx="8" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+  <text x="500" y="613" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">汇入测试记录：每层指标 + 样本量 N + 阈值出处（可复算，不拍脑袋）</text>
+</svg>

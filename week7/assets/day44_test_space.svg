@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="680" viewBox="0 0 1000 680" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrA" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrB" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="arrC" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#2563eb"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="680" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#0f172a">Day 44 测试空间全景：先定类，再分流，六维边界矩阵喂两侧</text>
+  <text x="500" y="50" text-anchor="middle" font-size="11.5" fill="#64748b">非数值改动 → 功能等价支路；数值改动 → 三层对拍支路；所有结果汇入同一份测试记录，bug 当天闭环</text>
+
+  <!-- Step 1 -->
+  <rect x="290" y="62" width="420" height="36" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+  <text x="500" y="85" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Step 1 · 改动定类：这个优化动了数学吗？</text>
+
+  <!-- three categories -->
+  <g text-anchor="middle">
+    <rect x="55" y="118" width="280" height="70" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="195" y="140" font-size="13" font-weight="bold" fill="#14532d">① 位级等价</text>
+    <text x="195" y="158" font-size="10.5" fill="#166534">调度 / block table 布局 / 分配器</text>
+    <text x="195" y="175" font-size="10.5" fill="#166534">输出逐位相同 → 功能等价验证</text>
+
+    <rect x="360" y="118" width="280" height="70" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="500" y="140" font-size="13" font-weight="bold" fill="#1e3a8a">② 同数学 · 不同顺序</text>
+    <text x="500" y="158" font-size="10.5" fill="#1e40af">融合 / re-tiling / split-K / reduction 重排</text>
+    <text x="500" y="175" font-size="10.5" fill="#1e40af">误差有界 → 数值对拍（有容差）</text>
+
+    <rect x="665" y="118" width="280" height="70" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+    <text x="805" y="140" font-size="13" font-weight="bold" fill="#78350f">③ 近似数学</text>
+    <text x="805" y="158" font-size="10.5" fill="#92400e">量化 / 低精度累加 / 近似公式</text>
+    <text x="805" y="175" font-size="10.5" fill="#92400e">任务级评估 → 全链路对拍</text>
+  </g>
+
+  <!-- arrows category -> lanes -->
+  <g stroke="#475569" stroke-width="1.5" fill="none">
+    <path d="M195,188 L195,216" marker-end="url(#arrA)"/>
+    <path d="M500,188 L410,216" marker-end="url(#arrA)"/>
+    <path d="M805,188 L695,216" marker-end="url(#arrA)"/>
+  </g>
+
+  <!-- lanes -->
+  <g>
+    <rect x="55" y="220" width="290" height="170" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8"/>
+    <text x="200" y="244" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#14532d">功能等价验证（类别 ①）</text>
+    <text x="72" y="270" font-size="11" fill="#166534">• 边界矩阵六维全过</text>
+    <text x="72" y="292" font-size="11" fill="#166534">• 回归测试套件零回归</text>
+    <text x="72" y="314" font-size="11" fill="#166534">• 固定 seed 输出 diff = 0</text>
+    <text x="72" y="336" font-size="11" fill="#166534">• eager vs CUDA Graph A/B</text>
+    <text x="72" y="364" font-size="10.5" fill="#64748b">强度错配提醒：① 跑全套对拍</text>
+    <text x="72" y="380" font-size="10.5" fill="#64748b">= 浪费一天；③ 只做等价 = 漏精度回归</text>
+
+    <rect x="655" y="220" width="290" height="170" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+    <text x="800" y="244" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1e3a8a">三层精度对拍（类别 ② ③）</text>
+    <text x="672" y="270" font-size="11" fill="#1e40af">• L1 tensor 级：assert_close（容差见 4.2）</text>
+    <text x="672" y="292" font-size="11" fill="#1e40af">• L2 logits 级：cos / top-1 / KL</text>
+    <text x="672" y="314" font-size="11" fill="#1e40af">• L3 端到端：greedy 首分歧位置分布</text>
+    <text x="672" y="336" font-size="11" fill="#1e40af">• 漏斗不跳层：L1 不过禁进 L2</text>
+    <text x="672" y="364" font-size="10.5" fill="#64748b">阈值先写进文档再跑测试，</text>
+    <text x="672" y="380" font-size="10.5" fill="#64748b">防止"看着结果定标准"</text>
+  </g>
+
+  <!-- center matrix -->
+  <g>
+    <rect x="365" y="220" width="270" height="170" rx="10" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
+    <text x="500" y="244" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0f172a">边界 Case 矩阵（六维）</text>
+    <g text-anchor="middle">
+      <rect x="378" y="256" width="120" height="26" rx="13" fill="#f1f5f9" stroke="#64748b"/>
+      <text x="438" y="273" font-size="10.5" fill="#334155">shape 边界</text>
+      <rect x="504" y="256" width="120" height="26" rx="13" fill="#f1f5f9" stroke="#64748b"/>
+      <text x="564" y="273" font-size="10.5" fill="#334155">dtype 边界</text>
+      <rect x="378" y="288" width="120" height="26" rx="13" fill="#f1f5f9" stroke="#64748b"/>
+      <text x="438" y="305" font-size="10.5" fill="#334155">动态 shape·CG bucket</text>
+      <rect x="504" y="288" width="120" height="26" rx="13" fill="#f1f5f9" stroke="#64748b"/>
+      <text x="564" y="305" font-size="10.5" fill="#334155">prefix caching 交互</text>
+      <rect x="378" y="320" width="120" height="26" rx="13" fill="#f1f5f9" stroke="#64748b"/>
+      <text x="438" y="337" font-size="10.5" fill="#334155">极端负载·生命周期</text>
+      <rect x="504" y="320" width="120" height="26" rx="13" fill="#f1f5f9" stroke="#64748b"/>
+      <text x="564" y="337" font-size="10.5" fill="#334155">回归测试</text>
+    </g>
+    <text x="500" y="372" text-anchor="middle" font-size="10.5" fill="#64748b">枚举法：grep kernel 里每个 if / % / min / max</text>
+  </g>
+
+  <!-- matrix feeds both lanes (dashed) -->
+  <g stroke="#2563eb" stroke-width="1.5" stroke-dasharray="5,4" fill="none">
+    <path d="M365,305 L349,305" marker-end="url(#arrC)"/>
+    <path d="M635,305 L651,305" marker-end="url(#arrC)"/>
+  </g>
+
+  <!-- converge to record -->
+  <g stroke="#475569" stroke-width="1.5" fill="none">
+    <path d="M200,390 L200,430 L330,452" marker-end="url(#arrA)"/>
+    <path d="M800,390 L800,430 L670,452" marker-end="url(#arrA)"/>
+  </g>
+
+  <!-- record + triage -->
+  <g>
+    <rect x="55" y="456" width="420" height="120" rx="10" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+    <text x="265" y="480" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0f172a">测试记录（今日产出 1）</text>
+    <text x="72" y="504" font-size="11" fill="#334155">• case 清单 × pass / fail / blocked</text>
+    <text x="72" y="524" font-size="11" fill="#334155">• 精度对拍数据：指标 + 样本量 + 阈值出处</text>
+    <text x="72" y="544" font-size="11" fill="#334155">• 环境指纹（复用 Day 43 harness 逻辑）</text>
+    <text x="72" y="564" font-size="11" fill="#334155">• 概率性 case 记录 seed 与触发条件</text>
+
+    <rect x="525" y="456" width="420" height="120" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="735" y="480" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#991b1b">bug 分诊（当天闭环，今日产出 2）</text>
+    <text x="542" y="504" font-size="11" fill="#7f1d1d">① 复现稳定吗？② 影响面（dtype / shape 区间）？</text>
+    <text x="542" y="524" font-size="11" fill="#7f1d1d">③ 根因在哪层（kernel / 包装 / graph / 缓存）？</text>
+    <text x="542" y="544" font-size="11" fill="#7f1d1d">④ 今天能修吗？→ 修完全量重跑相关维度</text>
+    <text x="542" y="564" font-size="11" font-weight="bold" fill="#991b1b">不能修 → 回滚子改动 / 收窄 PR，不带病进 Day 45</text>
+  </g>
+  <path d="M475,516 L521,516" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arrB)"/>
+  <!-- fix loop back -->
+  <path d="M735,576 L735,600 L240,600 L240,582" stroke="#dc2626" stroke-width="1.3" stroke-dasharray="5,4" fill="none" marker-end="url(#arrB)"/>
+  <text x="490" y="595" text-anchor="middle" font-size="10.5" fill="#991b1b">修复后回到测试记录，全量重跑</text>
+
+  <!-- final -->
+  <g stroke="#475569" stroke-width="1.5" fill="none">
+    <path d="M265,576 L265,612" marker-end="url(#arrA)"/>
+  </g>
+  <rect x="290" y="616" width="420" height="42" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="500" y="634" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">Day 45 · PR 的 Test Plan 章节</text>
+  <text x="500" y="650" text-anchor="middle" font-size="10.5" fill="#1e40af">= 本图全部产出的归档版</text>
+</svg>

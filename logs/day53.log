@@ -1,0 +1,38 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la week8/ 2>/dev/null && ls week8/assets/ 2>/dev/null
+total 116
+drwxr-xr-x  3 root root  4096 Oct  2 18:50 .
+drwxr-xr-x 19 root root  4096 Oct  2 17:58 ..
+drwxr-xr-x  2 root root  4096 Oct  2 18:55 assets
+-rw-r--r--  1 root root 32573 Oct  2 18:31 day50_memory_estimation_block_table.md
+-rw-r--r--  1 root root 44839 Oct  2 18:55 day52_interview_question_drill.md
+-rw-r--r--  1 root root 27278 Oct  1 23:17 README.md
+day50_block_table_prefix_hit.svg
+day50_cow_split.svg
+day52_chunked_prefill_budget.svg
+day52_tp_scaling_curve.svg
+[0m
+[0m→ [0mRead week8/day50_memory_estimation_block_table.md[90m [limit=60][0m
+[0m→ [0mRead week8/day52_interview_question_drill.md[90m [limit=60][0m
+[0m→ [0mRead week8/README.md[90m [limit=50][0m
+[0m✱ [0mGrep "Day 53"[90m in week8/README.md · 6 matches[0m
+[0m→ [0mRead week8/README.md[90m [limit=100, offset=256][0m
+[0m
+[0m$ [0mgrep -n "svg\|assets" week8/day50_memory_estimation_block_table.md | head -20; echo ---; grep -n "svg\|assets" week8/day52_interview_question_drill.md | head -20
+66:```svg
+67:<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 740" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+135:</svg>
+293:![Block Table 与 prefix caching 命中](assets/day50_block_table_prefix_hit.svg)
+305:![COW 分裂：未满块共享后的写时复制](assets/day50_cow_split.svg)
+---
+41:```svg
+42:<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 700" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+130:</svg>
+373:![chunked prefill token budget 权衡](assets/day52_chunked_prefill_budget.svg)
+609:![TP 扩展曲线与负收益临界点](assets/day52_tp_scaling_curve.svg)
+[0m

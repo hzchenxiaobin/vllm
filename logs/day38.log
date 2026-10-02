@@ -1,0 +1,381 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "week6/**"[90m 9 matches[0m
+[0m→ [0mRead week6/day36_topic_selection_and_research.md[90m [limit=80][0m
+[0m→ [0mRead week6/day37_env_setup_and_baseline.md[90m [limit=80][0m
+[0m→ [0mRead week6/README.md[90m [limit=60][0m
+[0m✱ [0mGrep "^#{2,3} "[90m in week6/day36_topic_selection_and_research.md · 100 matches[0m
+[0m✱ [0mGrep "^#{2,3} "[90m in week6/day37_env_setup_and_baseline.md · 100 matches[0m
+[0m→ [0mRead week6/README.md[90m [limit=80, offset=182][0m
+[0m→ [0mRead week6/day37_env_setup_and_baseline.md[90m [limit=35, offset=427][0m
+[0m→ [0mRead week6/day36_topic_selection_and_research.md[90m [limit=45, offset=120][0m
+[0m
+[0m$ [0mls vllm/v1/engine/ && ls vllm/entrypoints/openai/ | head -20
+ls: cannot access 'vllm/v1/engine/': No such file or directory
+[0m
+Day 38 对应「Day 38-40 性能剖析定位瓶颈」的第一天：服务级分诊 + step 级 trace 拆解。先核对 vLLM V1 源码中 profiler 的真实调用链，确保教程中的源码引用准确。
+[0m✱ [0mGrep "start_profile"[90m in vllm · 0 matches[0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm && git -C /mnt/workspace/aiinfra/vllm log --oneline -3 2>/dev/null | cat
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+f1da259 Add Day 20-36 tutorial notes (weeks 3-6) with logs
+9b87999 Add Day 10-21 tutorial notes (weeks 2-3) with assets and logs; update generator and progress
+9f00707 Add Day 03-19 tutorial notes (weeks 1-3) with logs; improve generator (cooldown, no-retry, low thinking variant)
+[0m
+工作区没有 vLLM 源码（这是教程生成仓库），与前两天一致，源码引用将标注「以 main 分支为准」。先看一眼 day37 的 SVG 风格保持统一：
+[0m→ [0mRead week6/assets/day37_noise_band.svg
+结构已明确。开始产出：先创建第一张 SVG（三层剖析总览图）。
+[0m
+[0m← [0mWrite week6/assets/day38_three_layer_funnel.svg
+Wrote file successfully.
+[0m
+SVG 1 完成。现在写入 Markdown 前半部分（§0 ~ §3）：
+[0m← [0mWrite week6/day38_service_and_step_profiling.md
+Wrote file successfully.
+[0m
+前半部分完成。创建第二张 SVG（服务级分诊决策树）：
+[0m← [0mWrite week6/assets/day38_service_triage_tree.svg
+Wrote file successfully.
+[0m
+创建第三张 SVG（decode step 时间线解剖图）：
+[0m← [0mWrite week6/assets/day38_step_timeline.svg
+Wrote file successfully.
+[0m
+SVG 全部完成。现在追加 Markdown 后半部分（§4 ~ §5）：
+[0m$ [0mcat >> /mnt/workspace/aiinfra/vllm/week6/day38_service_and_step_profiling.md << 'MDEOF'
+
+---
+
+## 4. 时间分解的算术：从 trace 数字到判定结论
+
+![decode step 时间线解剖](assets/day38_step_timeline.svg)
+
+### 4.1 四本账的求和规则（三步）
+
+1. **求 busy 区间并集**：$T_{\text{busy}} = \left| \bigcup_{k \in \text{device 事件}} [\text{ts}_k, \text{ts}_k + \text{dur}_k] \right|$。若通信与计算在时间上重叠（Day 32-33 讲过的 overlap），**并集只算一次**——先别把 kernel 和 comm 的 dur 直接相加，重叠量让脚本报出来。
+2. **切 gap**：$T_{\text{gap}} = T_{\text{step}} - T_{\text{busy}}$，再按 §3.3 的"回 CPU 轨对齐"把 gap 分成 host 与 sync 两本。
+3. **按 step 类型分列后平均**：纯 decode / 混排（chunked prefill）/ 含 recompute 各自一行，每类 ≥10 个 step 再谈占比；把类型占比也记下来（它本身就是 Day 11 的"代价面"实测）。
+
+### 4.2 host 账的先验估算：launch 链路能吃掉多少
+
+不打开 trace 也能先算一笔上限账（用来校验分解结果是否合理）：
+
+$$T_{\text{host,max}} \approx n_{\text{ops/step}} \times t_{\text{launch}}, \qquad n_{\text{ops/step}} \approx L \times n_{\text{ops/layer}} + n_{\text{sampler}}$$
+
+代入示例：$L = 36$ 层、每层 ~12 个下发算子（QKV/rq-silu-proj 两次 GEMM、add-rmsnorm、rotary、attention、residual……量化路径再多一两个）、sampler 若干 → 约 450 个 op；NPU 侧 launch 链路（Python → torch_npu → aclnn 下发）单次取 10~20µs 量级（**以你机器实测为准**，trace 上量一个最短矩形就知道）→ $T_{\text{host,max}} \approx 4.5 \sim 9$ ms/step。
+
+对照意义：若实测 host gap 接近这个量级 → 病根是"散装 launch"，图模式/torchair（方向 3）收益直接给到 $1/\beta$；若远小于 → host 不是主要矛盾，别在它上面花 Day 41 的时间。
+
+### 4.3 与理论下界的第一次会师（给 Day 40 铺路）
+
+Day 37 算过 $t_{\text{lb}} = \text{Bytes}/\text{BW}$（decode 每 step 要搬运的权重 + KV 字节）。今天从 trace 拿到 $T_{\text{kernel}}$ 后，可以算**有效带宽**：
+
+$$\text{BW}_{\text{eff}} = \frac{\text{Bytes}_{\text{step}}}{T_{\text{kernel}}}, \qquad \eta_{\text{mem}} = \frac{\text{BW}_{\text{eff}}}{\text{BW}_{\text{HBM}}}$$
+
+三个读法：$\eta_{\text{mem}}$ 接近 1 → kernel 已贴带宽上限，优化空间在"少搬字节"（量化/布局），不在 tiling；$\eta_{\text{mem}}$ 低但 AICore 也闲 → 搬运组织有问题（Day 39 的数据流图会揭示）；$\eta_{\text{mem}}$ 低且算子是 compute 密集型 → 该用 AI 判 bound 而不是带宽（这正是 Day 40 的正题）。
+
+---
+
+## 5. 关键命令与脚本
+
+### 5.1 服务级采集（复用 Day 37 负载与 seed）
+
+```bash
+# 终端 1：压测进入稳态（并发取 baseline 梯度中 TPOT 最差且健康的一档）
+# 终端 2：稳态后抓 /metrics 快照
+curl -s http://localhost:8000/metrics \
+  | grep -E "num_requests_(running|waiting)|time_to_first_token|time_per_output_token|e2e_request|queue_time|preempt|cache" \
+  > metrics_steady.txt
+
+# 分位数：Prometheus 部署时用（Day 6 环境）
+# histogram_quantile(0.99, sum(rate(vllm:time_to_first_token_seconds_bucket[1m])))
+# 未部署时直接用 vllm bench serve 输出的 p50/p99 列（与 baseline 同源）
+
+# 终端 3：AICore/HBM 只作辅助证据（记住 Day 37 §4.4 三个陷阱）
+watch -n 0.5 npu-smi info
+```
+
+> 指标名以你版本 `/metrics` 实际输出为准（V1 的 histogram 指标需要 bucket 自算分位数或走 bench 工具输出）。**分诊证据 = bench 分位数 + 计数器指标 + npu-smi 三者交叉**，不要单源下结论。
+
+### 5.2 trace 采集（服务在线路径）
+
+```bash
+export VLLM_TORCH_PROFILER_DIR=/tmp/vllm_prof
+mkdir -p $VLLM_TORCH_PROFILER_DIR
+
+# 压测进入稳态后（running 数稳定 ≥30s）：
+curl -X POST http://localhost:8000/start_profile \
+  -H "Content-Type: application/json" \
+  -d '{"activities": ["CPU", "GPU"], "record_shapes": true}'
+
+# 稳定运行 30~60s（窗口宁短勿长，够 ~50 个 step 即可）
+curl -X POST http://localhost:8000/stop_profile
+
+ls -lht $VLLM_TORCH_PROFILER_DIR | head   # 找到各 rank 的 chrome trace JSON
+```
+
+注意：① 参数集合随版本演进（部分版本 `num_steps` 由 start 请求携带、到步自动停）——以你版本的 API 定义为准；② torch_npu 环境下 `"GPU"` activity 会被映射为 NPU 采集，**若结果只有 CPU 轨道 → 走 §5.3 降级**；③ 采集前后各测一次 TPOT，差值落在 Day 37 噪声带内才算数。
+
+### 5.3 降级路径：离线脚本直接包 profiler
+
+```python
+# profile_offline.py —— vllm-ascend 的离线 trace 采集（与 serving 结论可比性标注为"kernel 构成"级）
+from torch_npu.profiler import profile, ProfilerActivity
+from vllm import LLM, SamplingParams
+
+llm = LLM(model=MODEL, quantization="w8a8", **BASELINE_KWARGS)   # 与 baseline.md §1 同参
+sp = SamplingParams(temperature=0, max_tokens=256, ignore_eos=True)
+
+llm.generate(warmup_prompts, sp)      # 预热：图 capture / JIT / 缓存冷启动都在这里消化掉
+
+with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.NPU],
+             record_shapes=True) as prof:
+    llm.generate(bench_prompts, sp)   # 复用 Day 37 同一份 prompt 集（可比性）
+
+prof.export_chrome_trace("offline_decode_trace.json")
+```
+
+离线路径少了 API 进程与 detokenizer 的 host 噪声，**host 账会偏乐观**——用它下 kernel/comm 的结论，host 结论仍以在线 trace 为准。
+
+### 5.4 trace 解析脚本：四本账自动化
+
+```python
+#!/usr/bin/env python3
+"""chrome_trace_decompose.py —— 把 V1 profiler 的 chrome trace 拆成四本账
+用法：
+  python3 chrome_trace_decompose.py trace.json --inspect   # 第一步：看有哪些 cat / Top 名
+  python3 chrome_trace_decompose.py trace.json --steps 50   # 第二步：回填 PATTERNS 后分解
+注意：cat 集合与 kernel 命名因后端而异（torch_npu / HCCL / 图模式各不同），
+      先 --inspect 再回填，不要盲跑。"""
+import json, re, argparse
+from collections import Counter, defaultdict
+
+PATTERNS = {   # name 的正则 → 账目；--inspect 后按你的 Top 名回填
+    "comm":   r"(?i)hccl|hcom|all_?reduce|all_?gather|send|recv",
+    # "kernel" 不在这里穷举：device 类 cat 的默认归 kernel，见 classify()
+}
+
+DEVICE_CATS = {"kernel", "npu_op", "gpu_op"}      # 以 --inspect 看到的实际 cat 为准
+HOST_CATS   = {"cpu_op"}
+
+def classify(ev):
+    for label, pat in PATTERNS.items():
+        if re.search(pat, ev.get("name", "")):
+            return label
+    if ev.get("cat") in DEVICE_CATS: return "kernel"
+    if ev.get("cat") in HOST_CATS:   return "cpu"
+    return "other"
+
+def load(path):
+    with open(path) as f:
+        return [e for e in json.load(f)["traceEvents"]
+                if e.get("ph") == "X" and e.get("dur", 0) > 0]
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("trace"); ap.add_argument("--inspect", action="store_true")
+    ap.add_argument("--steps", type=int, default=0, help="step 数：把总量除以它得每 step 摊销")
+    a = ap.parse_args(); evs = load(a.trace)
+
+    if a.inspect:
+        print("cat 分布:", Counter(e["cat"] for e in evs))
+        print("Top name:", Counter(e["name"] for e in evs).most_common(30))
+        return
+
+    dev = [e for e in evs if classify(e) in ("kernel", "comm")]
+    acct = defaultdict(float); cnt = Counter()
+    for e in dev:
+        acct[classify(e)] += e["dur"]; cnt[classify(e)] += 1
+    t0, t1 = min(e["ts"] for e in dev), max(e["ts"] + e["dur"] for e in dev)
+    window = (t1 - t0)
+    busy_union = 0; cur_end = None
+    for e in sorted(dev, key=lambda x: x["ts"]):           # 并集：重叠只算一次
+        s = e["ts"]; d = e["dur"]
+        if cur_end is None or s >= cur_end: busy_union += d; cur_end = s + d
+        elif s + d > cur_end: busy_union += s + d - cur_end; cur_end = s + d
+    n = a.steps or 1
+    print(f"窗口 {window/1e3:.1f} ms，device 事件 {len(dev)} 个，按 {n} step 摊销")
+    for k in ("kernel", "comm"):
+        print(f"  {k:8s} {acct[k]/1e3/n:8.2f} ms/step  ({cnt[k]} 次)")
+    gap = window - busy_union
+    print(f"  gap 合计 {gap/1e3/n:.2f} ms/step  → 回 trace 对齐 CPU 轨分 host/sync")
+    print(f"  β(device busy) = {busy_union/window:.2f}   S_max(去全部 gap) = {window/busy_union:.2f}x")
+
+if __name__ == "__main__":
+    main()
+```
+
+> 脚本给出的是**骨架**：并集求和、gap 计算与摊销逻辑可直接用；`DEVICE_CATS` 与 `PATTERNS` 必须先用 `--inspect` 看过你的真实 cat 集合与 kernel 命名后回填。host/sync 的细分需要人眼回 CPU 轨对齐（§3.3 第 3 步），别指望全自动。
+
+### 5.5 常见坑速查
+
+| 症状 | 原因 | 处置 |
+|---|---|---|
+| trace JSON 太大，Perfetto 卡死 | 窗口太长 / `with_stack` 开着 | 缩短窗口、关 with_stack、分段采集 |
+| 只有 CPU 轨道，NPU 事件缺失 | activity 映射在 torch_npu 上不支持/不完整 | §5.3 降级脚本；或提前进 Day 39 的 msprof |
+| 找不到 step 边界 | 无明显 marker 事件 | 用最高频 kernel 的重复次数计数 step；或离线脚本里人为分段 |
+| TPOT 在 profile 前后差异 > 噪声带 | 观测扰动超标 | 缩窗、减 activities、改离线路径，并在报告中标注 |
+| HCCL 事件同时出现在 CPU/通信轨 | 调用与执行两条记录 | 只在 device/通信轨上计一次，防双计 |
+| gap 巨大但 CPU 轨也空白 | 进程在等别的东西（IO/detokenize/引擎间消息） | 把等待点的函数名记下来——这可能直接是一条 issue 级发现 |
+MDEOF
+echo "appended part 2, lines now: $(wc -l < /mnt/workspace/aiinfra/vllm/week6/day38_service_and_step_profiling.md)"
+appended part 2, lines now: 335
+[0m
+追加最后部分（§6 实验 ~ 明日预告）：
+[0m$ [0mcat >> /mnt/workspace/aiinfra/vllm/week6/day38_service_and_step_profiling.md << 'MDEOF'
+
+---
+
+## 6. 动手实验（今日主线）
+
+> 前置：Day 37 环境健康（L0~L4 全绿）、baseline.md 在手。全程复用同一负载与 seed。每个实验末尾都有"落表动作"——今天的实验记录直接构成《瓶颈分析报告》的 §1 现状素材。
+
+### 实验 1：服务级分诊（约 40 min，上午核心）
+
+1. 选 baseline 中"TPOT 最差且无 preemption 污染"的一档并发，起稳态压测；
+2. 按 §5.1 抓三份证据：bench 分位数（TTFT/TPOT p50/p99）、计数器快照（running/waiting/preemption/cache）、npu-smi 观察记录；
+3. 沿 §3.1 分诊树走一遍，先验证 baseline.md §5 的"已知异常"（Day 37 留的钩子——昨天读日志发现的 fallback/告警，今天用数据判定它是真病因还是无关噪声）；
+4. **落表**：写 `week6/triage.md`，格式：`症状（数据）→ 分诊树路径 → 出口（①/②/③）→ 证据链接`。
+
+**验收**：出口唯一且有三源证据交叉支撑；若出口是①（调度/配置），别硬挖 kernel——调参验证后回 Day 36 启用备选题，或把该发现整理成 issue（同样是贡献）。
+
+### 实验 2：采集 chrome trace（约 40 min）
+
+1. `export VLLM_TORCH_PROFILER_DIR=...` 后重启服务（环境变量需在启动前生效）；
+2. 同档并发压测进入稳态，按 §5.2 start → 30~60s → stop；
+3. 检查产物：NPU 轨道是否存在、事件量级是否合理（几十个 step、数千事件）；不达标 → §5.3 离线降级重采；
+4. **扰动检查**：profile 窗口内外的 TPOT 差与 Day 37 噪声带对比，记录结论。
+
+**验收**：一份"有 NPU 轨、扰动在噪声带内、覆盖 ≥50 个稳态 step"的 trace 存档（命名含日期与并发档位）。
+
+### 实验 3：step 时间分解（约 50 min，下午核心）
+
+1. Perfetto 打开 trace，按 §3.3 四步人工走一遍：认轨道 → 认边界 → 数 gap → 认 graph replay 段落，截图标注一个典型 step；
+2. 用 §5.4 脚本 `--inspect` 回填分类表，再跑分解，得到 kernel/comm/gap 与 β；
+3. 人工把 gap 分成 host/sync 两本（回 CPU 轨对齐）；混排 step 与纯 decode step 分列；
+4. **落表**：`step_decomposition.md`（模板）：
+
+```markdown
+# step 分解 @ C=<档位>，<日期>，trace=<文件名>
+| step 类型 | 占比 | T_step | kernel | comm | gap,host | gap,sync | β |
+|---|---|---|---|---|---|---|---|
+| 纯 decode | 85% | 48.0ms | 29.8 | 8.6 | 5.8 | 3.8 | 0.80 |
+| 混排(含 prefill 块) | 15% | 61.0ms | ... | ... | ... | ... | ... |
+
+## Top kernel（名称/每 step 次数/每 step 总耗时/记录到的 shape）——Day 39 的靶子清单
+## graph replay 生效与否 + 证据
+## host 账 vs §4.2 先验估算的对照
+```
+
+**验收**：表内数字齐全、≥3 个采样窗口的 β 波动 < ±0.05、Top kernel 至少列出前 5 名及其 shape。
+
+### 实验 4：假设清单（约 30 min，输出给明天的自己）
+
+把分解表里每一条"可疑"转成结构化假设，按 ROI 排序：
+
+1. 每条假设 = `现象（数据）→ 机制猜想（联系源码/算子名）→ 验证方式（Day 39 用 msprof 看什么）→ 若成立的预期收益量级`；
+2. 示例（对应选题方向 1）："现象：量化 GEMM 类 kernel 占 kernel 账 70%，单次 1.9ms；机制：小 M 下 tiling 多核饥饿或反量化未融合；验证：msprof 看 cube 利用率与多核负载均衡（balanceRate 直觉）；收益：若 η_mem 从 0.4 → 0.7，TPOT 降 ~20%"；
+3. **落表**：`hypotheses.md`（≥3 条，含一条 host 侧、一条 kernel 侧）。
+
+**验收**：每条都能直接执行——明天打开 msprof 时不需要再做任何"看什么"的决策。
+
+---
+
+## 7. 面试高频问题
+
+1. **拿到"服务慢"的投诉，你的排查顺序是什么？**（答：三层剖析法——先 /metrics 分诊定位环节，再 step 级 trace 拆时间构成，最后才 kernel 级下钻；强调每层结论决定下层工具，直接 msprof 的三大误诊风险）
+2. **decode step 的 wall time 由哪几部分构成？device busy 率低说明什么？**（四本账；β 低 → host/同步主导，优化 kernel 无意义，方向是图模式/异步调度）
+3. **TPOT 和单个 decode step 的耗时是什么关系？什么时候会背离？**（稳态近似相等；混排、抢占 recompute、调度间隙三重失效来源）
+4. **AICore 利用率 90%，能说明性能健康吗？**（不能——假忙/空转搬运；要结合 β、kernel 构成、有效带宽看；举 Day 37 §4.4 的陷阱）
+5. **怎么确认 CUDA Graph / 图模式真的生效了？**（trace 上 decode step 表现为单个 replay 长事件 vs 散装 launch 序列；对比图 capture 前后的 host 账）
+6. **profiler 本身对性能的影响怎么控制？**（窗口宁短勿长、activities 精简、with_stack 只短开、开/关对比落在噪声带内才算数、离线路径交叉验证）
+7. **TTFT p99 高但 TPOT 稳定，你会先查哪三个指标？**（queue time、cache hit rate、preemption/调度 budget——prefill 拥塞类问题，与 decode 无关）
+
+---
+
+## 8. 今日总结
+
+| # | 一句话 |
+|---|---|
+| 1 | 剖析是决策树不是工具箱：L1 定环节、L2 定构成、L3 定算子，**上层能定位就不下层** |
+| 2 | 服务级分诊的三问：TTFT 还是 TPOT、时延还是吞吐、有没有调度事件在伪装 |
+| 3 | 四本账 + β + S_max：一组数字就把"下一步去哪"钉死（β<0.7 → host；β>0.85 → kernel） |
+| 4 | trace 是证据不是答案：稳态采样、类型分列、扰动量化、样本量——四条纪律防误读 |
+| 5 | 今天的产出三件套（分诊单/分解表/假设清单）就是《瓶颈分析报告》§1 的全部素材 |
+
+**与后续的衔接**：hypotheses.md 的每一条 = Day 39 msprof 的待验证清单；分解表 + Day 37 的 $t_{\text{lb}}$ = Day 40 bound 建模（η 分解）的两个输入；Top kernel 表里的 shape 列 = 你选题方向 1 的"现场证据"。
+
+---
+
+## 9. 今日自测题（不看笔记作答）
+
+1. 三层剖析法每一层回答什么问题、用什么工具？"一上来就掏 msprof"有哪三个风险？
+2. 写出 step 四本账公式与 β 的定义。β = 0.55 时，host 侧优化的收益上限是多少？该往哪个方向优化 kernel 吗？
+3. TPOT ≈ E[T_step] 的三个失效场景分别对应哪些已学机制（Day 11/12/19）？
+4. 用 §4.2 的先验公式估算：L=40、每层 15 个下发算子、单次 launch 12µs，host 账上限是多少？若实测 host gap 是它的 3 倍，说明什么？
+5. 你在 trace 上看到 decode step 是 300 个散装小矩形而非单个 graph replay 事件，下一步做什么？可能的原因是什么？
+6. 口头 3 分钟：拿着你自己的分解表，向 reviewer 讲清"我为什么认为瓶颈在 X"——要求每个论断后面都跟着一个数字。
+
+---
+
+## 10. 今日产出物清单
+
+- [ ] **`week6/triage.md`**：分诊单（症状 → 树路径 → 出口 → 三源证据）——**今日核心产出 1**
+- [ ] **trace 存档**：在线（或离线降级）chrome trace，命名含日期/档位，附扰动检查结论
+- [ ] **`week6/step_decomposition.md`**：四本账分解表 + Top kernel 清单（含 shape）+ graph 生效证据——**今日核心产出 2**
+- [ ] **`week6/hypotheses.md`**：≥3 条按 ROI 排序的假设（现象→机制→验证→预期收益）——**今日核心产出 3，Day 39 的输入**
+- [ ] 截图：Perfetto 上标注好的典型 step（NPU 轨 + CPU 轨 + gap 指认）
+- [ ] β 与 S_max 的计算过程（进 Day 40 的 η 分解）
+
+---
+
+## 明日预告（Day 39：kernel 级下钻）
+
+带着 hypotheses.md 打开 msprof：抓 Top-N 热点 kernel 表（名字/耗时/调用次数/shape/布局），对着 cube 与 vector 利用率、多核负载均衡检查每条假设；再给目标 kernel 画那张你画惯了的达芬奇数据流图（输入 → L2 → L1 → L0 → Cube → 写回，逐段标数据量与理论搬运耗时）。今天分解表里的"量化 GEMM 占 70%"，明天要变成"这个算子、这个 shape、差在 tiling 还是搬运"的精确指控。
+MDEOF
+echo "done, total lines: $(wc -l < /mnt/workspace/aiinfra/vllm/week6/day38_service_and_step_profiling.md)"
+done, total lines: 444
+[0m
+验证文件完整性与 SVG 格式：
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week6 && python3 -c "
+import xml.dom.minidom, glob
+for f in sorted(glob.glob('assets/day38_*.svg')):
+    xml.dom.minidom.parse(f); print('SVG OK:', f)
+" && grep -n 'assets/day38' day38_service_and_step_profiling.md && grep -c '^## ' day38_service_and_step_profiling.md
+SVG OK: assets/day38_service_triage_tree.svg
+SVG OK: assets/day38_step_timeline.svg
+SVG OK: assets/day38_three_layer_funnel.svg
+30:![三层剖析法总览](assets/day38_three_layer_funnel.svg)
+102:![服务级分诊决策树](assets/day38_service_triage_tree.svg)
+167:![decode step 时间线解剖](assets/day38_step_timeline.svg)
+15
+[0m
+[0m→ [0mRead week6/day38_service_and_step_profiling.md[90m [limit=60, offset=160][0m
+Day 38 已完成并验证。
+
+**文件路径**：
+- `week6/day38_service_and_step_profiling.md`（444 行）
+- `week6/assets/day38_three_layer_funnel.svg`（三层剖析法总览）
+- `week6/assets/day38_service_triage_tree.svg`（服务级分诊决策树）
+- `week6/assets/day38_step_timeline.svg`（decode step 时间线解剖 + 四本账分解）
+
+**主要内容**：严格对应 README「Day 38-40 性能剖析定位瓶颈」的第一天（week6/README 的 L1 服务级 + L2 step 级），含：V1 profiler 跨进程控制链路与 torch_npu 降级路径、step 四本账模型（$T_{\text{kernel}}+T_{\text{comm}}+T_{\text{gap,host}}+T_{\text{gap,sync}}$）、β/S_max/有效带宽判据、chrome trace 解析脚本、4 个动手实验（分诊单 → trace 采集 → 分解表 → 假设清单）、面试题与自测题。内容主动衔接 Day 36（选题备忘录、方向 1 量化 GEMM）、Day 37（baseline.md、噪声带、已知异常钩子）及 Day 5/10-13/18/19/32-33 的机制知识，产出物直接喂给 Day 39（msprof）与 Day 40（bound 建模）。

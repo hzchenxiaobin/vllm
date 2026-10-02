@@ -1,0 +1,511 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la week7/ 2>/dev/null && ls week7/assets/ 2>/dev/null
+total 116
+drwxr-xr-x  3 root root  4096 Oct  2 16:57 .
+drwxr-xr-x 18 root root  4096 Oct  2 12:40 ..
+drwxr-xr-x  2 root root  4096 Oct  2 17:00 assets
+-rw-r--r--  1 root root 35104 Oct  2 16:51 day43_benchmark_before_after.md
+-rw-r--r--  1 root root 46201 Oct  2 17:04 day44_boundary_cases_accuracy.md
+-rw-r--r--  1 root root 16764 Oct  1 23:14 README.md
+day43_benchmark_pipeline.svg
+day43_round_protocol.svg
+day43_significance_errorbar.svg
+day44_cudagraph_bucket_boundary.svg
+day44_diff_testing_flow.svg
+day44_test_space.svg
+[0m
+[0m→ [0mRead week7/day43_benchmark_before_after.md[90m [limit=80][0m
+[0m→ [0mRead week7/day44_boundary_cases_accuracy.md[90m [limit=80][0m
+[0m
+[0m$ [0mtail -60 week7/day44_boundary_cases_accuracy.md
+**Q4：kernel 在 eager 下全对，开了 CUDA Graph 偶发算错，你会怀疑什么？**
+
+> 答：三类：① padding 元素进入了 kernel 且没被安全处理（replay 时 batch 被 pad 到 bucket，假输入的读越界/NaN 传播）；② capture 时把动态值（shape、指针、host 侧变量）烧进了图；③ 静态 buffer 地址假设被别处打破。定位手法：`--enforce-eager` A/B 收窄到 graph 语义，再按 bucket 值 / bucket+1 / 最大值+1 单测，启动日志里拿真实 bucket 列表。
+
+**Q5：给你一个 M×N×K 的 kernel，说出你必须测的 shape。**
+
+> 答：M=1（最稀疏路径）、M 到 max_num_seqs 量级（最满 tile）、N 或 K 的尾块（对齐余量，如 N=257 对 256）、窄 N（tile 装不满）、K 非对齐；推理栈特有的：CUDA Graph bucket±1、spec decode 开启后的 q_len=1+k、chunked prefill 尾 token。方法论是"测试空间 = 代码分支依赖的大小关系的取值组合"——grep kernel 里每个 if / % / min / max。
+
+**Q6：精度退化到什么程度可以接受？**
+
+> 答：分层回答：tensor 级看误差界（对 dtype 推导）；logits 级看 top-1/KL 是否显著超出"同实现换 seed"的自然波动；最终看任务级指标（困惑度 / 下游抽检）和业务 SLO。量化类改动的参考线 top-1 ≥99.5% 是社区经验值，**必须以具体模型任务的 baseline 校准**。原则：退化可接受的前提是可度量、可复现、有机制解释（比如误差集中在低概率 token）。
+
+**Q7：PR 提交前一天发现边界 case 挂了，怎么办？**
+
+> 答：四问分诊：复现稳定吗、影响面多大、根因在哪层、今天能修吗。能修就修完全量重跑相关维度；修不动就回滚该子改动或收窄 PR 范围（拆成两个 PR）。底线是**不带已知问题提 PR**——reviewer 自己踩到已知 bug 会严重损害整个 PR 的可信度。
+
+---
+
+## 九、今日总结
+
+- **先定类再测试**：位级等价 / 同数学不同顺序 / 近似数学三类别对应三档验证强度，强度错配是浪费或漏测
+- **边界空间 = 分支条件的取值组合**：昇腾算子的 M=1 / 尾块 / 窄 N 思维直接迁移，GPU 栈追加 CUDA Graph bucket、q_len>1（spec decode）、prefix caching 交互三类
+- **三层对拍漏斗不跳层**：L1 tensor（assert_close + 对抗输入）→ L2 logits（cos / top-1 / KL，样本量按置信区间）→ L3 greedy 首分歧分布
+- **数值误差有公式可依**：$\gamma_n$ 界决定 L1 容差；FP8 的 $u=6.25\%$ 决定了量化改动必须用任务级指标
+- **阈值先行 + bug 当天闭环**：容差写进文档再跑测试；分诊四问；修完全量重跑；不带病进 Day 45
+- 今天的 `test_plan.md` 就是明天 PR 的 **Test Plan** 章节——Day 43 的对比表 + 今天的测试记录，构成 PR 的全部证据链
+
+---
+
+## 十、今日自测题
+
+1. 你的改动是"把 split-K 的切分点从 4 改到 8"，属于哪个类别？L1 容差该按什么依据设？
+2. 服务日志显示 capture 了 `[1,2,4,8,16,24,32,40,...,256]`。列出你必须构造的至少 5 个 batch size 测试点，并说明每个考验什么。
+3. 对拍测得 top-1 一致率 99.7%（N=300 token）。这个数字能区分 99.5% 和 99.9% 吗？需要多少样本？
+4. prefix caching 关闭时全对、开启且命中率 85% 时部分请求乱码。给出你的排查路线（提示：block hash 与新旧布局）。
+5. 投机解码开启后你的 decode attention kernel 输出错了。最可能违反了哪个隐含假设？
+
+<details>
+<summary>参考答案（先自己答再看）</summary>
+
+1. 类别 ②（同数学不同顺序）。容差依据 4.2 节：累加器 FP32、K 维长度下顺序差的理论量级（$u$ 为 FP32 的 $6\times10^{-8}$，深度差 $\log_2 8 - \log_2 4$ 级别，实测通常远小于界），设 rtol/atol 留出该量级余量而非拍 1e-6。
+2. 至少：`1`（最稀疏）、`40`（恰好命中 bucket，off-by-one）、`41`（落到下一 bucket，padding 最多档）、`256`（最大 capture，满 tile）、`257`（超界 → eager fallback，另一条执行路径）；再加 `--enforce-eager` 的 A/B 对照。
+3. 不能。N=300、p≈0.997 时 Wald 半宽 $1.96\sqrt{0.997\times0.003/300}\approx 0.62\%$，置信区间横跨 99.1%~100.3%。区分 99.5% vs 99.9%（ε=0.2%）约需 $N \ge 3.84\times0.005/0.0004 \approx 48$……注意此处 p(1-p) 取 0.995×0.005≈0.005，得 N≥48 是"区分两个已知比例"的样本量；而**估计**单个比例到 ±0.2% 需要 N≈9,600。答出"半宽与 $\sqrt{N}$ 反比、需近万 token"即算对。
+4. ① 复现：固定 seed + 固定命中序列；② 对照：关缓存复跑同请求应恢复 → 锁定缓存路径；③ 机制：block hash 复用了旧请求写入的 KV，而你的改动改了写入布局 → 新代码读到旧布局数据；④ 修复方向：让布局/版本进入 hash 组成（或升级时失效缓存），高命中负载复测。
+5. "decode 时 q_len==1"。投机解码下 query 长度 = 1 + num_speculative_tokens，kernel 若按单 query 写死（如把 q 维当作不存在、K/V 偏移按单 token 计算）就会算错或越界。
+</details>
+
+---
+
+## 十一、今日产出物
+
+| 产出物 | 验收标准 |
+|---|---|
+| `test_plan.md`：定类 + 阈值 + case 清单 | 阈值在测试前写下、每项有出处（公式 / 版本日志） |
+| 测试记录（边界矩阵 × pass/fail） | 六维度全覆盖，含 prefix caching 开/关、eager/graph、全 dtype |
+| 精度对拍数据 | top-1（含 N）/ KL / cosine / L3 首分歧分布；N ≥ 10k token |
+| `tests_proj/` 测试脚本 | 可重跑（一条命令）；做过"故意改坏"自检 |
+| bug 清单 | 每项过四问分诊；已修复项全量重跑；无"带病进 Day 45"项 |
+
+> **明日预告（Day 45）**：把 Day 43 的对比表与今天的测试记录组装成 PR——Why / What / Benchmarks / Test Plan 四段式描述、pre-commit 与 commit history 整理、提交后 CI 红了当天修、review 意见 24 小时内响应。PR 不合并也值：review 是免费的专家反馈。
+[0m
+[0m→ [0mRead week7/assets/day43_round_protocol.svg
+Day 45 的定位明确：Day 43-45 块的最后一天——把前两天的对比表与测试记录组装成 PR 提交。先创建第一张 SVG（PR 生命周期图）。
+[0m
+[0m← [0mWrite week7/assets/day45_pr_lifecycle.svg
+Wrote file successfully.
+[0m
+SVG 1 完成。现在写入 Markdown 前半部分。
+[0m← [0mWrite week7/day45_pr_submission.md
+Wrote file successfully.
+[0m
+修复第一部分中的一处笔误，然后继续写入后半部分。
+[0m← [0mEdit week7/day45_pr_submission.md
+Index: /mnt/workspace/aiinfra/vllm/week7/day45_pr_submission.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/day45_pr_submission.md
++++ /mnt/workspace/aiinfra/vllm/week7/day45_pr_submission.md
+@@ -119,6 +119,6 @@
+ 一次 review 往返的时延可以写成：
+ 
+ $$T_{\text{round}} = T_{\text{queue}} + T_{\text{read}} + T_{\text{write}} + T_{\text{your\ response}}$$
+ 
+-其中你能控制的只有最后一项。维持arianer（violate） $T_{\text{your\ response}} \le 24\text{h}$ 有两个作用：其一，reviewer 上下文还热着，他复核你的修复时不用重读整个 PR；其二，PR 在 maintainer 心理队列里保持"活跃"状态——**开源仓库的 WIP PR 死亡率与响应时延正相关**。反过来，你不需要 5 分钟内回复，深度思考后的回复（带数据）比秒回"will fix"更受欢迎。
++其中你能控制的只有最后一项。维持 $T_{\text{your\ response}} \le 24\text{h}$ 有两个作用：其一，reviewer 上下文还热着，他复核你的修复时不用重读整个 PR；其二，PR 在 maintainer 心理队列里保持"活跃"状态——**开源仓库的 WIP PR 死亡率与响应时延正相关**。反过来，你不需要 5 分钟内回复，深度思考后的回复（带数据）比秒回"will fix"更受欢迎。
+ 
+
+[0m
+创建第二张 SVG（PR 四段式描述与证据链映射图）。
+[0m← [0mWrite week7/assets/day45_pr_anatomy.svg
+Wrote file successfully.
+[0m
+继续追加 Markdown 中间部分（四段式 PR 描述、git 工作流、对比表模板）。
+[0m$ [0mcat >> week7/day45_pr_submission.md << 'MDEOF'
+
+---
+
+## 四、关键操作：从本地分支到 PR 页面
+
+### 4.1 PR 描述：四段式模板
+
+![Day 45 PR 描述解剖与证据链映射](assets/day45_pr_anatomy.svg)
+
+上面这张图是今天的核心操作视图：**左边你都有，右边是今天要写的**。可直接套用的模板（以 vllm-ascend 为例，若仓库有自己的 PR 模板则以模板为主、把下面四段填进对应位置）：
+
+```markdown
+## WHY（瓶颈与上限）
+- profile 显示 decode step 的 X% 时间在 xxx kernel（nsys/msprof 火焰图，完整报告见 <链接>）
+- 现状每次迭代搬运 N bytes，理论下限 M bytes（按 Day 1/Day 3 的访存模型推导），
+  优化空间 ≈ (N-M)/N
+- 该 kernel 在 decode 密集负载（占生产流量 ~xx%）为主热点
+
+## WHAT（改动机制）
+- <改动 1>：一句话机制 + 为什么它能逼近上限（联系 WHY 的数字）
+- <改动 2>：同上
+- 明确说明改动类别：本 PR 属"同数学不同顺序"（Day 44 的定类），预期输出差异在
+  浮点舍入误差界内
+
+## BENCHMARKS（前后对比）
+- 环境：Atlas 800T A2 ×1 · CANN x.y · vllm-ascend <commit hash>（base: main@<hash>）
+- 协议：3 seeds × 1000 req，每轮重启服务，warmup 丢弃，均值 ± σ
+- 负载：vllm bench serve --dataset sonnet-4k --request-rate 4（完整命令见附录）
+
+| 场景 | 指标 | baseline | optimized | Δ | 显著性 |
+|---|---|---|---|---|---|
+| decode 密集 | TPOT p99 (ms) | 21.3 ± 0.4 | 17.5 ± 0.5 | **-17.8%** | p < 0.01 |
+| prefill 密集 | TTFT p99 (ms) | 342 ± 9 | 341 ± 11 | -0.3%（不显著） | n.s. |
+| 混合 | goodput @ TPOT<200ms | 38 ± 1 | 44 ± 2 | +15.8% | p < 0.05 |
+
+（数字为示例格式，以你的实测为准；prefill 无感符合访存类优化的机制预期）
+
+## TEST PLAN（正确性）
+- 定类：类别②（同数学不同顺序）→ L1 容差按 FP32 累加误差界 + 余量设定
+- 边界 case：CUDA Graph bucket ±1 / 最大+1 · q_len=1+k（spec decode）· N/K 尾块 ·
+  prefix caching 开/关 —— 62 case 全 pass（清单见 tests/）
+- 三层对拍：top-1 一致率 99.8%（N=12k tokens）· KL 0.011 · 固定 seed greedy 首分歧
+  分布 ≥ 95 分位无分歧
+- 回归：CI 全绿（含 <真机 job 名>）
+```
+
+> **两个高频加分动作**：① **主动写"无收益场景"**——reviewer 最警惕只挑好看的数据；② 把完整 benchmark JSON、profile 截图放到 gist 或 PR comment 附录，主描述只留结论表——**密度是对 reviewer 注意力的尊重**。
+
+### 4.2 git 工作流：命令级序列
+
+```bash
+# 0. 同步上游（永远从最新 main 切分支，减少后面 rebase 冲突）
+git fetch upstream
+git checkout -b perf/optimize-xxx-kernel upstream/main
+
+# ...开发与提交（Day 41-42 已完成）...
+
+# 1. 私有分支整理历史（只对未 push 的 commit 做）
+git add -p                          # 按语义块暂存，而不是 git add -A
+git commit -m "perf(xxx): split K dim to fit L2 tile"
+
+# 2. 本地过 pre-commit（CI lint 的镜像，本地不过别 push）
+pip install pre-commit && pre-commit run --all-files
+# 常见钩子：ruff / black / isort / clang-format / trailing-whitespace / check-yaml
+
+# 3. 本地跑相关单测（别等 CI 才发现）
+pytest tests/ -k "xxx" -x
+
+# 4. DCO sign-off（vllm-project 系仓库要求每个 commit 带 Signed-off-by）
+git commit --amend -s   # 或提交时就用 git commit -s
+
+# 5. push 到你的 fork，创建 PR
+git push -u origin perf/optimize-xxx-kernel
+gh pr create --repo vllm-project/vllm-ascend \
+  --title "perf: optimize xxx kernel for decode (-18% TPOT p99)" \
+  --body-file pr_description.md --base main
+```
+
+**commit message 规范**（conventional commits 风格，vLLM 系仓库普遍适用）：
+
+```
+<type>(<scope>): <一句话机制描述，祈使语气，<=72 字符>
+
+<可选正文：为什么这么改，数字证据，与替代方案的比较>
+<footer: Signed-off-by: Your Name <email>>
+```
+
+`type` 常用 `perf`（性能）、`fix`、`feat`、`refactor`、`test`、`docs`。**标题里放机制与量化结果，不放"优化了代码"这种空话**——这与 PR 标题公式一致：`[perf] 机制短语 + 量化结果 + 场景`。
+
+### 4.3 review 应对的操作模式
+
+收到 review 意见后，对每条意见形成三元组闭环：
+
+```
+意见 #N（reviewer 原文）
+├── 同意 → 新 commit "fix: address review comment about <主题>" + 回复
+│          "Done in <commit-hash>，补充验证：<跑了什么>"
+└── 不同意 → 回复结构：
+           ① 复述："如果理解正确，您担心的是 <X>"
+           ② 证据："实测/引用显示 <数据/文档链接>"
+           ③ 结论："因此我倾向保持现状，如果您仍认为 <X>，我可以 <折中方案>"
+```
+
+注意 ③ 永远给 maintainer 留台阶——**技术分歧的裁判权在上游 maintainer**，你的任务是保证裁判拿到完整证据，而不是赢下辩论。Day 43-44 的产出在这里逐条变现：质疑数据 → 贴环境指纹与显著性；质疑正确性 → 贴对拍与边界矩阵。
+
+MDEOF
+echo "part2 appended, lines: $(wc -l < week7/day45_pr_submission.md)"
+part2 appended, lines: 229
+[0m
+创建第三张 SVG（大 PR 拆分策略图），然后写入最后部分。
+[0m← [0mWrite week7/assets/day45_pr_split_strategy.svg
+Wrote file successfully.
+[0m
+[0m← [0mEdit week7/assets/day45_pr_split_strategy.svg
+Index: /mnt/workspace/aiinfra/vllm/week7/assets/day45_pr_split_strategy.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/assets/day45_pr_split_strategy.svg
++++ /mnt/workspace/aiinfra/vllm/week7/assets/day45_pr_split_strategy.svg
+@@ -56,9 +56,9 @@
+   <line x1="330" y1="293" x2="356" y2="293" marker-end="url(#arr45e)"/>
+   <line x1="600" y1="293" x2="626" y2="293" marker-end="url(#arr45e)"/>
+ </g>
+ <text x="90" y="348" font-size="10.5" fill="#166534">依赖标注：PR#2 描述里写 "based on #<PR#1 编号>"；PR#1 合入后 rebase，语义 diff 保持最小</text>
+-<text x="90" y="364" font-size="10.5" fill="#166534">每个 PR 独立满足"单一验证强度"——reviewer 可以用对应的最cheap手段审查每一环</text>
++<text x="90" y="364" font-size="10.5" fill="#166534">每个 PR 独立满足"单一验证强度"——reviewer 可以用对应的最廉价手段审查每一环</text>
+ 
+ <!-- bottom summary -->
+ <rect x="60" y="384" width="860" height="26" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+ <text x="490" y="401" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">拆分原则：按"验证强度"切，不按"文件目录"切——每一环都能用最便宜的验证手段独立确认</text>
+
+[0m
+[0m$ [0mcat >> week7/day45_pr_submission.md << 'MDEOF'
+
+---
+
+## 五、动手实验步骤
+
+> **总时长约 3 小时**。前提：Day 44 结束时已确认无"带病"项；如果昨天有未闭环 bug，先回去修完再开始今天。
+
+### 步骤 1：Go / No-Go 自检（15 min）
+
+逐项打勾，任何一项不过就停在这里处理：
+
+- [ ] diff 只包含**一个主题**（多主题 → 按下图拆分）
+- [ ] `git diff upstream/main --stat` 总行数在甜点区（200~600 行；超出则考虑拆分）
+- [ ] 无格式化噪声 diff（`pre-commit run --all-files` 干净）
+- [ ] 每个 commit 都是可独立描述的逻辑单元（`git log --oneline` 自查）
+- [ ] Day 43 对比表与当前分支代码**对应**（数据是不是最新 commit 跑的？改过代码必须重跑）
+- [ ] Day 44 测试记录同样与最新代码对应
+- [ ] 所有 commit 有 `Signed-off-by`
+
+![Day 45 PR 拆分策略](assets/day45_pr_split_strategy.svg)
+
+如果 diff 超标，按上图方案 B 拆：**按验证强度切分**（位级等价的重构 / 语义核心 / 测试），而不是按文件目录切分。PR#2 的描述里用 "based on #<编号>" 标注依赖。
+
+### 步骤 2：整理历史 + 本地三关（45 min）
+
+```bash
+git rebase -i upstream/main        # squash/fixup 掉开发期碎 commit
+pre-commit run --all-files         # 第一关：格式
+pytest tests/ -k "<你的模块>" -x    # 第二关：相关单测
+python -m pytest tests_proj/ -q    # 第三关：Day 44 的边界矩阵脚本
+```
+
+第三关是昨天测试记录的可重跑版本——**push 前最后一道本地防线**，确保 PR 建立后 CI 挂掉的概率尽可能低。
+
+### 步骤 3：写四段式描述（30 min）
+
+按 4.1 模板写 `pr_description.md`。写作时的自查问题：
+
+1. 标题里有没有量化结果？
+2. WHY 段不看代码能否看懂瓶颈？
+3. BENCHMARKS 表是否含环境指纹四件套（base hash / 硬件镜像 / 完整命令 / 轮次协议）？
+4. 无收益场景是否主动交代？
+5. TEST PLAN 是否写明定类结论与容差出处？
+
+### 步骤 4：创建 PR 并盯完 CI（30 min + 观察期）
+
+```bash
+git push -u origin perf/optimize-xxx-kernel
+gh pr create --repo vllm-project/vllm-ascend --title "..." --body-file pr_description.md
+gh pr checks --watch    # 盯 CI
+```
+
+CI 全绿则进入步骤 5；红了则：**读日志 → 判断环境抖动 vs 真失败 → 本地复现真失败 → fix commit → push**。当天闭环。
+
+### 步骤 5：主动触发 review + 归档（30 min）
+
+- 在 PR 里 @ 对应模块的 maintainer（从该目录近期 commit 的作者里找，或问社区频道）
+- 在项目本地 README 归档：PR 链接、对比表快照、环境指纹——**面试时能直接打开**
+- 建一个 `review_log.md`：记录每条 review 意见与你的回应——Day 49 讲稿的原始素材
+
+### 步骤 6：模拟"reviewer 视角"自审（15 min）
+
+换位检查：只看 PR 页面，10 分钟能否看懂？描述里有没有只有你自己懂的缩写？表格数字有没有没解释的口径（σ 是什么轮间的？p 是怎么算的？）？——发现一处就修一处。
+
+---
+
+## 六、面试高频问题
+
+**Q1：为什么强调 PR 要小？大 PR 一次提完不是效率更高吗？**
+
+> 答：review 成本随 diff 大小超线性：行数是线性项，跨模块上下文加载是超线性项，超过一屏后阅读退化成抽样是质量塌陷项。小 PR 周转快、每步可独立验证、被 block 时损失面小。工程上按"验证强度"拆序列：先合纯重构（位级等价，回归测试即可），再上语义核心（带对拍数据），最后测试 PR 锁回归——每一环用最便宜的验证手段审查。
+
+**Q2：reviewer 质疑你的 benchmark 数据不可信，你怎么回应？**
+
+> 答：不辩解，补证据链：环境指纹（base/optim 的 commit hash、硬件与镜像、完整 bench 命令）、轮次协议（warmup、重启、seed 数）、统计口径（均值 ± σ、p99、显著性检验）。如果对方指出协议缺陷（比如没控制某变量），正确动作是**补测**而不是解释——我在 Day 43 就把协议文档化了，所以这个回应成本很低。这也是为什么 benchmark 协议要前置到设计阶段。
+
+**Q3：你不同意某条 review 意见，怎么处理？**
+
+> 答：三段式回复：复述对方观点确认没理解偏 → 给出我的证据（数据/源码引用/文档）→ 给结论并留折中方案。技术分歧的裁判权在 maintainer，我的任务是让裁判拿到完整证据。举实例：reviewer 建议用方案 A，我实测 A 在我的场景慢 x%，贴数据后他认可了方案 B——分歧用实验闭环，不用立场闭环。
+
+**Q4：PR 最后没被合并，这段经历对面试有价值吗？**
+
+> 答：有，且可以正面讲。review 过程是免费专家反馈：maintainer 对我 kernel 切分方式的一条质疑，直接暴露了我对某硬件 cache 层级的理解偏差，我据此补了实验。面试时这段的讲法是"我向上游提交了 X，收到了 Y 挑战，我用 Z 数据回应/修正"——展示的是开源协作成熟度和被挑战后的迭代能力，比"一提就合"更能证明真实性。
+
+**Q5：commit message 和 PR 描述分别承担什么？**
+
+> 答：PR 描述是静态俯视图（Why/What/Benchmarks/Test Plan 四段），commit history 是时间顺序的第二遍叙事。好的 commit 序列让每步小到"显然正确"：纯重构 commit 可以被位级等价验证直接放行，语义 commit 单独对拍。标题公式 `[perf] 机制短语 + 量化结果 + 场景`——reviewer 扫 inbox 只看标题。
+
+**Q6：DCO 的 `Signed-off-by` 是什么？和 CLA 有什么区别？**
+
+> 答：DCO（Developer Certificate of Origin）是 commit 级声明："我有权提交这段代码并以该许可证贡献"，用 `git commit -s` 在 footer 加 `Signed-off-by: Name <email>`。CLA 是项目级法律协议，签一次覆盖全部贡献。vllm-project 系仓库要求 DCO，CI 会检查每个 commit 是否带 sign-off，漏了直接红。这是机械流程，但漏了会浪费一轮 CI 周期。
+
+**Q7：CI 红了但本地是绿的，你的排查顺序？**
+
+> 答：先读日志分类：① 环境差异（CI 镜像的依赖版本、真机 job 的硬件行为与本地不同）；② 抖动（超时类 flaky test，看历史成功率）；③ 竞态（本地单线程过、CI 并发挂——比如测试间共享了状态）。在 PR comment 贴日志分析结论再行动：抖动可申请重跑，真失败本地构造同环境复现修复。**禁止不读日志盲 push 重跑三连**——那是在浪费 CI 资源和 reviewer 耐心。
+
+**Q8：你的 PR 里哪一部分最重要？**
+
+> 答：BENCHMARKS 表，因为它同时约束了其他三部分：WHY 段的优化空间推导要与它量级一致；diff 应该恰好服务于表中的 Δ%；TEST PLAN 保证表中的性能不是用精度换的。如果只能说一句话，就是"TPOT p99 从 X±σ 到 Y±σ，显著性 p<0.01，prefill 场景无感（符合机制预期）"——这句里有效应量、误差、显著性、边界，是完整故事。
+
+---
+
+## 七、今日总结
+
+- **PR = 证据链载体**：Why（瓶颈与上限）+ What（机制）+ Benchmarks（Day 43 对比表）+ Test Plan（Day 44 记录）四位一体，标准是"reviewer 10 分钟内独立看懂并相信"
+- **大小经济学**：review 成本超线性，一个 PR 一个主题；超标按**验证强度**拆序列（重构 → 语义 → 测试），不按目录拆
+- **commit history 是第二遍叙事**：push 前用 rebase/fixup 整理，1 commit = 1 逻辑单元；PR 后新增改动用独立 commit 便于增量审查
+- **机械流程零失误**：pre-commit 本地过、`-s` 签 DCO、本地先跑相关单测——这些不是技术问题，但每一项失误都烧掉一轮 CI 周期
+- **两条时间线**：CI 红当天修（先读日志再动手）；review 意见 24h 内逐条闭环（同意即改，不同意给数据）
+- **不合并也有价值**：review 是免费专家反馈，`review_log.md` 直接变成 Day 49 项目讲稿的"被挑战与回应"素材
+- 项目 A 至此收官：选题（Day 36）→ 基线（Day 37）→ 定位（Day 38-39）→ 实现（Day 41-42）→ 验证（Day 43-44）→ 上游提交（今天），**全链路可复述、全数据可追溯**
+
+---
+
+## 八、今日自测题
+
+1. 你的 diff 是 1500 行：700 行 kernel 语义改动 + 500 行纯重构 helper 提取 + 300 行测试。给出拆分方案、每个 PR 的验证手段和依赖标注方式。
+2. PR 标题 `perf: improve performance` 有什么问题？写出你的版本（含公式）。
+3. maintainer 说："你这个 -18% 是不是就在挑对你有利的场景？"——写出你的完整回复（结构 + 内容要点）。
+4. 为什么 push 之后不建议再 rebase 整理历史？什么时候例外（提示：与 maintainer 的交互）？
+5. 列出你 push 前的"三关"，以及每一关分别在拦截什么类别的 CI 失败。
+
+<details>
+<summary>参考答案（先自己答再看）</summary>
+
+1. 三个 PR 序列：PR#1 refactor（500 行，位级等价，验证 = 回归测试 + 固定 seed 零 diff，可快速合入）→ PR#2 perf（700 行，语义核心，验证 = Day 43 对比表 + Day 44 类别②对拍，描述注明 based on #PR#1）→ PR#3 test（300 行，边界矩阵，独立价值，即使 PR#2 搁置也不浪费）。按验证强度切，每环用最便宜的验证手段。
+2. 无机制、无量化、无场景。改写：`perf(xxx): eliminate tail-block redundant copy in decode kernel (-18% TPOT p99 on sonnet-4k)`——类型 + 机制短语 + 量化结果 + 场景。
+3. 结构：① 承认关切合理（场景选择偏差是 benchmark 常见问题）；② 交代场景矩阵覆盖（decode 密集 / prefill 密集 / 混合三场景，机制预期是访存类优化只在 decode 生效）；③ 主动给出 prefill 不显著的数据行与机制解释；④ 提供完整协议与环境指纹供复现，欢迎指定任何场景补测。核心：用矩阵设计与机制预期回应"挑数据"质疑，而不是辩护。
+4. push 后 rebase 改写历史会使远端与本地分叉，force push 会**作废已有 review 的 line comment 锚点**（行号对不上），打乱增量审查。例外：maintainer 明确要求 squash-and-merge 前的整理，或 PR 仍无人 review。
+5. 第一关 pre-commit：拦格式/lint/yaml 类失败（CI 最便宜的 job）；第二关模块相关单测：拦代码逻辑回归（CPU 可跑部分）；第三关本地边界矩阵脚本：拦真机 job 才会暴露的 shape/精度问题——把最贵的失败类别在本地提前拦截。
+</details>
+
+---
+
+## 九、今日产出物
+
+| 产出物 | 验收标准 |
+|---|---|
+| **已提交的 PR**（vllm-ascend / vLLM 主仓） | 四段式描述完整；CI 状态已处理；@ 了对应 maintainer |
+| **PR 内的前后性能数据对比表** | 环境指纹四件套 + 均值±σ + p99 + 显著性 + 无收益场景行 |
+| 整理后的 commit 序列 | 每条可独立描述；全部带 Signed-off-by |
+| `review_log.md` | 每条意见 + 回应（或回应计划）；Day 49 讲稿素材 |
+| 项目 README 归档 | PR 链接 + 对比表快照 + 环境指纹，面试可直接打开 |
+| 拆分方案（若 diff 超标） | 按 PR#1/2/3 序列提交并标注依赖 |
+
+> **明日预告（Day 46）**：项目 C 启动——实验设计。四组消融（chunked prefill × prompt 长度 / prefix caching 命中率梯度 / 投机解码接受率-收益曲线 / 量化吞吐-精度权衡）的假设、变量与指标矩阵，压测脚本与 Prometheus + Grafana 采集。好消息：**Day 43 的 benchmark harness 将被整套复用**——你今天已经把"消融实验"最难的那部分（可信的测量协议）做完了。
+MDEOF
+echo "done, total lines: $(wc -l < week7/day45_pr_submission.md)"
+done, total lines: 375
+[0m
+验证文件完整性和结构。
+[0m$ [0mgrep -n "^#\|assets/" week7/day45_pr_submission.md && echo "---" && ls -la week7/assets/day45* && python3 -c "
+import xml.dom.minidom
+for f in ['week7/assets/day45_pr_lifecycle.svg','week7/assets/day45_pr_anatomy.svg','week7/assets/day45_pr_split_strategy.svg']:
+    xml.dom.minidom.parse(f)
+    print(f, 'XML OK')
+"
+1:# Day 45：优化迭代与验证（三）——整理为 PR 提交
+11:## 一、今日学习目标
+22:## 二、核心概念
+24:### 2.1 PR 不是"提交代码"，是"提交证据链"
+37:### 2.2 PR 大小的经济学：review 精力是稀缺资源
+52:### 2.3 commit history 是给 reviewer 讲的第二遍故事
+63:### 2.4 review 是免费的专家反馈：换一个心态
+71:### 2.5 今日全景图
+73:![Day 45 PR 生命周期](assets/day45_pr_lifecycle.svg)
+79:## 三、原理深入讲解
+81:### 3.1 上游与下游：你的 PR 落在哪
+91:### 3.2 提交前检查的"三角验证"
+104:### 3.3 CI 矩阵：你的 PR 会触发什么
+117:### 3.4 review 轮次的周期模型
+128:## 四、关键操作：从本地分支到 PR 页面
+130:### 4.1 PR 描述：四段式模板
+132:![Day 45 PR 描述解剖与证据链映射](assets/day45_pr_anatomy.svg)
+137:## WHY（瓶颈与上限）
+143:## WHAT（改动机制）
+149:## BENCHMARKS（前后对比）
+162:## TEST PLAN（正确性）
+173:### 4.2 git 工作流：命令级序列
+176:# 0. 同步上游（永远从最新 main 切分支，减少后面 rebase 冲突）
+180:# ...开发与提交（Day 41-42 已完成）...
+182:# 1. 私有分支整理历史（只对未 push 的 commit 做）
+186:# 2. 本地过 pre-commit（CI lint 的镜像，本地不过别 push）
+188:# 常见钩子：ruff / black / isort / clang-format / trailing-whitespace / check-yaml
+190:# 3. 本地跑相关单测（别等 CI 才发现）
+193:# 4. DCO sign-off（vllm-project 系仓库要求每个 commit 带 Signed-off-by）
+196:# 5. push 到你的 fork，创建 PR
+214:### 4.3 review 应对的操作模式
+233:## 五、动手实验步骤
+237:### 步骤 1：Go / No-Go 自检（15 min）
+249:![Day 45 PR 拆分策略](assets/day45_pr_split_strategy.svg)
+253:### 步骤 2：整理历史 + 本地三关（45 min）
+264:### 步骤 3：写四段式描述（30 min）
+274:### 步骤 4：创建 PR 并盯完 CI（30 min + 观察期）
+284:### 步骤 5：主动触发 review + 归档（30 min）
+290:### 步骤 6：模拟"reviewer 视角"自审（15 min）
+296:## 六、面试高频问题
+332:## 七、今日总结
+344:## 八、今日自测题
+364:## 九、今日产出物
+---
+-rw-r--r-- 1 root root 6532 Oct  2 17:08 week7/assets/day45_pr_anatomy.svg
+-rw-r--r-- 1 root root 7587 Oct  2 17:06 week7/assets/day45_pr_lifecycle.svg
+-rw-r--r-- 1 root root 5121 Oct  2 17:10 week7/assets/day45_pr_split_strategy.svg
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+  File "/opt/buildtools/Python-3.11.4/lib/python3.11/xml/dom/minidom.py", line 1990, in parse
+    return expatbuilder.parse(file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/buildtools/Python-3.11.4/lib/python3.11/xml/dom/expatbuilder.py", line 911, in parse
+    result = builder.parseFile(fp)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/buildtools/Python-3.11.4/lib/python3.11/xml/dom/expatbuilder.py", line 207, in parseFile
+    parser.Parse(buffer, False)
+xml.parsers.expat.ExpatError: not well-formed (invalid token): line 59, column 84
+week7/assets/day45_pr_lifecycle.svg XML OK
+week7/assets/day45_pr_anatomy.svg XML OK
+[0m
+第三张 SVG 有 XML 错误，检查第 59 行。
+[0m→ [0mRead week7/assets/day45_pr_split_strategy.svg[90m [limit=12, offset=54][0m
+`<PR#1 编号>` 中的尖括号未转义，修复：
+[0m
+[0m← [0mEdit week7/assets/day45_pr_split_strategy.svg
+Index: /mnt/workspace/aiinfra/vllm/week7/assets/day45_pr_split_strategy.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/assets/day45_pr_split_strategy.svg
++++ /mnt/workspace/aiinfra/vllm/week7/assets/day45_pr_split_strategy.svg
+@@ -55,9 +55,9 @@
+ <g stroke="#16a34a" stroke-width="1.8">
+   <line x1="330" y1="293" x2="356" y2="293" marker-end="url(#arr45e)"/>
+   <line x1="600" y1="293" x2="626" y2="293" marker-end="url(#arr45e)"/>
+ </g>
+-<text x="90" y="348" font-size="10.5" fill="#166534">依赖标注：PR#2 描述里写 "based on #<PR#1 编号>"；PR#1 合入后 rebase，语义 diff 保持最小</text>
++<text x="90" y="348" font-size="10.5" fill="#166534">依赖标注：PR#2 描述里写 "based on #PR1编号"；PR#1 合入后 rebase，语义 diff 保持最小</text>
+ <text x="90" y="364" font-size="10.5" fill="#166534">每个 PR 独立满足"单一验证强度"——reviewer 可以用对应的最廉价手段审查每一环</text>
+ 
+ <!-- bottom summary -->
+ <rect x="60" y="384" width="860" height="26" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+
+[0m
+[0m$ [0mpython3 -c "
+import xml.dom.minidom
+for f in ['week7/assets/day45_pr_lifecycle.svg','week7/assets/day45_pr_anatomy.svg','week7/assets/day45_pr_split_strategy.svg']:
+    xml.dom.minidom.parse(f)
+    print(f, 'XML OK')
+" && grep -c "MDEOF\|arianer" week7/day45_pr_submission.md; echo "residual check exit: $?"
+week7/assets/day45_pr_lifecycle.svg XML OK
+week7/assets/day45_pr_anatomy.svg XML OK
+week7/assets/day45_pr_split_strategy.svg XML OK
+0
+residual check exit: 1
+[0m
+Day 45 教程已完成，文件均已验证通过。
+
+**文件路径**
+- `week7/day45_pr_submission.md`（375 行，9 大章节 + 3 张 SVG）
+- `week7/assets/day45_pr_lifecycle.svg` — PR 生命周期（本地链路 → CI 红修循环 → review 循环 → 合并）
+- `week7/assets/day45_pr_anatomy.svg` — PR 四段式描述解剖与证据链映射（Day 38-44 产出 → WHY/WHAT/BENCHMARKS/TEST PLAN）
+- `week7/assets/day45_pr_split_strategy.svg` — 大 PR 按验证强度拆分的序列策略
+
+**主要内容**：严格对应 README Day 43-45 块的收官日（整理为 PR 提交）。核心是“PR = 证据链载体”：PR 大小经济学（review 成本超线性）、commit history 叙事、四段式描述模板（可直接套用）、git/pre-commit/DCO 完整命令序列、前后性能数据对比表模板（环境指纹四件套 + 均值±σ + 显著性）、review 逐条闭环策略与周期模型，以及“未合并也有价值”的面试讲法。实验步骤 6 步约 3 小时，产出为已提交 PR + 对比表 + review_log.md。内容主动衔接 Day 43/44（对比表、测试记录直接作为 PR 章节），并以明日预告衔接 Day 46 项目 C。

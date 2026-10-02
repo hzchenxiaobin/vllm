@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d52b" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+    <marker id="d52c" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect width="960" height="620" fill="#fafbfc"/>
+  <text x="480" y="32" text-anchor="middle" font-size="21" font-weight="700" fill="#0f172a">chunked prefill：max_num_batched_tokens 的双向约束</text>
+  <text x="480" y="56" text-anchor="middle" font-size="13" fill="#64748b">示例：8B 模型 @H100，prefill ≈ 20k tok/s（t_tok ≈ 50μs），ITL SLO = 200ms</text>
+
+  <!-- plot area -->
+  <rect x="90" y="90" width="770" height="420" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <!-- recommended band: x from 512..4096 maps to 190..?; axis: ticks 512,1k,2k,4k,8k,16k,32k at even spacing -->
+  <!-- x mapping: 512->140, 1k->252, 2k->364, 4k->476, 8k->588, 16k->700, 32k->812 -->
+  <rect x="364" y="90" width="112" height="420" fill="#f0fdf4" opacity="0.55"/>
+  <text x="420" y="486" text-anchor="middle" font-size="12" font-weight="700" fill="#15803d">推荐区间</text>
+  <text x="420" y="502" text-anchor="middle" font-size="11" fill="#16a34a">2k~4k</text>
+
+  <!-- lower bound: M_sat at 2k..4k region -->
+  <line x1="392" y1="90" x2="392" y2="510" stroke="#16a34a" stroke-width="2" stroke-dasharray="7,5"/>
+  <text x="392" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="#15803d">下限 M_sat ≈ 2~4k</text>
+  <text x="392" y="528" text-anchor="middle" font-size="11" fill="#16a34a">GEMM 饱和</text>
+
+  <!-- upper bound: ITL SLO at 4k -->
+  <line x1="476" y1="90" x2="476" y2="510" stroke="#dc2626" stroke-width="2" stroke-dasharray="7,5"/>
+  <text x="620" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="#dc2626">上限 ≈ ITL_SLO / t_prefill_tok = 200ms / 50μs = 4000</text>
+  <line x1="476" y1="74" x2="768" y2="74" stroke="#dc2626" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#d52c)"/>
+  <text x="476" y="528" text-anchor="middle" font-size="11" fill="#dc2626">超出 → ITL 尖刺超 SLO</text>
+
+  <!-- axes -->
+  <line x1="90" y1="510" x2="860" y2="510" stroke="#475569" stroke-width="2" marker-end="url(#d52b)"/>
+  <line x1="90" y1="510" x2="90" y2="90" stroke="#475569" stroke-width="2" marker-end="url(#d52b)"/>
+  <text x="880" y="516" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">budget</text>
+  <text x="72" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">ms</text>
+
+  <!-- x ticks -->
+  <g font-size="12" fill="#475569" text-anchor="middle">
+    <line x1="140" y1="510" x2="140" y2="516" stroke="#475569"/><text x="140" y="534">512</text>
+    <line x1="252" y1="510" x2="252" y2="516" stroke="#475569"/><text x="252" y="534">1k</text>
+    <line x1="364" y1="510" x2="364" y2="516" stroke="#475569"/><text x="364" y="534">2k</text>
+    <line x1="476" y1="510" x2="476" y2="516" stroke="#475569"/><text x="476" y="534">4k</text>
+    <line x1="588" y1="510" x2="588" y2="516" stroke="#475569"/><text x="588" y="534">8k</text>
+    <line x1="700" y1="510" x2="700" y2="516" stroke="#475569"/><text x="700" y="534">16k</text>
+    <line x1="812" y1="510" x2="812" y2="516" stroke="#475569"/><text x="812" y="534">32k</text>
+  </g>
+  <!-- y ticks: 0,50,100,200,400,800 ms → y = 510 - ms*0.5? map 0->510, 800->110: scale 0.5/ms -->
+  <g font-size="12" fill="#475569" text-anchor="end">
+    <line x1="84" y1="510" x2="90" y2="510" stroke="#475569"/><text x="80" y="514">0</text>
+    <line x1="84" y1="485" x2="90" y2="485" stroke="#475569"/><text x="80" y="489">50</text>
+    <line x1="84" y1="460" x2="90" y2="460" stroke="#475569"/><text x="80" y="464">100</text>
+    <line x1="84" y1="410" x2="90" y2="410" stroke="#475569"/><text x="80" y="414">200</text>
+    <line x1="84" y1="310" x2="90" y2="310" stroke="#475569"/><text x="80" y="314">400</text>
+    <line x1="84" y1="110" x2="90" y2="110" stroke="#475569"/><text x="80" y="114">800</text>
+  </g>
+
+  <!-- ITL p99 line (blue): step time ≈ budget × 50μs, through (140,~505)(812,~110)... points: 512→26ms→y497, 1k→50→485, 2k→100→460, 4k→200→410, 8k→400→310, 16k→800→110; 32k→1600 off-chart -->
+  <polyline points="140,497 252,485 364,460 476,410 588,310 700,110" fill="none" stroke="#2563eb" stroke-width="3"/>
+  <circle cx="140" cy="497" r="4" fill="#2563eb"/><circle cx="252" cy="485" r="4" fill="#2563eb"/>
+  <circle cx="364" cy="460" r="4" fill="#2563eb"/><circle cx="476" cy="410" r="4" fill="#2563eb"/>
+  <circle cx="588" cy="310" r="4" fill="#2563eb"/><circle cx="700" cy="110" r="4" fill="#2563eb"/>
+  <text x="700" y="96" font-size="12" font-weight="700" fill="#2563eb">ITL p99（≈ step 时长）</text>
+  <text x="620" y="292" font-size="11" fill="#2563eb" transform="rotate(0)">线性上升</text>
+
+  <!-- TTFT p99 line (amber): high at small budget (GEMM unsaturated + queueing), decreases, flattens, slightly rises at very large (queueing blocks) -->
+  <polyline points="140,210 252,250 364,286 476,306 588,318 700,322 812,320" fill="none" stroke="#d97706" stroke-width="3"/>
+  <circle cx="140" cy="210" r="4" fill="#d97706"/><circle cx="252" cy="250" r="4" fill="#d97706"/>
+  <circle cx="364" cy="286" r="4" fill="#d97706"/><circle cx="476" cy="306" r="4" fill="#d97706"/>
+  <circle cx="588" cy="318" r="4" fill="#d97706"/><circle cx="700" cy="322" r="4" fill="#d97706"/>
+  <circle cx="812" cy="320" r="4" fill="#d97706"/>
+  <text x="180" y="196" font-size="12" font-weight="700" fill="#b45309">TTFT p99</text>
+  <text x="152" y="228" font-size="11" fill="#b45309">budget 太小：</text>
+  <text x="152" y="244" font-size="11" fill="#b45309">GEMM 不饱和 + 排队</text>
+
+  <!-- SLO horizontal line for ITL 200ms -->
+  <line x1="90" y1="410" x2="860" y2="410" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,4"/>
+  <text x="856" y="402" text-anchor="end" font-size="11" font-weight="700" fill="#dc2626">ITL SLO = 200ms</text>
+
+  <!-- annotations -->
+  <text x="560" y="440" font-size="11" fill="#334155">budget &gt; 4k 后 ITL 超标：一步内所有 decode 请求</text>
+  <text x="560" y="456" font-size="11" fill="#334155">的间隔都被拉到 step 时长（prefill 独占式尖刺回归）</text>
+
+  <!-- legend -->
+  <g font-size="12">
+    <line x1="120" y1="120" x2="160" y2="120" stroke="#2563eb" stroke-width="3"/>
+    <text x="168" y="124" fill="#334155">ITL p99（混排 step 时长 ≈ budget × t_prefill_tok）</text>
+    <line x1="120" y1="144" x2="160" y2="144" stroke="#d97706" stroke-width="3"/>
+    <text x="168" y="148" fill="#334155">TTFT p99（效率 + 排队综合）</text>
+  </g>
+
+  <!-- bottom formula -->
+  <rect x="90" y="552" width="770" height="52" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="475" y="574" text-anchor="middle" font-size="13" font-family="Consolas, monospace" fill="#0f172a">max(2×M_sat, 并发×1k) ≤ budget ≤ (ITL_SLO − B_d·t_dec) / t_prefill_tok</text>
+  <text x="475" y="594" text-anchor="middle" font-size="12" fill="#64748b">V1 默认值随 KV cache 规模自适应，常见配置 2048~16384；调参时对着 SLO 调，不要照抄默认值</text>
+</svg>

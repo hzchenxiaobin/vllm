@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="960" height="560" fill="#ffffff"/>
+  <text x="480" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">异常分诊决策树：先分类，再动手（Day 47）</text>
+
+  <rect x="330" y="52" width="300" height="56" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="480" y="76" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">异常事件发生</text>
+  <text x="480" y="96" text-anchor="middle" font-size="10.5" fill="#475569">Grafana 齿形 ｜ 日志 preempt 行 ｜ sanity 三道关不过 ｜ z &gt; 3 离群</text>
+
+  <line x1="480" y1="108" x2="480" y2="146" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Diamond 1 -->
+  <polygon points="480,148 665,205 480,262 295,205" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="480" y="199" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#92400e">所有格子同时变慢 / 异常？</text>
+  <text x="480" y="217" text-anchor="middle" font-size="10" fill="#92400e">（降频 · 热节流 · 其他进程抢卡 · 网络）</text>
+
+  <line x1="293" y1="205" x2="268" y2="205" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="280" y="197" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#059669">是</text>
+  <rect x="62" y="172" width="200" height="68" rx="8" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+  <text x="162" y="194" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#9a3412">环境类（伪数据）</text>
+  <text x="162" y="212" text-anchor="middle" font-size="10" fill="#9a3412">nvidia-smi 查降频 / 温度 / 进程</text>
+  <text x="162" y="228" text-anchor="middle" font-size="10" fill="#9a3412">→ 修环境后重跑，不进报告</text>
+
+  <line x1="480" y1="264" x2="480" y2="302" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="492" y="290" font-size="10.5" font-weight="bold" fill="#059669">否</text>
+
+  <!-- Diamond 2 -->
+  <polygon points="480,304 665,361 480,418 295,361" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="480" y="355" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1e3a8a">数字违反构造预期？</text>
+  <text x="480" y="373" text-anchor="middle" font-size="10" fill="#1e3a8a">（0% 命中档有 hits · completed &lt; expected · 参数未生效）</text>
+
+  <line x1="293" y1="361" x2="268" y2="361" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="280" y="353" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#059669">是</text>
+  <rect x="62" y="328" width="200" height="68" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="162" y="350" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">脚本类（伪数据）</text>
+  <text x="162" y="368" text-anchor="middle" font-size="10" fill="#1e3a8a">warmup 污染梯度 / bench 部分失败</text>
+  <text x="162" y="384" text-anchor="middle" font-size="10" fill="#1e3a8a">→ 修脚本后重跑，不进报告</text>
+
+  <line x1="480" y1="420" x2="480" y2="452" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="492" y="440" font-size="10.5" font-weight="bold" fill="#059669">否</text>
+
+  <rect x="300" y="456" width="360" height="70" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="480" y="480" text-anchor="middle" font-size="13" font-weight="bold" fill="#5b21b6">机制类（宝贝，不可再生）</text>
+  <text x="480" y="498" text-anchor="middle" font-size="10.5" fill="#5b21b6">抓快照 → anomaly_log.md 原样保留（现象 + 负载 + 快照路径 + 归因）</text>
+  <text x="480" y="515" text-anchor="middle" font-size="10.5" fill="#5b21b6">→ Day 48 报告「机制解释」段的核心素材</text>
+
+  <text x="480" y="548" text-anchor="middle" font-size="10.5" fill="#475569">重跑协议：当天重跑 1~2 次（隔天环境不可比）——复现 → 系统性（机制证据）；消失 → 偶发（保留全部数据并披露，绝不悄悄删点）</text>
+</svg>

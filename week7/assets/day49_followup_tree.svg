@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="550" viewBox="0 0 960 550" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="960" height="550" fill="#ffffff"/>
+  <text x="480" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">Day 49：追问树——讲稿是邀请函，追问才是主战场（以项目 A 为例）</text>
+  <text x="480" y="45" text-anchor="middle" font-size="10.5" fill="#64748b">每片叶子必须挂证据指针；挂不上的标 TODO——那正是 Day 53 打磨、Day 54-55 模拟面试前要补的洞</text>
+
+  <rect x="240" y="58" width="480" height="52" rx="8" fill="#0f172a"/>
+  <text x="480" y="78" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#ffffff">根：TPOT p99 -17.8%（21.3±0.4 → 17.5±0.5 ms，p&lt;0.01）</text>
+  <text x="480" y="97" text-anchor="middle" font-size="9.5" fill="#cbd5e1">讲稿四根浮标：35% 时间 · 尾块冗余拷贝 · 配对统计 · p&lt;0.01 → 分别钓向五类分支</text>
+
+  <line x1="480" y1="110" x2="112" y2="150" stroke="#475569" stroke-width="1.6" marker-end="url(#arr3)"/>
+  <line x1="480" y1="110" x2="296" y2="150" stroke="#475569" stroke-width="1.6" marker-end="url(#arr3)"/>
+  <line x1="480" y1="110" x2="480" y2="150" stroke="#475569" stroke-width="1.6" marker-end="url(#arr3)"/>
+  <line x1="480" y1="110" x2="664" y2="150" stroke="#475569" stroke-width="1.6" marker-end="url(#arr3)"/>
+  <line x1="480" y1="110" x2="848" y2="150" stroke="#475569" stroke-width="1.6" marker-end="url(#arr3)"/>
+
+  <rect x="24" y="152" width="176" height="38" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="112" y="168" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1e3a8a">① 为什么（机制）</text>
+  <text x="112" y="183" text-anchor="middle" font-size="8.5" fill="#2563eb">现象 → 机制 → 预期 → 验证</text>
+
+  <rect x="208" y="152" width="176" height="38" rx="6" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+  <text x="296" y="168" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#5b21b6">② 怎么测（方法）</text>
+  <text x="296" y="183" text-anchor="middle" font-size="8.5" fill="#7c3aed">Day 43 协议复述</text>
+
+  <rect x="392" y="152" width="176" height="38" rx="6" fill="#fff7ed" stroke="#d97706" stroke-width="1.8"/>
+  <text x="480" y="168" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#9a3412">③ 边界（失效）</text>
+  <text x="480" y="183" text-anchor="middle" font-size="8.5" fill="#d97706">主动交出边界 = 加分</text>
+
+  <rect x="576" y="152" width="176" height="38" rx="6" fill="#ecfeff" stroke="#0891b2" stroke-width="1.8"/>
+  <text x="664" y="168" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#155e75">④ 对比（方案选择）</text>
+  <text x="664" y="183" text-anchor="middle" font-size="8.5" fill="#0891b2">候选 → 权衡 → 实验</text>
+
+  <rect x="760" y="152" width="176" height="38" rx="6" fill="#f0fdf4" stroke="#059669" stroke-width="1.8"/>
+  <text x="848" y="168" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#065f46">⑤ 重做（反思）</text>
+  <text x="848" y="183" text-anchor="middle" font-size="8.5" fill="#059669">真实失败点 + 改进假设</text>
+
+  <line x1="112" y1="190" x2="112" y2="204" stroke="#94a3b8" stroke-width="1.2"/>
+  <line x1="296" y1="190" x2="296" y2="204" stroke="#94a3b8" stroke-width="1.2"/>
+  <line x1="480" y1="190" x2="480" y2="204" stroke="#94a3b8" stroke-width="1.2"/>
+  <line x1="664" y1="190" x2="664" y2="204" stroke="#94a3b8" stroke-width="1.2"/>
+  <line x1="848" y1="190" x2="848" y2="204" stroke="#94a3b8" stroke-width="1.2"/>
+
+  <rect x="24" y="206" width="176" height="62" rx="5" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+  <text x="112" y="222" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">为什么 tiling 重排有效？</text>
+  <text x="112" y="238" text-anchor="middle" font-size="8.5" fill="#475569">证据：Day 38-39 瓶颈分析报告</text>
+  <text x="112" y="250" text-anchor="middle" font-size="8.5" fill="#475569">（访存模式图 + 带宽利用率推导）</text>
+
+  <rect x="24" y="276" width="176" height="62" rx="5" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+  <text x="112" y="292" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">尾块冗余拷贝怎么产生？</text>
+  <text x="112" y="308" text-anchor="middle" font-size="8.5" fill="#475569">证据：kernel diff + 数据流图</text>
+  <text x="112" y="320" text-anchor="middle" font-size="8.5" fill="#475569">（讲稿「机制动作」的原型）</text>
+
+  <rect x="24" y="346" width="176" height="62" rx="5" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+  <text x="112" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">上游为什么没做？</text>
+  <text x="112" y="378" text-anchor="middle" font-size="8.5" fill="#475569">证据：Day 36 选题备忘录</text>
+  <text x="112" y="390" text-anchor="middle" font-size="8.5" fill="#475569">（issues / roadmap 调研）</text>
+
+  <rect x="208" y="206" width="176" height="62" rx="5" fill="#ffffff" stroke="#c4b5fd" stroke-width="1"/>
+  <text x="296" y="222" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#5b21b6">-18% 的测量协议？</text>
+  <text x="296" y="238" text-anchor="middle" font-size="8.5" fill="#475569">证据：run_suite.sh + Day 43 对比表</text>
+  <text x="296" y="250" text-anchor="middle" font-size="8.5" fill="#475569">（交替轮次 / n=5 / 环境指纹）</text>
+
+  <rect x="208" y="276" width="176" height="62" rx="5" fill="#ffffff" stroke="#c4b5fd" stroke-width="1"/>
+  <text x="296" y="292" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#5b21b6">会不会是噪声？</text>
+  <text x="296" y="308" text-anchor="middle" font-size="8.5" fill="#475569">Δ=3.8 ms，σ≈0.4，t≈10</text>
+  <text x="296" y="320" text-anchor="middle" font-size="8.5" fill="#475569">（当场手算，见 Day 43 §四）</text>
+
+  <rect x="208" y="346" width="176" height="62" rx="5" fill="#ffffff" stroke="#c4b5fd" stroke-width="1"/>
+  <text x="296" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#5b21b6">为何报 p99 不报均值？</text>
+  <text x="296" y="378" text-anchor="middle" font-size="8.5" fill="#475569">回顾 Day 5：尾延迟才是用户感知；</text>
+  <text x="296" y="390" text-anchor="middle" font-size="8.5" fill="#475569">访存类收益只在 p99 可见</text>
+
+  <rect x="392" y="206" width="176" height="62" rx="5" fill="#ffffff" stroke="#fcd34d" stroke-width="1"/>
+  <text x="480" y="222" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#9a3412">什么场景不管用？</text>
+  <text x="480" y="238" text-anchor="middle" font-size="8.5" fill="#475569">证据：prefill n.s. [[A-01]] +</text>
+  <text x="480" y="250" text-anchor="middle" font-size="8.5" fill="#475569">Day 44 边界矩阵（shape/batch）</text>
+
+  <rect x="392" y="276" width="176" height="62" rx="5" fill="#ffffff" stroke="#fcd34d" stroke-width="1"/>
+  <text x="480" y="292" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#9a3412">精度代价？</text>
+  <text x="480" y="308" text-anchor="middle" font-size="8.5" fill="#475569">证据：对拍记录 top-1 99.8%</text>
+  <text x="480" y="320" text-anchor="middle" font-size="8.5" fill="#475569">KL 0.011，N=12k（[[A-03]]）</text>
+
+  <rect x="392" y="346" width="176" height="62" rx="5" fill="#ffffff" stroke="#fcd34d" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="480" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#9a3412">长上下文 / GQA 变体？</text>
+  <text x="480" y="378" text-anchor="middle" font-size="8.5" fill="#b45309">TODO：未覆盖 → 如实说明，</text>
+  <text x="480" y="390" text-anchor="middle" font-size="8.5" fill="#b45309">并从讲稿删掉相关钩子</text>
+
+  <rect x="576" y="206" width="176" height="62" rx="5" fill="#ffffff" stroke="#67e8f9" stroke-width="1"/>
+  <text x="664" y="222" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#155e75">为什么不用现成方案 X？</text>
+  <text x="664" y="238" text-anchor="middle" font-size="8.5" fill="#475569">证据：候选对比实验 /</text>
+  <text x="664" y="250" text-anchor="middle" font-size="8.5" fill="#475569">PR review 讨论（Day 45）</text>
+
+  <rect x="576" y="276" width="176" height="62" rx="5" fill="#ffffff" stroke="#67e8f9" stroke-width="1"/>
+  <text x="664" y="292" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#155e75">为什么拆成 3 个 PR？</text>
+  <text x="664" y="308" text-anchor="middle" font-size="8.5" fill="#475569">证据：按验证强度切分</text>
+  <text x="664" y="320" text-anchor="middle" font-size="8.5" fill="#475569">（Day 45 自测第 1 问）</text>
+
+  <rect x="576" y="346" width="176" height="62" rx="5" fill="#ffffff" stroke="#67e8f9" stroke-width="1"/>
+  <text x="664" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#155e75">换硬件还成立吗？</text>
+  <text x="664" y="378" text-anchor="middle" font-size="8.5" fill="#475569">机制层成立（访存合并通用），</text>
+  <text x="664" y="390" text-anchor="middle" font-size="8.5" fill="#475569">tiling 参数需按存储层级重调</text>
+
+  <rect x="760" y="206" width="176" height="62" rx="5" fill="#ffffff" stroke="#6ee7b7" stroke-width="1"/>
+  <text x="848" y="222" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">第一轮为什么失败？</text>
+  <text x="848" y="238" text-anchor="middle" font-size="8.5" fill="#475569">证据：失败迭代记录</text>
+  <text x="848" y="250" text-anchor="middle" font-size="8.5" fill="#475569">（讲稿反思段 15s 的原型）</text>
+
+  <rect x="760" y="276" width="176" height="62" rx="5" fill="#ffffff" stroke="#6ee7b7" stroke-width="1"/>
+  <text x="848" y="292" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">与昇腾经验的关系？</text>
+  <text x="848" y="308" text-anchor="middle" font-size="8.5" fill="#475569">方法论迁移主线（Day 53 展开），</text>
+  <text x="848" y="320" text-anchor="middle" font-size="8.5" fill="#475569">今天先备好两个对照实例</text>
+
+  <rect x="24" y="424" width="912" height="106" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+  <text x="480" y="448" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">构建方法与三类处置</text>
+  <text x="480" y="468" text-anchor="middle" font-size="10" fill="#475569">构建：把讲稿里每个名词和数字过一遍「如果面试官就这个词问我，我最怕什么」——怕的地方就是缺口</text>
+  <text x="480" y="488" text-anchor="middle" font-size="10" fill="#475569">① 有证据 → 挂指针（文件 / 行号 / 复现命令）　② 有记忆无证据 → 补文件　③ 既无证据也无把握 → 标 TODO</text>
+  <text x="480" y="512" text-anchor="middle" font-size="10" font-weight="bold" fill="#b45309">TODO 的钩子必须从讲稿里删掉——没有准备好，就不要邀请追问</text>
+</svg>

@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/>
+    </marker>
+    <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F855A"/>
+    </marker>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6">
+      <rect width="6" height="6" fill="#EDF2F7"/>
+      <path d="M 0 6 L 6 0" stroke="#A0AEC0" stroke-width="1.1"/>
+    </pattern>
+  </defs>
+  <rect width="960" height="620" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">Day 27 · 同一条请求流，两种命运：static batching vs continuous batching</text>
+
+  <!-- ================= STATIC PANEL ================= -->
+  <rect x="40" y="52" width="880" height="252" rx="10" fill="#FFF5F5" stroke="#C53030" stroke-width="1.4"/>
+  <text x="60" y="76" font-size="13.5" font-weight="bold" fill="#9B2C2C">① static batching：整批进、整批出 —— 槽位空转 + 批间壁垒</text>
+
+  <!-- arrivals during batch 1 -->
+  <g font-size="10" fill="#9B2C2C">
+    <line x1="330" y1="84" x2="330" y2="90" stroke="#C53030" stroke-width="1" marker-end="url(#arr)"/>
+    <line x1="450" y1="84" x2="450" y2="90" stroke="#C53030" stroke-width="1" marker-end="url(#arr)"/>
+    <line x1="570" y1="84" x2="570" y2="90" stroke="#C53030" stroke-width="1" marker-end="url(#arr)"/>
+    <text x="576" y="80">E/F/G/H 持续到达 →</text>
+  </g>
+
+  <!-- waiting queue box -->
+  <rect x="640" y="62" width="266" height="24" rx="6" fill="#FED7D7" stroke="#C53030" stroke-width="1"/>
+  <text x="773" y="78" text-anchor="middle" font-size="10.5" fill="#742A2A">waiting：E · F · G · H 只能整批等（批间壁垒）</text>
+
+  <!-- slot labels -->
+  <g font-size="10.5" fill="#2D3748" text-anchor="end">
+    <text x="102" y="109">slot1 (A)</text>
+    <text x="102" y="143">slot2 (B)</text>
+    <text x="102" y="177">slot3 (C)</text>
+    <text x="102" y="211">slot4 (D)</text>
+  </g>
+
+  <!-- batch 1 prefill block -->
+  <rect x="110" y="92" width="60" height="130" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.2"/>
+  <text x="140" y="152" text-anchor="middle" font-size="10.5" fill="#7B341E">prefill</text>
+  <text x="140" y="165" text-anchor="middle" font-size="10.5" fill="#7B341E">×4 整批</text>
+
+  <!-- slot A: decode then idle -->
+  <rect x="170" y="92" width="130" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="235" y="110" text-anchor="middle" font-size="10" fill="#2A4365">A decode</text>
+  <rect x="300" y="92" width="320" height="28" fill="url(#hatch)" stroke="#A0AEC0" stroke-width="1"/>
+  <text x="460" y="110" text-anchor="middle" font-size="10" fill="#718096">A 已完成：槽位空转（padding/无效前向）</text>
+
+  <!-- slot B -->
+  <rect x="170" y="126" width="230" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="285" y="144" text-anchor="middle" font-size="10" fill="#2A4365">B decode</text>
+  <rect x="400" y="126" width="220" height="28" fill="url(#hatch)" stroke="#A0AEC0" stroke-width="1"/>
+
+  <!-- slot C -->
+  <rect x="170" y="160" width="330" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="335" y="178" text-anchor="middle" font-size="10" fill="#2A4365">C decode</text>
+  <rect x="500" y="160" width="120" height="28" fill="url(#hatch)" stroke="#A0AEC0" stroke-width="1"/>
+
+  <!-- slot D: longest, defines batch end -->
+  <rect x="170" y="194" width="450" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="395" y="212" text-anchor="middle" font-size="10" fill="#2A4365">D decode（最长者决定整批步数 max(L)）</text>
+
+  <!-- finish events -->
+  <g stroke="#C53030" stroke-width="1.3" stroke-dasharray="4 3">
+    <line x1="300" y1="88" x2="300" y2="226"/>
+    <line x1="400" y1="88" x2="400" y2="226"/>
+    <line x1="500" y1="88" x2="500" y2="226"/>
+    <line x1="620" y1="84" x2="620" y2="226" stroke-width="2"/>
+  </g>
+  <text x="620" y="234" text-anchor="middle" font-size="10" font-weight="bold" fill="#9B2C2C">整批完成 = D 完成</text>
+
+  <!-- batch 2 -->
+  <rect x="660" y="92" width="40" height="130" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.2"/>
+  <text x="680" y="152" text-anchor="middle" font-size="9.5" fill="#7B341E">pf</text>
+  <g>
+    <rect x="700" y="92"  width="210" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+    <rect x="700" y="126" width="210" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+    <rect x="700" y="160" width="210" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+    <rect x="700" y="194" width="210" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  </g>
+  <text x="805" y="152" text-anchor="middle" font-size="10" fill="#2A4365">batch 2（E/F/G/H）这才起跑</text>
+  <text x="715" y="88" font-size="9.5" fill="#9B2C2C">TTFT(E) ≈ 整批周期</text>
+
+  <!-- axis -->
+  <line x1="110" y1="248" x2="920" y2="248" stroke="#718096" stroke-width="1.2" marker-end="url(#arr)"/>
+  <text x="925" y="252" font-size="10" fill="#718096">t</text>
+  <text x="60" y="278" font-size="11" fill="#742A2A">浪费 1：decode 利用率 η = mean(L) / max(L) —— 输出长度方差越大、batch 越大，空转越多</text>
+  <text x="60" y="296" font-size="11" fill="#742A2A">浪费 2：批间壁垒 —— 新请求 TTFT 被上一批的最慢者绑架；整批 GPU 算力按 max(L) 付费、按 mean(L) 收货</text>
+
+  <!-- ================= CONTINUOUS PANEL ================= -->
+  <rect x="40" y="328" width="880" height="244" rx="10" fill="#F0FFF4" stroke="#2F855A" stroke-width="1.4"/>
+  <text x="60" y="352" font-size="13.5" font-weight="bold" fill="#22543D">② continuous batching（iteration 级 / in-flight）：每个 step 重组 batch，完成即补位</text>
+
+  <!-- slot labels -->
+  <g font-size="10.5" fill="#2D3748" text-anchor="end">
+    <text x="102" y="385">slot1</text>
+    <text x="102" y="419">slot2</text>
+    <text x="102" y="453">slot3</text>
+    <text x="102" y="487">slot4</text>
+  </g>
+
+  <!-- slot1: A -> E -->
+  <rect x="110" y="368" width="60" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <rect x="170" y="368" width="130" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="235" y="386" text-anchor="middle" font-size="10" fill="#2A4365">A decode</text>
+  <rect x="300" y="368" width="30" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <text x="315" y="386" text-anchor="middle" font-size="9" fill="#7B341E">pf</text>
+  <rect x="330" y="368" width="230" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="445" y="386" text-anchor="middle" font-size="10" fill="#2A4365">E decode</text>
+  <rect x="560" y="368" width="30" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <rect x="590" y="368" width="320" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="750" y="386" text-anchor="middle" font-size="10" fill="#2A4365">I decode</text>
+
+  <!-- slot2: B -> F -->
+  <rect x="110" y="402" width="60" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <rect x="170" y="402" width="230" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="285" y="420" text-anchor="middle" font-size="10" fill="#2A4365">B decode</text>
+  <rect x="400" y="402" width="30" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <rect x="430" y="402" width="480" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="670" y="420" text-anchor="middle" font-size="10" fill="#2A4365">F decode</text>
+
+  <!-- slot3: C -> G -->
+  <rect x="110" y="436" width="60" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <rect x="170" y="436" width="330" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="335" y="454" text-anchor="middle" font-size="10" fill="#2A4365">C decode</text>
+  <rect x="500" y="436" width="30" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <rect x="530" y="436" width="380" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="720" y="454" text-anchor="middle" font-size="10" fill="#2A4365">G decode</text>
+
+  <!-- slot4: D -> H -->
+  <rect x="110" y="470" width="60" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <rect x="170" y="470" width="450" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="395" y="488" text-anchor="middle" font-size="10" fill="#2A4365">D decode</text>
+  <rect x="620" y="470" width="30" height="28" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1.1"/>
+  <rect x="650" y="470" width="260" height="28" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.1"/>
+  <text x="780" y="488" text-anchor="middle" font-size="10" fill="#2A4365">H decode</text>
+
+  <!-- finish events -->
+  <g stroke="#C53030" stroke-width="1.2" stroke-dasharray="4 3">
+    <line x1="300" y1="364" x2="300" y2="502"/>
+    <line x1="400" y1="364" x2="400" y2="502"/>
+    <line x1="500" y1="364" x2="500" y2="502"/>
+    <line x1="560" y1="364" x2="560" y2="502"/>
+    <line x1="620" y1="364" x2="620" y2="502"/>
+  </g>
+  <text x="300" y="360" text-anchor="middle" font-size="9" fill="#9B2C2C">A 完成</text>
+  <text x="400" y="360" text-anchor="middle" font-size="9" fill="#9B2C2C">B 完成</text>
+  <text x="500" y="360" text-anchor="middle" font-size="9" fill="#9B2C2C">C 完成</text>
+  <text x="560" y="360" text-anchor="middle" font-size="9" fill="#9B2C2C">E 完成</text>
+  <text x="620" y="360" text-anchor="middle" font-size="9" fill="#9B2C2C">D 完成</text>
+
+  <!-- join events (green arrows up into slots) -->
+  <g stroke="#2F855A" stroke-width="1.8" marker-end="url(#arrG)">
+    <line x1="315" y1="356" x2="315" y2="366"/>
+    <line x1="415" y1="356" x2="415" y2="366"/>
+    <line x1="515" y1="356" x2="515" y2="366"/>
+    <line x1="575" y1="356" x2="575" y2="366"/>
+    <line x1="635" y1="356" x2="635" y2="366"/>
+  </g>
+  <text x="475" y="344" text-anchor="middle" font-size="10" font-weight="bold" fill="#2F855A">↑ 完成事件即补位事件：E/F/G/H/I 的 prefill 在下一个 step 就被排进 batch</text>
+
+  <!-- axis -->
+  <line x1="110" y1="514" x2="920" y2="514" stroke="#718096" stroke-width="1.2" marker-end="url(#arr)"/>
+  <text x="925" y="518" font-size="10" fill="#718096">t</text>
+  <text x="60" y="540" font-size="11" fill="#22543D">收益 1：running 永远满员 → 输出吞吐 ≈ B / t_step(B)，随并发近似线性增长（带宽瓶颈下）</text>
+  <text x="60" y="558" font-size="11" fill="#22543D">收益 2：TTFT ≈ 纯排队延迟，不再等整批周期；调度粒度 = 1 个 iteration（Day 52 面试原题的答案核心）</text>
+
+  <!-- legend -->
+  <g font-size="10" fill="#2D3748">
+    <rect x="60"  y="590" width="16" height="12" fill="#FEEBC8" stroke="#DD6B20"/><text x="82"  y="600">prefill（整段或 chunk）</text>
+    <rect x="240" y="590" width="16" height="12" fill="#BEE3F8" stroke="#2B6CB0"/><text x="262" y="600">decode 有效计算</text>
+    <rect x="396" y="590" width="16" height="12" fill="url(#hatch)" stroke="#A0AEC0"/><text x="418" y="600">空转 / padding（浪费）</text>
+    <line x1="560" y1="596" x2="586" y2="596" stroke="#C53030" stroke-width="1.3" stroke-dasharray="4 3"/><text x="592" y="600">请求完成</text>
+    <line x1="668" y1="596" x2="694" y2="596" stroke="#2F855A" stroke-width="1.8" marker-end="url(#arrG)"/><text x="700" y="600">新请求补位</text>
+  </g>
+</svg>

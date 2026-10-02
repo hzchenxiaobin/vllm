@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="580" viewBox="0 0 960 580" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="960" height="580" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">Day 48 全景：四道工序 + 单一事实源——从 84 个 JSON 到消融报告</text>
+
+  <text x="128" y="60" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">素材（Day 47 归档）</text>
+  <text x="436" y="60" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">四道工序（今日）</text>
+  <text x="786" y="60" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">报告结构（今晚成形）</text>
+
+  <rect x="24" y="76" width="208" height="76" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="128" y="98" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">results/ 全矩阵数据</text>
+  <text x="128" y="116" text-anchor="middle" font-size="10" fill="#475569">~84 个 bench JSON + 每轮 metrics 快照</text>
+  <text x="128" y="132" text-anchor="middle" font-size="10" fill="#475569">面 · 回答「变了多少」</text>
+
+  <rect x="24" y="170" width="208" height="76" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="128" y="192" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5b21b6">anomaly_log.md + 快照</text>
+  <text x="128" y="210" text-anchor="middle" font-size="10" fill="#5b21b6">Day 47 抓的机制类异常现场</text>
+  <text x="128" y="226" text-anchor="middle" font-size="10" fill="#5b21b6">点 · 回答「为什么」</text>
+
+  <rect x="24" y="264" width="208" height="76" rx="8" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+  <text x="128" y="286" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#9a3412">predictions.md / rerun.md</text>
+  <text x="128" y="304" text-anchor="middle" font-size="10" fill="#9a3412">机制预测 ✔/✘ 标注 + 离群处置</text>
+  <text x="128" y="320" text-anchor="middle" font-size="10" fill="#9a3412">线 · 回答「预期 vs 实际」</text>
+
+  <rect x="24" y="358" width="208" height="64" rx="8" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="128" y="380" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#065f46">env.txt 环境指纹</text>
+  <text x="128" y="398" text-anchor="middle" font-size="10" fill="#065f46">commit / 锁频 / 驱动 / 启动命令</text>
+  <text x="128" y="412" text-anchor="middle" font-size="10" fill="#065f46">可复现性 · 源码引用的锚</text>
+
+  <rect x="300" y="76" width="272" height="76" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="436" y="98" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">① 聚合 aggregate.py</text>
+  <text x="436" y="116" text-anchor="middle" font-size="10" fill="#1e3a8a">JSON + 快照 → tidy.csv → agg.csv</text>
+  <text x="436" y="132" text-anchor="middle" font-size="10" fill="#1e3a8a">每格 mean±σ · 配对 ratio · 实测命中率</text>
+
+  <rect x="300" y="170" width="272" height="76" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="436" y="192" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">② 作图 plot.py</text>
+  <text x="436" y="210" text-anchor="middle" font-size="10" fill="#1e3a8a">误差棒图（六要素齐全，见 3.2）</text>
+  <text x="436" y="226" text-anchor="middle" font-size="10" fill="#1e3a8a">每图一句话结论 + 图号 + 附录索引</text>
+
+  <rect x="300" y="264" width="272" height="76" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="436" y="286" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">③ 解释（最难，先写）</text>
+  <text x="436" y="304" text-anchor="middle" font-size="10" fill="#1e3a8a">三环闭合：指标表现 → 源码机制 → 证据</text>
+  <text x="436" y="320" text-anchor="middle" font-size="10" fill="#1e3a8a">anomaly_log 的现场在此兑现</text>
+
+  <rect x="300" y="358" width="272" height="76" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="436" y="380" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">④ 建议</text>
+  <text x="436" y="398" text-anchor="middle" font-size="10" fill="#1e3a8a">if-then 决策规则（可抄进运维手册）</text>
+  <text x="436" y="414" text-anchor="middle" font-size="10" fill="#1e3a8a">跨组综合：负载-配置决策表</text>
+
+  <line x1="232" y1="114" x2="296" y2="114" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="232" y1="208" x2="296" y2="290" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="232" y1="302" x2="296" y2="382" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M232,414 L266,414 L266,452 L786,452 L786,438" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arr)"/>
+  <text x="500" y="446" text-anchor="middle" font-size="9.5" fill="#059669">环境指纹 → 报告「实验设置」节</text>
+
+  <line x1="436" y1="152" x2="436" y2="166" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="436" y1="246" x2="436" y2="260" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="436" y1="340" x2="436" y2="354" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <line x1="572" y1="114" x2="632" y2="150" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="572" y1="208" x2="632" y2="240" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="572" y1="302" x2="632" y2="285" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="572" y1="396" x2="632" y2="345" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="636" y="76" width="300" height="358" rx="10" fill="#f8fafc" stroke="#0f172a" stroke-width="2"/>
+  <text x="786" y="100" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0f172a">《vLLM 性能消融实验报告》</text>
+
+  <rect x="648" y="112" width="276" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="786" y="132" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">① 摘要（半页，最后写）</text>
+  <text x="786" y="150" text-anchor="middle" font-size="9.5" fill="#475569">四组各一句结论 + 一个反直觉发现</text>
+
+  <rect x="648" y="174" width="276" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="786" y="194" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">② 实验设置（可复现）</text>
+  <text x="786" y="212" text-anchor="middle" font-size="9.5" fill="#475569">硬件 / 版本 / 固定参数 / 负载构造 / 统计口径</text>
+
+  <rect x="648" y="236" width="276" height="62" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="786" y="256" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">③ 四组消融 × 四段式（主体）</text>
+  <text x="786" y="274" text-anchor="middle" font-size="9.5" fill="#475569">设计 → 图表 → 机制解释 → 实践建议</text>
+  <text x="786" y="288" text-anchor="middle" font-size="9.5" fill="#475569">机制解释 = 三环闭合，最难也最值钱</text>
+
+  <rect x="648" y="306" width="276" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="786" y="326" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">④ 跨组综合</text>
+  <text x="786" y="344" text-anchor="middle" font-size="9.5" fill="#475569">负载-配置决策表 + 单开关优先级推导</text>
+
+  <rect x="648" y="368" width="276" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="786" y="388" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">⑤ 局限与后续 + 预测 vs 实际</text>
+  <text x="786" y="406" text-anchor="middle" font-size="9.5" fill="#475569">✘ 反思单独成段（面试最吃这个）</text>
+
+  <rect x="24" y="466" width="912" height="92" rx="10" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="480" y="488" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#065f46">工程纪律：单一事实源（全天不可破）</text>
+  <text x="480" y="508" text-anchor="middle" font-size="10.5" fill="#065f46">所有数字出自 agg.csv——图由 CSV 生成、正文数字由 make_report.py 模板渲染，「数字 · 图 · 结论」三方对账由机制保证，不靠人眼</text>
+  <text x="480" y="526" text-anchor="middle" font-size="10.5" fill="#065f46">反直觉（✘）格子 = 机制理解的欠账 → 回源码 / 论文深挖 → 写进反思段；摘要最后写（结论成形前写摘要 = 先给答案后编题）</text>
+  <text x="480" y="544" text-anchor="middle" font-size="10.5" fill="#065f46">今日是补 seeds 的最后窗口；数据今晚 commit 冻结，之后只改文字、不改数字</text>
+</svg>

@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="630" viewBox="0 0 960 630" font-family="Helvetica, Arial, sans-serif">
+  <rect width="960" height="630" fill="#ffffff"/>
+  <text x="480" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">一张合格主图的解剖：并列双子图讲「权衡」（消融一示例数据）</text>
+
+  <!-- ============ Panel A: TPOT p99 ============ -->
+  <text x="260" y="56" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">左：decode 尾延迟（低 = 好）</text>
+  <line x1="80" y1="380" x2="440" y2="380" stroke="#334155" stroke-width="1.5"/>
+  <line x1="80" y1="380" x2="80" y2="70" stroke="#334155" stroke-width="1.5"/>
+  <line x1="80" y1="292" x2="440" y2="292" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="80" y1="204" x2="440" y2="204" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="80" y1="116" x2="440" y2="116" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="74" y="384" text-anchor="end" font-size="9.5" fill="#475569">0</text>
+  <text x="74" y="296" text-anchor="end" font-size="9.5" fill="#475569">400</text>
+  <text x="74" y="208" text-anchor="end" font-size="9.5" fill="#475569">800</text>
+  <text x="74" y="120" text-anchor="end" font-size="9.5" fill="#475569">1200</text>
+  <text transform="rotate(-90 34 225)" x="34" y="225" text-anchor="middle" font-size="11" fill="#334155">TPOT p99 (ms)</text>
+  <line x1="140" y1="380" x2="140" y2="386" stroke="#334155" stroke-width="1.5"/>
+  <line x1="260" y1="380" x2="260" y2="386" stroke="#334155" stroke-width="1.5"/>
+  <line x1="380" y1="380" x2="380" y2="386" stroke="#334155" stroke-width="1.5"/>
+  <text x="140" y="400" text-anchor="middle" font-size="9.5" fill="#475569">2048</text>
+  <text x="260" y="400" text-anchor="middle" font-size="9.5" fill="#475569">8192</text>
+  <text x="380" y="400" text-anchor="middle" font-size="9.5" fill="#475569">32768</text>
+  <text x="260" y="418" text-anchor="middle" font-size="11" fill="#334155">max_num_batched_tokens（chunk 大小上限）</text>
+
+  <line x1="140" y1="107" x2="380" y2="107" stroke="#dc2626" stroke-width="2" stroke-dasharray="7,5"/>
+  <text x="260" y="99" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#dc2626">chunk OFF：1240±90 ms（巨石 step）</text>
+
+  <polyline points="140,328 260,267 380,127" fill="none" stroke="#2563eb" stroke-width="2"/>
+  <line x1="140" y1="325" x2="140" y2="331" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="136" y1="325" x2="144" y2="325" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="136" y1="331" x2="144" y2="331" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="260" y1="260" x2="260" y2="274" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="256" y1="260" x2="264" y2="260" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="256" y1="274" x2="264" y2="274" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="380" y1="109" x2="380" y2="145" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="376" y1="109" x2="384" y2="109" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="376" y1="145" x2="384" y2="145" stroke="#1e3a8a" stroke-width="1.5"/>
+  <circle cx="140" cy="328" r="4" fill="#2563eb"/>
+  <circle cx="260" cy="267" r="4" fill="#2563eb"/>
+  <circle cx="380" cy="127" r="4" fill="#2563eb"/>
+  <text x="140" y="345" text-anchor="middle" font-size="9.5" fill="#1e3a8a">236±14</text>
+  <text x="260" y="290" text-anchor="middle" font-size="9.5" fill="#1e3a8a">512±30</text>
+  <text x="380" y="162" text-anchor="middle" font-size="9.5" fill="#1e3a8a">1150±80</text>
+  <text x="172" y="312" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1e3a8a">chunk ON</text>
+  <text x="436" y="84" text-anchor="end" font-size="9.5" font-style="italic" fill="#d97706">示例数据（演示格式）</text>
+
+  <!-- ============ Panel B: TTFT p50 ============ -->
+  <text x="720" y="56" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">右：首字时延（低 = 好）</text>
+  <line x1="540" y1="380" x2="900" y2="380" stroke="#334155" stroke-width="1.5"/>
+  <line x1="540" y1="380" x2="540" y2="70" stroke="#334155" stroke-width="1.5"/>
+  <line x1="540" y1="280" x2="900" y2="280" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="540" y1="180" x2="900" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="540" y1="80" x2="900" y2="80" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="534" y="384" text-anchor="end" font-size="9.5" fill="#475569">0</text>
+  <text x="534" y="284" text-anchor="end" font-size="9.5" fill="#475569">1</text>
+  <text x="534" y="184" text-anchor="end" font-size="9.5" fill="#475569">2</text>
+  <text x="534" y="84" text-anchor="end" font-size="9.5" fill="#475569">3</text>
+  <text transform="rotate(-90 494 225)" x="494" y="225" text-anchor="middle" font-size="11" fill="#334155">TTFT p50 (s)</text>
+  <line x1="600" y1="380" x2="600" y2="386" stroke="#334155" stroke-width="1.5"/>
+  <line x1="720" y1="380" x2="720" y2="386" stroke="#334155" stroke-width="1.5"/>
+  <line x1="840" y1="380" x2="840" y2="386" stroke="#334155" stroke-width="1.5"/>
+  <text x="600" y="400" text-anchor="middle" font-size="9.5" fill="#475569">2048</text>
+  <text x="720" y="400" text-anchor="middle" font-size="9.5" fill="#475569">8192</text>
+  <text x="840" y="400" text-anchor="middle" font-size="9.5" fill="#475569">32768</text>
+  <text x="720" y="418" text-anchor="middle" font-size="11" fill="#334155">max_num_batched_tokens（chunk 大小上限）</text>
+
+  <line x1="600" y1="238" x2="840" y2="238" stroke="#dc2626" stroke-width="2" stroke-dasharray="7,5"/>
+  <text x="720" y="230" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#dc2626">chunk OFF：1.42±0.06 s</text>
+
+  <polyline points="600,109 720,182 840,225" fill="none" stroke="#2563eb" stroke-width="2"/>
+  <line x1="600" y1="100" x2="600" y2="118" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="596" y1="100" x2="604" y2="100" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="596" y1="118" x2="604" y2="118" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="720" y1="175" x2="720" y2="189" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="716" y1="175" x2="724" y2="175" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="716" y1="189" x2="724" y2="189" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="840" y1="220" x2="840" y2="230" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="836" y1="220" x2="844" y2="220" stroke="#1e3a8a" stroke-width="1.5"/>
+  <line x1="836" y1="230" x2="844" y2="230" stroke="#1e3a8a" stroke-width="1.5"/>
+  <circle cx="600" cy="109" r="4" fill="#2563eb"/>
+  <circle cx="720" cy="182" r="4" fill="#2563eb"/>
+  <circle cx="840" cy="225" r="4" fill="#2563eb"/>
+  <text x="600" y="134" text-anchor="middle" font-size="9.5" fill="#1e3a8a">2.71±0.09</text>
+  <text x="720" y="205" text-anchor="middle" font-size="9.5" fill="#1e3a8a">1.98±0.07</text>
+  <text x="840" y="250" text-anchor="middle" font-size="9.5" fill="#1e3a8a">1.55±0.05</text>
+  <text x="655" y="150" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1e3a8a">chunk ON</text>
+  <text x="896" y="84" text-anchor="end" font-size="9.5" font-style="italic" fill="#d97706">示例数据（演示格式）</text>
+
+  <!-- ============ callouts ============ -->
+  <circle cx="58" cy="92" r="11" fill="#d97706"/>
+  <text x="58" y="96" text-anchor="middle" font-size="11" font-weight="bold" fill="#ffffff">1</text>
+  <text x="74" y="96" font-size="10" fill="#92400e">轴标签 + 单位 + 刻度</text>
+
+  <circle cx="208" cy="84" r="11" fill="#d97706"/>
+  <text x="208" y="88" text-anchor="middle" font-size="11" font-weight="bold" fill="#ffffff">4</text>
+  <text x="224" y="88" font-size="10" fill="#92400e">每条线直接标注（含负载条件）</text>
+
+  <circle cx="414" cy="150" r="11" fill="#d97706"/>
+  <text x="414" y="154" text-anchor="middle" font-size="11" font-weight="bold" fill="#ffffff">2</text>
+  <line x1="404" y1="157" x2="386" y2="138" stroke="#d97706" stroke-width="1.2"/>
+  <text x="416" y="172" font-size="10" fill="#92400e">误差棒 ±σ（n=3）</text>
+
+  <circle cx="566" cy="262" r="11" fill="#d97706"/>
+  <text x="566" y="266" text-anchor="middle" font-size="11" font-weight="bold" fill="#ffffff">3</text>
+  <text x="582" y="266" font-size="10" fill="#92400e">基线参照（虚线 = OFF）</text>
+
+  <circle cx="490" cy="220" r="11" fill="#d97706"/>
+  <text x="490" y="224" text-anchor="middle" font-size="11" font-weight="bold" fill="#ffffff">5</text>
+  <text x="490" y="248" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#92400e">两图并列讲权衡</text>
+  <text x="490" y="266" text-anchor="middle" font-size="9.5" fill="#92400e">budget 调小 ⇒</text>
+  <text x="490" y="281" text-anchor="middle" font-size="9.5" fill="#92400e">左图 p99 ↓（好）</text>
+  <text x="490" y="296" text-anchor="middle" font-size="9.5" fill="#92400e">右图 TTFT ↑（差）</text>
+  <text x="490" y="311" text-anchor="middle" font-size="9.5" fill="#92400e">剪刀差：没有免费旋钮</text>
+
+  <!-- ============ caption ============ -->
+  <rect x="80" y="425" width="800" height="78" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.2"/>
+  <circle cx="98" cy="464" r="11" fill="#d97706"/>
+  <text x="98" y="468" text-anchor="middle" font-size="11" font-weight="bold" fill="#ffffff">6</text>
+  <text x="118" y="447" font-size="10" fill="#78350f">图 1（示例数据）：长 prompt（8k–16k）混跑负载下，开启 chunked prefill 将 TPOT p99 从 1240±90 ms 压至 236~512 ms（budget=2048/8192）；</text>
+  <text x="118" y="465" font-size="10" fill="#78350f">代价是 TTFT p50 上升 9%~91%。budget 是「尾延迟 ↔ 首字时延」的旋钮；budget=32768 已超过典型 prompt 长度，行为退化回巨石 step（p99 ≈ OFF）。</text>
+  <text x="118" y="483" font-size="10" fill="#78350f">数据：results/abl1/{off,on_2048,on_8192,on_32768}_seed*.json（附录索引 A-1）；n=3 seeds，误差棒 = ±1σ</text>
+
+  <!-- ============ checklist ============ -->
+  <rect x="80" y="520" width="800" height="95" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+  <text x="480" y="542" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">图表六要素自查（每张图交卷前过一遍）</text>
+  <text x="210" y="564" text-anchor="middle" font-size="10" fill="#475569">□ 轴标签 + 单位 + 刻度</text>
+  <text x="480" y="564" text-anchor="middle" font-size="10" fill="#475569">□ 线条 / 图例标注含负载条件</text>
+  <text x="750" y="564" text-anchor="middle" font-size="10" fill="#475569">□ 一句话结论（含具体数字）</text>
+  <text x="210" y="582" text-anchor="middle" font-size="10" fill="#475569">□ 误差棒 ±σ（caption 注明 n）</text>
+  <text x="480" y="582" text-anchor="middle" font-size="10" fill="#475569">□ 图号 + 正文引用</text>
+  <text x="750" y="582" text-anchor="middle" font-size="10" fill="#475569">□ 数据文件索引（附录）</text>
+  <text x="480" y="604" text-anchor="middle" font-size="9.5" fill="#b91c1c">禁忌：双 y 轴挤两个量纲 · 3D 效果 · 无误差棒的平滑曲线 · 只报均值不报分位数（Day 43 §2.3 的坑）</text>
+</svg>

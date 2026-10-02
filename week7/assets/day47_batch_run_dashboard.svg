@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="690" viewBox="0 0 960 690" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrO" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#ea580c"/>
+    </marker>
+  </defs>
+  <rect width="960" height="690" fill="#ffffff"/>
+  <text x="480" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">项目 C 批量执行与异常盯防总控（Day 47）</text>
+
+  <!-- ① Matrix -->
+  <rect x="40" y="52" width="205" height="318" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="56" y="76" font-size="13" font-weight="bold" fill="#334155">① 实验矩阵（Day 46 冻结）</text>
+  <g text-anchor="middle">
+    <rect x="55" y="88" width="175" height="44" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+    <text x="142" y="106" font-size="11.5" font-weight="bold" fill="#1e3a8a">消融一 chunked prefill</text>
+    <text x="142" y="123" font-size="10.5" fill="#1e3a8a">开关 × budget × 长度（9 格）</text>
+    <rect x="55" y="140" width="175" height="44" rx="6" fill="#f0fdfa" stroke="#0d9488"/>
+    <text x="142" y="158" font-size="11.5" font-weight="bold" fill="#115e59">消融二 prefix caching</text>
+    <text x="142" y="175" font-size="10.5" fill="#115e59">命中率梯度 0/50/90%（6 格）</text>
+    <rect x="55" y="192" width="175" height="44" rx="6" fill="#fef2f2" stroke="#dc2626"/>
+    <text x="142" y="210" font-size="11.5" font-weight="bold" fill="#991b1b">消融三 投机解码</text>
+    <text x="142" y="227" font-size="10.5" fill="#991b1b">k × 负载（8 格）</text>
+    <rect x="55" y="244" width="175" height="44" rx="6" fill="#fffbeb" stroke="#d97706"/>
+    <text x="142" y="262" font-size="11.5" font-weight="bold" fill="#92400e">消融四 量化</text>
+    <text x="142" y="279" font-size="10.5" fill="#92400e">精度档位（5 格）</text>
+  </g>
+  <text x="142" y="316" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">≈28 格 × 3 seeds ≈ 84 runs</text>
+  <text x="142" y="334" text-anchor="middle" font-size="10.5" fill="#475569">predictions.md 已写每格预期</text>
+  <text x="142" y="352" text-anchor="middle" font-size="10" fill="#64748b">（配置冻结，今天零改动）</text>
+  <line x1="245" y1="211" x2="270" y2="211" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ② State machine -->
+  <rect x="276" y="52" width="380" height="318" rx="10" fill="#f0f9ff" stroke="#0369a1" stroke-width="1.5"/>
+  <text x="292" y="76" font-size="13" font-weight="bold" fill="#0c4a6e">② run_matrix.sh 批量状态机（每格 = 独立事务）</text>
+  <g font-size="10.5" text-anchor="middle">
+    <rect x="292" y="92" width="80" height="34" rx="6" fill="#ffffff" stroke="#0369a1"/><text x="332" y="113" fill="#0c4a6e">载参</text>
+    <rect x="378" y="92" width="80" height="34" rx="6" fill="#ffffff" stroke="#0369a1"/><text x="418" y="113" fill="#0c4a6e">启动 serve</text>
+    <rect x="464" y="92" width="80" height="34" rx="6" fill="#ffffff" stroke="#0369a1"/><text x="504" y="113" fill="#0c4a6e">健康检查</text>
+    <rect x="550" y="92" width="80" height="34" rx="6" fill="#e2e8f0" stroke="#64748b"/><text x="590" y="113" fill="#334155">warmup 丢弃</text>
+    <rect x="292" y="150" width="80" height="34" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="332" y="171" fill="#1e3a8a" font-weight="bold">正式采集</text>
+    <rect x="378" y="150" width="80" height="34" rx="6" fill="#ffffff" stroke="#0369a1"/><text x="418" y="171" fill="#0c4a6e">metrics 快照</text>
+    <rect x="464" y="150" width="80" height="34" rx="6" fill="#ffffff" stroke="#0369a1"/><text x="504" y="171" fill="#0c4a6e">停服</text>
+    <rect x="550" y="150" width="80" height="34" rx="6" fill="#ffffff" stroke="#0369a1"/><text x="590" y="171" fill="#0c4a6e">冷却 30 s</text>
+    <line x1="372" y1="109" x2="376" y2="109" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="458" y1="109" x2="462" y2="109" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="544" y1="109" x2="548" y2="109" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="372" y1="167" x2="376" y2="167" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="458" y1="167" x2="462" y2="167" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="544" y1="167" x2="548" y2="167" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <path d="M 602 126 L 602 138 L 332 138 L 332 148" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  </g>
+  <line x1="380" y1="186" x2="380" y2="198" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="570" y1="186" x2="570" y2="198" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <g text-anchor="middle">
+    <rect x="292" y="200" width="175" height="56" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="379" y="219" font-size="11" font-weight="bold" fill="#9a3412">幂等跳过（断点续跑）</text>
+    <text x="379" y="236" font-size="10" fill="#9a3412">已有 &lt;case&gt;_&lt;seed&gt;.json</text>
+    <text x="379" y="250" font-size="10" fill="#9a3412">→ 直接下一格</text>
+    <rect x="487" y="200" width="169" height="56" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="571" y="219" font-size="11" font-weight="bold" fill="#9a3412">失败隔离</text>
+    <text x="571" y="236" font-size="10" fill="#9a3412">任一步失败：失败标记+日志尾</text>
+    <text x="571" y="250" font-size="10" fill="#9a3412">→ 继续下一格，不烧整晚</text>
+  </g>
+  <text x="292" y="288" font-size="11" fill="#0c4a6e">× ~84 runs 串行推进（nohup / tmux 挂机，人巡检）</text>
+  <text x="292" y="306" font-size="11" fill="#0c4a6e">每格启动前复核：锁频状态 + 显存干净（无残留进程）</text>
+  <text x="292" y="324" font-size="11" fill="#0c4a6e">失败格落 failed/ 清单，收尾时统一补跑或降级</text>
+  <text x="292" y="348" font-size="10.5" fill="#64748b">（协议同 Day 43：warmup 丢弃 / 轮间冷却 / seed 控制随机化）</text>
+
+  <line x1="656" y1="122" x2="686" y2="122" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="671" y="114" text-anchor="middle" font-size="9.5" fill="#475569">落盘</text>
+  <line x1="656" y1="297" x2="686" y2="297" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arr)"/>
+  <text x="671" y="289" text-anchor="middle" font-size="9.5" fill="#dc2626">盯防</text>
+
+  <!-- ③ Auto sink -->
+  <rect x="690" y="52" width="230" height="140" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="706" y="76" font-size="13" font-weight="bold" fill="#5b21b6">③ 自动落盘（机器）</text>
+  <g font-size="10.5" fill="#5b21b6">
+    <text x="706" y="100">results/&lt;组&gt;/&lt;case&gt;_&lt;seed&gt;.json</text>
+    <text x="706" y="118">metrics_&lt;ts&gt;.txt（/metrics 快照）</text>
+    <text x="706" y="136">serve 全程日志 + 环境指纹</text>
+    <text x="706" y="158" font-weight="bold">幂等键：组 / case / seed</text>
+  </g>
+
+  <!-- ④ Watch -->
+  <rect x="690" y="225" width="230" height="145" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="706" y="249" font-size="13" font-weight="bold" fill="#991b1b">④ 盯防（不可再生）</text>
+  <g font-size="10.5" fill="#991b1b">
+    <text x="706" y="271">Grafana：TPOT/ITL 时序</text>
+    <text x="706" y="288">running · waiting 齿形</text>
+    <text x="706" y="305">gpu_cache_usage · 命中率</text>
+    <text x="706" y="322">引擎日志：preemption 行</text>
+    <text x="706" y="344" font-weight="bold" fill="#dc2626">异常 → 快照 → anomaly_log</text>
+  </g>
+
+  <!-- rerun loop -->
+  <path d="M 811 428 L 811 380 L 480 380 L 480 374" fill="none" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arrO)"/>
+  <text x="630" y="374" text-anchor="middle" font-size="10" fill="#c2410c">当天重跑（隔天环境不可比）</text>
+
+  <!-- ⑤ Sanity band -->
+  <rect x="40" y="395" width="880" height="115" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+  <text x="56" y="419" font-size="13.5" font-weight="bold" fill="#065f46">⑤ sanity 三道关（每格 3 seeds 齐 → 当天判定）</text>
+  <g text-anchor="middle">
+    <rect x="56" y="432" width="200" height="56" rx="6" fill="#ffffff" stroke="#059669"/>
+    <text x="156" y="452" font-size="11.5" font-weight="bold" fill="#065f46">关 1 · 单调性</text>
+    <text x="156" y="468" font-size="10.5" fill="#047857">机制预期单调关系成立？</text>
+    <text x="156" y="482" font-size="10" fill="#059669">（对照 predictions.md）</text>
+    <rect x="276" y="432" width="200" height="56" rx="6" fill="#ffffff" stroke="#059669"/>
+    <text x="376" y="452" font-size="11.5" font-weight="bold" fill="#065f46">关 2 · 量级常识</text>
+    <text x="376" y="468" font-size="10.5" fill="#047857">TPOT 量级 / 加速比上限</text>
+    <text x="376" y="482" font-size="10" fill="#059669">吞吐=0 → 先查脚本</text>
+    <rect x="496" y="432" width="200" height="56" rx="6" fill="#ffffff" stroke="#059669"/>
+    <text x="596" y="452" font-size="11.5" font-weight="bold" fill="#065f46">关 3 · 跨格一致</text>
+    <text x="596" y="468" font-size="10.5" fill="#047857">同配置格彼此 ±σ 内</text>
+    <text x="596" y="482" font-size="10" fill="#059669">（免费的配对数据）</text>
+    <rect x="716" y="432" width="190" height="56" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="811" y="452" font-size="11.5" font-weight="bold" fill="#9a3412">离群判定（z &gt; 3）</text>
+    <text x="811" y="468" font-size="10.5" fill="#9a3412">当天重跑 1~2 次</text>
+    <text x="811" y="482" font-size="10" fill="#9a3412">复现→系统性｜消失→偶发</text>
+    <line x1="256" y1="460" x2="274" y2="460" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="476" y1="460" x2="494" y2="460" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="696" y1="460" x2="714" y2="460" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- Row C outputs -->
+  <line x1="250" y1="512" x2="250" y2="534" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="710" y1="512" x2="710" y2="534" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="40" y="538" width="420" height="72" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="56" y="560" font-size="12.5" font-weight="bold" fill="#334155">anomaly_log.md（现场快照 + 初步归因）</text>
+  <text x="56" y="580" font-size="10.5" fill="#475569">分诊：环境类 → 修环境重跑 ｜ 脚本类 → 修脚本重跑</text>
+  <text x="56" y="596" font-size="10.5" fill="#475569">机制类 → 原样保留，成为 Day 48「机制解释」的核心素材</text>
+  <rect x="500" y="538" width="420" height="72" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="516" y="560" font-size="12.5" font-weight="bold" fill="#334155">results/ 全矩阵（绿格 + 失败清单 + 重跑记录）</text>
+  <text x="516" y="580" font-size="10.5" fill="#475569">predictions.md 预对照：✔ 符合预期 / ✘ 反直觉</text>
+  <text x="516" y="596" font-size="10.5" fill="#475569">反直觉的格子 = 理解盲区，Day 48 优先深挖</text>
+
+  <line x1="250" y1="610" x2="250" y2="624" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="710" y1="610" x2="710" y2="624" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="230" y="628" width="500" height="36" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="480" y="651" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5b21b6">Day 48：数据分析 + 《vLLM 性能消融实验报告》</text>
+  <text x="480" y="682" text-anchor="middle" font-size="11" fill="#475569">原则：机器的事（上半）全自动 · 人的事（下半）寸土不让 —— 注意力按「素材的不可再生性」分配</text>
+</svg>

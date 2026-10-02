@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 640" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d54a" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="980" height="640" fill="#fafbfc"/>
+  <text x="490" y="36" text-anchor="middle" font-size="24" font-weight="700" fill="#0f172a">第一次模拟面试：60 分钟全真结构</text>
+  <text x="490" y="60" text-anchor="middle" font-size="13" fill="#64748b">五个环节的时长、考察点与弹药来源｜三类探针贯穿 ②③④ 全程</text>
+
+  <!-- Phase cards -->
+  <!-- Card 1 -->
+  <g>
+    <rect x="28" y="90" width="172" height="260" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <circle cx="52" cy="116" r="14" fill="#2563eb"/>
+    <text x="52" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">1</text>
+    <text x="114" y="122" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">开场自我介绍</text>
+    <rect x="74" y="136" width="68" height="20" rx="10" fill="#dbeafe"/>
+    <text x="108" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">5 分钟</text>
+    <line x1="44" y1="168" x2="184" y2="168" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text x="44" y="192" font-size="12" font-weight="700" fill="#1e40af">考察</text>
+    <text x="44" y="212" font-size="12" fill="#334155">· 主线叙事是否清晰</text>
+    <text x="44" y="232" font-size="12" fill="#334155">· 表达结构（非背简历）</text>
+    <text x="44" y="262" font-size="12" font-weight="700" fill="#1e40af">弹药</text>
+    <text x="44" y="282" font-size="12" fill="#334155">· Day 53 三分钟讲稿</text>
+    <text x="44" y="302" font-size="12" fill="#334155">  压缩为 90 秒版</text>
+  </g>
+  <!-- Card 2 -->
+  <g>
+    <rect x="216" y="90" width="172" height="260" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+    <rect x="270" y="76" width="64" height="20" rx="10" fill="#4f46e5"/>
+    <text x="302" y="90" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">主战场</text>
+    <circle cx="240" cy="116" r="14" fill="#4f46e5"/>
+    <text x="240" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">2</text>
+    <text x="302" y="122" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">项目深挖</text>
+    <rect x="262" y="136" width="80" height="20" rx="10" fill="#e0e7ff"/>
+    <text x="302" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#3730a3">20 分钟</text>
+    <line x1="232" y1="168" x2="372" y2="168" stroke="#c7d2fe" stroke-width="1.5"/>
+    <text x="232" y="192" font-size="12" font-weight="700" fill="#3730a3">考察</text>
+    <text x="232" y="212" font-size="12" fill="#334155">· 深度与真实性</text>
+    <text x="232" y="232" font-size="12" fill="#334155">· 追问 3+ 层不乱</text>
+    <text x="232" y="252" font-size="12" fill="#334155">· 数字是否张口即来</text>
+    <text x="232" y="282" font-size="12" font-weight="700" fill="#3730a3">弹药</text>
+    <text x="232" y="302" font-size="12" fill="#334155">· 项目 A/B/C 的 STAR</text>
+    <text x="232" y="322" font-size="12" fill="#334155">  讲稿 + 前后数据</text>
+  </g>
+  <!-- Card 3 -->
+  <g>
+    <rect x="404" y="90" width="172" height="260" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <circle cx="428" cy="116" r="14" fill="#16a34a"/>
+    <text x="428" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">3</text>
+    <text x="490" y="122" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">场景设计题</text>
+    <rect x="450" y="136" width="80" height="20" rx="10" fill="#dcfce7"/>
+    <text x="490" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">20 分钟</text>
+    <line x1="420" y1="168" x2="560" y2="168" stroke="#bbf7d0" stroke-width="1.5"/>
+    <text x="420" y="192" font-size="12" font-weight="700" fill="#166534">考察</text>
+    <text x="420" y="212" font-size="12" fill="#334155">· 白板四件套</text>
+    <text x="420" y="232" font-size="12" fill="#334155">· 容量估算数字先行</text>
+    <text x="420" y="252" font-size="12" fill="#334155">· trade-off 决策</text>
+    <text x="420" y="282" font-size="12" font-weight="700" fill="#166534">弹药</text>
+    <text x="420" y="302" font-size="12" fill="#334155">· Day 35 集群设计题</text>
+    <text x="420" y="322" font-size="12" fill="#334155">· Day 50 五步法开场</text>
+  </g>
+  <!-- Card 4 -->
+  <g>
+    <rect x="592" y="90" width="172" height="260" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <circle cx="616" cy="116" r="14" fill="#d97706"/>
+    <text x="616" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">4</text>
+    <text x="678" y="122" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">快问快答</text>
+    <rect x="638" y="136" width="80" height="20" rx="10" fill="#fef3c7"/>
+    <text x="678" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">10 分钟</text>
+    <line x1="608" y1="168" x2="748" y2="168" stroke="#fde68a" stroke-width="1.5"/>
+    <text x="608" y="192" font-size="12" font-weight="700" fill="#92400e">考察</text>
+    <text x="608" y="212" font-size="12" fill="#334155">· 30 秒结论先行</text>
+    <text x="608" y="232" font-size="12" fill="#334155">· 概念边界准确</text>
+    <text x="608" y="262" font-size="12" font-weight="700" fill="#92400e">弹药</text>
+    <text x="608" y="282" font-size="12" fill="#334155">· Day 52 七问</text>
+    <text x="608" y="302" font-size="12" fill="#334155">  及其常见变形</text>
+  </g>
+  <!-- Card 5 -->
+  <g>
+    <rect x="780" y="90" width="172" height="260" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <circle cx="804" cy="116" r="14" fill="#475569"/>
+    <text x="804" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">5</text>
+    <text x="866" y="122" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">反问环节</text>
+    <rect x="826" y="136" width="68" height="20" rx="10" fill="#e2e8f0"/>
+    <text x="860" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#334155">5 分钟</text>
+    <line x1="796" y1="168" x2="936" y2="168" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="796" y="192" font-size="12" font-weight="700" fill="#334155">考察</text>
+    <text x="796" y="212" font-size="12" fill="#334155">· 生产视角思考</text>
+    <text x="796" y="232" font-size="12" fill="#334155">· 对业务的好奇心</text>
+    <text x="796" y="262" font-size="12" font-weight="700" fill="#334155">弹药</text>
+    <text x="796" y="282" font-size="12" fill="#334155">· 团队 SLO 是多少？</text>
+    <text x="796" y="302" font-size="12" fill="#334155">· P/D 部署形态？</text>
+  </g>
+
+  <!-- Arrows between cards -->
+  <g fill="#94a3b8">
+    <path d="M200,218 L214,218 L214,222 L200,222 Z" transform="translate(2,0)"/>
+    <path d="M388,220 L402,220 L402,224 L388,224 Z" transform="translate(2,0)"/>
+    <path d="M576,220 L590,220 L590,224 L576,224 Z" transform="translate(2,0)"/>
+    <path d="M764,220 L778,220 L778,224 L764,224 Z" transform="translate(2,0)"/>
+  </g>
+
+  <!-- Time axis -->
+  <line x1="28" y1="380" x2="930" y2="380" stroke="#475569" stroke-width="2" marker-end="url(#d54a)"/>
+  <text x="479" y="404" text-anchor="middle" font-size="12" fill="#64748b">时间流（②③ 两环节合计 40 分钟，是评分的主要来源）</text>
+
+  <!-- Three probes -->
+  <text x="490" y="442" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">三类探针：面试官下钻的三种固定姿势（贯穿 ②③④）</text>
+  <g>
+    <rect x="40" y="460" width="286" height="150" rx="10" fill="#fdf2f8" stroke="#db2777" stroke-width="2"/>
+    <text x="183" y="488" text-anchor="middle" font-size="14" font-weight="700" fill="#9d174d">① trade-off 探针</text>
+    <text x="183" y="514" text-anchor="middle" font-size="12.5" fill="#334155">"代价是什么？什么时候不划算？"</text>
+    <line x1="60" y1="530" x2="306" y2="530" stroke="#fbcfe8" stroke-width="1.5"/>
+    <text x="183" y="554" text-anchor="middle" font-size="12" fill="#64748b">检验：收益与代价的双向因果链</text>
+    <text x="183" y="578" text-anchor="middle" font-size="12" fill="#64748b">弹药：Day 11 / 22-24 / 29-33 专题</text>
+  </g>
+  <g>
+    <rect x="347" y="460" width="286" height="150" rx="10" fill="#f0f9ff" stroke="#0284c7" stroke-width="2"/>
+    <text x="490" y="488" text-anchor="middle" font-size="14" font-weight="700" fill="#0c4a6e">② 数字探针</text>
+    <text x="490" y="514" text-anchor="middle" font-size="12.5" fill="#334155">"具体多少？这个 2 倍怎么算的？"</text>
+    <line x1="367" y1="530" x2="613" y2="530" stroke="#bae6fd" stroke-width="1.5"/>
+    <text x="490" y="554" text-anchor="middle" font-size="12" fill="#64748b">检验：手算能力 + 量级直觉</text>
+    <text x="490" y="578" text-anchor="middle" font-size="12" fill="#64748b">弹药：Day 2 / 50 显存与时延公式</text>
+  </g>
+  <g>
+    <rect x="654" y="460" width="286" height="150" rx="10" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+    <text x="797" y="488" text-anchor="middle" font-size="14" font-weight="700" fill="#713f12">③ 诊断探针</text>
+    <text x="797" y="514" text-anchor="middle" font-size="12.5" fill="#334155">"线上 TTFT 涨了 3 倍，怎么定位？"</text>
+    <line x1="674" y1="530" x2="920" y2="530" stroke="#fef08a" stroke-width="1.5"/>
+    <text x="797" y="554" text-anchor="middle" font-size="12" fill="#64748b">检验：症状 → 分层 → 动作 → 验证</text>
+    <text x="797" y="578" text-anchor="middle" font-size="12" fill="#64748b">弹药：Day 13 / 51 诊断树</text>
+  </g>
+</svg>

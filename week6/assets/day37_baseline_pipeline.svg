@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="parr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <text x="480" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">基线采集闭环：一次可复现、可进 PR 的测量</text>
+
+  <!-- Row 1 -->
+  <rect x="40" y="70" width="260" height="78" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="58" y="96" font-size="14" font-weight="bold" fill="#1e3a5f">① 锁定配置</text>
+  <text x="58" y="116" font-size="11.5" fill="#475569">版本五元组 · server 启动参数</text>
+  <text x="58" y="134" font-size="11.5" fill="#475569">数据集 + seed —— 一切可比性的根</text>
+
+  <rect x="340" y="70" width="260" height="78" rx="10" fill="#f0fdfa" stroke="#14b8a6" stroke-width="2"/>
+  <text x="358" y="96" font-size="14" font-weight="bold" fill="#134e4a">② 预热 warmup</text>
+  <text x="358" y="116" font-size="11.5" fill="#475569">丢弃前 10~20 条请求</text>
+  <text x="358" y="134" font-size="11.5" fill="#475569">（权重加载 / 编译 / 图 capture 段）</text>
+
+  <rect x="640" y="70" width="280" height="78" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="2"/>
+  <text x="658" y="96" font-size="14" font-weight="bold" fill="#312e81">③ 并发梯度压测</text>
+  <text x="658" y="116" font-size="11.5" fill="#475569">vllm bench serve（ShareGPT，seed 固定）</text>
+  <text x="658" y="134" font-size="11.5" fill="#475569">C = 1 / 4 / 16 / 64，逐档独立落日志</text>
+
+  <!-- arrows row1 -->
+  <line x1="300" y1="109" x2="340" y2="109" stroke="#475569" stroke-width="2" marker-end="url(#parr)"/>
+  <line x1="600" y1="109" x2="640" y2="109" stroke="#475569" stroke-width="2" marker-end="url(#parr)"/>
+  <line x1="780" y1="148" x2="780" y2="198" stroke="#475569" stroke-width="2" marker-end="url(#parr)"/>
+
+  <!-- Row 2 (flow right to left) -->
+  <rect x="640" y="200" width="280" height="78" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+  <text x="658" y="226" font-size="14" font-weight="bold" fill="#065f46">④ 双通道采集</text>
+  <text x="658" y="246" font-size="11.5" fill="#047857">bench 指标：TTFT / TPOT / 吞吐</text>
+  <text x="658" y="264" font-size="11.5" fill="#047857">npu-smi 采样：AICore util / HBM 占用</text>
+
+  <rect x="340" y="200" width="260" height="78" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="358" y="226" font-size="14" font-weight="bold" fill="#1e3a5f">⑤ 落表 baseline.md</text>
+  <text x="358" y="246" font-size="11.5" fill="#475569">环境栏 + 结果表 + 冒烟证据</text>
+  <text x="358" y="264" font-size="11.5" fill="#475569">+ 已知异常（WARNING/fallback 摘录）</text>
+
+  <rect x="40" y="200" width="260" height="78" rx="10" fill="#fefce8" stroke="#eab308" stroke-width="2"/>
+  <text x="58" y="226" font-size="14" font-weight="bold" fill="#713f12">⑥ 复测 ×3 标噪声带</text>
+  <text x="58" y="246" font-size="11.5" fill="#a16207">median + 极差 → CV → 噪声带 ±2CV</text>
+  <text x="58" y="264" font-size="11.5" fill="#a16207">得出「最小可检测效应」</text>
+
+  <!-- arrows row2 -->
+  <line x1="640" y1="239" x2="600" y2="239" stroke="#475569" stroke-width="2" marker-end="url(#parr)"/>
+  <line x1="340" y1="239" x2="300" y2="239" stroke="#475569" stroke-width="2" marker-end="url(#parr)"/>
+  <line x1="170" y1="278" x2="170" y2="322" stroke="#475569" stroke-width="2" marker-end="url(#parr)"/>
+
+  <!-- outputs -->
+  <rect x="40" y="324" width="280" height="72" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="58" y="350" font-size="12.5" font-weight="bold" fill="#334155">→ Day 38-40 剖析</text>
+  <text x="58" y="370" font-size="11.5" fill="#475569">瓶颈分析报告 §1「现状数据」</text>
+  <text x="58" y="387" font-size="11.5" fill="#475569">（η = t_lb / 实测，从这张表开始算）</text>
+
+  <rect x="340" y="324" width="280" height="72" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="358" y="350" font-size="12.5" font-weight="bold" fill="#334155">→ Day 41-45 优化</text>
+  <text x="358" y="370" font-size="11.5" fill="#475569">每轮改动的 before 对照组</text>
+  <text x="358" y="387" font-size="11.5" fill="#475569">（同一配置、同一噪声带判据）</text>
+
+  <rect x="640" y="324" width="280" height="72" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="658" y="350" font-size="12.5" font-weight="bold" fill="#334155">→ W7 PR 证据链</text>
+  <text x="658" y="370" font-size="11.5" fill="#475569">before X ms → after Y ms 的 before 列</text>
+  <text x="658" y="387" font-size="11.5" fill="#475569">（含环境五元组，保证可复现）</text>
+</svg>

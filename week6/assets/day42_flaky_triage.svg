@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">Day 42 间歇性失效诊断树：三种"偶尔红"，三种处置</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#64748b">原则：先分类再处置——把非确定性当回归会丢刀，把回归当非确定性会放走 bug</text>
+
+  <!-- ===== Top: symptom ===== -->
+  <rect x="300" y="66" width="360" height="50" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="480" y="88" text-anchor="middle" font-size="13" font-weight="bold" fill="#991b1b">症状：门禁偶尔红，重跑又绿</text>
+  <text x="480" y="106" text-anchor="middle" font-size="10.5" fill="#475569">第一问：红的是"数值 diff"还是"测量数字"？</text>
+
+  <!-- Split -->
+  <line x1="400" y1="116" x2="230" y2="152" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="226,156 234,148 238,158" fill="#475569"/>
+  <line x1="560" y1="116" x2="730" y2="152" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="734,156 726,148 722,158" fill="#475569"/>
+
+  <!-- ===== Branch 1: numeric diff ===== -->
+  <rect x="60" y="160" width="330" height="46" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="225" y="180" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a5f">G1 精度 diff 间歇出现</text>
+  <text x="225" y="197" text-anchor="middle" font-size="10.5" fill="#475569">token diff / logits max diff 偶发超限</text>
+
+  <!-- ===== Branch 2: measurement ===== -->
+  <rect x="570" y="160" width="330" height="46" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="735" y="180" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a5f">G2 / G3 数字抖动</text>
+  <text x="735" y="197" text-anchor="middle" font-size="10.5" fill="#475569">p50 / TPOT 忽好忽坏，与代码无关</text>
+
+  <!-- Branch 1 children: nondeterminism vs regression -->
+  <line x1="160" y1="206" x2="150" y2="240" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="150,246 145,237 155,237" fill="#475569"/>
+  <line x1="300" y1="206" x2="330" y2="240" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="333,244 326,235 323,245" fill="#475569"/>
+
+  <rect x="40" y="250" width="250" height="118" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="1.5"/>
+  <text x="165" y="272" text-anchor="middle" font-size="12" font-weight="bold" fill="#064e3b">① 数值非确定性</text>
+  <text x="54" y="292" font-size="10.5" fill="#475569">画像：diff 重跑位置漂移；</text>
+  <text x="54" y="308" font-size="10.5" fill="#475569">logits max diff 阈值内；每次 ≤ 2 token</text>
+  <text x="54" y="324" font-size="10.5" fill="#475569">诊断：diff 率 p̂ 与底噪基线 p₀ 比</text>
+  <text x="54" y="340" font-size="10.5" fill="#475569">（旧路径 vs 旧路径，R=20 轮）</text>
+  <text x="54" y="358" font-size="10.5" font-weight="bold" fill="#064e3b">处置：接受 + G1 协议加固</text>
+
+  <rect x="310" y="250" width="250" height="118" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="435" y="272" text-anchor="middle" font-size="12" font-weight="bold" fill="#991b1b">③ 真回归（间歇形态）</text>
+  <text x="324" y="292" font-size="10.5" fill="#475569">画像：diff 稳定复现于同一位置；</text>
+  <text x="324" y="308" font-size="10.5" fill="#475569">logits 超阈值；特定 shape/batch 触发</text>
+  <text x="324" y="324" font-size="10.5" fill="#475569">诊断：p̂ ≫ p₀（如 6% vs 0.5%）</text>
+  <text x="324" y="340" font-size="10.5" fill="#475569">+ 二分 + 构造最小复现</text>
+  <text x="324" y="358" font-size="10.5" font-weight="bold" fill="#991b1b">处置：revert + 单开修复刀</text>
+
+  <!-- Branch 2 children -->
+  <line x1="660" y1="206" x2="640" y2="240" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="639,246 634,237 644,237" fill="#475569"/>
+  <line x1="800" y1="206" x2="820" y2="240" stroke="#475569" stroke-width="1.6"/>
+  <polygon points="822,245 815,236 812,246" fill="#475569"/>
+
+  <rect x="520" y="250" width="240" height="118" rx="8" fill="#fefce8" stroke="#b45309" stroke-width="1.5"/>
+  <text x="640" y="272" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">② 测量噪声</text>
+  <text x="534" y="292" font-size="10.5" fill="#475569">画像：数字波动带内往返，</text>
+  <text x="534" y="308" font-size="10.5" fill="#475569">无方向性、与 diff 位置无关</text>
+  <text x="534" y="324" font-size="10.5" fill="#475569">诊断：对照 Day 37 噪声带；</text>
+  <text x="534" y="340" font-size="10.5" fill="#475569">npu-smi 独占 / 频率漂移检查</text>
+  <text x="534" y="358" font-size="10.5" font-weight="bold" fill="#92400e">处置：带内不判定，超带才算</text>
+
+  <rect x="780" y="250" width="150" height="118" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="855" y="278" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">环境干扰源</text>
+  <text x="792" y="300" font-size="10" fill="#475569">· 旁边挂着 serve</text>
+  <text x="792" y="316" font-size="10" fill="#475569">· 降频 / 温控</text>
+  <text x="792" y="332" font-size="10" fill="#475569">· 页表 / L2 冷热</text>
+  <text x="792" y="348" font-size="10" fill="#475569">· CG 重捕获时机</text>
+
+  <!-- ===== Bottom: hardened G1 protocol ===== -->
+  <line x1="225" y1="368" x2="225" y2="400" stroke="#047857" stroke-width="1.6"/>
+  <line x1="435" y1="368" x2="435" y2="400" stroke="#dc2626" stroke-width="1.6"/>
+  <line x1="640" y1="368" x2="640" y2="400" stroke="#b45309" stroke-width="1.6"/>
+  <line x1="225" y1="400" x2="640" y2="400" stroke="#475569" stroke-width="1.2"/>
+  <line x1="435" y1="400" x2="435" y2="416" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="435,422 430,413 440,413" fill="#475569"/>
+
+  <rect x="120" y="426" width="720" height="150" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="480" y="450" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a5f">G1 协议加固（从"单次通过"升级为"统计判据"）</text>
+  <text x="140" y="474" font-size="11" fill="#475569">1. 固定 prompt 集 + greedy，重复 R = 20 轮（同输入，跨轮观察漂移）</text>
+  <text x="140" y="494" font-size="11" fill="#475569">2. 记录 diff 率 p̂ = diff 次数 / (R × prompts)，以及每处 diff 的 token 数与位置分布</text>
+  <text x="140" y="514" font-size="11" fill="#475569">3. 底噪基线 p₀：改前代码同协议先跑 20 轮（与 Day 37"先标定噪声带再测性能"同构）</text>
+  <text x="140" y="534" font-size="11" fill="#475569">4. 判据：p̂ ≤ max(3 × p₀, 2%) 且 logits max diff &lt; 阈值 → 绿；任一超 → 红</text>
+  <text x="140" y="554" font-size="11" fill="#475569">5. 红了不猜：按上图三分类走处置；结论与证据写进 logbook（失败也是数据）</text>
+</svg>

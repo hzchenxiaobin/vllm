@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrUp" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  <rect width="960" height="470" fill="#ffffff"/>
+  <text x="480" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">Day 49：讲稿的三层版本——嵌套结构 + 3 分钟时间预算</text>
+  <text x="480" y="48" text-anchor="middle" font-size="11" fill="#64748b">上层是下层的摘要，不是随机删减；每一层都结论先行（金字塔原理）——面试官的注意力在最初 15 秒最贵</text>
+
+  <text x="195" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">四层表达资产（resume/scripts/）</text>
+
+  <rect x="40" y="82" width="310" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="195" y="104" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">30 秒 · 电梯版</text>
+  <text x="195" y="122" text-anchor="middle" font-size="10" fill="#1e3a8a">一句话定位 + 最强数字 + 一句机制</text>
+  <text x="195" y="137" text-anchor="middle" font-size="9" fill="#2563eb">开场自我介绍 / 被打断后重述 / 跨领域面试官</text>
+
+  <rect x="40" y="158" width="310" height="64" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+  <text x="195" y="180" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5b21b6">3 分钟 · 标准版</text>
+  <text x="195" y="198" text-anchor="middle" font-size="10" fill="#5b21b6">背景 30s → 动作 90s → 结果 45s → 反思 15s</text>
+  <text x="195" y="213" text-anchor="middle" font-size="9" fill="#7c3aed">「介绍一个你最有挑战的项目」的标准应答</text>
+
+  <rect x="40" y="234" width="310" height="64" rx="8" fill="#fff7ed" stroke="#d97706" stroke-width="1.8"/>
+  <text x="195" y="256" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#9a3412">10 分钟 · 深挖版</text>
+  <text x="195" y="274" text-anchor="middle" font-size="10" fill="#9a3412">标准版逐段展开：失败的第一轮 / 边界矩阵 /</text>
+  <text x="195" y="289" text-anchor="middle" font-size="10" fill="#9a3412">与上游方案对比 / 局限与重做</text>
+
+  <rect x="40" y="310" width="310" height="64" rx="8" fill="#f0fdf4" stroke="#059669" stroke-width="1.8"/>
+  <text x="195" y="332" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#065f46">追问层 · 40 分钟弹性</text>
+  <text x="195" y="350" text-anchor="middle" font-size="10" fill="#065f46">五类追问 × 证据指针（followup_tree.md）</text>
+  <text x="195" y="365" text-anchor="middle" font-size="9" fill="#059669">面试真正的主体；深度上限 = 证据链完整度</text>
+
+  <line x1="28" y1="368" x2="28" y2="92" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#arrUp)"/>
+  <text x="20" y="230" font-size="9" fill="#64748b" transform="rotate(-90 20 230)" text-anchor="middle">向上 = 摘要压缩 · 向下 = 展开细节</text>
+
+  <line x1="350" y1="190" x2="396" y2="120" stroke="#475569" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="384" y="112" font-size="9" fill="#475569">展开为 →</text>
+
+  <text x="660" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">3 分钟标准版的时间预算（共 180 秒）</text>
+
+  <rect x="400" y="84" width="87" height="34" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="443" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">30s</text>
+  <rect x="487" y="84" width="260" height="34" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="617" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#5b21b6">90s（主体！）</text>
+  <rect x="747" y="84" width="130" height="34" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="812" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#065f46">45s</text>
+  <rect x="877" y="84" width="43" height="34" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+  <text x="898" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">15s</text>
+
+  <rect x="400" y="132" width="10" height="10" fill="#2563eb"/>
+  <text x="418" y="141" font-size="10.5" font-weight="bold" fill="#1e3a8a">背景 30s</text>
+  <text x="480" y="141" font-size="10" fill="#334155">只做一件事：让「难」成立——profile 显示 X% 时间在热点 / 理论上限与实测的差距</text>
+
+  <rect x="400" y="162" width="10" height="10" fill="#7c3aed"/>
+  <text x="418" y="171" font-size="10.5" font-weight="bold" fill="#5b21b6">动作 90s</text>
+  <text x="480" y="171" font-size="10" fill="#334155">三轮迭代的机制细节（至少 1 个能画图的）+ 测量协议 + 精度对拍——展示能力的主战场</text>
+
+  <rect x="400" y="192" width="10" height="10" fill="#059669"/>
+  <text x="418" y="201" font-size="10.5" font-weight="bold" fill="#065f46">结果 45s</text>
+  <text x="480" y="201" font-size="10" fill="#334155">A 级数字 + 显著性 + 边界（prefill 无回归，符合机制预期）——给动作盖钢印</text>
+
+  <rect x="400" y="222" width="10" height="10" fill="#d97706"/>
+  <text x="418" y="231" font-size="10.5" font-weight="bold" fill="#9a3412">反思 15s</text>
+  <text x="480" y="231" font-size="10" fill="#334155">一个真实的失败点 + 改进假设——可信度的封印；也常是「重做」追问的预埋答案</text>
+
+  <rect x="400" y="256" width="520" height="118" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+  <text x="660" y="278" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">两个反直觉的纪律</text>
+  <text x="660" y="298" text-anchor="middle" font-size="10" fill="#475569">① 动作 : 背景 ≈ 3 : 1 ——通病是背景讲 2 分钟、动作一句带过；背景只需让问题成立，不需铺陈行业趋势</text>
+  <text x="660" y="318" text-anchor="middle" font-size="10" fill="#475569">② 现场砍时长必须沿嵌套结构砍——先砍 10 分钟版的分支，保住 3 分钟版的因果链完整</text>
+  <text x="660" y="338" text-anchor="middle" font-size="10" fill="#475569">③ 讲稿里故意留 2~3 个术语钩子（配对统计 / 尾块冗余拷贝 / n.s.），引导面试官进入你准备好的追问分支</text>
+  <text x="660" y="360" text-anchor="middle" font-size="9.5" fill="#64748b">电梯版与标准版全文见正文 3.3；10 分钟版 = 标准版 + 追问树的口头展开</text>
+
+  <rect x="40" y="392" width="880" height="52" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.2"/>
+  <text x="480" y="413" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#854d0e">嵌套 ≠ 删减：30 秒版是 3 分钟版的摘要，3 分钟版是 10 分钟版的骨架</text>
+  <text x="480" y="431" text-anchor="middle" font-size="10" fill="#854d0e">错误做法是背一篇长稿现场随机砍——砍掉的部分往往恰好破坏因果链；正确做法是每层独立成稿、逐层可展开（Day 53 将分层试讲录音）</text>
+</svg>

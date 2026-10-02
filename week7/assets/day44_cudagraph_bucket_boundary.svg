@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="580" viewBox="0 0 1000 580" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrE" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrF" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="arrH" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#2563eb"/>
+    </marker>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#fee2e2"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#fca5a5" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="1000" height="580" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#0f172a">CUDA Graph bucket 边界：同一份代码，两套 shape 假设</text>
+  <text x="500" y="50" text-anchor="middle" font-size="11.5" fill="#64748b">横轴为 batch size（示意、非等比）；bucket 列表以你版本启动日志打印的为准——生成策略随版本演进，不要背任何固定列表</text>
+
+  <!-- log box -->
+  <rect x="150" y="66" width="700" height="44" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+  <text x="165" y="84" font-size="11" font-weight="bold" fill="#334155">启动日志（示例）：</text>
+  <text x="165" y="101" font-size="11" fill="#475569" font-family="Consolas, Menlo, monospace">Capturing batches (1, 2, 4, 8, 16, 24, 32, 40, 48, 64, 96, 128, 192, 256) ...   # 小 batch 段密集，大段按步长</text>
+
+  <!-- Case callouts above axis -->
+  <g>
+    <rect x="355" y="150" width="210" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="460" y="170" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1e3a8a">Case A：bs = 37</text>
+    <text x="460" y="187" text-anchor="middle" font-size="10" fill="#1e40af">padding 3 个假输入 → replay bucket 40</text>
+    <text x="460" y="203" text-anchor="middle" font-size="10" fill="#1e40af">kernel 必须对 padding 元素安全</text>
+
+    <rect x="600" y="150" width="200" height="64" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+    <text x="700" y="170" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#78350f">Case B：bs = 40（恰好）</text>
+    <text x="700" y="187" text-anchor="middle" font-size="10" fill="#92400e">命中 bucket：无 padding</text>
+    <text x="700" y="203" text-anchor="middle" font-size="10" fill="#92400e">"恰好等于"处 off-by-one 高发</text>
+
+    <rect x="790" y="150" width="185" height="64" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="882" y="170" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#991b1b">Case C：bs = 257</text>
+    <text x="882" y="187" text-anchor="middle" font-size="10" fill="#7f1d1d">超过最大 capture size</text>
+    <text x="882" y="203" text-anchor="middle" font-size="10" fill="#7f1d1d">→ eager fallback 另一条路径</text>
+  </g>
+
+  <!-- arrows from callouts to axis -->
+  <g fill="none">
+    <path d="M432,214 L432,262" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrH)"/>
+    <path d="M700,214 L700,262" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrE)"/>
+    <path d="M882,214 L882,262" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrF)"/>
+  </g>
+
+  <!-- axis -->
+  <line x1="90" y1="278" x2="920" y2="278" stroke="#334155" stroke-width="2" marker-end="url(#arrE)"/>
+  <text x="930" y="282" font-size="11" fill="#334155" font-weight="bold">bs</text>
+
+  <!-- eager zone -->
+  <rect x="748" y="270" width="160" height="16" fill="url(#hatch)" stroke="#dc2626" stroke-width="1"/>
+  <text x="828" y="302" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#991b1b">eager 区域（graph 外）</text>
+
+  <!-- bucket ticks: value @ x -->
+  <g>
+    <g stroke="#2563eb" stroke-width="2">
+      <line x1="100" y1="270" x2="100" y2="286"/><line x1="155" y1="270" x2="155" y2="286"/>
+      <line x1="210" y1="270" x2="210" y2="286"/><line x1="265" y1="270" x2="265" y2="286"/>
+      <line x1="320" y1="270" x2="320" y2="286"/><line x1="360" y1="270" x2="360" y2="286"/>
+      <line x1="400" y1="270" x2="400" y2="286"/><line x1="440" y1="270" x2="440" y2="286"/>
+      <line x1="480" y1="270" x2="480" y2="286"/><line x1="525" y1="270" x2="525" y2="286"/>
+      <line x1="575" y1="270" x2="575" y2="286"/><line x1="625" y1="270" x2="625" y2="286"/>
+      <line x1="685" y1="270" x2="685" y2="286"/><line x1="745" y1="270" x2="745" y2="286"/>
+    </g>
+    <g font-size="10.5" fill="#1e3a8a" text-anchor="middle">
+      <text x="100" y="264">1</text><text x="155" y="264">2</text><text x="210" y="264">4</text>
+      <text x="265" y="264">8</text><text x="320" y="264">16</text><text x="360" y="264">24</text>
+      <text x="400" y="264">32</text><text x="440" y="264">40</text><text x="480" y="264">48</text>
+      <text x="525" y="264">64</text><text x="575" y="264">96</text><text x="625" y="264">128</text>
+      <text x="685" y="264">192</text><text x="745" y="264">256</text>
+    </g>
+    <!-- padding illustration for case A: 37..40 -->
+    <rect x="427" y="270" width="13" height="16" fill="#dbeafe" stroke="#2563eb" stroke-width="1"/>
+    <circle cx="432" cy="278" r="3.5" fill="#2563eb"/>
+    <circle cx="700" cy="278" r="3.5" fill="#d97706"/>
+    <circle cx="882" cy="278" r="3.5" fill="#dc2626"/>
+    <text x="432" y="322" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">37</text>
+    <text x="700" y="322" text-anchor="middle" font-size="10" fill="#92400e" font-weight="bold">40</text>
+    <text x="882" y="322" text-anchor="middle" font-size="10" fill="#991b1b" font-weight="bold">257</text>
+    <!-- non-linear note -->
+    <text x="160" y="322" font-size="10" fill="#94a3b8">⟵ 轴为示意，非线性</text>
+  </g>
+
+  <!-- capture vs replay strip -->
+  <g>
+    <rect x="60" y="344" width="420" height="86" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+    <text x="270" y="368" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">capture 阶段（服务启动时，每个 bucket 一次）</text>
+    <text x="76" y="390" font-size="10.5" fill="#334155">• 按 bucket 的固定 shape 跑一遍并录制计算图</text>
+    <text x="76" y="408" font-size="10.5" fill="#334155">• 静态 buffer + 固定地址：replay 时复用同一块显存</text>
+    <text x="76" y="424" font-size="10.5" fill="#334155">• capture 本身吃显存：CI 小显存机器可能 OOM（环境差异型 bug）</text>
+
+    <rect x="520" y="344" width="420" height="86" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+    <text x="730" y="368" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">replay 阶段（每个 decode step）</text>
+    <text x="536" y="390" font-size="10.5" fill="#334155">• 真实 bs 向上取整到最近的 bucket（ceil）</text>
+    <text x="536" y="408" font-size="10.5" fill="#334155">• padding 元素 = 假输入，输出被丢弃</text>
+    <text x="536" y="424" font-size="10.5" fill="#334155">• bs &gt; 最大 bucket → 不走 graph，回 eager 动态 shape</text>
+  </g>
+  <path d="M480,387 L516,387" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arrE)"/>
+
+  <!-- test points -->
+  <rect x="60" y="452" width="880" height="104" rx="10" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+  <text x="500" y="476" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a">测试点清单（把 bucket 轴变成 pytest 参数）</text>
+  <text x="80" y="500" font-size="11" fill="#334155">① 每个 bucket 值本身（Case B 型：恰好命中）　　② bucket + 1（落到更大 bucket，padding 最多档）　　③ 最大 capture size + 1（eager 交界，Case C 型）</text>
+  <text x="80" y="522" font-size="11" fill="#334155">④ --enforce-eager A/B：同 case 两种执行模式输出 diff（类别①应零 diff；类别②应在 L1 容差内）</text>
+  <text x="80" y="544" font-size="11" fill="#334155">⑤ 并发构造：N 个等长同步短请求精确控制 running batch 停在目标值　　⑥ 显存边界：CI 与本机 bucket 列表可能不同（max_num_seqs / 显存推导）</text>
+</svg>

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr45b" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="980" height="520" fill="#ffffff"/>
+  <text x="490" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#0f172a">PR 描述解剖：四段式结构与证据链的映射</text>
+  <text x="490" y="52" text-anchor="middle" font-size="12" fill="#64748b">左边是过去两周的本地产出，右边是 reviewer 看到的 PR 页面——今天的工作就是完成这张映射</text>
+
+  <!-- Left: evidence sources -->
+  <text x="150" y="92" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">证据来源（本地）</text>
+  <g text-anchor="middle">
+    <rect x="40" y="108" width="220" height="66" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="150" y="132" font-size="12" font-weight="bold" fill="#7c2d12">Day 38-39 瓶颈分析报告</text>
+    <text x="150" y="150" font-size="10.5" fill="#9a3412">热点定位 + 理论上限</text>
+    <text x="150" y="165" font-size="10.5" fill="#9a3412">（现状 → 上限 → 优化空间）</text>
+
+    <rect x="40" y="188" width="220" height="66" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="150" y="212" font-size="12" font-weight="bold" fill="#334155">Day 41-42 优化实现</text>
+    <text x="150" y="230" font-size="10.5" fill="#475569">两轮迭代的 diff</text>
+    <text x="150" y="245" font-size="10.5" fill="#475569">（每个改动对应一个机制假设）</text>
+
+    <rect x="40" y="268" width="220" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="150" y="292" font-size="12" font-weight="bold" fill="#1e3a8a">Day 43 前后对比表</text>
+    <text x="150" y="310" font-size="10.5" fill="#1e40af">均值 ± σ · p99 · 显著性</text>
+    <text x="150" y="325" font-size="10.5" fill="#1e40af">（环境指纹 + 轮次协议）</text>
+
+    <rect x="40" y="348" width="220" height="66" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="150" y="372" font-size="12" font-weight="bold" fill="#14532d">Day 44 测试记录</text>
+    <text x="150" y="390" font-size="10.5" fill="#166534">边界矩阵 + 三层对拍</text>
+    <text x="150" y="405" font-size="10.5" fill="#166534">（阈值先行 · bug 已闭环）</text>
+  </g>
+
+  <!-- Right: PR page -->
+  <text x="700" y="92" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">PR 页面（reviewer 视角）</text>
+  <rect x="440" y="104" width="520" height="392" rx="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+  <!-- title bar -->
+  <rect x="440" y="104" width="520" height="40" rx="10" fill="#f1f5f9" stroke="#0f172a" stroke-width="2"/>
+  <text x="460" y="130" font-size="13" font-weight="bold" fill="#0f172a">[perf] Optimize xxx kernel: <tspan fill="#16a34a">-18% TPOT p99</tspan> (decode)</text>
+
+  <g>
+    <!-- WHY -->
+    <rect x="456" y="156" width="488" height="62" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="472" y="178" font-size="12.5" font-weight="bold" fill="#7c2d12">WHY — 瓶颈与上限</text>
+    <text x="472" y="196" font-size="10.5" fill="#9a3412">profile 证据：当前实现 X% 时间耗于 Y；理论上限 = Z（访存模型推导）</text>
+    <text x="472" y="211" font-size="10.5" fill="#9a3412">一句话说清"不改会怎样、改了空间多大"</text>
+
+    <!-- WHAT -->
+    <rect x="456" y="228" width="488" height="62" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="472" y="250" font-size="12.5" font-weight="bold" fill="#334155">WHAT — 机制层面的改动描述</text>
+    <text x="472" y="268" font-size="10.5" fill="#475569">如：把 K/V 分块从 A×B 调整为 C×D，消除尾块冗余搬运；reduction 顺序不变（类别②）</text>
+    <text x="472" y="283" font-size="10.5" fill="#475569">diff 只负责"改了哪些行"，这段负责"为什么是这几行"</text>
+
+    <!-- BENCHMARKS -->
+    <rect x="456" y="300" width="488" height="88" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="472" y="322" font-size="12.5" font-weight="bold" fill="#1e3a8a">BENCHMARKS — 对比表（本 PR 的核心）</text>
+    <text x="472" y="340" font-size="10.5" fill="#1e40af">场景 × 版本 × 指标 × 均值±σ × Δ% × 显著性；环境指纹四件套</text>
+    <text x="472" y="355" font-size="10.5" fill="#1e40af">只贴与结论相关的行，完整 JSON 放 gist / 附录链接</text>
+    <text x="472" y="370" font-size="10.5" fill="#1e40af">无收益场景也要写（prefill 无感）——主动交代边界是加分项</text>
+    <text x="472" y="384" font-size="10.5" fill="#1e40af">示例：TPOT p99 21.3±0.4 ms → 17.5±0.5 ms（-17.8%，p&lt;0.01）</text>
+
+    <!-- TEST PLAN -->
+    <rect x="456" y="398" width="488" height="78" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="472" y="420" font-size="12.5" font-weight="bold" fill="#14532d">TEST PLAN — 正确性证据</text>
+    <text x="472" y="438" font-size="10.5" fill="#166534">定类结论（类别②：同数学不同顺序）+ 容差及出处</text>
+    <text x="472" y="453" font-size="10.5" fill="#166534">边界矩阵结果摘要：N case 全 pass（CUDA Graph bucket±1、q_len&gt;1、尾块…）</text>
+    <text x="472" y="468" font-size="10.5" fill="#166534">三层对拍：top-1 99.8%（N=12k）/ KL 0.011 / L3 首分歧分布</text>
+  </g>
+
+  <!-- mapping arrows -->
+  <g stroke="#94a3b8" stroke-width="1.8" fill="none" stroke-dasharray="5,4">
+    <path d="M 260 141 L 456 187" marker-end="url(#arr45b)"/>
+    <path d="M 260 221 L 456 259" marker-end="url(#arr45b)"/>
+    <path d="M 260 301 L 456 344" marker-end="url(#arr45b)"/>
+    <path d="M 260 381 L 456 437" marker-end="url(#arr45b)"/>
+  </g>
+
+  <!-- bottom note -->
+  <rect x="40" y="440" width="360" height="56" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="220" y="462" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">标题公式：[类型] 机制短语 + 量化结果 + 场景</text>
+  <text x="220" y="480" text-anchor="middle" font-size="10.5" fill="#475569">reviewer 扫 inbox 时只看标题——把结论放进标题，不是放进第五段</text>
+</svg>

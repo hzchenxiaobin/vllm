@@ -1,0 +1,572 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls week7/ 2>/dev/null && ls week7/assets/ 2>/dev/null
+assets
+day43_benchmark_before_after.md
+day44_boundary_cases_accuracy.md
+day45_pr_submission.md
+day47_batch_run_anomaly_watch.md
+day48_analysis_and_report.md
+README.md
+day43_benchmark_pipeline.svg
+day43_round_protocol.svg
+day43_significance_errorbar.svg
+day44_cudagraph_bucket_boundary.svg
+day44_diff_testing_flow.svg
+day44_test_space.svg
+day45_pr_anatomy.svg
+day45_pr_lifecycle.svg
+day45_pr_split_strategy.svg
+day47_anomaly_signatures.svg
+day47_anomaly_triage_tree.svg
+day47_batch_run_dashboard.svg
+day48_chart_anatomy.svg
+day48_decision_table.svg
+day48_report_pipeline.svg
+[0m
+[0m→ [0mRead week7/day43_benchmark_before_after.md[90m [limit=70][0m
+[0m→ [0mRead week7/day47_batch_run_anomaly_watch.md[90m [limit=70][0m
+[0m→ [0mRead week7/day48_analysis_and_report.md[90m [limit=70][0m
+[0m
+[0m$ [0mgrep -n "^## " week7/day48_analysis_and_report.md week7/day43_benchmark_before_after.md week7/day47_batch_run_anomaly_watch.md | sed -n '1,60p'
+week7/day48_analysis_and_report.md:15:## 一、今日学习目标
+week7/day48_analysis_and_report.md:26:## 二、核心概念
+week7/day48_analysis_and_report.md:90:## 三、原理深入讲解
+week7/day48_analysis_and_report.md:264:## 四、关键代码
+week7/day48_analysis_and_report.md:401:## 五、与 vLLM V1 的实际联系：机制解释的源码锚点清单
+week7/day48_analysis_and_report.md:420:## 六、动手实验步骤
+week7/day48_analysis_and_report.md:472:## 七、面试高频问题
+week7/day48_analysis_and_report.md:504:## 八、今日总结
+week7/day48_analysis_and_report.md:518:## 九、今日自测题
+week7/day48_analysis_and_report.md:538:## 十、今日产出物
+week7/day43_benchmark_before_after.md:11:## 一、今日学习目标
+week7/day43_benchmark_before_after.md:21:## 二、核心概念
+week7/day43_benchmark_before_after.md:73:## 三、原理深入讲解
+week7/day43_benchmark_before_after.md:160:## 四、数学推导：从数字到结论
+week7/day43_benchmark_before_after.md:226:## 五、关键代码：一条命令跑完的 benchmark harness
+week7/day43_benchmark_before_after.md:390:## 六、与 vLLM V1 的实际联系
+week7/day43_benchmark_before_after.md:446:## 七、动手实验步骤（约 2.5 小时）
+week7/day43_benchmark_before_after.md:511:## 八、面试高频问题
+week7/day43_benchmark_before_after.md:539:## 九、今日总结
+week7/day43_benchmark_before_after.md:548:## 十、今日自测题
+week7/day43_benchmark_before_after.md:569:## 十一、今日产出物
+week7/day47_batch_run_anomaly_watch.md:15:## 一、今日学习目标
+week7/day47_batch_run_anomaly_watch.md:26:## 二、核心概念
+week7/day47_batch_run_anomaly_watch.md:83:## 三、原理深入讲解
+week7/day47_batch_run_anomaly_watch.md:176:## 四、数学推导：从排程到判定
+week7/day47_batch_run_anomaly_watch.md:231:## 五、关键代码：批量执行器 + 快照 + 三道关
+week7/day47_batch_run_anomaly_watch.md:421:## [14:23] g2_prefix / hit90 / seed2 — 疑似 prefix 颠簸（机制类）
+week7/day47_batch_run_anomaly_watch.md:431:## 六、与 vLLM V1 的实际联系
+week7/day47_batch_run_anomaly_watch.md:487:## 七、动手实验步骤（约 3 小时 + 机时）
+week7/day47_batch_run_anomaly_watch.md:540:## 八、面试高频问题
+week7/day47_batch_run_anomaly_watch.md:572:## 九、今日总结
+week7/day47_batch_run_anomaly_watch.md:585:## 十、今日自测题
+week7/day47_batch_run_anomaly_watch.md:605:## 十一、今日产出物
+[0m
+[0m$ [0mgrep -n "TPOT p99\|提升\|加速\|1\.\|%" week7/day45_pr_submission.md | head -40; echo ---; grep -n "^## \|^# " week7/day45_pr_submission.md | head -20; echo ---; grep -rn "p99" week7/day43_benchmark_before_after.md | sed -n '1,15p'
+13:1. **建立"PR = 证据链载体"的模型**：代码（What）、动机与机制（Why）、性能数据（Benchmarks）、正确性数据（Test Plan）四位一体，缺一角 reviewer 就要靠猜
+47:1. **一个 PR 一个主题**：kernel 优化、配套的单测、CI 适配可以是三个 PR 的序列，而不是一个三合一的大 PR
+138:- profile 显示 decode step 的 X% 时间在 xxx kernel（nsys/msprof 火焰图，完整报告见 <链接>）
+141:- 该 kernel 在 decode 密集负载（占生产流量 ~xx%）为主热点
+156:| decode 密集 | TPOT p99 (ms) | 21.3 ± 0.4 | 17.5 ± 0.5 | **-17.8%** | p < 0.01 |
+157:| prefill 密集 | TTFT p99 (ms) | 342 ± 9 | 341 ± 11 | -0.3%（不显著） | n.s. |
+158:| 混合 | goodput @ TPOT<200ms | 38 ± 1 | 44 ± 2 | +15.8% | p < 0.05 |
+166:- 三层对拍：top-1 一致率 99.8%（N=12k tokens）· KL 0.011 · 固定 seed greedy 首分歧
+182:# 1. 私有分支整理历史（只对未 push 的 commit 做）
+199:  --title "perf: optimize xxx kernel for decode (-18% TPOT p99)" \
+268:1. 标题里有没有量化结果？
+308:> 答：三段式回复：复述对方观点确认没理解偏 → 给出我的证据（数据/源码引用/文档）→ 给结论并留折中方案。技术分歧的裁判权在 maintainer，我的任务是让裁判拿到完整证据。举实例：reviewer 建议用方案 A，我实测 A 在我的场景慢 x%，贴数据后他认可了方案 B——分歧用实验闭环，不用立场闭环。
+328:> 答：BENCHMARKS 表，因为它同时约束了其他三部分：WHY 段的优化空间推导要与它量级一致；diff 应该恰好服务于表中的 Δ%；TEST PLAN 保证表中的性能不是用精度换的。如果只能说一句话，就是"TPOT p99 从 X±σ 到 Y±σ，显著性 p<0.01，prefill 场景无感（符合机制预期）"——这句里有效应量、误差、显著性、边界，是完整故事。
+346:1. 你的 diff 是 1500 行：700 行 kernel 语义改动 + 500 行纯重构 helper 提取 + 300 行测试。给出拆分方案、每个 PR 的验证手段和依赖标注方式。
+348:3. maintainer 说："你这个 -18% 是不是就在挑对你有利的场景？"——写出你的完整回复（结构 + 内容要点）。
+355:1. 三个 PR 序列：PR#1 refactor（500 行，位级等价，验证 = 回归测试 + 固定 seed 零 diff，可快速合入）→ PR#2 perf（700 行，语义核心，验证 = Day 43 对比表 + Day 44 类别②对拍，描述注明 based on #PR#1）→ PR#3 test（300 行，边界矩阵，独立价值，即使 PR#2 搁置也不浪费）。按验证强度切，每环用最便宜的验证手段。
+356:2. 无机制、无量化、无场景。改写：`perf(xxx): eliminate tail-block redundant copy in decode kernel (-18% TPOT p99 on sonnet-4k)`——类型 + 机制短语 + 量化结果 + 场景。
+---
+1:# Day 45：优化迭代与验证（三）——整理为 PR 提交
+11:## 一、今日学习目标
+22:## 二、核心概念
+79:## 三、原理深入讲解
+128:## 四、关键操作：从本地分支到 PR 页面
+137:## WHY（瓶颈与上限）
+143:## WHAT（改动机制）
+149:## BENCHMARKS（前后对比）
+162:## TEST PLAN（正确性）
+176:# 0. 同步上游（永远从最新 main 切分支，减少后面 rebase 冲突）
+180:# ...开发与提交（Day 41-42 已完成）...
+182:# 1. 私有分支整理历史（只对未 push 的 commit 做）
+186:# 2. 本地过 pre-commit（CI lint 的镜像，本地不过别 push）
+188:# 常见钩子：ruff / black / isort / clang-format / trailing-whitespace / check-yaml
+190:# 3. 本地跑相关单测（别等 CI 才发现）
+193:# 4. DCO sign-off（vllm-project 系仓库要求每个 commit 带 Signed-off-by）
+196:# 5. push 到你的 fork，创建 PR
+233:## 五、动手实验步骤
+296:## 六、面试高频问题
+332:## 七、今日总结
+---
+15:3. **掌握统计口径**：均值 ± σ、p50/p99、Welch t 检验与配对设计，能当场手算"这个提升是否显著"
+53:| p50 / p99 分位数 | TPOT、TTFT 的**主口径** | 回顾 Day 5：尾延迟才是用户感知；chunked prefill 的收益主要在 p99 |
+54:| goodput（SLO 达标吞吐） | 混合场景的终极指标 | 回顾 Day 5：如 TPOT p99 < 200 ms 约束下的有效吞吐 |
+65:| decode 密集 | 短 prompt（128-512）+ 长输出（≥1024） | **TPOT p99** | decode 访存 bound → 优化 kernel 访存效率直接体现在 TPOT |
+66:| prefill 密集 | 长 prompt（8k-16k）+ 短输出（32-64） | **TTFT p99** | prefill 计算 bound → 访存类优化对 TTFT 通常无感甚至劣化 |
+155:- 例：TPOT p99 从 23.4 ± 0.8 ms 降到 19.1 ± 0.5 ms（n=5）→ Δ = 4.3，σ ≈ 0.8，Δ/σ ≈ 5.4 → 显著
+156:- 反例：TTFT p99 从 812 ± 31 ms 到 798 ± 28 ms → Δ = 14，σ ≈ 31 → **σ > Δ/3，不显著**，只能写"无可测量的变化"
+164:设某场景跑了 $n$ 轮（= $n$ 个 seed），每轮得到该轮 1000 个请求聚合出的一个指标值（如 TPOT p99）。记：
+170:注意区分两个"方差"：**轮间方差 s²**（我们报的 σ）与单轮内请求间方差（不直接进对比表，但决定 p99 的估计质量，见 4.3）。
+182:- TPOT p99：$\Delta = 19.1 - 23.4 = -4.3$；$\sqrt{0.5^2/5 + 0.8^2/5} = \sqrt{0.178} \approx 0.42$；$t \approx -4.3/0.42 \approx \mathbf{-10.2}$ → **显著**
+183:- TTFT p99：$\Delta = 798 - 812 = -14$；$\sqrt{31^2/5 + 28^2/5} \approx \sqrt{349} \approx 18.7$；$t \approx -14/18.7 \approx \mathbf{-0.75}$ → **不显著**
+202:**p99 的另一个样本量问题**：分位数本身也是估计量。$n$ 个请求的 p99 只由最慢的 $n(1-p)$ 个次序统计量支撑——1000 个请求的 p99 由最慢 ~10 个请求决定（够用但粗糙）；**100 个请求的 p99 = 最慢 1 个请求，基本是纯噪声**。所以每轮 `--num-prompts` 至少 1000，这是 p99 可信的下限。
+264:# 每场景的正式采集请求量（p99 至少由 ~10 个最慢请求支撑 → ≥1000；
+338:    "decode_dense":  "p99_tpot_ms",     # 越小越好
+339:    "prefill_dense": "p99_ttft_ms",     # 越小越好
+[0m
+[0m$ [0mgrep -n "决策表\|决策\|收益\|最优\|结论" week7/day48_analysis_and_report.md | head -30
+7:实验报告最常见的失败模式，是把结果表原样粘进 Markdown：28 行配置 × 6 列指标排开，结尾一句"chunked prefill 提升了系统性能"。这不是报告，是**配置扫描的打印件**。读者面对一堆没有因果结构的数字，只会得出一个结论：跑是跑了，没看懂。本周 README"常见坑"第 3 条（"消融实验跑成配置扫描"）说的就是这个。
+9:一份合格的消融报告，每一节都在回答四个问题：**变了多少（图表）、为什么变（机制）、什么时候不变甚至变坏（边界）、那我该怎么配（建议）**。这四问恰好构成 README 为 Day 48 规定的四段式。数字自己不会说话——让数字说话的，是你围绕数字搭起的因果链；而因果链里"为什么"一段的素材，全部来自昨天抓的机制类异常现场（Day 47 §2.3 的"面 / 点 / 线"三层素材今天各就各位）。它和 Day 45 的 PR 描述也不同：PR 面向 reviewer，只需把**一个优化点**讲深；报告面向更广的读者，要把**四个机制的收益边界**讲全。
+18:2. **掌握聚合统计口径**：样本标准差与 SEM、配对 ratio 优先于独立传播、倍率指标用几何平均、p99 结论的保守性判据与补 seeds 的决策
+19:3. **掌握图表规范**：六要素清单、图型选择（折线 / 柱状 / 散点 + 理论线 / 并列双子图）、每图一句话结论
+21:5. **完成跨组综合**：负载-配置决策表、"只准开一个开关"的优先级推导、预测 vs 实际对照与反直觉反思
+22:6. **产出**：《vLLM 性能消融实验报告》初稿（摘要 / 实验设置 / 四组消融 / 决策表 / 局限 / 预测对照），并通过"数字-图-结论"三方对账
+32:| **面试官**（3 分钟） | 摘要 → 决策表 → 挑一张图看 | 3 分钟后能向别人复述你的核心结论和一个反直觉发现 |
+34:| **面试前夜的你** | 只扫图 + 每图一句话结论 | 不读正文也能把四组结论讲满 5 分钟 |
+43:| ② 作图 | `agg.csv` | `charts/*.png` | 图表六要素齐全（见 3.2）；每图一句话结论 |
+45:| ④ 建议 | 以上全部 | if-then 决策规则 + 跨组决策表 | 规则可被运维直接执行 |
+56:| p99 | per-seed p99 的 mean ± σ，**$n=3$ 时结论保守化**（见 3.1） | p99 是次序统计量，方差远大于均值类指标 |
+86:**读图**：左侧是昨天归档的三层素材（数字面 / 异常点 / 预测线）加环境指纹；中间是今天上午的四道工序——聚合、作图、解释、建议；右侧是报告的五段结构，注意**摘要最后写**（四组结论没落定之前，摘要只能靠猜）。底部横幅是全天的工程纪律：单一事实源 + 三方对账 + 数据今晚冻结。流程里唯一的"回环"是反直觉格子：✘ 越多，今天回源码深挖的价值越大——它们既是报告的记忆点，也是你机制理解的欠账清单。
+92:### 3.1 聚合阶段的三个统计决策
+94:**决策一：ratio 用配对还是独立。** 2.3 的公式已给出方向，这里说清配对的前提：Day 46 的设计里 seed 同时控制请求序列与采样，处理格与基线格用同一 seed 时，请求到达次序相同 → batch 组成的随机性相同 → 两臂强相关，配对有效。两种情况会破坏配对：① Day 47 的 rerun 若换了 seed；② 个别格子 seeds 本来就不齐。聚合脚本要显式检测配对完整度（`merge` 后行数不足 → 该格退回独立传播并在 `agg.csv` 里打 `paired=False` 标记），报告脚注披露——**口径的例外必须可见**。
+96:**决策二：倍率用几何平均。** 例：三个 seed 的加速比 1.30 / 1.42 / 0.92，算术平均 $= 1.213$，几何平均 $= (1.30 \times 1.42 \times 0.92)^{1/3} \approx 1.193$。差距看似不到 2%，但个别 seed 偏低时 AM 会被向上拉（离群值对 AM 的影响不对称）。报告纪律：**倍率类结论一律 GM + 区间 $[\min, \max]$，均值类结论 mean ± σ**。
+98:**决策三：p99 的保守性。** p99 是次序统计量：`num_prompts = 1000` 时它由最慢的 ~10 个请求决定，本身就高方差；再叠加 seeds 间波动，$n=3$ 的 $\sigma_{p99}$ 常达到均值的 10%~20%。判据：
+100:$$\Delta_{p99} < 2\times\mathrm{SEM}_{p99} \;\Rightarrow\; \text{结论降级为「方向性改善」，不报百分比}$$
+102:处于关键结论路径上的格子（如消融一主图的四个点），今天补 2 个 seeds（$n = 3 \to 5$，SEM 收缩 $\sqrt{3/5} \approx 22\%$）——**今天是最后窗口**：数据今晚 commit 冻结，之后只改文字、不改数字。
+110:**读图**：这是消融一的主图（示例数据）。左图 TPOT p99、右图 TTFT p50，共享 x 轴（budget）：budget 调小，左图曲线下降（尾延迟变好）、右图曲线上升（首字变慢）——两条曲线方向相反，这就是 chunked prefill 的核心权衡。并列双子图让读者**自己看出**"没有免费的旋钮，只有可调的权衡"，比任何文字都更有说服力。图中 ①~⑥ 标出合格图表的六个要素，最容易被忽略的是 **② 误差棒** 和 **⑥ 图下的一句话结论**——缺了这两样，图只是装饰。
+122:**为什么权衡不用双 y 轴**：双 y 轴把两个量纲的曲线塞进同一坐标系，读者会不自觉地对齐两条曲线的斜率，得出未经证实的相关结论。并列双子图各自量纲、共享 x 轴，是讲"此消彼长"的标准做法。
+146:3. **负载依赖**：短 prompt 负载下 ON/OFF 无显著差异——机制是"巨石"本身不存在（prompt < budget）。没有这一行，"chunked prefill 有收益"就是过度概括。
+165:2. **收益只进 TTFT、不进 TPOT**：decode 每 step 仍要读全部 KV → TPOT 三档无显著差异。这条**负结果**很有信息量——它把 prefix caching 从"万能加速"修正为"TTFT 优化器"。
+170:#### 消融三：投机解码接受率-收益曲线
+185:| 4 | 2.61 | 2.35±0.09 | 1.62 | 1.28±0.06 | **0.94±0.05（负收益）** |
+190:2. **对话负载的峰值左移**（理论 k\*≈3，实测 k\*≈2）：α 低时理论曲线本就平坦，叠加验证 batch 的非线性干扰后，最优 k 比理论预测更小。
+191:3. **负收益失效模式**（并发 64 × k=4）：验证 step 要处理 $(k+1)\times$ batch 个 token 的 attention / KV 读取——decode 本是访存 bound，低 α 下这部分读放大的**未接受部分全部浪费**；再叠加 draft 前向，总时间反超节省。**这是全报告最值钱的一个点：优化不是收益递减，是会转负。**
+223:1. **decode 访存 bound 的直接验证**：W8A8 的效率比（1.73）与 BF16（1.72）几乎相同——权重量化按预期等比例压缩访存，收益直接进 TPOT。这就是 Day 2"decode 时延下界 ≈ 每 step 读的字节 ÷ 带宽"的实验版。
+226:4. **FP8 KV 的收益在容量不在速度**：TPOT 仅改善 7%（KV 只占每步访存的一部分），但并发上限翻倍（189 → 379），随即被 `max_num_seqs` 封顶——Day 47 自测题第 3 问的手算在这里兑现成实验结论：**量化后瓶颈会搬家**。
+230:### 3.4 跨组综合：负载-配置决策表与单开关优先级
+232:![负载-配置决策表](assets/day48_decision_table.svg)
+[0m
+我已了解本周文件结构和既有数字口径。现在快速查看一个 SVG 的风格模板，保持视觉一致。
+[0m→ [0mRead week7/assets/day48_report_pipeline.svg[90m [limit=60][0m
+风格已明确。开始写 Day 49 正文前半部分。
+[0m
+[0m← [0mWrite week7/day49_resume_bullets_interview_scripts.md
+Wrote file successfully.
+[0m
+前半部分已写入。现在创建第一张 SVG：bullet 解剖图。
+[0m← [0mWrite week7/assets/day49_bullet_anatomy.svg
+Wrote file successfully.
+[0m
+第二张 SVG：讲稿三层结构图。
+[0m← [0mWrite week7/assets/day49_story_versions.svg
+Wrote file successfully.
+[0m
+SVG 前两张完成。现在追加正文中间部分（原理深入 + 模板脚本）。
+[0m← [0mEdit week7/day49_resume_bullets_interview_scripts.md
+Index: /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
++++ /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
+@@ -130,4 +130,194 @@
+ 第 3.4 节会给项目 A 的完整追问树。先记住构建原则：**每片叶子必须挂证据指针**（文件路径 / 行号 / 复现命令）。挂不上证据的叶子标记为 `TODO`——它就是你在 Day 53 打磨、Day 54-55 模拟面试前必须补的洞，而不是面试现场现编的素材。
+ 
+ > **钩子策略**：讲稿是你可以主动设计追问方向的唯一机会。在 3 分钟版里**故意**留下 2~3 个术语钩子（"配对统计""尾块冗余拷贝""n.s."），它们是钓鱼的浮标——面试官咬哪个，你就沿哪条准备好的分支往下讲。**面试的主动权不在于你说得多，而在于你决定他被什么吸引。**
+ 
++---
++
++## 三、原理深入讲解
++
++### 3.1 从工程产出到表达素材：一条压缩流水线
++
++三个项目的原始素材规模大致是：项目 A 的 PR 描述 + 对比表 ≈ 800 词；项目 B 的 README + 代码 ≈ 更大；项目 C 的报告 ≈ 5000 词。而它们最终要被压缩到的尺度：
++
++| 尺度 | 字数 / 时长 | 压缩比（对项目 A 素材） | 保真的对象 |
++|---|---|---|---|
++| 电梯版 | ~60 字 / 30 秒 | ≈ 1 : 30 | 一句话定位 + 最强数字 |
++| 标准讲稿 | ~450 字 / 3 分钟 | ≈ 1 : 4 | 因果链骨架（背景→动作→结果） |
++| 简历 bullet | 25~40 字 | ≈ 1 : 60 | 问题规模 + 方法名 + 数字 + 边界 |
++| 追问层 | 不限 | 展开方向 | 细节随时可现场重建 |
++
++压缩必然丢信息，**丢什么**是关键决策。规则只有一条：**丢过程细节，保四要素——问题规模（多大/多难）、方法名（技术路径）、结果数字（A/B 级）、边界（什么时候无效）**。这与 Day 48 §2.1"为 3 分钟读者组织结构，为 30 分钟读者提供证据"完全同构——报告的分层结构本身就是讲稿的提词器：摘要句抄进电梯版，决策表抄进 bullet，机制解释段是追问层的标准答案，附录索引就是证据指针。
++
++> **一个便宜的检验法**：把 Day 48 报告的"每图一句话结论"列出来，它们几乎可以直接拼成项目 C 的 3 分钟讲稿中段。报告写得好，今天的工作量就小——这就是复盘日产出的复利。
++
++### 3.2 三个项目的 bullet 库：主打 + 支撑
++
++每个项目写**一条主打 bullet**（简历上真正占位置的那条）加两条支撑 bullet（应对不同 JD 的变体与追问铺垫），每条数字挂 claim 标注（`[[A-01]]` 形式，供第 4 节的对账脚本消费）。
++
++**项目 A（vllm-ascend / vLLM V1 kernel 优化）**
++
++> **主打**：优化 vLLM V1 decode 路径热点 kernel 的访存模式（tiling 重排 + 尾块冗余拷贝消除），decode 密集负载 TPOT p99 -17.8%（21.3±0.4 → 17.5±0.5 ms，n=5，p<0.01）[[A-01]]，混合负载 goodput +15.8% [[A-02]]，prefill 场景无回归（符合 decode 访存 bound 的机制预期）
++>
++> **支撑 1**：构建可复现 benchmark 流水线（warmup / 交替轮次 / 环境指纹 / Welch 显著性口径，n=5），支撑三轮优化迭代的量化决策；输出对拍验证精度无损（top-1 一致率 99.8%，KL 0.0.11，N=12k tokens）[[A-03]]
++>
++> **支撑 2**：以 refactor → perf → test 三 PR 序列（1500 行按验证强度拆分）提交 upstream，完成 review 讨论与数据答辩 [[A-04]]
++
++英文版主打（投外企 / 海外团队时数字结构不变，只换语言层）：
++
++```
++Optimized the memory access pattern of a hot decode-path kernel in vLLM V1
++(vllm-ascend) via tiling re-layout and tail-block copy elimination, reducing
++TPOT p99 by 17.8% (21.3±0.4 → 17.5±0.5 ms, n=5, p<0.01) on decode-intensive
++workloads and improving goodput by 15.8% under mixed traffic, with no prefill
++regression.
++```
++
++**项目 B（mini 推理引擎）**
++
++> **主打**：从零实现教学级 mini 推理引擎——分页 KV 池 + block table + 引用计数/COW + continuous batching + chunked prefill + preemption + token budget 调度，复现 vLLM V1 核心机制；在 <N> 并发长输出负载下较 static batching 吞吐提升 <X>×、TPOT p99 下降 <Y>% [[B-01]]
++>
++> **支撑 1**：实现 prefix caching 的 block hash 与 COW 分裂语义，单测覆盖跨请求共享、抢占重算、非法 slot 等边界场景 [[B-02]]
++>
++> **支撑 2**：benchmark 脚本对比 static / continuous batching 的吞吐-时延曲线，验证并发收益来自逐 iteration 调度而非批大小差异 [[B-03]]
++
++> **注意**：`<X>/<Y>` 必须替换为你 Day 27 实测的数字——**示例数字没有写进 evidence.md 的资格**。项目 B 的数字通常是三个项目里最"朴素"的（毕竟模型小、负载合成），没关系：它的价值在机制完整性，主打 bullet 里机制名词的密度就是它的战斗力。
++
++**项目 C（vLLM 性能消融实验）**
++
++> **主打**：设计并执行 vLLM V1 四组性能消融（chunked prefill / prefix caching / 投机解码 / 量化；28 配置 × 3 seeds ≈ 84 runs），产出负载-配置决策表与机制解释报告（每格 mean±σ、配对 ratio、显著性口径）[[C-00]]
++>
++> **支撑 1**：定位投机解码的负收益失效模式——开放对话负载 k=4 时加速比 0.94±0.05 [[C-01]]，机制归因于低接受率下验证 batch 的 KV 读放大；实测最优 k（≈2）低于理论值（≈3）
++>
++> **支撑 2**：量化 FP8 KV cache 的收益结构：TPOT 仅 -7% 但并发上限翻倍（189→379，后被 `max_num_seqs` 封顶）[[C-02]]，提出"量化后瓶颈搬家"的容量规划结论
++
++读一遍三个主打 bullet，检查 2.1 节的定位是否成立：A 讲深度（kernel + 测量 + 上游协作），B 讲系统理解（机制名词密铺），C 讲判断力（负结果 + 收益结构 + 决策表）——**没有一条在重复另一条的工作**。
++
++### 3.3 项目 A 的 3 分钟讲稿全文（带秒表标注）
++
++这是今天的核心示例。约 470 字，语速 ≈ 160 字/分钟，四段结构与 2.3 的时间预算严格对应。**加粗处为故意埋设的追问钩子**。
++
++> **【背景 30s】** 我在 vllm-ascend 上做 vLLM V1 的 decode 性能优化。入手先跑 profiler，发现 decode step 约有 **35% 时间集中在一个 kernel**；按 decode 访存 bound 的第一性原理分析它的访存模式，发现**尾块存在冗余拷贝**，理论上限分析给出约 25% 的优化空间，而上游当时没有覆盖这个点。
++>
++> **【动作 90s】** 优化分三轮：第一轮 tiling 重排，把分散的访存请求合并成大块传输；第二轮消除尾块冗余拷贝；第三轮把改动与 CUDA Graph capture 的尺寸 bucket 对齐，避免 capture 失效。过程中我给自己立了两条纪律：**每次改动都用固定的 benchmark 协议验证**——warmup、baseline 与优化版交替跑、n=5、记录环境指纹，用**配对统计**判断显著性；**精度红线**——每轮做输出对拍，top-1 一致率 99.8%、KL 0.011。最后把 1500 行拆成 refactor、perf、test 三个 PR 的序列提交 upstream。
++>
++> **【结果 45s】** 最终 decode 密集负载 TPOT p99 从 21.3±0.4 降到 17.5±0.5 毫秒，**降幅 17.8%，p<0.01**；混合负载 goodput 提升 15.8%。prefill 场景无显著变化——这符合预期，因为改动只作用于 decode 的访存路径。
++>
++> **【反思 15s】** 回看过程，动第一轮之前我试过一个方案，实测无效，回溯 profiler 才发现是瓶颈定位错了——这件事让我把"先建模、后动手"从口号变成了习惯。
++
++30 秒电梯版（嵌套结构的顶层，供开场与被打断时使用）：
++
++> 「我在 vllm-ascend 上优化了 vLLM V1 decode 路径的一个热点 kernel——通过 tiling 重排和尾块冗余拷贝消除，TPOT p99 降了 18%、goodput 升 16%，并验证了精度无损。这是我六周推理系统工作里挖得最深的一个项目。」
++
++对照 2.6 的钩子清单：加粗的 "35% 时间""尾块冗余拷贝""配对统计""p<0.01" 就是四根浮标——分别钓向追问树的"为什么/怎么测"分支。**这不是巧合，是设计**。
++
++### 3.4 追问树：项目 A 完整示例
++
++![追问树](assets/day49_followup_tree.svg)
++
++讲稿的每个钩子都必须有一条准备好的追问分支。项目 A 的完整追问树（缩进即层级，叶子带证据指针）：
++
++```text
++根：TPOT p99 -17.8%（怎么来的？站得住吗？）
++├── 为什么（机制）
++│   ├── 为什么 tiling 重排有效？ ………… 证据：Day 38-39 瓶颈分析报告（访存模式图 + 带宽利用率推导）
++│   ├── 尾块冗余拷贝是怎么产生的？ …… 证据：kernel 源码 diff + 数据流图
++│   └── 为什么上游之前没做？ …………… 证据：Day 36 选题备忘录（issues/roadmap 调研）
++├── 怎么测（方法）
++│   ├── -18% 的测量协议？ ……………… 证据：run_suite.sh + Day 43 对比表（交替轮次 / n=5 / 环境指纹）
++│   ├── 会不会是噪声？ ………………… Δ=3.8 ms，σ≈0.4，t≈10 → 显著性可手算（[[A-01]]）
++│   └── 为什么报 p99 不报均值？ ……… 回顾 Day 5：尾延迟才是用户感知；Day 43：chunk 类收益只在 p99 可见
++├── 边界（失效）
++│   ├── 什么场景不管用？ ……………… 证据：prefill 密集 n.s.（[[A-01]]）+ Day 44 边界矩阵（shape/batch 扫描）
++│   ├── 精度代价？ ……………………… 证据：对拍记录 top-1 99.8% / KL 0.011（[[A-03]]）
++│   └── 长上下文 / GQA 变体？ ………… 证据：Day 44 类别②对拍 + TODO（若未覆盖，如实说明）
++├── 对比（方案选择）
++│   ├── 为什么不用现成方案 X？ ……… 证据：候选对比实验 / PR review 讨论（Day 45）
++│   └── 为什么拆成 3 个 PR？ ………… 证据：Day 45 自测第 1 问（按验证强度切分）
++└── 重做（反思）
++    ├── 第一轮为什么失败？ …………… 证据：失败迭代记录（讲稿反思段的原型）
++    └── 和你昇腾算子经验的关系？ …… 方法论迁移主线（Day 53 展开，今天先备好两个对照实例）
++```
++
++构建方法：把讲稿里每个**名词和数字**都过一遍"如果面试官就这个词问我最怕什么"，怕的地方就是缺口。三类处置：① 有证据 → 挂指针；② 有记忆无证据 → 补文件；③ 既无证据也无把握 → 写进 `TODO` 并在讲稿里**删掉这个钩子**——没有准备好就不要邀请追问。以项目 A 为例，若长上下文边界没有数据，讲稿中就不主动提"任意上下文长度通用"。
++
++### 3.5 诚实性纪律：夸大的代价模型
++
++夸大不是道德问题，是**期望管理问题**。设讲稿陈述的夸大度为 $k$（陈述强度 ÷ 事实强度），追问每深一层的"穿帮概率"随 $k$ 上升。$k \le 1$（如实或保守）时，追问只会让你显得更深；$k > 1$ 时，每一层追问都在消耗一个你没做过的细节。面试官的平均钻探深度是 2~3 层，资深面试官 4 层以上——**夸大的期望收益是负的**。具体到措辞：
++
++| ✗ 不能写 / 不能说 | ✓ 应该写 / 应该说 | 机制 |
++|---|---|---|
++| "优化了 vLLM 的调度器" | "给 vLLM 提交了一个 decode kernel 优化 PR（review 中）" | 范围夸大：调度器是另一个模块，一句追问即穿帮 |
++| "合入 vLLM 主干"（若实际未合） | "以 3-PR 序列提交 upstream，refactor PR 已合入" | 合入状态可在 30 秒内核实，造假是致命伤 |
++| "自研推理引擎" | "教学级复现 vLLM V1 核心机制的 mini 引擎" | 定位夸大反而降低预期收益；"复现 + 实验平台"的定位经得起任何追问 |
++| "性能提升 18%"（若 p=0.3） | "方向性改善，p99 从 X 到 Y，不显著" | Day 43 纪律：n.s. 不是可四舍五入成"提升"的数字 |
++| "深入理解 PagedAttention" | "实现过 block table + 引用计数 + COW，测过 prefix caching 命中率梯度" | 用做过的事替代形容词——前者是声明，后者是证据 |
++
++最后一条是今天最重要的元规则：**简历和讲稿里删掉所有"熟悉 / 深入理解 / 精通"类形容词，用"实现过 X、测过 Y、定位过 Z"替换**。形容词不可验证，动词 + 名词 + 数字可验证——而可验证性正是你与"背过八股的候选人"的护城河。
++
++---
++
++## 四、关键模板：`resume/` 目录与对账脚本
++
++今天不写引擎代码，产出是四个模板文件加一个对账脚本。目录结构：
++
++```text
++resume/
++├── bullets.md          # 简历 bullet 库（中/英 · 主打+支撑 · 带 [[claim]] 标注）
++├── evidence.md         # 证据链登记表（数字唯一来源，见 2.5 示例）
++├── followup_tree.md    # 三个项目 × 五分支的追问树 + TODO 清单
++├── scripts/
++│   ├── project_a.md    # 30s / 3min / 10min 三层（B/C 同构）
++│   ├── project_b.md
++│   └── project_c.md
++└── audit_claims.py     # 文-证对账脚本
++```
++
++**`bullets.md` 的组织**：按项目分三节，每节"主打 → 支撑 → 变体"。变体指针对不同 JD 的重排——kernel 岗把主打放在最前并保留全部技术细节；平台岗把 benchmark 流水线支撑条上移。**同一 claim 在所有变体里的数字逐位一致**，这是对账脚本的检查目标。
++
++**`scripts/project_a.md` 的组织**：三个小节（`## 30s` / `## 3min` / `## 10min`），3 分钟版即 3.3 的全文；10 分钟版不写成连续文稿，而是"3 分钟版 + 每段的展开要点 + 展开要点挂的追问树分支"——10 分钟是互动态，背全文反而僵化。
++
++**对账脚本** `audit_claims.py`：检查 bullets 与 scripts 里所有 `[[X-dd]]` 标注的数字与 `evidence.md` 逐位一致（Day 48 "三方对账"的自动化版）：
++
++```python
++#!/usr/bin/env python3
++# audit_claims.py —— 简历/讲稿数字 ↔ 证据登记表 对账（单一事实源的最后防线）
++import re, sys
++from pathlib import Path
++
++EVIDENCE = Path("resume/evidence.md").read_text(encoding="utf-8")
++# 登记行形如：| A-01 | 陈述 | -17.8%（21.3±0.4→17.5±0.5，n=5） | 来源 | 复现 |
++rows = dict(re.findall(
++    r"^\|\s*([ABC]-\d+)\s*\|[^|]+\|[^|]*?(-?\d+(?:\.\d+)?%)[^|]*\|",
++    EVIDENCE, re.M))
++
++TARGETS = ["resume/bullets.md", "resume/scripts/project_a.md",
++           "resume/scripts/project_b.md", "resume/scripts/project_c.md"]
++
++errors = 0
++for t in TARGETS:
++    p = Path(t)
++    if not p.exists():
++        continue
++    for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
++        for cid in re.findall(r"\[\[([ABC]-\d+)\]\]", line):
++            if cid not in rows:
++                print(f"[MISS] {t}:{i} 引用了未登记的 claim {cid}")
++                errors += 1
++            elif rows[cid] not in line:
++                print(f"[DIFF] {t}:{i} 的数字与 evidence 中 {cid}（{rows[cid]}）不一致")
++                errors += 1
++
++print("PASS: 文-证一致" if not errors else f"FAIL: {errors} 处不一致")
++sys.exit(1 if errors else 0)
++```
++
++集成进 `Makefile`（与 Day 43 的 harness、Day 48 的 `make_report.py` 同级维护）：
++
++```makefile
++audit:
++	python3 resume/audit_claims.py
++```
++
++> **纪律含义**：从此简历改数字只有一条合法路径——先改 `evidence.md`（其本身必须溯源到 `agg.csv` / PR / 日志），再改 bullets / scripts，然后 `make audit`。任何跳过登记的"顺手改数字"都会在对账时暴露。这条链路 = Day 43 环境指纹 → Day 48 单一事实源 → 今日简历层的同一哲学：**可信度是流水线保证的，不是记性保证的**。
++
++
+
+[0m
+修复一处笔误（KL 0.0.11 → 0.011）：
+[0m← [0mEdit week7/day49_resume_bullets_interview_scripts.md
+Index: /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
++++ /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
+@@ -157,9 +157,9 @@
+ **项目 A（vllm-ascend / vLLM V1 kernel 优化）**
+ 
+ > **主打**：优化 vLLM V1 decode 路径热点 kernel 的访存模式（tiling 重排 + 尾块冗余拷贝消除），decode 密集负载 TPOT p99 -17.8%（21.3±0.4 → 17.5±0.5 ms，n=5，p<0.01）[[A-01]]，混合负载 goodput +15.8% [[A-02]]，prefill 场景无回归（符合 decode 访存 bound 的机制预期）
+ >
+-> **支撑 1**：构建可复现 benchmark 流水线（warmup / 交替轮次 / 环境指纹 / Welch 显著性口径，n=5），支撑三轮优化迭代的量化决策；输出对拍验证精度无损（top-1 一致率 99.8%，KL 0.0.11，N=12k tokens）[[A-03]]
++> **支撑 1**：构建可复现 benchmark 流水线（warmup / 交替轮次 / 环境指纹 / Welch 显著性口径，n=5），支撑三轮优化迭代的量化决策；输出对拍验证精度无损（top-1 一致率 99.8%，KL 0.011，N=12k tokens）[[A-03]]
+ >
+ > **支撑 2**：以 refactor → perf → test 三 PR 序列（1500 行按验证强度拆分）提交 upstream，完成 review 讨论与数据答辩 [[A-04]]
+ 
+ 英文版主打（投外企 / 海外团队时数字结构不变，只换语言层）：
+
+[0m
+创建第三张 SVG：追问树。
+[0m← [0mWrite week7/assets/day49_followup_tree.svg
+Wrote file successfully.
+[0m
+最后追加正文后半部分（V1 联系、实验步骤、面试问题、总结、自测、产出物）：
+[0m← [0mEdit week7/day49_resume_bullets_interview_scripts.md
+Index: /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
++++ /mnt/workspace/aiinfra/vllm/week7/day49_resume_bullets_interview_scripts.md
+@@ -319,5 +319,129 @@
+ ```
+ 
+ > **纪律含义**：从此简历改数字只有一条合法路径——先改 `evidence.md`（其本身必须溯源到 `agg.csv` / PR / 日志），再改 bullets / scripts，然后 `make audit`。任何跳过登记的"顺手改数字"都会在对账时暴露。这条链路 = Day 43 环境指纹 → Day 48 单一事实源 → 今日简历层的同一哲学：**可信度是流水线保证的，不是记性保证的**。
+ 
++---
+ 
++## 五、与 vLLM V1 的实际联系
++
++### 5.1 术语正确性：源码阅读经历的"免费证明"
++
++讲稿与追问里的 V1 术语是面试官**零成本采样的指纹**。术语说错比答不出更糟——答不出只是"没学到"，说错 V0 残留术语则直接暴露"没读过源码、看的是旧博客"。对照表（左列是高频翻车点，右列是 V1 正确口径，均已在前几周源码走读中确认）：
++
++| ✗ V0 残留 / 错误说法 | ✓ V1 正确口径 | 出处 |
++|---|---|---|
++| "preemption 时 KV 被 swap 到 CPU" | V1 抢占默认 **recompute** 模式：请求回 waiting 队列、`num_computed_tokens` 清零、重算 | Day 12 |
++| "vLLM 是一个进程里的引擎" | V1 把 **EngineCore 拆成独立进程**，AsyncLLM（前端）经消息队列提交 / 取回 | Day 8-9 |
++| "decode 和 prefill 在两个队列轮流跑" | V1 默认 **chunked prefill 与 decode 混排**在同一 step，受 token budget 约束 | Day 10-11 |
++| "attention 只有 FlashAttention 一种" | V1 的 attention **backend 抽象**可插拔（FlashAttention / FlashInfer / Triton…），新硬件实现统一接口 | Day 17 |
++| "prefix caching 命中就全跳过" | 命中按 **block 粒度**（hash = 父前缀 + token ids），未命中尾部仍需 prefill；收益主要进 TTFT | Day 16、Day 48 消融二 |
++
++**操作建议**：把追问树的每片"为什么"叶子都口头过一遍"我能不能给出模块 / 函数级锚点"（如 `vllm/v1/core/scheduler.py` 的 `schedule()` 里 budget 的扣减逻辑）。锚点不必背行号，但**目录 + 类 + 函数名**要能脱口而出——这是六周源码走读在面试里的直接变现。
++
++### 5.2 三个项目对 V1 知识面的覆盖映射
++
++三个项目合起来恰好铺满 V1 的主干链路，这正是它们作为作品集的价值结构（也是回答"为什么是这三个项目"的底气）：
++
++| 项目 | 覆盖的 V1 层 | 源码锚点 | 对应白板件（Day 50-51） |
++|---|---|---|---|
++| A：kernel 优化 | 执行层：attention backend、CUDA Graph、NPU/GPU kernel | `vllm/v1/worker/`（model runner / attention 后端） | CUDA Graph 与 decode（为什么 decode 必须 CG） |
++| B：mini 引擎 | 调度与 KV：scheduler、kv_cache_manager、block pool | `vllm/v1/core/scheduler.py`、`kv_cache_manager.py` | block table 手绘（含 COW 分裂）、调度推演 |
++| C：消融报告 | 全链路指标与机制权衡 | `/metrics` 指标、benchmark 策略 | 性能诊断树（TTFT↑/ITL↑/preemption 的分诊） |
++
++> **钩子与源码的对应自查**：讲稿里每个机制主张（"decode 访存 bound""命中按 block 粒度""budget 混排"）都必须能落进这张表的某一格。落不进去的主张，要么补证据，要么删掉——**讲稿不允许出现没有源码锚点的机制断言**，那是八股与实战的分界线。
++
++---
++
++## 六、动手实验步骤（约 2.5 小时）
++
++**Step 1（30 min）：建证据登记表。** 打开本周所有产物，提取 10~12 个数字进 `resume/evidence.md`：
++
++```bash
++mkdir -p resume/scripts
++# 数字来源清单（逐个核对，不凭记忆抄）：
++#   项目 A：bench/agg.csv（Day 43）、对拍记录（Day 44）、PR 描述 BENCHMARKS 表（Day 45）
++#   项目 B：mini 引擎 README 的对比表（Day 27）
++#   项目 C：results/ 与报告 agg.csv（Day 47-48）
++```
++
++验收：每行 claim 都有"来源 + 复现命令"两列非空；`<X>` 类占位符清零（项目 B 的示例数字必须换成实测）。
++
++**Step 2（45 min）：写 bullet 库。** 按 3.2 的结构写三项目 ×（主打 + 支撑），主打各配英文版。每条过六秒测试——隔 10 分钟后自测三问（做了什么 / 在哪做的 / 效果如何），或直接找人测。
++
++验收：`make audit` 输出 `PASS: 文-证一致`。
++
++**Step 3（60 min）：写讲稿 + 录音。** 项目 A 写足三层（30s / 3min / 10min 展开要点）；B / C 写 3 分钟版骨架（中段"动作"要点各 3 条）。然后录音：
++
++```bash
++# 录项目 A 的 3 分钟版，只许看 bullets.md 不许看讲稿全文——模拟真实面试的提词条件
++# 回听三查：① 总时长 180s±15s ② 钩子是否都留下了 ③ 有没有超纲断言（无证据的机制主张）
++```
++
++**Step 4（30 min）：追问树 + TODO。** 按 3.4 完成 `followup_tree.md`：A 完整五分支，B/C 至少每类一条。TODO 单独成节，并排进 Day 53 之前的日程（明天 Day 50 起进入白板周，补洞只能见缝插针）。
++
++**Step 5（15 min）：收尾。** `git add resume/ && git commit`——表达资产从此进版本控制，每次改动可追溯。
++
++**总验收（一条命令心态）**：`make audit` 通过 + 录音三查通过 + TODO 清单非空（空 TODO 清单几乎必然意味着追问树没认真构建）。
++
++---
++
++## 七、面试高频问题
++
++**Q1：「用三分钟介绍你最有挑战的项目。」**
++> 考点即结构本身。按 3.3 的四段时间预算讲项目 A：结论先行（第一句给定位与最强数字），动作 90 秒占主体，结果带误差与显著性，反思 15 秒收尾。**大忌**：背景铺垫超过 1 分钟、讲成技术名词串烧、没有数字结尾。
++
++**Q2：「这个 -18% 怎么测的？怎么排除噪声？」**
++> Day 43 协议完整复述：每场景 n=5 轮、warmup 后 baseline 与优化版**交替**跑（消灭时间漂移偏差）、记录环境指纹（commit/锁频/启动命令）、报 mean±σ 与 Welch 显著性；然后当场手算——Δ=3.8 ms、σ≈0.4、SEM≈0.25、t≈15，远超 3。**追问预期**：为什么交替跑？（防冷热机偏差——Day 43 §2.1 的偏差/噪声二分）
++
++**Q3：「你的 mini 引擎和 vLLM 比差在哪？」**
++> 诚实 + 有深度地列差距：单进程无 EngineCore 分离、无 async scheduling、无 CUDA Graph、attention 是朴素实现而非分页 gather kernel、调度策略只有 FCFS+budget。然后给出对等部分：block table / 引用计数 / COW / chunked prefill / preemption 的**语义**与 V1 一致（Day 21、Day 27 的实现与测试）。最后一句升华：**复现的目的是把"读源码"变成"能重写"**——这句话同时回答了"为什么要造轮子"。
++
++**Q4：「三个项目里你最喜欢哪个？为什么？」**
++> 考察判断力，没有标准答案，但答案必须体现价值排序。示例：最喜欢项目 C——因为它是唯一让我看到"优化会转负"的地方（投机解码 k=4 时 0.94±0.05，[[C-01]]）；这个负结果比任何正提升都更深地塑造了我对系统的理解：收益函数不是单调的，边界比峰值更值得测量。
++
++**Q5：「如果 PR 最终没被合入，这个项目的价值怎么体现？」**
++> 三个层次：① 过程资产——瓶颈分析方法（profile → 理论上限 → 优化空间）可迁移到任何 kernel；② 工具资产——benchmark harness 与统计协议已在项目 C 复用；③ 认知资产——走完 upstream review 流程本身（拆 PR、数据答辩、DCO/CI 规范）是工程协作能力的证明。**合入是结果之一，不是价值的唯一载体**——但措辞上仍要如实说明当前状态（见 3.5）。
++
++**Q6：「如果重做项目 C，你会改进什么？」**
++> 给三个真实的：① 关键格子 seeds 不齐（Day 47 rerun 换过 seed 的格子退化为独立传播）——重做会在设计期就锁定配对完整性；② 只做了单开关消融，没有覆盖开关**交互项**（如 prefix caching × chunked prefill 的组合）——四开关全交互是 2⁴=16 格，可挑 4 个最有物理意义的组合；③ 负载用合成到达率，没有回放真实 trace——这是结论外推到生产时的最大限制。**这个问题答得好 = 你知道自己实验的边界在哪**。
++
++---
++
++## 八、今日总结
++
++1. **表达是独立技能**：工程产出只有被表达才存在价值；三个项目在简历筛选（6 秒）、项目讲述（3 分钟）、追问（40 分钟）三个时刻扮演不同角色，互不重复。
++2. **bullet 四成分公式**：强动词 + 对象/技术栈 + 机制动作 + 量化结果（+ 边界）；六秒测试三问是验收标准；百分比与绝对值成对出现。
++3. **讲稿三层嵌套**：30s / 3min / 10min 不是删减关系；3 分钟版的时间预算 30/90/45/15，动作是主体，背景只负责让"难"成立。
++4. **数字分级**：只允许 A/B 级进表达层；n.s. 写成"无回归"而不是提升；模糊词全面禁用，用"实现过/测过/定位过"替换"熟悉/精通"。
++5. **证据链登记表**：Day 48 单一事实源的简历层延伸；`make audit` 用脚本保证文-证一致——可信度是流水线保证的，不是记性保证的。
++6. **追问树五分支**：为什么 / 怎么测 / 边界 / 对比 / 重做；每片叶子挂证据指针，挂不上的标 TODO 并从讲稿删钩子。
++7. **钩子策略**：讲稿故意留 2~3 个术语浮标，主动设计追问方向；术语必须是 V1 口径——术语错误是"没读过源码"的无声自白。
++8. **诚实性是期望管理**：夸大度 k>1 时期望收益为负；PR 未合入如实写、mini 引擎定位为"复现 + 实验平台"，可信本身就是差异化优势。
++
++---
++
++## 九、今日自测题
++
++1. 默写 bullet 四成分公式，并指出「负责 vLLM 推理引擎性能优化，参与 kernel 开发与测试，显著提升推理速度」缺失了哪些成分、各对应什么修复动作。
++2. 3 分钟讲稿的时间预算是什么比例？为什么"动作 : 背景 ≈ 3 : 1"？
++3. 不看任何文件，说出你 `evidence.md` 里 A-01 的三个核心数字（百分比、前后绝对值、显著性），并说出它的复现命令。
++4. 追问树的五类分支是什么？你项目 A 的追问树里哪片叶子标了 TODO？为什么选择从讲稿里删掉对应钩子而不是硬讲？
++5. p=0.3 的"提升 5%"在简历上应该怎么写？这种写法为什么反而更有信息量？
++
++---
++
++## 十、今日产出物
++
++| 产出物 | 验收标准 |
++|---|---|
++| `resume/evidence.md` | ≥10 条 claim，来源与复现命令两列非空，无占位符 |
++| `resume/bullets.md` | 三项目 ×（主打 + 支撑），主打含英文版；六秒测试三问全中 |
++| `resume/scripts/project_{a,b,c}.md` | A 为三层全文；B/C 为 3 分钟骨架（动作段 ≥3 个要点） |
++| `resume/followup_tree.md` | A 五分支完整、叶子挂证据指针；B/C 骨架；TODO 单列成节 |
++| `audit_claims.py` + `make audit` | 输出 `PASS: 文-证一致` |
++| 项目 A 三分钟版录音 | 时长 180s±15s；钩子完整；无超纲断言 |
++| 简历正文三段（可直接粘贴） | 数字与 bullets.md 逐位一致（同一流水线渲染或对账通过） |
++
++> **明日预告（Day 50）**：白板四件套第一件——3 分钟内手算任意模型/精度/上下文的 KV 显存与并发上限（Day 2 的公式将进入"默写 + 计时"模式），以及手绘 block table（含 prefix caching 命中与 COW 分裂）。今天 `evidence.md` 里登记的每一个数字，明天都会成为你手算结果的校对答案。
++
++
+
+[0m
+验证文件完整性与 SVG 有效性：
+[0m$ [0mwc -l week7/day49_resume_bullets_interview_scripts.md && grep -n "^## \|assets/day49" week7/day49_resume_bullets_interview_scripts.md && python3 -c "
+import xml.dom.minidom
+for f in ['day49_bullet_anatomy','day49_story_versions','day49_followup_tree']:
+    xml.dom.minidom.parse(f'week7/assets/{f}.svg')
+    print(f, 'SVG OK')
+"
+447 week7/day49_resume_bullets_interview_scripts.md
+18:## 一、今日学习目标
+29:## 二、核心概念
+53:![简历 bullet 解剖](assets/day49_bullet_anatomy.svg)
+75:![讲稿三层结构](assets/day49_story_versions.svg)
+136:## 三、原理深入讲解
+215:![追问树](assets/day49_followup_tree.svg)
+259:## 四、关键模板：`resume/` 目录与对账脚本
+325:## 五、与 vLLM V1 的实际联系
+355:## 六、动手实验步骤（约 2.5 小时）
+388:## 七、面试高频问题
+410:## 八、今日总结
+423:## 九、今日自测题
+433:## 十、今日产出物
+day49_bullet_anatomy SVG OK
+day49_story_versions SVG OK
+day49_followup_tree SVG OK
+[0m
+Day 49 教程已完成，文件与内容如下：
+
+**文件**：`week7/day49_resume_bullets_interview_scripts.md`（447 行）+ 3 张 SVG（`week7/assets/day49_bullet_anatomy.svg`、`day49_story_versions.svg`、`day49_followup_tree.svg`，均已通过 XML 校验并在正文引用）
+
+**内容**（严格对应 README Day 49「把项目 A/B/C 整理成简历 bullet 与面试讲稿」）：
+- **bullet 四成分公式**（强动词/对象/机制动作/量化结果+边界）与六秒测试验收标准
+- **讲稿三层嵌套结构**（30s/3min/10min）+ 3 分钟时间预算（背景 30s→动作 90s→结果 45s→反思 15s），附项目 A 讲稿全文示例
+- **证据链登记表**：延续 Day 48 单一事实源，每个数字可溯源；附 `audit_claims.py` 对账脚本与 `make audit` 集成
+- **追问树**：五类分支（为什么/怎么测/边界/对比/重做）× 证据指针 + TODO 处置规则
+- **诚实性纪律**：PR 未合入写法、n.s. 表述、夸大代价模型
+- 衔接本周：复用 Day 43 统计口径与数字（-17.8% 等）、Day 44 对拍、Day 45 PR 序列、Day 47-48 消融结论（投机解码负收益、FP8 KV 瓶颈搬家）；预告 Day 50 白板周与 Day 53 讲稿打磨

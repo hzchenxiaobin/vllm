@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 560" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d56e" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="980" height="560" fill="#fafbfc"/>
+  <text x="490" y="32" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">面试前 24 小时执行时间线（T-24h → 开考）</text>
+  <text x="490" y="56" text-anchor="middle" font-size="13" fill="#64748b">总原则：强度递减、只用自己的材料、睡眠是不可压缩项</text>
+
+  <!-- Timeline axis -->
+  <line x1="60" y1="120" x2="920" y2="120" stroke="#475569" stroke-width="3" marker-end="url(#d56e)"/>
+  <g font-size="12" fill="#0f172a" text-anchor="middle">
+    <circle cx="110" cy="120" r="9" fill="#db2777"/>
+    <text x="110" y="96" font-weight="700">T-24h</text>
+    <circle cx="330" cy="120" r="9" fill="#d97706"/>
+    <text x="330" y="96" font-weight="700">T-24h ~ T-12h</text>
+    <circle cx="560" cy="120" r="9" fill="#2563eb"/>
+    <text x="560" y="96" font-weight="700">T-12h ~ T-8h</text>
+    <circle cx="740" cy="120" r="9" fill="#7c3aed"/>
+    <text x="740" y="96" font-weight="700">T-8h（睡眠线）</text>
+    <circle cx="900" cy="120" r="9" fill="#16a34a"/>
+    <text x="900" y="96" font-weight="700">面试日晨</text>
+  </g>
+
+  <!-- Phase blocks -->
+  <g>
+    <rect x="62" y="150" width="180" height="150" rx="10" fill="#fdf2f8" stroke="#db2777" stroke-width="2"/>
+    <text x="152" y="176" text-anchor="middle" font-size="14" font-weight="700" fill="#831843">高强度：总装日白天</text>
+    <text x="78" y="204" font-size="12" fill="#334155">· 工具包 8 件归档 + 索引卡</text>
+    <text x="78" y="226" font-size="12" fill="#334155">· 60 分钟收官过堂（录音）</text>
+    <text x="78" y="248" font-size="12" fill="#334155">· 查漏补缺三车道收敛</text>
+    <text x="78" y="270" font-size="12" fill="#334155">· 20:00 补漏硬截止</text>
+  </g>
+
+  <g>
+    <rect x="262" y="150" width="180" height="150" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <text x="352" y="176" text-anchor="middle" font-size="14" font-weight="700" fill="#78350f">中强度：晚间确认</text>
+    <text x="278" y="204" font-size="12" fill="#334155">· 只读 INDEX.md + 索引卡</text>
+    <text x="278" y="226" font-size="12" fill="#334155">· 数字锚点表过一遍</text>
+    <text x="278" y="248" font-size="12" fill="#334155">· 90 秒自我介绍练 2 遍</text>
+    <text x="278" y="270" font-size="12" fill="#334155">· 22:30 前结束全部材料</text>
+  </g>
+
+  <g>
+    <rect x="462" y="150" width="180" height="150" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="552" y="176" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a">零强度：睡眠巩固</text>
+    <text x="478" y="204" font-size="12" fill="#334155">· 7~8 小时睡眠不可压缩</text>
+    <text x="478" y="226" font-size="12" fill="#334155">· 记忆巩固发生在睡眠期</text>
+    <text x="478" y="248" font-size="12" fill="#334155">· 熬夜复习 = 主动降低</text>
+    <text x="478" y="270" font-size="12" fill="#334155">　 次日检索强度</text>
+  </g>
+
+  <g>
+    <rect x="662" y="150" width="180" height="150" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="752" y="176" text-anchor="middle" font-size="14" font-weight="700" fill="#4c1d95">晨间：轻检索</text>
+    <text x="678" y="204" font-size="12" fill="#334155">· 醒后 1 小时内不看技术</text>
+    <text x="678" y="226" font-size="12" fill="#334155">· 只看锚点表 + 诊断树</text>
+    <text x="678" y="248" font-size="12" fill="#334155">· 白板四件套默一遍</text>
+    <text x="678" y="270" font-size="12" fill="#334155">· 30 分钟为限</text>
+  </g>
+
+  <g>
+    <rect x="862" y="150" width="96" height="150" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="910" y="180" text-anchor="middle" font-size="13.5" font-weight="700" fill="#14532d">T-30min</text>
+    <text x="910" y="210" text-anchor="middle" font-size="12" fill="#334155">呼吸 5 分钟</text>
+    <text x="910" y="232" text-anchor="middle" font-size="12" fill="#334155">90 秒开场</text>
+    <text x="910" y="254" text-anchor="middle" font-size="12" fill="#334155">过最后 1 遍</text>
+    <text x="910" y="276" text-anchor="middle" font-size="12" fill="#334155">不再翻材料</text>
+  </g>
+
+  <!-- Bottom: what to bring / rules -->
+  <rect x="62" y="340" width="896" height="190" rx="12" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+  <text x="510" y="370" text-anchor="middle" font-size="15" font-weight="700" fill="#134e4a">随考清单（白板场尤其重要）</text>
+  <g font-size="12.5" fill="#334155">
+    <text x="90" y="400">✒️ 三支笔（黑/红/蓝：主体 / 强调 / 数字）——白板题的红蓝分工是 Day 50 的实践</text>
+    <text x="90" y="426">📄 一页纸：数字锚点表正面 + 诊断树背面（纸质，若允许携带；不允许则晨间默记）</text>
+    <text x="90" y="452">⏱️ 手表/手机计时意识：白板显存题 3 分钟 / 七问 3 分钟，超时即收尾给结论</text>
+    <text x="90" y="478">💧 水 + 提前 15 分钟到场（技术面的"提前量"本身就是状态信号）</text>
+    <text x="90" y="504">🧠 心态锚点：被追问到底时回到"结论 → 机制 → 数字"结构——Day 54 已验证三层不乱</text>
+  </g>
+</svg>

@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 650" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">decode 量化 GEMM 的达芬奇数据流（单 AI Core 视角，示例：o_proj M=16, N=K=4096）</text>
+
+  <!-- ===== HBM ===== -->
+  <rect x="190" y="58" width="300" height="48" rx="6" fill="#fef2f2" stroke="#b91c1c" stroke-width="1.6"/>
+  <text x="340" y="78" text-anchor="middle" font-size="13" font-weight="bold" fill="#7f1d1d">HBM（整卡 · 带宽示例 392 GB/s）</text>
+  <text x="340" y="96" text-anchor="middle" font-size="10.5" fill="#7f1d1d">weight int8 ≈ 16.78 MB · act 64 KB · scale 16 KB</text>
+
+  <!-- HBM -> L2 -->
+  <line x1="340" y1="106" x2="340" y2="130" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="340,136 335,126 345,126" fill="#475569"/>
+
+  <!-- ===== L2 ===== -->
+  <rect x="190" y="138" width="300" height="46" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="340" y="156" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#78350f">L2（整卡共享 · 数十~百 MB）</text>
+  <text x="340" y="173" text-anchor="middle" font-size="10" fill="#78350f">36 层权重 6.9 GB/step → 跨 step 零复用，L2 救不了 decode GEMM</text>
+
+  <!-- MTE2: L2 -> L1 -->
+  <line x1="290" y1="184" x2="290" y2="244" stroke="#2563eb" stroke-width="2.4"/>
+  <polygon points="290,250 284,239 296,239" fill="#2563eb"/>
+  <text x="302" y="206" font-size="11" font-weight="bold" fill="#1d4ed8">MTE2 搬入</text>
+  <text x="302" y="222" font-size="10" fill="#475569">N_tK_t·1B + M_tK_t·1B + scale</text>
+  <text x="302" y="236" font-size="10" fill="#475569">（权重主导，占 98.8%）</text>
+
+  <!-- ===== L1 ===== -->
+  <rect x="120" y="252" width="340" height="52" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="290" y="272" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a5f">L1（每核 ~1 MB）· tile 缓冲 ×2</text>
+  <text x="290" y="291" text-anchor="middle" font-size="10.5" fill="#1e3a5f">double buffer：装载 tile i+1 ‖ 计算 tile i</text>
+
+  <!-- MTE1: L1 -> L0A/L0B -->
+  <line x1="230" y1="304" x2="230" y2="358" stroke="#2563eb" stroke-width="2.4"/>
+  <polygon points="230,364 224,353 236,353" fill="#2563eb"/>
+  <text x="120" y="330" font-size="11" font-weight="bold" fill="#1d4ed8">MTE1：L1→L0 喂给 Cube</text>
+
+  <!-- L0A / L0B -->
+  <rect x="120" y="366" width="120" height="40" rx="5" fill="#f8fafc" stroke="#64748b" stroke-width="1.3"/>
+  <text x="180" y="382" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">L0A ~64 KB</text>
+  <text x="180" y="397" text-anchor="middle" font-size="9.5" fill="#64748b">A：激活块</text>
+  <rect x="252" y="366" width="120" height="40" rx="5" fill="#f8fafc" stroke="#64748b" stroke-width="1.3"/>
+  <text x="312" y="382" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">L0B ~128 KB</text>
+  <text x="312" y="397" text-anchor="middle" font-size="9.5" fill="#64748b">B：权重块</text>
+
+  <!-- Cube -->
+  <line x1="230" y1="406" x2="230" y2="440" stroke="#047857" stroke-width="2.4"/>
+  <polygon points="230,446 224,435 236,435" fill="#047857"/>
+  <rect x="120" y="448" width="252" height="54" rx="6" fill="#f0fdf4" stroke="#047857" stroke-width="1.8"/>
+  <text x="246" y="468" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#064e3b">Cube 单元 · 16×16×16 MAC/cycle</text>
+  <text x="246" y="487" text-anchor="middle" font-size="10.5" fill="#064e3b">M=16 恰好满槽 · M=1 时 M 维仅用 1/16</text>
+
+  <!-- Cube -> L0C -->
+  <line x1="372" y1="476" x2="420" y2="476" stroke="#047857" stroke-width="1.8"/>
+  <polygon points="426,476 416,471 416,481" fill="#047857"/>
+  <rect x="428" y="452" width="110" height="48" rx="5" fill="#f0fdf4" stroke="#047857" stroke-width="1.3"/>
+  <text x="483" y="470" text-anchor="middle" font-size="11" font-weight="bold" fill="#064e3b">L0C ~256 KB</text>
+  <text x="483" y="487" text-anchor="middle" font-size="9.5" fill="#064e3b">fp32 累加</text>
+
+  <!-- MTE3: L0C -> L1 -> L2 -> HBM (right channel) -->
+  <path d="M 538,476 L 578,476 L 578,165 L 496,165" fill="none" stroke="#7c3aed" stroke-width="2.2"/>
+  <polygon points="490,165 500,160 500,170" fill="#7c3aed"/>
+  <text x="588" y="300" font-size="11" font-weight="bold" fill="#6d28d9">MTE3 写回</text>
+  <text x="588" y="316" font-size="10" fill="#475569">M_tN_t·2B = 128 KB</text>
+  <text x="588" y="330" font-size="10" fill="#475569">（占比小，非瓶颈）</text>
+
+  <!-- ===== bottom: double buffer strip ===== -->
+  <rect x="60" y="524" width="600" height="106" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="76" y="546" font-size="12" font-weight="bold" fill="#334155">tiling 循环：double buffer 让 T = max 而非 Σ</text>
+  <!-- load lane -->
+  <text x="76" y="570" font-size="10.5" fill="#475569">装载</text>
+  <rect x="112" y="558" width="90" height="16" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
+  <text x="157" y="570" text-anchor="middle" font-size="9" fill="#1e3a5f">load tile 1</text>
+  <rect x="206" y="558" width="90" height="16" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
+  <text x="251" y="570" text-anchor="middle" font-size="9" fill="#1e3a5f">load tile 2</text>
+  <rect x="300" y="558" width="90" height="16" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
+  <text x="345" y="570" text-anchor="middle" font-size="9" fill="#1e3a5f">load tile 3</text>
+  <!-- compute lane -->
+  <text x="76" y="602" font-size="10.5" fill="#475569">计算</text>
+  <rect x="206" y="590" width="90" height="16" fill="#a7f3d0" stroke="#047857" stroke-width="1"/>
+  <text x="251" y="602" text-anchor="middle" font-size="9" fill="#064e3b">cube tile 1</text>
+  <rect x="300" y="590" width="90" height="16" fill="#a7f3d0" stroke="#047857" stroke-width="1"/>
+  <text x="345" y="602" text-anchor="middle" font-size="9" fill="#064e3b">cube tile 2</text>
+  <text x="408" y="602" font-size="10" fill="#64748b">→ 与装载重叠</text>
+  <text x="408" y="570" font-size="10" fill="#64748b">↘</text>
+
+  <!-- ===== Right panel: three timing models ===== -->
+  <rect x="688" y="58" width="252" height="446" rx="8" fill="#ffffff" stroke="#475569" stroke-width="1.4"/>
+  <text x="814" y="82" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">三种耗时模型（示例数字）</text>
+
+  <!-- serial -->
+  <text x="704" y="110" font-size="11" font-weight="bold" fill="#334155">① T_串行 = Σ 各段 ≈ 52 µs</text>
+  <rect x="704" y="120" width="86" height="14" fill="#2563eb"/>
+  <rect x="790" y="120" width="12" height="14" fill="#60a5fa"/>
+  <rect x="802" y="120" width="4" height="14" fill="#047857"/>
+  <rect x="806" y="120" width="2" height="14" fill="#a7f3d0"/>
+  <text x="704" y="150" font-size="9.5" fill="#64748b">mte2 43 · mte1 6 · cube 2 · mte3 1（µs）</text>
+
+  <!-- pipelined -->
+  <text x="704" y="182" font-size="11" font-weight="bold" fill="#334155">② T_流水 = max(各段) ≈ 43 µs</text>
+  <rect x="704" y="192" width="43" height="14" fill="#2563eb"/>
+  <text x="752" y="204" font-size="9.5" fill="#64748b">搬运是关键路径</text>
+
+  <!-- measured -->
+  <text x="704" y="236" font-size="11" font-weight="bold" fill="#334155">③ T_实测 p50 ≈ 190 µs</text>
+  <rect x="704" y="246" width="43" height="14" fill="#2563eb"/>
+  <rect x="747" y="246" width="147" height="14" fill="#fecaca" stroke="#b91c1c" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="820" y="257" text-anchor="middle" font-size="9" fill="#7f1d1d">组织开销 147 µs</text>
+  <text x="704" y="278" font-size="9.5" fill="#64748b">（同步 / 装载不平衡 / 尾块 / 未贴满带宽）</text>
+
+  <!-- verdict -->
+  <rect x="700" y="296" width="228" height="92" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="714" y="318" font-size="11" font-weight="bold" fill="#1e3a5f">判定（三证据交叉）</text>
+  <text x="714" y="338" font-size="10.5" fill="#334155">· AI 31.6 vs ridge ~800 → memory bound</text>
+  <text x="714" y="356" font-size="10.5" fill="#334155">· η_mem = 43/190 ≈ 0.23 → 空间 4.4×</text>
+  <text x="714" y="374" font-size="10.5" fill="#334155">· Cube 需求 1.7µs ≪ 搬运 43µs → 等</text>
+
+  <text x="704" y="412" font-size="10" fill="#64748b">优化目标 = 压 ③ 向 ② 靠拢：</text>
+  <text x="704" y="428" font-size="10" fill="#64748b">tiling 切分 / 多核均分 / double buffer</text>
+  <text x="704" y="444" font-size="10" fill="#64748b">轮次 / 同步合并 —— 而不是 Cube 指令</text>
+  <text x="704" y="476" font-size="9.5" fill="#94a3b8">容量/带宽/峰值均为典型量级示意，以手册为准</text>
+</svg>

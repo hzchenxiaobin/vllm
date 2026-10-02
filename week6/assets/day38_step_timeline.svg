@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 560" font-family="Helvetica, Arial, sans-serif">
+  <text x="470" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">一个 decode step 的解剖：四本账与判定（示意数据）</text>
+
+  <!-- ===== Left: timeline ===== -->
+  <text x="270" y="58" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e3a5f">chrome trace 时间线（稳态纯 decode step）</text>
+
+  <!-- CPU track -->
+  <text x="70" y="88" font-size="12" fill="#334155">CPU 轨</text>
+  <line x1="120" y1="84" x2="620" y2="84" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="120" y="72" width="70" height="22" fill="#fde68a" stroke="#b45309" stroke-width="1"/>
+  <text x="155" y="87" text-anchor="middle" font-size="9.5" fill="#78350f">调度决策</text>
+  <rect x="196" y="72" width="120" height="22" fill="#fecaca" stroke="#b91c1c" stroke-width="1"/>
+  <text x="256" y="87" text-anchor="middle" font-size="9.5" fill="#7f1d1d">launch 算子 x N</text>
+  <rect x="322" y="72" width="90" height="22" fill="#e0e7ff" stroke="#4338ca" stroke-width="1"/>
+  <text x="367" y="87" text-anchor="middle" font-size="9.5" fill="#312e81">等 .item() 同步</text>
+  <rect x="418" y="72" width="110" height="22" fill="#fecaca" stroke="#b91c1c" stroke-width="1"/>
+  <text x="473" y="87" text-anchor="middle" font-size="9.5" fill="#7f1d1d">launch 后半段</text>
+  <rect x="534" y="72" width="86" height="22" fill="#fde68a" stroke="#b45309" stroke-width="1"/>
+  <text x="577" y="87" text-anchor="middle" font-size="9.5" fill="#78350f">采样/detoken</text>
+
+  <!-- NPU track -->
+  <text x="70" y="132" font-size="12" fill="#334155">NPU 轨</text>
+  <line x1="120" y1="128" x2="620" y2="128" stroke="#cbd5e1" stroke-width="1"/>
+  <!-- kernels: k1 large, gap, comm, gap, k2, k3... -->
+  <rect x="130" y="116" width="120" height="24" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="1.2"/>
+  <text x="190" y="132" text-anchor="middle" font-size="9.5" fill="#1e3a5f">量化 GEMM（块×L 层）</text>
+  <rect x="254" y="116" width="54" height="24" fill="#a7f3d0" stroke="#047857" stroke-width="1.2"/>
+  <text x="281" y="132" text-anchor="middle" font-size="9.5" fill="#064e3b">attention</text>
+  <!-- gap 1 -->
+  <rect x="312" y="116" width="34" height="24" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="329" y="132" text-anchor="middle" font-size="9" fill="#64748b">gap</text>
+  <!-- comm -->
+  <rect x="350" y="116" width="60" height="24" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.2"/>
+  <text x="380" y="132" text-anchor="middle" font-size="9.5" fill="#4c1d95">HCCL all-reduce</text>
+  <!-- gap 2 -->
+  <rect x="414" y="116" width="50" height="24" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="439" y="132" text-anchor="middle" font-size="9" fill="#64748b">gap（同步）</text>
+  <rect x="468" y="116" width="70" height="24" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="1.2"/>
+  <text x="503" y="132" text-anchor="middle" font-size="9.5" fill="#1e3a5f">GEMM + norm</text>
+  <rect x="542" y="116" width="40" height="24" fill="#a7f3d0" stroke="#047857" stroke-width="1.2"/>
+  <text x="562" y="132" text-anchor="middle" font-size="9.5" fill="#064e3b">vec</text>
+  <rect x="586" y="116" width="26" height="24" fill="#a7f3d0" stroke="#047857" stroke-width="1.2"/>
+  <text x="599" y="132" text-anchor="middle" font-size="9" fill="#064e3b">…</text>
+
+  <!-- T_step brace -->
+  <path d="M 124,158 Q 124,150 132,150 L 606,150 Q 614,150 614,158" fill="none" stroke="#0f172a" stroke-width="1.6"/>
+  <line x1="124" y1="146" x2="124" y2="162" stroke="#0f172a" stroke-width="1.6"/>
+  <line x1="614" y1="146" x2="614" y2="162" stroke="#0f172a" stroke-width="1.6"/>
+  <text x="369" y="170" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">T_step ≈ 48 ms（示例）</text>
+
+  <!-- step boundary to next step -->
+  <line x1="620" y1="100" x2="660" y2="100" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="662" y="104" font-size="10" fill="#64748b">→ 下一个 step</text>
+
+  <!-- reading rules -->
+  <rect x="60" y="192" width="580" height="120" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="76" y="216" font-size="12" font-weight="bold" fill="#334155">读图四步（§3.3）</text>
+  <text x="76" y="238" font-size="11.5" fill="#475569">① 认轨道：CPU 线程轨 + NPU device 轨 + 通信轨</text>
+  <text x="76" y="258" font-size="11.5" fill="#475569">② 认 step 边界：等间隔 kernel 串 / step 标记事件</text>
+  <text x="76" y="278" font-size="11.5" fill="#475569">③ 数 gap：NPU 空白段回 CPU 轨对齐 → host / sync</text>
+  <text x="76" y="298" font-size="11.5" fill="#475569">④ 认 graph replay：单长事件 = 图生效；散装矩形 = eager</text>
+
+  <!-- ===== Right: stacked bar decomposition ===== -->
+  <text x="760" y="58" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e3a5f">四本账分解（示例）</text>
+  <!-- stacked vertical bar: total 220px = 48ms; kernel 62% comm 18% host 12% sync 8% -->
+  <rect x="730" y="80" width="60" height="136" fill="#2563eb"/>
+  <rect x="730" y="216" width="60" height="40" fill="#7c3aed"/>
+  <rect x="730" y="256" width="60" height="26" fill="#b91c1c"/>
+  <rect x="730" y="282" width="60" height="18" fill="#64748b"/>
+  <line x1="712" y1="80" x2="726" y2="80" stroke="#475569" stroke-width="1"/>
+  <text x="708" y="84" text-anchor="end" font-size="10.5" fill="#475569">48</text>
+  <text x="706" y="190" font-size="11" fill="#334155" transform="rotate(-90 706 190)" text-anchor="middle">ms</text>
+
+  <!-- legend with values -->
+  <rect x="806" y="84" width="14" height="14" fill="#2563eb"/>
+  <text x="826" y="96" font-size="11.5" fill="#334155">kernel 29.8ms · 62%</text>
+  <rect x="806" y="112" width="14" height="14" fill="#7c3aed"/>
+  <text x="826" y="124" font-size="11.5" fill="#334155">comm 8.6ms · 18%</text>
+  <rect x="806" y="140" width="14" height="14" fill="#b91c1c"/>
+  <text x="826" y="152" font-size="11.5" fill="#334155">gap,host 5.8ms · 12%</text>
+  <rect x="806" y="168" width="14" height="14" fill="#64748b"/>
+  <text x="826" y="180" font-size="11.5" fill="#334155">gap,sync 3.8ms · 8%</text>
+
+  <!-- judgement box -->
+  <rect x="660" y="192" width="260" height="120" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="676" y="216" font-size="12" font-weight="bold" fill="#1e3a5f">判定（写进分解表）</text>
+  <text x="676" y="240" font-size="11.5" fill="#334155">β = (29.8+8.6)/48 = 0.80 → 边界区间</text>
+  <text x="676" y="262" font-size="11.5" fill="#334155">kernel 内部再分：GEMM 类占 kernel 的 70%+</text>
+  <text x="676" y="284" font-size="11.5" fill="#334155">→ 主攻 kernel（Day 39 靶子：量化 GEMM），</text>
+  <text x="676" y="304" font-size="11.5" fill="#334155">  host/sync 记为次级假设（图模式收益 ~1/β）</text>
+
+  <!-- formula strip -->
+  <rect x="60" y="330" width="860" height="70" rx="8" fill="#ffffff" stroke="#475569" stroke-width="1.4"/>
+  <text x="80" y="356" font-size="13" fill="#0f172a" font-weight="bold">T_step = T_kernel + T_comm + T_gap,host + T_gap,sync</text>
+  <text x="80" y="382" font-size="12" fill="#475569">device busy β = (T_kernel + T_comm)/T_step · 去全部 gap 的上限 S_max = 1/β · TPOT ≈ E[T_step]（稳态、无混排、无抢占）</text>
+
+  <!-- bottom caveat -->
+  <rect x="60" y="416" width="860" height="112" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.3"/>
+  <text x="76" y="440" font-size="12" font-weight="bold" fill="#78350f">三个常见误读（都真实发生过）</text>
+  <text x="76" y="462" font-size="11.5" fill="#475569">① 把 prefill/decode 混排 step 和纯 decode step 平均 → gap 与 kernel 都被稀释，按 step 类型分列</text>
+  <text x="76" y="482" font-size="11.5" fill="#475569">② 通信轨事件重叠于计算轨 → 别把重叠时间双计入 T_comm，先看是否已被 overlap 隐藏（Day 32-33）</text>
+  <text x="76" y="502" font-size="11.5" fill="#475569">③ 预热段（图 capture/JIT）混进窗口 → 前 N 个 step 剔除，profile 在稳态后开启</text>
+</svg>

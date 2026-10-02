@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">第一刀怎么选：优化选项树（证据 → 路线 → 排序）</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#64748b">输入：Day 39 三证据判定 + Day 40 ROI 排序　|　原则：证据最硬 × 半径最小 × 可测性最好，而非收益最大</text>
+
+  <!-- Root -->
+  <rect x="280" y="68" width="400" height="64" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="480" y="92" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a5f">η_mem = 0.23：搬运组织问题</text>
+  <text x="480" y="112" text-anchor="middle" font-size="10.5" fill="#475569">o_proj M=16 N=K=4096：p50 190µs vs t_lb 43µs（Day 39 数据流图三列表）</text>
+
+  <!-- Trunk to 5 branches -->
+  <line x1="480" y1="132" x2="480" y2="152" stroke="#475569" stroke-width="1.8"/>
+  <line x1="96" y1="152" x2="864" y2="152" stroke="#475569" stroke-width="1.8"/>
+
+  <!-- Branch A -->
+  <line x1="96" y1="152" x2="96" y2="172" stroke="#475569" stroke-width="1.5"/>
+  <rect x="16" y="174" width="176" height="196" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="104" y="196" text-anchor="middle" font-size="12" font-weight="bold" fill="#991b1b">A. tiling / 流水参数</text>
+  <text x="28" y="216" font-size="10" fill="#475569">证据：MTE 61%，串行和&gt;max</text>
+  <text x="28" y="232" font-size="10" fill="#475569">机理：Σ → max，直击组织开销</text>
+  <text x="28" y="252" font-size="10" font-weight="bold" fill="#991b1b">⚠ 边界：CANN 侧闭源库</text>
+  <text x="28" y="268" font-size="10" fill="#475569">（Day 36 边界确认的老问题）</text>
+  <text x="28" y="288" font-size="10" fill="#475569">对策：带数据提 issue</text>
+  <text x="28" y="304" font-size="10" fill="#475569">或换切入点</text>
+  <text x="28" y="330" font-size="11" font-weight="bold" fill="#991b1b">判定：边界外，不选</text>
+  <text x="28" y="350" font-size="9.5" fill="#64748b">（收益上限最高 ≠ 该做）</text>
+
+  <!-- Branch B -->
+  <line x1="288" y1="152" x2="288" y2="172" stroke="#475569" stroke-width="1.5"/>
+  <rect x="208" y="174" width="176" height="196" rx="8" fill="#fefce8" stroke="#b45309" stroke-width="1.5"/>
+  <text x="296" y="196" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">B. 切核 / 多核均衡</text>
+  <text x="220" y="216" font-size="10" fill="#475569">证据：Block Dim=8</text>
+  <text x="220" y="232" font-size="10" fill="#475569">vs 卡上 40+ AI Core</text>
+  <text x="220" y="252" font-size="10" fill="#475569">机理：不降下界，决定</text>
+  <text x="220" y="268" font-size="10" fill="#475569">能否逼近下界（尾块/轮次）</text>
+  <text x="220" y="288" font-size="10" fill="#475569">半径：视算子接口</text>
+  <text x="220" y="304" font-size="10" fill="#475569">是否暴露参数（查文档）</text>
+  <text x="220" y="330" font-size="11" font-weight="bold" fill="#92400e">判定：备选第一刀</text>
+  <text x="220" y="350" font-size="9.5" fill="#64748b">（世界二时升为第一刀）</text>
+
+  <!-- Branch C (first cut) -->
+  <line x1="480" y1="152" x2="480" y2="168" stroke="#047857" stroke-width="2.2"/>
+  <rect x="400" y="170" width="176" height="204" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="2.2"/>
+  <text x="488" y="192" text-anchor="middle" font-size="12" font-weight="bold" fill="#064e3b">C. 融合度 ★第一刀</text>
+  <text x="412" y="212" font-size="10" fill="#475569">证据：trace 中反量化 kernel</text>
+  <text x="412" y="228" font-size="10" fill="#475569">+ 普通 GEMM 并存（分叉①）</text>
+  <text x="412" y="248" font-size="10" fill="#475569">机理：消除 bf16 临时张量</text>
+  <text x="412" y="264" font-size="10" fill="#475569">写+读 ~67MB 纯浪费</text>
+  <text x="412" y="284" font-size="10" font-weight="bold" fill="#064e3b">半径：vllm_ascend/quantization/</text>
+  <text x="412" y="300" font-size="10" font-weight="bold" fill="#064e3b">（我的地盘，PR 半径小）</text>
+  <text x="412" y="320" font-size="10" fill="#475569">可测：microbench 直接裁决</text>
+  <text x="412" y="336" font-size="10" fill="#475569">（shape 复用 Day 39 Top-N）</text>
+  <text x="412" y="360" font-size="11" font-weight="bold" fill="#047857">判定：今天做（Cut #1）</text>
+
+  <!-- Branch D -->
+  <line x1="672" y1="152" x2="672" y2="172" stroke="#475569" stroke-width="1.5"/>
+  <rect x="592" y="174" width="176" height="196" rx="8" fill="#fefce8" stroke="#b45309" stroke-width="1.5"/>
+  <text x="680" y="196" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">D. host 侧 dispatch 特化</text>
+  <text x="604" y="216" font-size="10" fill="#475569">证据：Day 38 host 账</text>
+  <text x="604" y="232" font-size="10" fill="#475569">5.8ms / step</text>
+  <text x="604" y="252" font-size="10" fill="#475569">机理：shape 感知选路</text>
+  <text x="604" y="268" font-size="10" fill="#475569">+ 消 python 分支开销</text>
+  <text x="604" y="288" font-size="10" fill="#475569">半径：vllm_ascend/ 内</text>
+  <text x="604" y="304" font-size="10" fill="#475569">需过 CG 兼容检查（§3.4）</text>
+  <text x="604" y="330" font-size="11" font-weight="bold" fill="#92400e">判定：第二刀（Day 42）</text>
+  <text x="604" y="350" font-size="9.5" fill="#64748b">（要靠 e2e 才看得清）</text>
+
+  <!-- Branch E -->
+  <line x1="864" y1="152" x2="864" y2="172" stroke="#475569" stroke-width="1.5"/>
+  <rect x="784" y="174" width="160" height="196" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="864" y="196" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a5f">E. 上层融合 / 减次数</text>
+  <text x="796" y="216" font-size="10" fill="#475569">证据："单次×次数"里</text>
+  <text x="796" y="232" font-size="10" fill="#475569">次数一侧（病因拆分）</text>
+  <text x="796" y="252" font-size="10" fill="#475569">机理：调用次数 ÷ k</text>
+  <text x="796" y="268" font-size="10" fill="#475569">（相邻算子合并等）</text>
+  <text x="796" y="288" font-size="10" fill="#475569">半径：大，涉模型结构</text>
+  <text x="796" y="304" font-size="10" fill="#475569">与图编译路径</text>
+  <text x="796" y="330" font-size="11" font-weight="bold" fill="#2563eb">判定：W7 候选</text>
+  <text x="796" y="350" font-size="9.5" fill="#64748b">（先修秤，再称货）</text>
+
+  <!-- Evidence fork note -->
+  <rect x="130" y="404" width="700" height="88" rx="8" fill="#fafafa" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="480" y="428" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">证据分叉（假设驱动，不是走形式）——先查 kernel_topn.md 再动笔</text>
+  <text x="480" y="450" text-anchor="middle" font-size="10.5" fill="#475569">世界一：trace 里有独立反量化 kernel（或融合只覆盖部分 shape）→ C 成立，按 §3.3 字节账开做</text>
+  <text x="480" y="468" text-anchor="middle" font-size="10.5" fill="#475569">世界二：Top-N 只有融合单算子、无反量化行 → C 退化为变体/参数切换，B（切核/均衡）升为第一刀</text>
+  <text x="480" y="486" text-anchor="middle" font-size="10.5" fill="#64748b">判定动作：rg -i "dequant|antiquant" trace 产物 / kernel_topn.md，两分钟，不拍脑袋</text>
+
+  <!-- Bottom principle -->
+  <text x="480" y="530" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#064e3b">第一刀的首要目标：打通"改 → 门禁 → 数据"流水线（先修秤，再称货）</text>
+  <text x="480" y="550" text-anchor="middle" font-size="10.5" fill="#64748b">三段论：证据最硬（η 定量）× 半径最小（我的地盘）× 可测性最好（microbench 最便宜）——面试标准答法</text>
+  <text x="480" y="576" text-anchor="middle" font-size="10" fill="#94a3b8">数字皆为示例（Qwen3-8B W8A8、392GB/s 示例带宽），以你的 kernel_topn.md 与型号手册为准</text>
+</svg>

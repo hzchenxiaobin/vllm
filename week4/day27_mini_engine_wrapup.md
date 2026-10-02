@@ -1,262 +1,152 @@
-[0m
-> build · glm-5.3
-[0m
-[0m→ [0mRead prompt.md
-[0m→ [0mRead README.md
-[0m
-[0m$ [0mls -la week4/ 2>/dev/null && ls week4/assets/ 2>/dev/null
-total 292
-drwxr-xr-x  3 root root  4096 Oct  2 13:01 .
-drwxr-xr-x 19 root root  4096 Oct  2 17:58 ..
-drwxr-xr-x  2 root root  4096 Oct  2 13:00 assets
--rw-r--r--  1 root root 45727 Oct  2 11:30 day22_quantization_basics.md
--rw-r--r--  1 root root 35742 Oct  2 11:51 day23_kv_cache_quantization.md
--rw-r--r--  1 root root 41930 Oct  2 12:05 day24_quantization_hands_on.md
--rw-r--r--  1 root root 43410 Oct  2 12:24 day25_speculative_decoding.md
--rw-r--r--  1 root root 37059 Oct  2 12:40 day26_speculative_decoding_experiments.md
--rw-r--r--  1 root root 34098 Oct  2 13:05 day28_speculative_decoding_review.md
--rw-r--r--  1 root root 29921 Oct  1 23:14 README.md
-day22_outlier_algorithms.svg
-day22_quant_framework.svg
-day22_roofline_quant.svg
-day23_capacity_ladder.svg
-day23_k_vs_v_error.svg
-day23_vllm_kv_fp8_chain.svg
-day24_a4_quant_map.svg
-day24_quant_toolchain.svg
-day24_verify_gates.svg
-day25_spec_pipeline.svg
-day25_speedup_curves.svg
-day25_three_routes.svg
-day26_experiment_matrix.svg
-day26_k_sweep.svg
-day26_negative_gain_anatomy.svg
-day28_a4_spec_map.svg
-day28_go_no_go_flow.svg
-day28_week4_map.svg
-[0m
-[0m→ [0mRead week4/day26_speculative_decoding_experiments.md[90m [limit=70][0m
-[0m→ [0mRead week4/day25_speculative_decoding.md[90m [limit=50][0m
-[0m
-[0m$ [0mtail -60 week4/day26_speculative_decoding_experiments.md && grep -n "^## " week4/day26_speculative_decoding_experiments.md
-三个独立机制：① $\gamma \to k{+}1$（$M_{KV}$ 随 $B \cdot \text{ctx}$ 涨到与 $W$ 同量级，verify 的 KV 读取按倍数付账）；② 越过 ridge 变 compute-bound——$B(1+k)$ 的算力强度跨过拐点后"多算免费"的前提消失；③ budget 挤压：每请求 $1+k$ token 让同预算下的最大并发容量除以 $1+k$。动作序列：调小 k → 熔断 → 关闭（或 W5 P/D 分离后只在 D 侧低并发档开）。
+# Day 27：mini 引擎收尾（项目 B）—— chunked prefill、preemption 落地与 static vs continuous batching 终局对比
 
-**Q6：你的对照实验怎么保证公平？**
-
-固定请求集/seed/温度/max-model-len/并发档，唯一变量是投机配置；metrics 用 bench 区间差分（排除启动期噪音）；预测先行（Day 24 方法论）；关注方差而非单次数（TPOT p50 与 p99 都记）；bench 期间盯熔断是否被意外触发。
-
-**Q7：线上白天低并发、晚上高并发，投机怎么配？**
-
-不开人肉开关，用 `speculative_disable_by_batch_size` 自动熔断：低并发段吃到 TPOT 收益，高并发段自动退回普通 decode 保吞吐。再进一步：按负载档位分实例/分配置（代码补全流量与对话流量分池），或 P/D 分离后在 D 侧低并发池开投机——监控 acceptance 与 TPOT-并发曲线做验收。
-
-**Q8：为什么实测加速比总是低于公式预测？**
-
-公式 $S = E[\tau]/(\gamma + kc)$ 是**带宽模型下的上界**，漏了每 step 固定成本：k+1 个位置的采样/验收、被拒草稿的 KV block 回收、scheduler 的 lookahead 记账、CUDA Graph bucket 变化、draft→verify 衔接空隙。合计每 step 数百 μs，低延迟档占 5~15%。我的实验 2 用 $S_{\text{pred}} - S_{\text{measured}}$ 差值随 k 的形态把它分离了出来（近似恒定 → 固定开销主导）。
-
----
-
-## 七、今日总结
-
-- **方法**：先预测（Day 25 的 β-γ-c 公式 + 自己的模型参数）→ 再测量（bench + metrics 差分）→ 后归因（四段式：现象 → 机制 → 指标 → 动作）。没有预测的实验只是采数。
-- **结论一（负载决定天花板）**：同模型、同 k、同并发，代码补全与开放对话的 acceptance 差出一截，TPOT 加速比随之分层——"投机收益是负载的函数"从断言变成实测。
-- **结论二（k 有峰）**：`num_speculative_tokens` 实测峰值 k*≈3~4；理论峰（4~5）被按深度衰减与每 step 固定开销左移。边际递减是结构性的，不是调优不充分。
-- **结论三（负收益两条独立路径）**：分子塌掉（低 β，ngram 有下限亏损）与分母涨掉（高并发的 γ 膨胀 + 越过 ridge + budget 挤压，亏损无下限）——检测靠 acceptance、吞吐对比、TPOT-并发曲线；动作靠调小 k、`speculative_disable_by_batch_size` 熔断、关闭。
-- **闭环**：acceptance → $E[\tau]$ → $S_{\text{pred}}$ → $S_{\text{measured}}$ 的差值即工程开销——把"公式是上界"从口号变成可量化的每 step 成本。
-- **口径纪律**：TPOT 看"赚没赚"，吞吐看"系统亏没亏"；counter 必须差分；TTFT 不受益是预期行为不是 bug。
-
-> **跨平台叙事（接 Day 25）**：今天全部实验方法论——预测公式、负载分类（高/低自重复）、k 扫参、负收益两条路径、熔断——没有一项绑定 NVIDIA。在昇腾上复刻本日实验，只需把 $W$、$M_{KV}$、ridge 换成 910B 的参数，负载构造与指标采集原样可用；vllm-ascend 的投机解码支持矩阵是 W6 项目 A 的候选调研点。
-
----
-
-## 八、今日自测题
-
-1. 不看笔记，默写 acceptance → $E[\tau]$ → $S_{\text{pred}}$ 的换算链，并指出 iid 近似在哪一步失真、朝哪个方向偏。
-2. 实测 EAGLE（代码负载、k=3）acceptance = 0.78，B=8、平均 ctx≈1500、$c$=0.16、$m_{\text{token}}$=56 KiB、$W$=15.2 GB：算 $S_{\text{pred}}$；若实测 $S_{\text{TPOT}}$=1.75，反推每 step 开销是 $T_{\text{base}}$ 的多少倍。
-3. 为什么 ngram 在低 β 负载上"最差也亏得少"？什么条件下它的亏损也会变大？
-4. `max_num_batched_tokens`=8192、k=3：投机开启后理论上最多能同时 running 多少个 decode 请求？baseline 呢？这个差值什么时候会变成真实伤害？
-5. 同一服务白天并发 4、晚上并发 128，给出你的投机配置与理由（引用你实验 3 的数据）。
-6. 实验里 TTFT 为什么不降反微增？说出两个启动期因素。
-
-<details><summary><b>参考答案要点</b></summary>
-
-1. $E[\tau] \approx 1 + k \cdot \text{acceptance}$，$S_{\text{pred}} = E[\tau]/(\gamma + kc)$。失真点：位置衰减（$\beta_1>\beta_2>\cdots$）使真实 $E[\tau]$ **低于** iid 估计（高估收益）；γ 的带宽模型还漏了固定开销（进一步高估）。
-2. $M_{KV}=8\times1500\times56\text{KiB}\approx0.66$ GB，$\gamma(3)=(15.2+4\times0.66)/(15.2+0.66)\approx1.13$；$E[\tau]=1+3\times0.78=3.34$；$S_{\text{pred}}=3.34/(1.13+0.48)\approx2.08$。实测 1.75 → 实际分母 $=3.34/1.75\approx1.91$ → 开销 $\approx 1.91-1.61=0.30$ 倍 $T_{\text{base}}$（每 step 约 30% 的固定成本）。
-3. $c=0$：它的亏损只来自 $\gamma(k)$ 与每 step 固定开销，与草稿长度弱相关且有下限。当 $M_{KV}$ 有规模（中等并发/长上下文）或 k 很大时，$\gamma$ 与开销照样把它拖到明显亏损。
-4. baseline：8192 个 token 位 → 8192 个请求（每 decode 请求每步 1 token）；投机：每请求 4 token → 2048 个。低并发时预算用不满、无感；高并发（到达率把 running 顶到预算上限）时最大吞吐被直接除以 4——实验 3b 的"budget 挤压"。
-5. 设 `speculative_disable_by_batch_size`（阈值取你实验 3b 中 TPOT 优势消失的并发附近，如 32）：白天吃到 1.6~1.9× 的 TPOT 收益，晚上自动退回普通 decode 保吞吐；监控 acceptance 与 TPOT-并发曲线验收。
-6. ① 草稿头权重的加载与图捕获拉长启动/首个请求；② prefill 本身不投机（compute-bound 无闲置算力）。投机的承诺只在 TPOT/ITL（Day 5 指标体系）。
-
-</details>
-
----
-
-## 九、今日产出物
-
-- [ ] **两条负载文件**（`day26_code_prompts.jsonl` / `day26_dialogue_prompts.jsonl`）+ 生成脚本 `day26_gen_loads.py`
-- [ ] **基线 × 2 负载的 TPOT/吞吐/TTFT 记录**（实验 0）
-- [ ] **EAGLE 高/低接受率对照表**（实验 1：acceptance / $E[\tau]$ / $S_{\text{TPOT}}$ / $S_{\text{thr}}$ 四列并排）
-- [ ] **k 扫参曲线**（实验 2：$S(k)$ 与 acceptance(k) 两张图，标注实测 $k^*$；用实测数据覆盖 SVG 示意图）
-- [ ] **负收益复现记录**（实验 3：路径 a 小亏 + 路径 b 吞吐反降 + 熔断对照，四段式各一条）
-- [ ] **闭环数据总表**（5.5 节模板填满——Day 28 专题 A4《投机解码》"权衡/失效模式"两段与 Day 46 消融组③的直接素材）
-- [ ] 明日预告打卡：Day 27 mini 引擎收尾——chunked prefill 与 preemption 落地，static vs continuous batching 对比报告（今天的 budget 记账直觉直接迁移过去）
-10:## 一、今日学习目标
-22:## 二、核心概念：把 Day 25 的公式变成可测量的实验
-100:## 三、实验前预计算：把你的数字代进 β-γ-c（约 30 分钟，纸笔）
-160:## 四、vLLM V1 配置与指标链路（实验视角源码走读）
-244:## 五、动手实验（GPU，约 2~2.5 小时）
-417:## 六、面试高频问题
-453:## 七、今日总结
-466:## 八、今日自测题
-488:## 九、今日产出物
-[0m
-[0m$ [0mhead -20 week4/day28_speculative_decoding_review.md && grep -n "Day 27" week4/day28_speculative_decoding_review.md | head -20
-# Day 28（复盘日）：投机解码专题收官 —— 专题 A4《投机解码》与口头自测
-
-> **第 4 周 · Day 28** ｜ 预计投入：2~3 小时（复盘日：没有新知识输入，全部是整理、压缩与口头输出）
-> **衔接回顾**：Day 25（β-γ-c 收益框架、三公式、四路线、vLLM V1 投机 step 源码链路）、Day 26（三组实验实测数据、k 扫参、负收益两条路径的亲手复现、S_pred vs S_meas 的工程开销闭环）、Day 22-24（量化三连与第一份 A4《量化》——今天产出第二份，两份配成一对面试弹药）、Day 27（mini 引擎收官：budget 记账、chunked prefill、preemption——投机的所有系统耦合昨天刚在代码里摸过一遍）、以及更早的地基：Day 2/3（decode 时延下界与 ridge point）、Day 5（TPOT/吞吐口径纪律）、Day 10/11（token budget）、Day 15（KV block 分配/回收）、Day 18（CUDA Graph bucket）、Day 19（nsys 找 bubble）。
-> **向后衔接**：Day 29-31（P/D 分离——"投机解码只该作用于 D 侧低并发档"是那三天的高分话题）、Day 35（四份 A4 白板互讲）、Day 46（消融实验组③：接受率-收益曲线，Day 26 数据直接复用）、Week 8（白板四件套，两份 A4 是现成素材）。
-> **产出目标**：① 专题 A4《投机解码：原理/场景/权衡/失效模式》定稿（第 4 节，可抽出成独立一页）；② 口头自测录音（核心题"投机解码什么时候是负收益"达到"一条判据 + 五条路径"的展开水平）；③ 本周产出物核对清单全部打勾；④（可选）量化 × 投机叠加收益的一页推演。
+> **第 4 周 · Day 27** ｜ 预计投入：3~4 小时（项目收官日，代码 + 实验为主，建议留一整块时间）
+> **衔接回顾**：Day 20（固定 block 的 KV 池 + block table + 引用计数）、Day 21（iteration 级 continuous batching 调度器：waiting/running + token budget）、Day 10/11/12（vLLM V1 调度器三连——队列与 budget、chunked prefill、preemption：前两周你**读**了这三套机制，今天在几百行纯 Python 里把它们**复刻**出来）、Day 13（调度行为压测的"现象 → 机制 → 指标"三段式，今天 benchmark 的归档格式）、Day 15/16（KVCacheManager 的 allocate/append/free 路径与 prefix caching——recompute 抢占恢复时它直接决定恢复成本）、Day 5（TTFT/TPOT/吞吐口径，今天所有对比数字都建立在它之上）、Day 2（decode 时延下界手算——今天模拟器成本模型的校准来源）、Day 25/26（本周投机的 budget 记账：γ 膨胀与 budget 挤压正是"每请求每步占 1+k 个 token 位"这一记账问题的又一实例）。
+> **本周前瞻**：Day 28（复盘日：专题 A4《投机解码》——mini 引擎里亲手写过的 budget 记账与 KV 回收，会让你对"投机收益如何被调度链路传导/吞掉"有肌肉记忆；本周产出物核对里也有项目 B 的 README + benchmark 数据）。
+> **产出目标**：① mini 引擎 v3：chunked prefill 与 recompute 模式 preemption 落地并通过行为自测；② benchmark 脚本三件套（负载生成 / static 基线 / continuous 引擎），跑出 **static vs continuous batching** 的吞吐-时延对比、**chunked on/off** 的 TPOT p99 对比、**KV 压力下 preemption** 的代价曲线；③ 项目 B README（架构图 + 机制对照表 + 性能数据表 + 局限与路线图）——**面试作品集素材**，Day 49/53 的 STAR 讲稿直接从这里取材。
 
 ---
 
 ## 一、今日学习目标
 
-- [ ] 把 Day 25 的公式、Day 26 的实测数据、Day 27 的系统耦合，**压缩进一页 A4**（四段式：原理/场景/权衡/失效模式），并与 Day 24 的《量化》A4 形成统一格式
-- [ ] 用**主动回忆**（不看笔记）完成 5 道口试题，每题 3 分钟录音——重点是 README 里的原题：**"投机解码什么时候是负收益？"**，答案要达到"一条判据 + 五条独立路径 + 每条带检测指标与调参动作"
-- [ ] 30 秒口算 β=0.75、k=3、c=0.05 的加速比（简化式），并说出计入 γ 后的修正方向
-- [ ] 讲清**量化与投机的叠加建模**：为什么收益是"重叠取小"而不是相乘
-- [ ] 从昇腾算子视角说清投机解码对 GEMM 形态的影响（M 维 1 → k+1，GEMV 变小 GEMM）——跨平台叙事素材
-- [ ] 完成本周产出物核对（8 项清单），缺的补齐
-- [ ] 对着 A4 地图做一次 **3 分钟白板互讲**（找同行或对镜头）
+- [ ] 把 Day 21 的调度器升级为 **v3**：长 prompt 按 token budget **切块**进 running 队列（chunked prefill），解码请求每步优先保住 1 个 token 位——并说清"decode 优先"保护的到底是哪个指标
+- [ ] 实现 **recompute 模式 preemption**：KV block 不足时从 running 尾部抢占、释放 block、`num_computed_tokens` 清零、回 waiting 队首；能用日志复盘一次完整"抢占 → 重算 → 恢复"事件
+- [ ] 手推 **static batching 的浪费公式**：decode 利用率 = mean(L)/max(L)，并解释为什么输出长度方差越大、static 越亏（Jensen 不等式的工程含义）
+- [ ] 写出 **continuous batching 的吞吐守恒式**：输出吞吐 ≈ B/t_step(B)，说明它为什么随 batch 近似线性增长、什么时候饱和
+- [ ] 用成本模型（校准自 Day 2 手算）完成**实验前预测**（Day 24 方法论最后一次全套演练）：每个实验点先写下预测吞吐/时延，再跑模拟器对答案
+- [ ] 跑通 **4 组实验**并按四段式归档：E1 离线吞吐、E2 在线 TTFT/TPOT vs 到达率、E3 chunked on/off 的 TPOT p99、E4 KV 压力下的 preemption 代价
+- [ ] 完成项目 B **README**：架构图（SVG）、mini ↔ vLLM V1 机制对照表、性能数据表、已知局限与改进路线——达到"贴到简历附录能讲 10 分钟"的标准
 
 ---
-4:> **衔接回顾**：Day 25（β-γ-c 收益框架、三公式、四路线、vLLM V1 投机 step 源码链路）、Day 26（三组实验实测数据、k 扫参、负收益两条路径的亲手复现、S_pred vs S_meas 的工程开销闭环）、Day 22-24（量化三连与第一份 A4《量化》——今天产出第二份，两份配成一对面试弹药）、Day 27（mini 引擎收官：budget 记账、chunked prefill、preemption——投机的所有系统耦合昨天刚在代码里摸过一遍）、以及更早的地基：Day 2/3（decode 时延下界与 ridge point）、Day 5（TPOT/吞吐口径纪律）、Day 10/11（token budget）、Day 15（KV block 分配/回收）、Day 18（CUDA Graph bucket）、Day 19（nsys 找 bubble）。
-12:- [ ] 把 Day 25 的公式、Day 26 的实测数据、Day 27 的系统耦合，**压缩进一页 A4**（四段式：原理/场景/权衡/失效模式），并与 Day 24 的《量化》A4 形成统一格式
-57:- **底座（Day 27 mini 引擎）**：两条路径的收益都要经调度链路传导（budget、KV 分配、preemption）——系统层的账算不清，单点优化的收益到不了用户。
-110:系统耦合（Day 25 §4 + Day 27）
-299:- [ ] 项目 B README + benchmark 数据（Day 27）
-[0m
-现在我来检查一下仓库中实际的 vLLM V1 调度器源代码，因为第 27 天需要准确的 V1 代码引用：
-[0m$ [0mls vllm/v1/core/ && git log --oneline -3
-ls: cannot access 'vllm/v1/core/': No such file or directory
-[0m
-[0m$ [0mls && git log --oneline -3 2>/dev/null | head -5
-build
-build.py
-generate_tutorials.sh
-logs
-prompt.md
-public
-README.md
-static
-week0
-week1
-week2
-week3
-week4
-week5
-week6
-week7
-week8
-陈斌斌简历.md
-9cce07e Add week0 interview-sprint notes to the Pages site
-f1da259 Add Day 20-36 tutorial notes (weeks 3-6) with logs
-9b87999 Add Day 10-21 tutorial notes (weeks 2-3) with assets and logs; update generator and progress
-[0m
-vLLM 的源代码不在这个仓库中。我来查看一下 week4 教程是如何引用 V1 源码路径以确保一致性的，然后开始撰写：
-[0m$ [0mgrep -n "vllm/v1" week4/day26_speculative_decoding_experiments.md | head -15; grep -rn "scheduler.py" week4/*.md | head -5
-213:    → SpecDecodingMetrics.update()          # vllm/v1/speculative_decode/metrics.py
-week4/day25_speculative_decoding.md:259:打开投机后，V1 scheduler（`vllm/v1/core/sched/scheduler.py`）的记账发生两处变化（对照 Day 10/11/15）：
-week4/day25_speculative_decoding.md:265:# scheduler.py 关键逻辑（简化示意，字段名以实际版本为准）
-week4/day25_speculative_decoding.md:424:python day25_ngram_sim.py scheduler.py 500 4
-[0m
-[0m$ [0mls week3/
-assets
-day15_kv_cache_manager_block_pool.md
-day16_prefix_caching.md
-day17_attention_backend_abstraction.md
-day18_cuda_graph.md
-day19_async_scheduling.md
-day20_mini_engine_kv_pool.md
-day21_continuous_batching_scheduler.md
-README.md
-[0m
-我已经掌握了所需的全部上下文。第 27 天是：mini 引擎收尾 —— chunked prefill + preemption 实现，static 对比 continuous batching 基准测试，以及项目 README。我先开始撰写教程的前半部分：
-[0m← [0mWrite week4/day27_mini_engine_wrapup.md
-Wrote file successfully.
-[0m
-Now creating the SVGs. First, let me check the style of an existing week4 SVG for consistency:
-[0m$ [0mhead -40 week4/assets/day26_experiment_matrix.svg
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="Helvetica, Arial, sans-serif">
-  <defs>
-    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/>
-    </marker>
-  </defs>
-  <rect width="960" height="640" fill="#ffffff"/>
-  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">Day 26 实验设计：一个模型 · 两条负载 · 三个问题（先预测 → 再测量 → 后归因）</text>
 
-  <!-- ======== fixed variables bar ======== -->
-  <rect x="40" y="48" width="880" height="66" rx="8" fill="#F7FAFC" stroke="#A0AEC0" stroke-width="1.2"/>
-  <text x="58" y="70" font-size="12" font-weight="bold" fill="#2D3748">固定变量（对照组之间唯一的差异 = 投机配置）</text>
-  <g font-size="10.5" fill="#2D3748">
-    <rect x="58"  y="80" width="200" height="22" rx="4" fill="#E2E8F0"/><text x="158" y="95" text-anchor="middle">target: Qwen2.5-7B + EAGLE-3 头</text>
-    <rect x="266" y="80" width="92"  height="22" rx="4" fill="#E2E8F0"/><text x="312" y="95" text-anchor="middle">dtype: BF16</text>
-    <rect x="366" y="80" width="146" height="22" rx="4" fill="#E2E8F0"/><text x="439" y="95" text-anchor="middle">temperature: 0（greedy）</text>
-    <rect x="520" y="80" width="130" height="22" rx="4" fill="#E2E8F0"/><text x="585" y="95" text-anchor="middle">max-model-len: 4096</text>
-    <rect x="658" y="80" width="138" height="22" rx="4" fill="#E2E8F0"/><text x="727" y="95" text-anchor="middle">并发档: 8（实验 3 例外）</text>
-    <rect x="804" y="80" width="100" height="22" rx="4" fill="#E2E8F0"/><text x="854" y="95" text-anchor="middle">同一请求集</text>
-  </g>
+## 二、核心概念：项目 B 的最后两块拼图
 
-  <!-- ======== load cards ======== -->
-  <rect x="40" y="140" width="430" height="138" rx="10" fill="#EBF8FF" stroke="#2B6CB0" stroke-width="1.5"/>
-  <text x="60" y="164" font-size="13" font-weight="bold" fill="#2C5282">负载 A · 代码补全（高接受率）</text>
-  <g font-size="11" fill="#2D3748">
-    <text x="60" y="188">· 真实源码前缀 → 模型续写（vLLM 仓库本身即可当语料）</text>
-    <text x="60" y="208">· 结构强、命名/API 复用、缩进模式 → 自重复度高</text>
-    <text x="60" y="228">· 预期 EAGLE-3 β ≈ 0.75 ~ 0.90</text>
-    <text x="60" y="248">· 预期 ngram β ≈ 0.1 ~ 0.3（Day 25 模拟器：普通源码 E[τ]≈1.2）</text>
-    <text x="60" y="268" fill="#718096">（越高重复 → 草稿越像 target → β 越大）</text>
-  </g>
+### 2.1 Day 20/21 攒下了什么，还缺什么
 
-  <rect x="490" y="140" width="430" height="138" rx="10" fill="#FFFAF0" stroke="#DD6B20" stroke-width="1.5"/>
-  <text x="510" y="164" font-size="13" font-weight="bold" fill="#9C4221">负载 B · 开放对话（低接受率）</text>
-  <g font-size="11" fill="#2D3748">
-    <text x="510" y="188">· 创意写作 / 开放问答（生成内容几乎不抄上下文）</text>
-    <text x="510" y="208">· 分布平坦、下一个 token 天然难猜</text>
-    <text x="510" y="228">· 预期 EAGLE-3 β ≈ 0.50 ~ 0.70</text>
-    <text x="510" y="248">· 预期 ngram β ≈ 0.05 ~ 0.15（连 4-gram 都难命中）</text>
-    <text x="510" y="268" fill="#718096">（同一个 k，收益的"天花板"由负载先定死）</text>
-[0m
-接下来是 SVG 1 —— 经典的 static 与 continuous batching 时间轴图：
-[0m← [0mWrite week4/assets/day27_static_vs_continuous.svg
-Wrote file successfully.
-[0m
-[0m← [0mEdit week4/assets/day27_static_vs_continuous.svg
-Index: /mnt/workspace/aiinfra/vllm/week4/assets/day27_static_vs_continuous.svg
-===================================================================
---- /mnt/workspace/aiinfra/vllm/week4/assets/day27_static_vs_continuous.svg
-+++ /mnt/workspace/aiinfra/vllm/week4/assets/day27_static_vs_continuous.svg
-@@ -152,11 +152,8 @@
- <text x="560" y="360" text-anchor="middle" font-size="9" fill="#9B2C2C">E 完成</text>
- <text x="620" y="360" text-anchor="middle" font-size="9" fill="#9B2C2C">D 完成</text>
- 
- <!-- join events (green arrows up into slots) -->
--<g stroke="#2F855A" stroke-width="1.8">
--  <line x1="315" y1="364" x2="315" y2="368" transform="translate(0,-6)"/>
--</g>
- <g stroke="#2F855A" stroke-width="1.8" marker-end="url(#arrG)">
-   <line x1="315" y1="356" x2="315" y2="366"/>
-   <line x1="415" y1="356" x2="415" y2="366"/>
-   <line x1="515" y1="356" x2="515" y2="366"/>
+先把项目 B 的资产盘点一遍（你的代码可能字段名不同，机制等价即可）：
 
-[0m
-现在是 SVG 2 —— 迷你引擎架构图（同时也用作项目 README 中的架构图）：
-[0m← [0mWrite week4/assets/day27_minengine_arch.svg
-Wrote file successfully.
-[0m
-现在正在追加第 四 节（实现代码）：
-[0m$ [0mcat >> week4/day27_mini_engine_wrapup.md << 'MDEOF'
+| 组件 | Day 20/21 已实现 | 对应 vLLM V1 | 今天要补 |
+|---|---|---|---|
+| `BlockPool` | 固定 16 token/block 的池、free 队列、引用计数 | `vllm/v1/core/kv_cache_manager.py` + kv_cache_interface | —（只加一个 `num_free` 快捷属性） |
+| `Request` | prompt/output token、`num_computed_tokens`、block table | `vllm/v1/request.py` | `preempted_count`、`first_token_time` 等统计字段 |
+| `Scheduler` | waiting/running 双队列、token budget、FCFS | `vllm/v1/core/sched/scheduler.py`（早期版本在 `v1/core/scheduler.py`） | **chunked prefill** + **preemption** |
+| 引擎循环 | 逐 step 调度 → 假模型出 token → 回收 | `vllm/v1/engine/core.py` 的 EngineCore loop | 接成本模型当"虚拟时钟" |
+| 指标 | — | `vllm/v1/metrics/` | TTFT/TPOT/吞吐/抢占计数的采集与分位数 |
+
+也就是说：**Day 21 的引擎只能"整条 prompt 一次吃进"**——`max_num_batched_tokens` 必须 ≥ 最长 prompt，否则长请求永远进不了 running；**KV 满了只会死锁或崩**——没有任何退让机制。这两点恰恰是 vLLM V1 调度器（Day 11/12）最有面试区分度的两个机制。今天补上它们，项目 B 的调度面就与 V1 的核心行为对齐了。
+
+### 2.2 chunked prefill：把"一次吃撑"改成"分口喂"
+
+Day 11 读源码时的结论今天要用代码兑现，先把机制复述成可实现的三条规则：
+
+1. **切块规则**：waiting 队首请求的剩余 prompt `R = num_tokens − num_computed_tokens`，本步最多喂 `c = min(R, budget剩余, chunk_size)` 个 token；喂不完的请求**带着部分计算状态进 running**，下一步继续（它不是 decode，是"半 prefill"）；
+2. **decode 优先记账**：本步先给 running 里所有 decode 请求各记 1 个 token 位（共 `n_decode` 个），剩余 budget 再分给 prefill 切块——保护的是 **TPOT**（Day 5：正在生成的用户体验），代价是 TTFT 略增；
+3. **KV 跟着走**：切块进来的 token 照常走 Day 20 的 `allocate → append_slots` 路径，block 按 16 token 粒度逐块申请——**chunked prefill 不需要 KV 层任何改动**，这是它实现成本极低的原因。
+
+> **版本备注**：V1 每步混合 prefill/decode、共享 `TokenBudget`，这与上面一致；但"先 decode 还是先 prefill"的内部顺序在不同版本间有过演进（还与 Day 19 的 async scheduling 提前一步调度相关）。以你安装版本的 `schedule()` 里 `schedule_prefills()/schedule_running()` 调用顺序为准——这正是 Day 10/11 你做过的事，别背结论、去看代码。
+
+### 2.3 preemption：recompute 是 V1 的唯一模式
+
+Day 12 的结论：V0 有 recompute / swap 两种抢占，**V1 只保留了 recompute**——被抢占请求释放全部 KV block，回到 waiting 队首，`num_computed_tokens` 清零，等下次调度重新 prefill。机制极简，代价是**已生成的 KV 全部作废**：
+
+$$
+\text{抢占浪费} = \underbrace{C \cdot t_{\text{prefill/tok}}}_{\text{重算成本}} \quad \text{其中 } C = \text{prompt} + \text{已生成 token 数}
+$$
+
+为什么 V1 敢删掉 swap？三个理由（面试要能展开）：
+
+- **swap 的收益窗口很窄**：只有当"CPU 内存搬运时间 < 重算时间"时 swap 才赚，而这要求被抢占请求的上下文足够长——但长上下文请求恰恰是最不该被抢占的（重算贵、swap 也贵）；
+- **工程复杂度不对称**：swap 需要 CPU 侧缓存池、双向搬运流水、swap-in 时机协调（V0 的一大坨代码），recompute 只需要"释放 + 回队"两行逻辑；
+- **正确的解法在调度入口**：与其事后抢占，不如**准入时留余量**（watermark / `max_num_seqs`），或者用 prefix caching 让重算变"重读"（Day 16：被抢占请求重进时命中自己留下的 block，成本从 $C \cdot t_{\text{prefill/tok}}$ 掉到接近 0）。
+
+### 2.4 收官对比：为什么是 static vs continuous batching
+
+项目 B 的 headline 实验是 README 里写明的：**benchmark 对比 static batching vs 你的 continuous batching**。这不只是"跑个数"——它是 Orca（OSDI 2022）那篇经典对比图的可复现版本，也是 Day 52 面试题清单里的原题：
+
+> *continuous batching vs static batching？in-flight batching 的调度粒度？*
+
+static batching（TGS，token-generation serving 的传统做法）：凑一批请求 → 整批 prefill → 整批逐 step decode → **全部生成完才放下一批进来**。两个结构性浪费：
+
+- **槽位空转**：先写完的请求占着 batch 位，GPU 每步还在为它做无效前向（真实系统里是 padding）；
+- **批间壁垒**：新到的请求哪怕队列空着也得等整批结束，TTFT 被上一个最慢请求绑架。
+
+continuous batching（iteration-level scheduling）：调度粒度从"请求级"细化到 **step 级**——每个 step 结束后重算 batch 组成：完成的踢出、有空位的补新请求。这就是 Day 21 已实现的骨架，今天加上 chunked prefill 和 preemption 后，它就是一个（模拟意义上的）完整 in-flight batching 引擎。
+
+![static batching 与 continuous batching 的时序对比：槽位空转与批间壁垒 vs step 级补位](assets/day27_static_vs_continuous.svg)
+
+---
+
+## 三、性能模型：先算清，再编码
+
+> Day 24 立的规矩今天最后一次全套执行：**先预测、再测量、后归因**。本节的所有公式就是今天实验的"押注单"。
+
+### 3.1 成本模型：把 Day 2 的手算变成虚拟时钟
+
+纯 Python 引擎没有真 kernel，用成本模型模拟每个 step 的耗时（校准自 Day 2 手算：8B BF16 模型 / A100 级硬件）：
+
+| 参数 | 取值 | 来源 |
+|---|---|---|
+| `PREFILL_MS_PER_TOKEN` | 0.25 ms | prefill compute-bound：$2P=16$ GFLOP/token ÷ ~64 TFLOP/s 有效算力 ≈ 4000 tok/s |
+| `DECODE_BASE_MS` | 8.0 ms | Day 2 下界：权重 16 GB ÷ 2 TB/s（读一遍权重） |
+| `DECODE_MS_PER_SEQ` | 0.15 ms | 每加一条序列的 KV 读取 + 开销增量（Day 2：$m_{\text{token}}$ 小、但聚合可见） |
+
+$$
+t_{\text{step}}(n_{\text{prefill}}, B) = 0.25 \cdot n_{\text{prefill}} + \max\big(0,\; 8 + 0.15\,(B-1)\big)\ \ \text{ms}
+$$
+
+（$B=0$ 且 $n_{\text{prefill}}=0$ 时步长为 0——引擎空闲直接跳到下一个到达事件。）
+
+### 3.2 static batching 的浪费公式
+
+一个 batch（$N$ 条请求，输出长度 $L_1,\dots,L_N$，prefill 共 $P_{\Sigma}$ tokens）的服务时间：
+
+$$
+T_{\text{batch}} = \underbrace{c_p \cdot P_{\Sigma}}_{\text{整批 prefill}} + \underbrace{\max_i L_i \cdot t_d(N)}_{\text{decode 步数取最长者}}
+$$
+
+其中 $t_d(N) = 8 + 0.15(N-1)$ ms。**有效产出只有 $\sum_i L_i$ 个 token**，于是 decode 阶段的算力利用率：
+
+$$
+\eta_{\text{static}} = \frac{\sum_i L_i}{N \cdot \max_i L_i} = \frac{\overline{L}}{\max_i L}
+$$
+
+输出长度独立同分布时，$\max_i L_i$ 随 $N$ 单调上涨（Jensen：$E[\max] \geq \max E[L]$，且右尾越长涨得越快）——**输出长度方差越大、batch 越大，static 的空转比例越高**。这是"static batching 在真实负载（输出长度重尾分布）下吞吐塌方"的一阶解释，也是今天 E1 要量化的第一预测。
+
+### 3.3 continuous batching 的吞吐守恒与 chunked prefill 的 TPOT 上界
+
+**吞吐侧**：稳态下 running 保持在 $B$ 条，每个 decode step 产 $B$ 个 token：
+
+$$
+\text{throughput}_{\text{decode}} \approx \frac{B}{8 + 0.15(B-1)}\ \ \text{tok/s} \xrightarrow{B \gg 1} \frac{1}{0.15} \approx 6600\ \text{tok/s（本模型上界）}
+$$
+
+带宽瓶颈下随 $B$ 近似线性增长（Day 1/3 的结论在这里以数字复现），饱和点由真实硬件的 ridge 决定——模拟器里我们用 `DECODE_MS_PER_SEQ` 把它参数化了。
+
+**时延侧（chunked prefill 的价值）**：一条 $P_{\max}$ token 的长 prompt 整段进一个 step，所有并发 decode 的该 step 被拉长：
+
+$$
+\Delta_{\text{stall}}^{\text{no chunk}} = c_p \cdot P_{\max} \quad\xrightarrow{P_{\max}=8192}\quad 0.25 \times 8192 \approx 2048\ \text{ms}
+$$
+
+即**单个 token 间隔从 ~18 ms 暴涨到 2 秒量级**（Day 11 的 head-of-line blocking）。切成长度为 $c$ 的块后，单 step 附加时延被钳到：
+
+$$
+\Delta_{\text{stall}}^{\text{chunk}} = c_p \cdot c \quad\xrightarrow{c=512}\quad 128\ \text{ms} \quad\Rightarrow\quad \text{TPOT 尖峰从 } 2048\text{ms 降到 } \sim146\text{ms（}16\times\text{）}
+$$
+
+代价：该请求的 prefill 拉长为 $\lceil P_{\max}/c \rceil$ 个 step，TTFT 增加约 $\lceil P_{\max}/c \rceil \cdot t_d(B)$ 的排队分量；以及窗口内所有并发请求的 TPOT 每步 +128 ms（摊薄但仍在）。**chunked prefill 不是免费午餐，它把"一个用户的灾难"重新分配成"所有用户的小税"**——这句话是 E3 的归因模板。
+
+![chunked prefill on/off 的 step 时序对比：整段 prefill 造成 decode 停摆 vs 切块后每步附加时延有上界](assets/day27_chunked_vs_full.svg)
+
+### 3.4 preemption 的代价与"抢占风暴"条件
+
+单次抢占成本即 §2.3 的重算公式。真正危险的是**循环抢占**：被抢占请求回 waiting 队首 → 重新 prefill 又要 $C/16$ 个 block → 若 KV 依旧紧张，再次抢占。系统陷入"precompute → preempt → precompute"的活锁式震荡，有效吞吐崩塌。触发条件的一阶判据：
+
+$$
+\text{稳态需求} \approx \lambda \cdot (\overline{p} + \overline{L})\ \text{token 位置} \geq \text{block 池容量} \times (1 - \text{watermark}) \Rightarrow \text{必然进入抢占区}
+$$
+
+**三个旋钮**（与 vLLM 同名）：① 调小 `max_num_seqs`（准入控制，治本）；② 压 watermark / 扩 KV 池（`gpu_memory_utilization`，治容量）；③ 开 prefix caching（把重算变重读，Day 16）。E4 会把这条判据跑成曲线。
 
 ---
 
@@ -495,20 +385,6 @@ class StaticBSEngine:
 | `preempted_count / recomputed_tokens` | preemption 相关计数（Day 13 在 `/metrics` 见过） | 自测题 4 会考"看到它涨了怎么办" |
 | `engine.step()` 同步虚拟时钟 | EngineCore loop + async scheduling（Day 19：调度提前一步与执行重叠） | **mini 与 V1 的最大差距之一**，README 局限一节如实列出 |
 | 无 prefix caching（Day 16 未接入） | block hash 命中免重算 | 抢占恢复成本可被打折——改进路线第一条 |
-MDEOF
-echo "appended, total lines: $(wc -l < week4/day27_mini_engine_wrapup.md)"
-appended, total lines: 387
-[0m
-现在是 SVG 3 —— 抢占生命周期（状态机 + KV 池时间线）：
-[0m← [0mWrite week4/assets/day27_preemption_flow.svg
-Wrote file successfully.
-[0m
-Now SVG 4 — chunked vs full prefill TPOT comparison:
-[0m← [0mWrite week4/assets/day27_chunked_vs_full.svg
-Wrote file successfully.
-[0m
-现在是第三部分 —— 实验和项目 README 模板：
-[0m$ [0mcat >> week4/day27_mini_engine_wrapup.md << 'MDEOF'
 
 ---
 
@@ -646,12 +522,6 @@ token budget 记账——并复现 static vs continuous batching 的经典对比
 - **T**：把 V1 调度面浓缩成可运行、可实验、可复现的最小系统。
 - **A**：三周三次增量（Day 20 KV 池 → Day 21 迭代级调度 → Day 27 chunked+preempt+benchmark），每步带行为自测；先手算预测再跑实验（预测 2.3×、实测 __×，差异归因三点）。
 - **R**：四个机制与 V1 源码一一对照的 executable spec；E1~E4 四组数据；三条可直接迁移到生产排查的结论（TPOT 上界公式 / 抢占重算比阈值 / 饱和点容量规划）。
-MDEOF
-echo "appended, total lines: $(wc -l < week4/day27_mini_engine_wrapup.md)"
-appended, total lines: 524
-[0m
-最终追加 — 面试问题、总结、自测、产出：
-[0m$ [0mcat >> week4/day27_mini_engine_wrapup.md << 'MDEOF'
 
 ---
 
@@ -734,74 +604,3 @@ decode 每请求每步只要 1 个 token 位，先记账保住 TPOT（正在生�
 - [ ] **预测 vs 实测对照表**（押注单回填 + 差异归因三点）
 - [ ] **项目 B README**：架构图（`day27_minengine_arch.svg`）+ 机制对照表 + 性能表 + 三决策 + 五局限 + 复现命令——**面试作品集素材，Day 49/53 取材**
 - [ ] 明日预告打卡：Day 28（复盘日）——投机解码专题 A4 定稿 + 本周产出物核对（含今天的 README 与数据）
-MDEOF
-echo "done, total lines: $(wc -l < week4/day27_mini_engine_wrapup.md)"
-done, total lines: 606
-[0m
-现在正在验证完整文件——结构、SVG 引用和 XML 有效性：
-[0m$ [0mgrep -n "^## \|^# " week4/day27_mini_engine_wrapup.md; echo "---"; grep -n "assets/" week4/day27_mini_engine_wrapup.md; echo "---"; python3 -c "
-import xml.etree.ElementTree as ET, glob
-for f in sorted(glob.glob('week4/assets/day27_*.svg')):
-    try:
-        ET.parse(f); print('OK', f)
-    except Exception as e:
-        print('FAIL', f, e)
-"
-1:# Day 27：mini 引擎收尾（项目 B）—— chunked prefill、preemption 落地与 static vs continuous batching 终局对比
-10:## 一、今日学习目标
-22:## 二、核心概念：项目 B 的最后两块拼图
-79:## 三、性能模型：先算清，再编码
-153:## 四、关键代码：mini 引擎 v3
-280:# engine.py（节选）—— 虚拟时钟事件循环
-391:## 五、动手实验：static vs continuous batching 终局对比
-396:# bench.py —— 负载生成（口径与 Day 6/13 的 vllm bench serve 对齐：闭队=固定请求集，开队=泊松到达）
-424:# report() 逐请求口径（Day 5）：
-425:#   TTFT = first_token_time − arrival
-426:#   TPOT = (finish_time − first_token_time) / (len(output) − 1)
-427:#   输出吞吐 = Σ len(output) / (max finish − min arrival)
-454:# 跑法（顺序执行；每组的 stdout 直接就是归档素材）
-490:## 六、项目 B README：面试作品集的封面页
-495:# mini-vllm：500 行复刻 vLLM V1 调度面的 continuous batching 引擎（模拟器）
-501:## 1. 架构（day27_minengine_arch.svg，含 vLLM V1 对应物标注）
-502:## 2. 机制对照表（mini ↔ vllm/v1/...，§4.5 那张表）
-503:## 3. 性能数据（E1~E4 表 + λ 扫描曲线，标注预测 vs 实测与差异归因）
-504:## 4. 设计决策（§4.2 三决策表：decode 优先 / 尾部抢占 / 乐观准入）
-505:## 5. 局限与改进路线（诚实清单，见下）
-506:## 6. 复现：pip 无依赖，python -m mini.selftest && python -m mini.bench --exp e1 ...
-528:## 七、面试高频问题
-564:## 八、今日总结
-576:## 九、今日自测题
-597:## 十、今日产出物
----
-75:![static batching 与 continuous batching 的时序对比：槽位空转与批间壁垒 vs step 级补位](assets/day27_static_vs_continuous.svg)
-139:![chunked prefill on/off 的 step 时序对比：整段 prefill 造成 decode 停摆 vs 切块后每步附加时延有上界](assets/day27_chunked_vs_full.svg)
-170:![mini 引擎 v3 总体架构：各模块职责与 vLLM V1 对应物](assets/day27_minengine_arch.svg)
-275:![请求状态机与 KV 池联动：一次「抢占 → 重算 → 恢复」事件的完整轨迹](assets/day27_preemption_flow.svg)
----
-OK week4/assets/day27_chunked_vs_full.svg
-OK week4/assets/day27_minengine_arch.svg
-OK week4/assets/day27_preemption_flow.svg
-OK week4/assets/day27_static_vs_continuous.svg
-[0m
-所有结构检查均已通过。第 495-506 行在 `README` 模板代码块中，符合预期。让我验证一下代码块（code fences）是否闭合，并对几处内容进行最后的抽查：
-[0m$ [0mawk '/^```/{c++} END{print "code fences:", c, (c%2==0 ? "BALANCED" : "UNBALANCED")}' week4/day27_mini_engine_wrapup.md; echo "---"; grep -c 'day27' week4/day28_speculative_decoding_review.md >/dev/null && echo "day28 cross-ref OK"; ls -la week4/day27_mini_engine_wrapup.md week4/assets/day27_*.svg | awk '{print $9, "("$5" bytes)"}'
-code fences: 18 BALANCED
----
-week4/assets/day27_chunked_vs_full.svg (9373 bytes)
-week4/assets/day27_minengine_arch.svg (9816 bytes)
-week4/assets/day27_preemption_flow.svg (7723 bytes)
-week4/assets/day27_static_vs_continuous.svg (11866 bytes)
-week4/day27_mini_engine_wrapup.md (46738 bytes)
-[0m
-Day 27 教程已完成并写入。
-
-**文件**：`week4/day27_mini_engine_wrapup.md`（606 行，十个章节，与本周 day25/26 结构对齐）
-
-**内容**（严格对应 README 中 Day 27 主题）：
-- **核心概念/原理**：chunked prefill 三条规则、recompute preemption（V1 唯一模式）、static batching 浪费公式 η=mean(L)/max(L)、CB 吞吐守恒式、TPOT 上界与抢占代价公式，成本模型校准自 Day 2 手算
-- **关键代码**：mini 引擎 v3（scheduler 核心约 60 行：Pass 0 抢占检查 / Pass 1 decode 优先 / Pass 2 切块喂 prefill）、行为自测三断言、static 基线引擎、mini ↔ vLLM V1 机制对照表
-- **实验**：E1 离线吞吐（预测 2.3×）、E2 在线 TTFT/TPOT vs λ、E3 chunked on/off（预测 2066ms→146ms）、E4 KV 压力抢占曲线，均含预测押注单与四段式归档
-- **产出**：项目 B README 模板（含 STAR 三分钟讲稿与五条诚实局限）
-- **衔接**：回顾 Day 20/21（项目 B 前作）、Day 10-16（V1 调度源码）、本周 Day 25/26（budget 记账）；前导 Day 28 复盘
-
-**SVG（4 张，均在 `week4/assets/`，XML 校验通过）**：`day27_static_vs_continuous.svg`（Orca 式时序对比）、`day27_minengine_arch.svg`（项目架构图）、`day27_preemption_flow.svg`（抢占状态机×KV 池联动）、`day27_chunked_vs_full.svg`（chunked TPOT 对比）

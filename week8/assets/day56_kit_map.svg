@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 740" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d56a" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="d56b" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="980" height="740" fill="#fafbfc"/>
+  <text x="490" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Day 56 收官全景：8 周学习 → 8 件工具包材料 → 面试环节</text>
+  <text x="490" y="58" text-anchor="middle" font-size="13" fill="#64748b">左：56 天的时间线｜中：README 附表要求的 8 件产出物（今日总装对象）｜右：一场 60 分钟技术面试的 5 个环节</text>
+
+  <!-- Column titles -->
+  <text x="140" y="92" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">8 周时间线</text>
+  <text x="480" y="92" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">面试工具包（kit/）8 件材料</text>
+  <text x="840" y="92" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">面试环节（Day 54 结构）</text>
+
+  <!-- Left: 8 weeks -->
+  <g font-size="12">
+    <rect x="42" y="106" width="196" height="58" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="60" y="130" font-size="13" font-weight="700" fill="#1e3a8a">W1 推理基础与性能建模</text>
+    <text x="60" y="150" fill="#475569">手算公式 · Roofline · 指标体系</text>
+
+    <rect x="42" y="172" width="196" height="58" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="60" y="196" font-size="13" font-weight="700" fill="#312e81">W2 V1 源码（调度链路）</text>
+    <text x="60" y="216" fill="#475569">Processor · Scheduler · 抢占</text>
+
+    <rect x="42" y="238" width="196" height="58" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="60" y="262" font-size="13" font-weight="700" fill="#312e81">W3 V1 源码（KV 与执行）</text>
+    <text x="60" y="282" fill="#475569">KV Manager · CG · mini 引擎开工</text>
+
+    <rect x="42" y="304" width="196" height="58" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="60" y="328" font-size="13" font-weight="700" fill="#4c1d95">W4 量化与投机解码</text>
+    <text x="60" y="348" fill="#475569">FP8/W4A16 · MTP/EAGLE · 项目B 收尾</text>
+
+    <rect x="42" y="370" width="196" height="58" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="60" y="394" font-size="13" font-weight="700" fill="#14532d">W5 P/D 分离与分布式</text>
+    <text x="60" y="414" fill="#475569">P/D · TP/PP/EP · cache 路由</text>
+
+    <rect x="42" y="436" width="196" height="58" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+    <text x="60" y="460" font-size="13" font-weight="700" fill="#78350f">W6 项目A（上）</text>
+    <text x="60" y="480" fill="#475569">vllm-ascend 选题 · 基线 · 剖析</text>
+
+    <rect x="42" y="502" width="196" height="58" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+    <text x="60" y="526" font-size="13" font-weight="700" fill="#78350f">W7 项目A（下）+ 项目C</text>
+    <text x="60" y="546" fill="#475569">PR + 数据对比 · 消融实验报告</text>
+
+    <rect x="42" y="568" width="196" height="58" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5"/>
+    <text x="60" y="592" font-size="13" font-weight="700" fill="#831843">W8 面试冲刺</text>
+    <text x="60" y="612" fill="#475569">四件套 · 七问 · 讲稿 · 模拟面试 ×2</text>
+  </g>
+
+  <!-- Middle: 8 kit materials -->
+  <g font-size="12">
+    <rect x="330" y="106" width="300" height="58" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+    <text x="348" y="130" font-size="13.5" font-weight="700" fill="#1e3a8a">① 第一性原理笔记（数字锚点）</text>
+    <text x="348" y="150" fill="#475569">KV 显存 / TPOT 下界 / Roofline 判定</text>
+
+    <rect x="330" y="172" width="300" height="58" rx="8" fill="#ffffff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="348" y="196" font-size="13.5" font-weight="700" fill="#312e81">② V1 架构图 + 源码走读笔记</text>
+    <text x="348" y="216" fill="#475569">进程结构 · 调用链 · KV 数据结构</text>
+
+    <rect x="330" y="238" width="300" height="58" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+    <text x="348" y="262" font-size="13.5" font-weight="700" fill="#134e4a">③ mini 引擎（项目 B）+ README</text>
+    <text x="348" y="282" fill="#475569">block 池 · continuous batching · 对比数据</text>
+
+    <rect x="330" y="304" width="300" height="58" rx="8" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="348" y="328" font-size="13.5" font-weight="700" fill="#4c1d95">④ 四份 A4：量化 / 投机 / P-D / 分布式</text>
+    <text x="348" y="348" fill="#475569">原理 · 场景 · 权衡 · 失效模式 四段式</text>
+
+    <rect x="330" y="370" width="300" height="58" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+    <text x="348" y="394" font-size="13.5" font-weight="700" fill="#14532d">⑤ vllm-ascend PR + 前后数据（项目 A）</text>
+    <text x="348" y="414" fill="#475569">瓶颈报告 · 优化实现 · benchmark 对比表</text>
+
+    <rect x="330" y="436" width="300" height="58" rx="8" fill="#ffffff" stroke="#d97706" stroke-width="2"/>
+    <text x="348" y="460" font-size="13.5" font-weight="700" fill="#78350f">⑥ 消融实验报告（项目 C）</text>
+    <text x="348" y="480" fill="#475569">4 组消融 · 图表 · 机制解释</text>
+
+    <rect x="330" y="502" width="300" height="58" rx="8" fill="#ffffff" stroke="#db2777" stroke-width="2"/>
+    <text x="348" y="526" font-size="13.5" font-weight="700" fill="#831843">⑦ 白板四件套（Day 50-51）</text>
+    <text x="348" y="546" fill="#475569">显存五步法 · block table · 调度推演 · 诊断树</text>
+
+    <rect x="330" y="568" width="300" height="58" rx="8" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+    <text x="348" y="592" font-size="13.5" font-weight="700" fill="#0f172a">⑧ 项目讲稿 + 七问录音（Day 52-53）</text>
+    <text x="348" y="612" fill="#475569">STAR 3'/10' 版 · 昇腾→GPU 叙事主线</text>
+  </g>
+
+  <!-- Right: 5 interview stages -->
+  <g font-size="12">
+    <rect x="742" y="106" width="212" height="84" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="758" y="132" font-size="13.5" font-weight="700" fill="#1e3a8a">① 开场 + 自我介绍 5'</text>
+    <text x="758" y="154" fill="#475569">90 秒主线叙事</text>
+    <text x="758" y="172" fill="#475569">（Day 53 → Day 54 压缩版）</text>
+
+    <rect x="742" y="220" width="212" height="84" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="758" y="246" font-size="13.5" font-weight="700" fill="#312e81">② 项目深挖 20'</text>
+    <text x="758" y="268" fill="#475569">追问梯子最密集</text>
+    <text x="758" y="286" fill="#475569">项目 A/B/C 主战场</text>
+
+    <rect x="742" y="334" width="212" height="84" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="758" y="360" font-size="13.5" font-weight="700" fill="#14532d">③ 场景 / 设计题 20'</text>
+    <text x="758" y="382" fill="#475569">主动上白板</text>
+    <text x="758" y="400" fill="#475569">数字先行 + 架构图</text>
+
+    <rect x="742" y="448" width="212" height="84" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+    <text x="758" y="474" font-size="13.5" font-weight="700" fill="#78350f">④ 快问快答 10'</text>
+    <text x="758" y="496" fill="#475569">30 秒准确输出</text>
+    <text x="758" y="514" fill="#475569">七问及其变形</text>
+
+    <rect x="742" y="562" width="212" height="84" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5"/>
+    <text x="758" y="588" font-size="13.5" font-weight="700" fill="#831843">⑤ 反问环节 5'</text>
+    <text x="758" y="610" fill="#475569">2~3 个内行问题</text>
+    <text x="758" y="628" fill="#475569">（SLO / 部署形态 / 团队方向）</text>
+  </g>
+
+  <!-- Arrows: week -> material -->
+  <g stroke="#94a3b8" stroke-width="1.6">
+    <line x1="238" y1="135" x2="326" y2="135" marker-end="url(#d56a)"/>
+    <line x1="238" y1="201" x2="326" y2="201" marker-end="url(#d56a)"/>
+    <line x1="238" y1="267" x2="326" y2="267" marker-end="url(#d56a)"/>
+    <line x1="238" y1="333" x2="326" y2="333" marker-end="url(#d56a)"/>
+    <line x1="238" y1="399" x2="326" y2="399" marker-end="url(#d56a)"/>
+    <line x1="238" y1="465" x2="326" y2="465" marker-end="url(#d56a)"/>
+    <line x1="238" y1="531" x2="326" y2="531" marker-end="url(#d56a)"/>
+    <line x1="238" y1="597" x2="326" y2="597" marker-end="url(#d56a)"/>
+  </g>
+
+  <!-- Arrows: material -> stage (curved) -->
+  <g fill="none" stroke="#0f766e" stroke-width="2">
+    <path d="M630,135 C688,135 684,148 738,148" marker-end="url(#d56b)"/>
+    <path d="M630,201 C700,208 672,258 738,262" marker-end="url(#d56b)"/>
+    <path d="M630,267 C700,267 672,264 738,264" marker-end="url(#d56b)"/>
+    <path d="M630,333 C700,330 680,345 738,360" marker-end="url(#d56b)"/>
+    <path d="M630,399 C710,399 668,470 738,486" marker-end="url(#d56b)"/>
+    <path d="M630,465 C710,468 672,484 738,492" marker-end="url(#d56b)"/>
+    <path d="M630,531 C710,531 668,380 738,372" marker-end="url(#d56b)"/>
+    <path d="M630,597 C710,597 672,600 738,600" marker-end="url(#d56b)"/>
+  </g>
+
+  <!-- Bottom note -->
+  <rect x="42" y="660" width="912" height="58" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="490" y="684" text-anchor="middle" font-size="13.5" font-weight="700" fill="#14532d">收官日铁律（README Day 56 原文）</text>
+  <text x="490" y="706" text-anchor="middle" font-size="12.5" fill="#166534">面试前最后一天只看自己写的总结，不看新东西 —— 今日所有动作只在这张图的"中列"8 件材料上进行</text>
+</svg>

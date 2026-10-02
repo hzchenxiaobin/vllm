@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/>
+    </marker>
+    <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2B6CB0"/>
+    </marker>
+    <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#C53030"/>
+    </marker>
+  </defs>
+  <rect width="960" height="700" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">mini 引擎 v3 总体架构（项目 B 收官版）—— 括号内为 vLLM V1 对应物</text>
+
+  <!-- ============ workload generator ============ -->
+  <rect x="40" y="56" width="240" height="92" rx="10" fill="#F7FAFC" stroke="#A0AEC0" stroke-width="1.4"/>
+  <text x="160" y="78" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2D3748">workload.py 负载生成</text>
+  <g font-size="10.5" fill="#2D3748">
+    <text x="56" y="98">· 泊松到达（rate λ 可调）</text>
+    <text x="56" y="114">· prompt ~ U[256,768]，输出 ~ LogN</text>
+    <text x="56" y="130">· 长 prompt 洪峰模式（E3 用）</text>
+  </g>
+  <text x="160" y="144" text-anchor="middle" font-size="9.5" fill="#718096">（对应 vllm bench serve 的请求集）</text>
+
+  <!-- ============ scheduler ============ -->
+  <rect x="360" y="56" width="560" height="300" rx="10" fill="#EBF8FF" stroke="#2B6CB0" stroke-width="1.6"/>
+  <text x="640" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#2C5282">scheduler.py —— 每步的核心：schedule()（vllm/v1/core/sched/scheduler.py）</text>
+
+  <!-- token budget box -->
+  <rect x="384" y="94" width="240" height="64" rx="8" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="1.2"/>
+  <text x="504" y="114" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2A4365">TokenBudget</text>
+  <g font-size="10" fill="#2A4365">
+    <text x="504" y="132" text-anchor="middle">max_num_batched_tokens = 2048</text>
+    <text x="504" y="148" text-anchor="middle">先扣 decode（每请求 1），再喂 prefill 块</text>
+  </g>
+
+  <!-- queues -->
+  <rect x="384" y="178" width="240" height="60" rx="8" fill="#ffffff" stroke="#2B6CB0" stroke-width="1.2"/>
+  <text x="504" y="198" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2A4365">waiting 队列（FCFS）</text>
+  <text x="504" y="216" text-anchor="middle" font-size="10" fill="#2D3748">新请求 / 被抢占请求插队首</text>
+  <rect x="384" y="250" width="240" height="60" rx="8" fill="#ffffff" stroke="#2B6CB0" stroke-width="1.2"/>
+  <text x="504" y="270" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2A4365">running 队列（≤ max_num_seqs）</text>
+  <text x="504" y="288" text-anchor="middle" font-size="10" fill="#2D3748">decode 请求 + 未切完的半 prefill</text>
+
+  <!-- new mechanisms (right column) -->
+  <rect x="656" y="94" width="240" height="102" rx="8" fill="#C6F6D5" stroke="#2F855A" stroke-width="1.4"/>
+  <text x="776" y="114" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#22543D">今日新增 ① chunked prefill</text>
+  <g font-size="10" fill="#22543D">
+    <text x="672" y="134">c = min(剩余prompt, budget, chunk)</text>
+    <text x="672" y="152">喂不完 → 带 num_computed_tokens</text>
+    <text x="672" y="170">进 running，下一步继续（Day 11）</text>
+  </g>
+  <rect x="656" y="210" width="240" height="100" rx="8" fill="#FED7D7" stroke="#C53030" stroke-width="1.4"/>
+  <text x="776" y="230" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#742A2A">今日新增 ② preemption（recompute）</text>
+  <g font-size="10" fill="#742A2A">
+    <text x="672" y="250">KV block 不足 → 从 running 尾部抢</text>
+    <text x="672" y="268">释放 block · computed=0 · 回队首</text>
+    <text x="672" y="286">（V1 唯一模式，Day 12；恢复成本</text>
+    <text x="672" y="302">可被 prefix caching 打折，Day 16）</text>
+  </g>
+
+  <!-- internal arrows in scheduler -->
+  <g stroke="#2B6CB0" stroke-width="1.3" fill="none" marker-end="url(#arrB)">
+    <path d="M 504 158 L 504 174"/>
+    <path d="M 504 238 L 504 246"/>
+  </g>
+  <!-- preemption arrow: running tail back to waiting head -->
+  <path d="M 384 282 C 340 282 340 196 384 196" stroke="#C53030" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#arrR)"/>
+  <text x="322" y="244" text-anchor="middle" font-size="9.5" fill="#C53030" transform="rotate(-90 322 244)">抢占回流（recompute）</text>
+  <!-- admission arrow: waiting -> running -->
+  <text x="630" y="222" font-size="10" fill="#2F855A">准入 →</text>
+
+  <!-- ============ kv manager ============ -->
+  <rect x="360" y="392" width="270" height="170" rx="10" fill="#FFFAF0" stroke="#DD6B20" stroke-width="1.6"/>
+  <text x="495" y="414" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#7B341E">kv.py：BlockPool + BlockTable（Day 20）</text>
+  <g font-size="10.5" fill="#2D3748">
+    <text x="378" y="436">· NUM_BLOCKS × 16 token/块 定长池</text>
+    <text x="378" y="454">· free 队列 + 引用计数 alloc/free</text>
+    <text x="378" y="472">· append_slots()：每 16 token 续一块</text>
+    <text x="378" y="490">· can_allocate()：余量 ≥ 需求+watermark</text>
+  </g>
+  <rect x="378" y="504" width="234" height="44" rx="6" fill="#FEEBC8" stroke="#DD6B20" stroke-width="1"/>
+  <g font-size="9.5" fill="#7B341E">
+    <text x="495" y="520" text-anchor="middle">block table：req → [b0, b3, b7, …]</text>
+    <text x="495" y="536" text-anchor="middle">（vllm/v1/core/kv_cache_manager.py）</text>
+  </g>
+
+  <!-- ============ engine loop ============ -->
+  <rect x="60" y="392" width="260" height="170" rx="10" fill="#E9FFFA" stroke="#2C7A7B" stroke-width="1.6"/>
+  <text x="190" y="414" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#234E52">engine.py：事件循环（EngineCore loop）</text>
+  <g font-size="10.5" fill="#2D3748">
+    <text x="76" y="436">while 有未完成请求：</text>
+    <text x="88" y="454">① 注入已到达请求（arrival ≤ now）</text>
+    <text x="88" y="472">② plan = scheduler.schedule()</text>
+    <text x="88" y="490">③ t = model.step_time(plan)</text>
+    <text x="88" y="508">④ 出 token · 记 TTFT/TPOT · 回收</text>
+    <text x="88" y="526">⑤ now += t（虚拟时钟推进）</text>
+  </g>
+  <text x="190" y="552" text-anchor="middle" font-size="9.5" fill="#718096">（vllm/v1/engine/core.py + Day 19 async：V1 调度提前一步与执行重叠）</text>
+
+  <!-- ============ sim model ============ -->
+  <rect x="680" y="392" width="240" height="110" rx="10" fill="#FAF5FF" stroke="#6B46C1" stroke-width="1.6"/>
+  <text x="800" y="414" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#44337A">model.py：成本模型</text>
+  <g font-size="10" fill="#44337A">
+    <text x="696" y="436">t_step = 0.25·n_prefill</text>
+    <text x="696" y="452">        + max(0, 8 + 0.15(B−1)) ms</text>
+    <text x="696" y="472">校准自 Day 2 手算</text>
+    <text x="696" y="488">（8B BF16 / A100 级）</text>
+  </g>
+
+  <!-- ============ static baseline ============ -->
+  <rect x="680" y="524" width="240" height="80" rx="10" fill="#FFF5F5" stroke="#C53030" stroke-width="1.4"/>
+  <text x="800" y="546" text-anchor="middle" font-size="12" font-weight="bold" fill="#742A2A">static_bs.py：对照基线</text>
+  <g font-size="10" fill="#742A2A">
+    <text x="696" y="566">凑满 N 条 → 整批跑完才接下一批</text>
+    <text x="696" y="582">（无 step 级补位，无 chunk，无抢占）</text>
+  </g>
+
+  <!-- ============ metrics ============ -->
+  <rect x="60" y="590" width="860" height="86" rx="10" fill="#F7FAFC" stroke="#A0AEC0" stroke-width="1.4"/>
+  <text x="490" y="612" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2D3748">metrics.py：TTFT / TPOT（p50·p99）· 输出吞吐 · 队列时长 · preempted_count · 重算 token 数（vllm/v1/metrics/）</text>
+  <g font-size="10" fill="#718096">
+    <text x="490" y="632" text-anchor="middle">四段式归档：现象（bench 数字）→ 机制（本图哪条路径）→ 指标（哪个计数器动了）→ 动作（哪个旋钮）</text>
+    <text x="490" y="650" text-anchor="middle">三个旋钮：max_num_batched_tokens（budget）· max_num_seqs（准入）· NUM_BLOCKS/watermark（KV 容量）</text>
+    <text x="490" y="668" text-anchor="middle">已知局限：无真实 kernel · 无 prefix caching · 无 CUDA Graph · 单 FIFO —— 详见 README「局限与路线图」</text>
+  </g>
+
+  <!-- ============ main flow arrows ============ -->
+  <g stroke="#718096" stroke-width="1.6" fill="none">
+    <path d="M 280 102 L 356 102" marker-end="url(#arr)"/>
+    <path d="M 490 356 L 490 388" marker-end="url(#arr)"/>
+    <path d="M 490 562 L 490 586" marker-end="url(#arr)"/>
+    <path d="M 356 470 C 330 470 330 470 324 470 L 324 470" marker-end="url(#arr)"/>
+    <path d="M 360 300 C 320 330 240 350 232 388" marker-end="url(#arr)"/>
+    <path d="M 676 447 L 640 447 L 640 300" marker-end="url(#arr)"/>
+  </g>
+  <text x="318" y="94" font-size="9.5" fill="#718096">请求注入</text>
+  <text x="498" y="376" font-size="9.5" fill="#718096">StepPlan（本步要算哪些 token）</text>
+  <text x="500" y="580" font-size="9.5" fill="#718096">逐请求统计</text>
+  <text x="246" y="360" font-size="9.5" fill="#718096">schedule() 每步调用</text>
+</svg>

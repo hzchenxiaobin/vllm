@@ -1,0 +1,26 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week8/ 2>/dev/null && ls /mnt/workspace/aiinfra/vllm/week8/assets/ 2>/dev/null
+total 140
+drwxr-xr-x  3 root root  4096 Oct  2 19:09 .
+drwxr-xr-x 19 root root  4096 Oct  2 17:58 ..
+drwxr-xr-x  2 root root  4096 Oct  2 19:12 assets
+-rw-r--r--  1 root root 32573 Oct  2 18:31 day50_memory_estimation_block_table.md
+-rw-r--r--  1 root root 44839 Oct  2 18:55 day52_interview_question_drill.md
+-rw-r--r--  1 root root 23515 Oct  2 19:14 day54_mock_interview_1.md
+-rw-r--r--  1 root root 27278 Oct  1 23:17 README.md
+day50_block_table_prefix_hit.svg
+day50_cow_split.svg
+day52_chunked_prefill_budget.svg
+day52_tp_scaling_curve.svg
+day54_followup_ladder.svg
+day54_mock_interview_flow.svg
+day54_stuck_point_loop.svg
+[0m
+[0m→ [0mRead week8/day54_mock_interview_1.md[90m [limit=80][0m
+[0m→ [0mRead week8/day52_interview_question_drill.md[90m [limit=60][0m
+[0m→ [0mRead week8/day54_mock_interview_1.md[90m [offset=240][0m

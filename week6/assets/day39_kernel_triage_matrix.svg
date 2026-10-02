@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">kernel 级 bound 判定矩阵：Ratio 组合 → 结论 → 优化方向</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#64748b">Ratio 是"时间占比"不是"效率"——每个象限的结论都必须再用 AI 手算与多核均衡交叉验证</text>
+
+  <!-- ===== Quadrant matrix ===== -->
+  <!-- axes area: x 90-560, y 80-420 -->
+  <!-- axis lines -->
+  <line x1="325" y1="80" x2="325" y2="420" stroke="#94a3b8" stroke-width="1.4"/>
+  <line x1="90" y1="250" x2="560" y2="250" stroke="#94a3b8" stroke-width="1.4"/>
+  <!-- axis labels -->
+  <text x="325" y="446" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">Cube Ratio →</text>
+  <text x="330" y="466" text-anchor="middle" font-size="10" fill="#64748b">低（计算单元闲）</text>
+  <text x="500" y="466" text-anchor="middle" font-size="10" fill="#64748b">高（计算单元忙）</text>
+  <text x="72" y="250" font-size="12.5" font-weight="bold" fill="#334155" transform="rotate(-90 72 250)" text-anchor="middle">MTE Ratio →</text>
+  <text x="58" y="150" font-size="10" fill="#64748b" transform="rotate(-90 58 150)" text-anchor="middle">高（搬运忙）</text>
+  <text x="58" y="360" font-size="10" fill="#64748b" transform="rotate(-90 58 360)" text-anchor="middle">低</text>
+
+  <!-- Q: Cube low / MTE high (top-left) -->
+  <rect x="98" y="88" width="219" height="154" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.6"/>
+  <text x="207" y="112" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">搬运主导（memory bound）</text>
+  <text x="110" y="134" font-size="10" fill="#475569">· tiling 切块与 double buffer 轮次</text>
+  <text x="110" y="152" font-size="10" fill="#475569">· 多核均分（Block Dim 是否够）</text>
+  <text x="110" y="170" font-size="10" fill="#475569">· 少搬字节：更低位宽 / 布局</text>
+  <text x="110" y="188" font-size="10" fill="#475569">· L2 命中（仅对可复用数据有效）</text>
+  <text x="207" y="226" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#c2410c">★ 今日示例：量化 GEMM（M=16）</text>
+
+  <!-- Q: both high (top-right) -->
+  <rect x="333" y="88" width="219" height="154" rx="6" fill="#f0fdf4" stroke="#047857" stroke-width="1.6"/>
+  <text x="442" y="112" text-anchor="middle" font-size="12" font-weight="bold" fill="#064e3b">流水健康</text>
+  <text x="345" y="134" font-size="10" fill="#475569">· 搬运与计算重叠良好</text>
+  <text x="345" y="152" font-size="10" fill="#475569">· 单 kernel 已接近该 shape 的</text>
+  <text x="352" y="170" font-size="10" fill="#475569">合理水平</text>
+  <text x="345" y="192" font-size="10" fill="#475569">→ 差距去别处找：调用次数 /</text>
+  <text x="352" y="210" font-size="10" fill="#475569">上层冗余 / host / 通信</text>
+
+  <!-- Q: both low (bottom-left) -->
+  <rect x="98" y="258" width="219" height="154" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
+  <text x="207" y="282" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">组织问题</text>
+  <text x="110" y="304" font-size="10" fill="#475569">· kernel 太碎 / 尾效应 / 同步</text>
+  <text x="110" y="322" font-size="10" fill="#475569">· launch 间隙吃掉执行时间</text>
+  <text x="110" y="344" font-size="10" fill="#475569">→ 算子融合（vllm-ascend 层）、</text>
+  <text x="118" y="362" font-size="10" fill="#475569">shape 特化、减少 kernel 数</text>
+  <text x="110" y="384" font-size="10" fill="#475569">（对应 Day 38 次数×单次的"次数"侧）</text>
+
+  <!-- Q: Cube high / MTE low (bottom-right) -->
+  <rect x="333" y="258" width="219" height="154" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="442" y="282" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a5f">计算主导（compute bound）</text>
+  <text x="345" y="304" font-size="10" fill="#475569">· Cube 利用率与指令排布</text>
+  <text x="345" y="322" font-size="10" fill="#475569">· L0 复用（K 维分块，A/B 多用）</text>
+  <text x="345" y="340" font-size="10" fill="#475569">· 更低位宽（int8 cube 路径）</text>
+  <text x="345" y="362" font-size="10" fill="#475569">decode 小 M 下罕见；</text>
+  <text x="352" y="380" font-size="10" fill="#475569">prefill / 大 batch 才会出现</text>
+
+  <!-- ===== Right column ===== -->
+  <!-- Vector special case -->
+  <rect x="600" y="80" width="330" height="112" rx="8" fill="#fdf2f8" stroke="#be185d" stroke-width="1.5"/>
+  <text x="616" y="104" font-size="12" font-weight="bold" fill="#831843">第五种信号：Vector 高 + Cube 低</text>
+  <text x="616" y="126" font-size="10.5" fill="#475569">· 反量化 / elementwise / 归一化吃掉了时间</text>
+  <text x="616" y="144" font-size="10.5" fill="#475569">· 对量化选题是直接证据：antiquant 是否</text>
+  <text x="626" y="162" font-size="10.5" fill="#475569">已融合进 GEMM kernel（WeightQuant 系列）</text>
+  <text x="616" y="180" font-size="10.5" fill="#475569">→ 方向：融合度 / 布局，而非搬运总量</text>
+
+  <!-- Block Dim bar -->
+  <rect x="600" y="204" width="330" height="118" rx="8" fill="#f8fafc" stroke="#475569" stroke-width="1.4"/>
+  <text x="616" y="228" font-size="12" font-weight="bold" fill="#0f172a">多核均衡：Block Dim vs AI Core 数</text>
+  <text x="616" y="250" font-size="10.5" fill="#475569">卡上 AI Core 数：</text>
+  <rect x="726" y="238" width="170" height="14" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/>
+  <text x="616" y="274" font-size="10.5" fill="#475569">实际 Block Dim：</text>
+  <rect x="726" y="262" width="42" height="14" fill="#f59e0b" stroke="#b45309" stroke-width="1"/>
+  <text x="774" y="274" font-size="10" fill="#92400e">← 只用了零头</text>
+  <text x="616" y="298" font-size="10.5" fill="#475569">切核不降下界（带宽整卡共享），</text>
+  <text x="616" y="314" font-size="10.5" fill="#475569">但每核 L1/MTE 通道决定能否逼近下界</text>
+
+  <!-- Formula strip -->
+  <rect x="600" y="334" width="330" height="78" rx="8" fill="#ffffff" stroke="#475569" stroke-width="1.4"/>
+  <text x="616" y="358" font-size="11.5" font-weight="bold" fill="#0f172a">AI = FLOPs / Bytes，与 ridge = 峰值算力/带宽 比较</text>
+  <text x="616" y="378" font-size="11.5" fill="#334155">η_mem = t_lb / t_实测，t_lb = Bytes / BW_HBM</text>
+  <text x="616" y="398" font-size="10" fill="#64748b">先手算 AI 定性 → 再用 Ratio 定位 → 最后 η 定量</text>
+
+  <!-- ===== Bottom caveat ===== -->
+  <rect x="60" y="470" width="870" height="70" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.3"/>
+  <text x="76" y="494" font-size="12" font-weight="bold" fill="#78350f">两个高频误判</text>
+  <text x="76" y="514" font-size="11" fill="#475569">① "MTE 高 = 带宽贴满"？不一定——搬运在串行关键路上也会高；贴没贴满要看 η_mem（Bytes/BW 与实测之比）</text>
+  <text x="76" y="532" font-size="11" fill="#475569">② "Cube 高 = 计算饱满"？不一定——小 M 下指令槽位空转，Ratio 照样不低；结合 Block Dim 与 shape 再下结论</text>
+</svg>

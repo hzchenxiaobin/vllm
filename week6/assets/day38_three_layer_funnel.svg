@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 560" font-family="Helvetica, Arial, sans-serif">
+  <text x="460" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">三层剖析法：每层只回答一个问题，答案决定下一层看什么</text>
+
+  <!-- ===== Layer 1: service level ===== -->
+  <polygon points="60,60 860,60 800,190 120,190" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="90" y="88" font-size="15" font-weight="bold" fill="#1e3a5f">L1 服务级（Day 38 上午）</text>
+  <text x="90" y="112" font-size="12.5" fill="#334155">问题：差距在 TTFT（prefill/排队）还是 TPOT（decode step）？是时延问题还是吞吐问题？</text>
+  <text x="90" y="134" font-size="12.5" fill="#334155">工具：/metrics 分位数 · running/waiting · preemption · cache hit · npu-smi</text>
+  <text x="90" y="156" font-size="12.5" fill="#334155">产出：分诊单 —— 指明往哪层挖（可能终点就在这一层：配置/调度问题）</text>
+  <rect x="700" y="66" width="120" height="24" rx="12" fill="#2563eb"/>
+  <text x="760" y="83" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">今日范围 ▶</text>
+
+  <!-- arrow L1 -> L2 -->
+  <line x1="460" y1="190" x2="460" y2="218" stroke="#475569" stroke-width="2"/>
+  <polygon points="460,228 453,216 467,216" fill="#475569"/>
+  <text x="480" y="215" font-size="11.5" fill="#475569">结论：TPOT 高 / decode step 慢 → 下钻 step 级</text>
+
+  <!-- ===== Layer 2: step level ===== -->
+  <polygon points="140,230 780,230 730,360 190,360" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="170" y="258" font-size="15" font-weight="bold" fill="#14532d">L2 step 级（Day 38 下午）</text>
+  <text x="170" y="282" font-size="12.5" fill="#334155">问题：一个 decode step 的 wall time 花在哪？kernel / host / 通信 / gap 各占多少？</text>
+  <text x="170" y="304" font-size="12.5" fill="#334155">工具：V1 torch profiler（chrome trace）· start/stop_profile · Perfetto 视图</text>
+  <text x="170" y="326" font-size="12.5" fill="#334155">产出：step 时间分解表 —— device busy 低 → host/同步问题；高 → kernel 问题</text>
+  <rect x="620" y="236" width="120" height="24" rx="12" fill="#16a34a"/>
+  <text x="680" y="253" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">今日范围 ▶</text>
+
+  <!-- arrow L2 -> L3 -->
+  <line x1="460" y1="360" x2="460" y2="388" stroke="#475569" stroke-width="2"/>
+  <polygon points="460,398 453,386 467,386" fill="#475569"/>
+  <text x="480" y="385" font-size="11.5" fill="#475569">结论：kernel 占比高且慢 → 下钻 kernel 级</text>
+
+  <!-- ===== Layer 3: kernel level ===== -->
+  <polygon points="240,400 680,400 640,510 280,510" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="270" y="426" font-size="15" font-weight="bold" fill="#78350f">L3 kernel 级（Day 39）</text>
+  <text x="270" y="450" font-size="12.5" fill="#334155">问题：Top-N 热点 kernel 是谁？shape/布局/tiling？理论搬运与计算上限多少？</text>
+  <text x="270" y="472" font-size="12.5" fill="#334155">工具：msprof + MindStudio Insight · 达芬奇数据流图</text>
+  <text x="270" y="494" font-size="12.5" fill="#334155">产出：Top-N 表 + 目标 kernel 详情（→ Day 40 bound 建模闭环）</text>
+
+  <!-- left annotation: observation cost -->
+  <line x1="46" y1="70" x2="46" y2="500" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowG)"/>
+  <defs>
+    <marker id="arrowG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  <text x="30" y="290" font-size="12" fill="#64748b" transform="rotate(-90 30 290)" text-anchor="middle">观测成本与扰动递增 —— 能在上层定位就不下层</text>
+
+  <!-- bottom note -->
+  <rect x="150" y="524" width="620" height="26" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="460" y="542" text-anchor="middle" font-size="12" fill="#475569">反过来也成立：跳过 L1/L2 直接掏 msprof，常把配置问题误诊成 kernel 问题</text>
+</svg>

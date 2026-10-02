@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" font-family="Helvetica, Arial, sans-serif">
+  <rect width="960" height="640" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">跨组综合：负载画像 → 机制优先级决策表（Day 48）</text>
+
+  <!-- header row -->
+  <rect x="40" y="64" width="240" height="48" fill="#e2e8f0" stroke="#64748b" stroke-width="1.2"/>
+  <text x="160" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">负载画像（行）× 机制（列）</text>
+  <rect x="280" y="64" width="160" height="48" fill="#e2e8f0" stroke="#64748b" stroke-width="1.2"/>
+  <text x="360" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">chunked prefill</text>
+  <rect x="440" y="64" width="160" height="48" fill="#e2e8f0" stroke="#64748b" stroke-width="1.2"/>
+  <text x="520" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">prefix caching</text>
+  <rect x="600" y="64" width="160" height="48" fill="#e2e8f0" stroke="#64748b" stroke-width="1.2"/>
+  <text x="680" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">投机解码</text>
+  <rect x="760" y="64" width="160" height="48" fill="#e2e8f0" stroke="#64748b" stroke-width="1.2"/>
+  <text x="840" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">量化（权重 / KV）</text>
+
+  <!-- Row 1 -->
+  <rect x="40" y="112" width="240" height="58" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="160" y="134" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">高重复前缀</text>
+  <text x="160" y="152" text-anchor="middle" font-size="9" fill="#64748b">&gt;30% 请求共享 ≥1k 前缀</text>
+  <rect x="280" y="112" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="360" y="132" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 无关</text>
+  <text x="360" y="149" text-anchor="middle" font-size="9" fill="#64748b">不改变 prefill 总量</text>
+  <rect x="440" y="112" width="160" height="58" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="520" y="132" text-anchor="middle" font-size="11" font-weight="bold" fill="#047857">● 首选</text>
+  <text x="520" y="148" text-anchor="middle" font-size="9" fill="#065f46">命中 ≈ 免 prefill</text>
+  <text x="520" y="161" text-anchor="middle" font-size="9" fill="#065f46">TTFT ↓ 40~50%（消融二）</text>
+  <rect x="600" y="112" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="680" y="132" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 无关</text>
+  <text x="680" y="149" text-anchor="middle" font-size="9" fill="#64748b">只加速 decode</text>
+  <rect x="760" y="112" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="840" y="132" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 无关</text>
+  <text x="840" y="149" text-anchor="middle" font-size="9" fill="#64748b">TTFT 主项不在访存</text>
+
+  <!-- Row 2 -->
+  <rect x="40" y="170" width="240" height="58" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="160" y="192" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">长 prompt 混跑 + 高并发</text>
+  <text x="160" y="210" text-anchor="middle" font-size="9" fill="#64748b">8k+ prompt，TTFT/TPOT 双 SLO</text>
+  <rect x="280" y="170" width="160" height="58" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="360" y="190" text-anchor="middle" font-size="11" font-weight="bold" fill="#047857">● 首选</text>
+  <text x="360" y="206" text-anchor="middle" font-size="9" fill="#065f46">TPOT p99 ↓ 60~80%</text>
+  <text x="360" y="219" text-anchor="middle" font-size="9" fill="#065f46">（消融一）</text>
+  <rect x="440" y="170" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="520" y="190" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 场景性</text>
+  <text x="520" y="207" text-anchor="middle" font-size="9" fill="#64748b">仅当 prompt 还共享前缀</text>
+  <rect x="600" y="170" width="160" height="58" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="680" y="190" text-anchor="middle" font-size="11" font-weight="bold" fill="#b91c1c">× 不建议</text>
+  <text x="680" y="207" text-anchor="middle" font-size="9" fill="#7f1d1d">深草稿加剧尾延迟</text>
+  <rect x="760" y="170" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="840" y="190" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 可选</text>
+  <text x="840" y="207" text-anchor="middle" font-size="9" fill="#64748b">按容量需求决定</text>
+
+  <!-- Row 3 -->
+  <rect x="40" y="228" width="240" height="58" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="160" y="250" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">代码 / 高接受率生成</text>
+  <text x="160" y="268" text-anchor="middle" font-size="9" fill="#64748b">补全类负载，α &gt; 0.7</text>
+  <rect x="280" y="228" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="360" y="248" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 无关</text>
+  <text x="360" y="265" text-anchor="middle" font-size="9" fill="#64748b">prompt 短则无巨石问题</text>
+  <rect x="440" y="228" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="520" y="248" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 弱相关</text>
+  <text x="520" y="265" text-anchor="middle" font-size="9" fill="#64748b">仅系统提示复用</text>
+  <rect x="600" y="228" width="160" height="58" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="680" y="248" text-anchor="middle" font-size="11" font-weight="bold" fill="#047857">● 首选</text>
+  <text x="680" y="264" text-anchor="middle" font-size="9" fill="#065f46">加速 2.0~2.4×</text>
+  <text x="680" y="277" text-anchor="middle" font-size="9" fill="#065f46">（消融三）</text>
+  <rect x="760" y="228" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="840" y="248" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 可选</text>
+  <text x="840" y="265" text-anchor="middle" font-size="9" fill="#64748b">叠加可再赚 TPOT</text>
+
+  <!-- Row 4 -->
+  <rect x="40" y="286" width="240" height="58" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="160" y="308" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">显存 / 容量受限</text>
+  <text x="160" y="326" text-anchor="middle" font-size="9" fill="#64748b">KV 卡并发上限</text>
+  <rect x="280" y="286" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="360" y="306" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 无关</text>
+  <text x="360" y="323" text-anchor="middle" font-size="9" fill="#64748b">不解决容量问题</text>
+  <rect x="440" y="286" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="520" y="306" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 慎用</text>
+  <text x="520" y="323" text-anchor="middle" font-size="9" fill="#64748b">evictable 池挤占 KV</text>
+  <rect x="600" y="286" width="160" height="58" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="680" y="306" text-anchor="middle" font-size="11" font-weight="bold" fill="#b91c1c">× 不建议</text>
+  <text x="680" y="323" text-anchor="middle" font-size="9" fill="#7f1d1d">draft 权重 + 验证更耗资源</text>
+  <rect x="760" y="286" width="160" height="58" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="840" y="306" text-anchor="middle" font-size="11" font-weight="bold" fill="#047857">● 首选</text>
+  <text x="840" y="322" text-anchor="middle" font-size="9" fill="#065f46">FP8 KV：容量 ×2</text>
+  <text x="840" y="335" text-anchor="middle" font-size="9" fill="#065f46">（消融四）</text>
+
+  <!-- Row 5 -->
+  <rect x="40" y="344" width="240" height="58" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="160" y="366" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">离线批量吞吐</text>
+  <text x="160" y="384" text-anchor="middle" font-size="9" fill="#64748b">无交互 SLO，只看 tok/s</text>
+  <rect x="280" y="344" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="360" y="364" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 可关</text>
+  <text x="360" y="381" text-anchor="middle" font-size="9" fill="#64748b">巨石 step 无害，省开销</text>
+  <rect x="440" y="344" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="520" y="364" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 无关</text>
+  <text x="520" y="381" text-anchor="middle" font-size="9" fill="#64748b">批内重复少则无关</text>
+  <rect x="600" y="344" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="680" y="364" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 小赚</text>
+  <text x="680" y="381" text-anchor="middle" font-size="9" fill="#64748b">α 中等时 1.2~1.4×</text>
+  <rect x="760" y="344" width="160" height="58" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="840" y="364" text-anchor="middle" font-size="11" font-weight="bold" fill="#047857">● 首选</text>
+  <text x="840" y="380" text-anchor="middle" font-size="9" fill="#065f46">同显存更大 batch</text>
+  <text x="840" y="393" text-anchor="middle" font-size="9" fill="#065f46">（消融四）</text>
+
+  <!-- Row 6 -->
+  <rect x="40" y="402" width="240" height="58" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="160" y="424" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">开放对话 · 低接受率</text>
+  <text x="160" y="442" text-anchor="middle" font-size="9" fill="#64748b">短 prompt，α &lt; 0.5</text>
+  <rect x="280" y="402" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="360" y="422" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 无关</text>
+  <text x="360" y="439" text-anchor="middle" font-size="9" fill="#64748b">prompt 短则无巨石问题</text>
+  <rect x="440" y="402" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="520" y="422" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 小赚</text>
+  <text x="520" y="439" text-anchor="middle" font-size="9" fill="#64748b">多轮会话可复用历史</text>
+  <rect x="600" y="402" width="160" height="58" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="680" y="422" text-anchor="middle" font-size="11" font-weight="bold" fill="#b91c1c">× 不建议</text>
+  <text x="680" y="438" text-anchor="middle" font-size="9" fill="#7f1d1d">k=4 实测 0.94×</text>
+  <text x="680" y="451" text-anchor="middle" font-size="9" fill="#7f1d1d">负收益（消融三）</text>
+  <rect x="760" y="402" width="160" height="58" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="840" y="422" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569">○ 可选</text>
+  <text x="840" y="439" text-anchor="middle" font-size="9" fill="#64748b">按容量需求决定</text>
+
+  <!-- legend -->
+  <text x="480" y="482" text-anchor="middle" font-size="10.5" fill="#475569">● 强推荐　　○ 可选 / 无关　　× 不建议　　——每格依据指向报告对应节；「看情况」这类空泛结论不允许出现</text>
+
+  <!-- bottom priority box -->
+  <rect x="40" y="505" width="880" height="110" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="480" y="529" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">「只准开一个开关」：先定位主瓶颈，再选机制</text>
+  <text x="480" y="551" text-anchor="middle" font-size="10.5" fill="#1e3a8a">TTFT 长 → prefix caching（消融二）　　　TPOT p99 抖 → chunked prefill（消融一）</text>
+  <text x="480" y="569" text-anchor="middle" font-size="10.5" fill="#1e3a8a">TPOT 均值高且 α 高 → 投机解码（消融三）　　　KV 容量卡并发 → 量化（消融四）</text>
+  <text x="480" y="593" text-anchor="middle" font-size="9.5" fill="#b91c1c">警告：四机制收益非独立可加（prefix × 投机的接受率交互、KV 量化 × hash 精度交互未测）——叠加效应列入「局限与后续」</text>
+</svg>

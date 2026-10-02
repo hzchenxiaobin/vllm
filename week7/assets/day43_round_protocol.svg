@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="980" height="430" fill="#ffffff"/>
+  <text x="490" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#0f172a">单轮 Benchmark 时间线：每个阶段在消灭什么偏差</text>
+  <text x="490" y="52" text-anchor="middle" font-size="12" fill="#64748b">单轮 = 一个 seed；共 3~5 轮；每轮重启服务，把 prefix cache / block pool / 分配器拉回同一初始状态</text>
+
+  <!-- badges -->
+  <rect x="262" y="76" width="76" height="20" rx="10" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="300" y="90" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">消偏差</text>
+  <rect x="480" y="76" width="120" height="20" rx="10" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="540" y="90" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">统计对象（噪声）</text>
+  <rect x="852" y="76" width="76" height="20" rx="10" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="890" y="90" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">消偏差</text>
+
+  <!-- phase blocks -->
+  <g text-anchor="middle">
+    <rect x="30"  y="104" width="110" height="58" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="85"  y="128" font-size="12.5" font-weight="bold" fill="#334155">启动服务</text>
+    <text x="85"  y="147" font-size="10.5" fill="#64748b">权重加载 ~1 min</text>
+
+    <rect x="160" y="104" width="90" height="58" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="205" y="128" font-size="12.5" font-weight="bold" fill="#334155">健康检查</text>
+    <text x="205" y="147" font-size="10.5" fill="#64748b">轮询 /health</text>
+
+    <rect x="270" y="104" width="150" height="58" rx="8" fill="#e2e8f0" stroke="#64748b" stroke-width="1.5"/>
+    <text x="345" y="128" font-size="12.5" font-weight="bold" fill="#334155">warmup（丢弃）</text>
+    <text x="345" y="147" font-size="10.5" fill="#475569">~32 请求，不计入统计</text>
+
+    <rect x="440" y="104" width="280" height="58" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="580" y="128" font-size="13" font-weight="bold" fill="#1e3a8a">正式采集（vllm bench serve）</text>
+    <text x="580" y="147" font-size="10.5" fill="#1e40af">~1000 请求 · --seed S · 输出 JSON</text>
+
+    <rect x="740" y="104" width="90" height="58" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="785" y="128" font-size="12.5" font-weight="bold" fill="#334155">metrics 快照</text>
+    <text x="785" y="147" font-size="10.5" fill="#64748b">curl /metrics</text>
+
+    <rect x="850" y="104" width="60" height="58" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="880" y="128" font-size="12.5" font-weight="bold" fill="#334155">停服</text>
+    <text x="880" y="147" font-size="10.5" fill="#64748b">kill</text>
+
+  </g>
+  <g stroke="#475569" stroke-width="1.5">
+    <line x1="140" y1="133" x2="156" y2="133" marker-end="url(#arr2)"/>
+    <line x1="250" y1="133" x2="266" y2="133" marker-end="url(#arr2)"/>
+    <line x1="420" y1="133" x2="436" y2="133" marker-end="url(#arr2)"/>
+    <line x1="720" y1="133" x2="736" y2="133" marker-end="url(#arr2)"/>
+    <line x1="830" y1="133" x2="846" y2="133" marker-end="url(#arr2)"/>
+  </g>
+
+  <!-- cooldown block after stop -->
+  <line x1="880" y1="162" x2="880" y2="194" stroke="#475569" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="820" y="196" width="112" height="34" rx="6" fill="#ffffff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="876" y="218" text-anchor="middle" font-size="12" font-weight="bold" fill="#155e75">冷却 30 s</text>
+
+  <!-- annotations -->
+  <line x1="345" y1="162" x2="345" y2="184" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="180" y="188" width="290" height="86" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="5,4"/>
+  <text x="325" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#991b1b">排除的偏差（首轮变慢的机制）</text>
+  <text x="325" y="230" text-anchor="middle" font-size="10.5" fill="#7f1d1d">CUDA Graph capture（batch bucket 逐个捕获）</text>
+  <text x="325" y="246" text-anchor="middle" font-size="10.5" fill="#7f1d1d">torch.compile / Triton JIT 编译</text>
+  <text x="325" y="262" text-anchor="middle" font-size="10.5" fill="#7f1d1d">分配器触页 · 权重页缓存冷读</text>
+
+  <line x1="580" y1="162" x2="580" y2="184" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="490" y="188" width="300" height="86" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-dasharray="5,4"/>
+  <text x="640" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">统计口径（端到端，含排队）</text>
+  <text x="640" y="230" text-anchor="middle" font-size="10.5" fill="#1e40af">TTFT / TPOT 的 p50 · p99 → JSON 落盘</text>
+  <text x="640" y="246" text-anchor="middle" font-size="10.5" fill="#1e40af">seed 改变请求到达顺序</text>
+  <text x="640" y="262" text-anchor="middle" font-size="10.5" fill="#1e40af">→ batch 组成随机波动 = 轮间噪声</text>
+
+  <line x1="876" y1="230" x2="876" y2="252" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="740" y="256" width="210" height="52" rx="8" fill="#ecfeff" stroke="#0891b2" stroke-dasharray="5,4"/>
+  <text x="845" y="277" text-anchor="middle" font-size="11" font-weight="bold" fill="#155e75">防热节流（单向下行偏差）</text>
+  <text x="845" y="294" text-anchor="middle" font-size="10.5" fill="#0e7490">记录温度/频率快照，异常轮作废</text>
+
+  <!-- bottom summary -->
+  <rect x="60" y="336" width="860" height="56" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="490" y="359" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">偏差靠设计消灭（warmup / 重启 / 冷却 / 锁频），噪声靠统计吸收（多 seed → 均值 ± σ → 显著性）</text>
+  <text x="490" y="379" text-anchor="middle" font-size="11.5" fill="#475569">带偏差的实验，统计做得再漂亮也是错的 —— 所以先设计，后跑数</text>
+</svg>

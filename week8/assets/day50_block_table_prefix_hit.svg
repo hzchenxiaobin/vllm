@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="darrow" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="960" height="700" fill="#fafbfc"/>
+  <text x="480" y="36" text-anchor="middle" font-size="23" font-weight="700" fill="#0f172a">Block Table 与 prefix caching 命中（block_size = 16）</text>
+  <text x="480" y="60" text-anchor="middle" font-size="13" fill="#64748b">Req A：prompt 96 tok（64 tok 系统提示 + 32 tok 问题A，先运行）｜Req B：同 64 tok 系统提示 + 32 tok 问题B，后到达</text>
+
+  <!-- Block Pool -->
+  <text x="46" y="96" font-size="15" font-weight="700" fill="#0f172a">Block Pool（物理块）</text>
+
+  <!-- Block 0 -->
+  <g>
+    <rect x="46" y="106" width="100" height="104" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="96" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Block 0</text>
+    <text x="96" y="150" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">sys 0–15</text>
+    <text x="96" y="170" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">hash h0</text>
+    <rect x="66" y="180" width="60" height="20" rx="10" fill="#16a34a"/>
+    <text x="96" y="195" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Consolas, monospace">ref=2</text>
+  </g>
+  <!-- Block 1 -->
+  <g>
+    <rect x="156" y="106" width="100" height="104" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="206" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Block 1</text>
+    <text x="206" y="150" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">sys 16–31</text>
+    <text x="206" y="170" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">hash h1</text>
+    <rect x="176" y="180" width="60" height="20" rx="10" fill="#16a34a"/>
+    <text x="206" y="195" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Consolas, monospace">ref=2</text>
+  </g>
+  <!-- Block 2 -->
+  <g>
+    <rect x="266" y="106" width="100" height="104" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="316" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Block 2</text>
+    <text x="316" y="150" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">sys 32–47</text>
+    <text x="316" y="170" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">hash h2</text>
+    <rect x="286" y="180" width="60" height="20" rx="10" fill="#16a34a"/>
+    <text x="316" y="195" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Consolas, monospace">ref=2</text>
+  </g>
+  <!-- Block 3 -->
+  <g>
+    <rect x="376" y="106" width="100" height="104" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="426" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Block 3</text>
+    <text x="426" y="150" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">sys 48–63</text>
+    <text x="426" y="170" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">hash h3</text>
+    <rect x="396" y="180" width="60" height="20" rx="10" fill="#16a34a"/>
+    <text x="426" y="195" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Consolas, monospace">ref=2</text>
+  </g>
+  <!-- Block 4 -->
+  <g>
+    <rect x="486" y="106" width="100" height="104" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="536" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">Block 4</text>
+    <text x="536" y="150" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">userA 64–79</text>
+    <text x="536" y="170" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">hash h4</text>
+    <rect x="506" y="180" width="60" height="20" rx="10" fill="#2563eb"/>
+    <text x="536" y="195" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Consolas, monospace">ref=1</text>
+  </g>
+  <!-- Block 5 -->
+  <g>
+    <rect x="596" y="106" width="100" height="104" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+    <text x="646" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">Block 5</text>
+    <text x="646" y="150" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">userA 80–95</text>
+    <text x="646" y="170" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">hash h5</text>
+    <rect x="616" y="180" width="60" height="20" rx="10" fill="#2563eb"/>
+    <text x="646" y="195" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Consolas, monospace">ref=1</text>
+  </g>
+  <!-- Block 6 -->
+  <g>
+    <rect x="706" y="106" width="100" height="104" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+    <text x="756" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">Block 6</text>
+    <text x="756" y="150" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">userB 64–79</text>
+    <text x="756" y="170" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">（新分配）</text>
+    <rect x="726" y="180" width="60" height="20" rx="10" fill="#ea580c"/>
+    <text x="756" y="195" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Consolas, monospace">ref=1</text>
+  </g>
+  <!-- Block 7 -->
+  <g>
+    <rect x="816" y="106" width="100" height="104" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+    <text x="866" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">Block 7</text>
+    <text x="866" y="150" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">userB 80–95</text>
+    <text x="866" y="170" text-anchor="middle" font-size="12" fill="#334155" font-family="Consolas, monospace">（新分配）</text>
+    <rect x="836" y="180" width="60" height="20" rx="10" fill="#ea580c"/>
+    <text x="866" y="195" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Consolas, monospace">ref=1</text>
+  </g>
+
+  <!-- shared bracket -->
+  <path d="M 46 226 L 46 240 L 475 240 L 475 226" fill="none" stroke="#16a34a" stroke-width="2"/>
+  <text x="260" y="260" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">A、B 共享（B 命中 prefix cache：物理块复用，零拷贝、零计算）</text>
+
+  <!-- Req A block table -->
+  <text x="46" y="308" font-size="15" font-weight="700" fill="#0f172a">Req A block table</text>
+  <text x="200" y="308" font-size="12" fill="#64748b">逻辑块号 0–5，逻辑连续、物理离散</text>
+  <g font-family="Consolas, monospace" font-size="14" font-weight="700">
+    <rect x="46"  y="320" width="56" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="74"  y="342" text-anchor="middle" fill="#166534">0</text>
+    <rect x="110" y="320" width="56" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="138" y="342" text-anchor="middle" fill="#166534">1</text>
+    <rect x="174" y="320" width="56" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="202" y="342" text-anchor="middle" fill="#166534">2</text>
+    <rect x="238" y="320" width="56" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="266" y="342" text-anchor="middle" fill="#166534">3</text>
+    <rect x="302" y="320" width="56" height="34" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/><text x="330" y="342" text-anchor="middle" fill="#1e40af">4</text>
+    <rect x="366" y="320" width="56" height="34" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/><text x="394" y="342" text-anchor="middle" fill="#1e40af">5</text>
+  </g>
+  <line x1="330" y1="318" x2="536" y2="212" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#darrow)"/>
+  <line x1="394" y1="318" x2="646" y2="212" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#darrow)"/>
+
+  <!-- Req B block table -->
+  <text x="46" y="408" font-size="15" font-weight="700" fill="#0f172a">Req B block table</text>
+  <text x="200" y="408" font-size="12" fill="#64748b">命中 h0..h3 后，自己的 32 tok 问题写入新分配的 Block 6/7</text>
+  <g font-family="Consolas, monospace" font-size="14" font-weight="700">
+    <rect x="46"  y="420" width="56" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="74"  y="442" text-anchor="middle" fill="#166534">0</text>
+    <rect x="110" y="420" width="56" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="138" y="442" text-anchor="middle" fill="#166534">1</text>
+    <rect x="174" y="420" width="56" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="202" y="442" text-anchor="middle" fill="#166534">2</text>
+    <rect x="238" y="420" width="56" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/><text x="266" y="442" text-anchor="middle" fill="#166534">3</text>
+    <rect x="302" y="420" width="56" height="34" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/><text x="330" y="442" text-anchor="middle" fill="#9a3412">6</text>
+    <rect x="366" y="420" width="56" height="34" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/><text x="394" y="442" text-anchor="middle" fill="#9a3412">7</text>
+  </g>
+  <line x1="266" y1="418" x2="426" y2="212" stroke="#16a34a" stroke-width="2" marker-end="url(#darrow)"/>
+  <text x="240" y="390" font-size="12" font-weight="700" fill="#166534">命中：逐块比对哈希链 h0→h1→h2→h3，ref +1</text>
+  <line x1="330" y1="418" x2="756" y2="212" stroke="#ea580c" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#darrow)"/>
+  <line x1="394" y1="418" x2="866" y2="212" stroke="#ea580c" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#darrow)"/>
+
+  <!-- hash chain -->
+  <rect x="46" y="486" width="440" height="120" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="66" y="512" font-size="14" font-weight="700" fill="#0f172a">块哈希链（内容寻址）</text>
+  <text x="66" y="538" font-size="13" fill="#334155" font-family="Consolas, monospace">h_i = hash( h_(i-1) , token_ids_i ,</text>
+  <text x="66" y="560" font-size="13" fill="#334155" font-family="Consolas, monospace">        lora_id / 多模态标识 )</text>
+  <text x="66" y="588" font-size="12" fill="#64748b">父哈希入参 → 天然防止"同内容不同位置"误命中，</text>
+  <text x="66" y="604" font-size="12" fill="#64748b">且保证只有语义完整的前缀才会命中</text>
+
+  <!-- benefit -->
+  <rect x="506" y="486" width="410" height="120" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="526" y="512" font-size="14" font-weight="700" fill="#166534">命中收益</text>
+  <text x="526" y="538" font-size="13" fill="#334155">B 的 prefill 只需计算 32 / 96 tokens</text>
+  <text x="526" y="560" font-size="13" fill="#334155">→ 计算量降为 1/3，TTFT 直接砍 2/3</text>
+  <text x="526" y="588" font-size="12" fill="#64748b">满块不可变 → 可免拷贝共享；</text>
+  <text x="526" y="604" font-size="12" fill="#64748b">ref_cnt 管理生命周期，减到 0 才真正回收/可驱逐</text>
+
+  <text x="480" y="668" text-anchor="middle" font-size="13" fill="#64748b">对照 Day 16 实验：高重复前缀负载下 prefix hit rate↑ → TTFT 显著下降</text>
+</svg>

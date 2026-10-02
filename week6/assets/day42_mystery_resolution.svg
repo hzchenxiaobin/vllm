@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" font-family="Helvetica, Arial, sans-serif">
+  <text x="480" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">Day 42 疑点裁决：κ = 0.33 是稀释还是覆盖缺失？</text>
+  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#64748b">纪律：数字对得上 ≠ 机制对得上——先用最便宜的观测（数次数）裁决，再决定第二刀的方向</text>
+
+  <!-- ===== Top: the mystery ===== -->
+  <rect x="230" y="68" width="500" height="62" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="480" y="92" text-anchor="middle" font-size="13" font-weight="bold" fill="#991b1b">Day 41 遗留疑点</text>
+  <text x="480" y="110" text-anchor="middle" font-size="11" fill="#475569">G3 实测 -2.6ms（-5.4%）＝单族预测；全家族外推 -8ms（-15%）</text>
+  <text x="480" y="125" text-anchor="middle" font-size="11" fill="#475569">κ = 2.6 / 8 ≈ 0.33 ≈ o_proj 家族份额 6.8/20.9 —— 两种世界都能凑出这个数</text>
+
+  <!-- Split arrows to two hypotheses -->
+  <line x1="380" y1="130" x2="250" y2="168" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="246,172 252,162 258,170" fill="#475569"/>
+  <line x1="580" y1="130" x2="710" y2="168" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="714,172 706,164 702,174" fill="#475569"/>
+
+  <!-- ===== Hypothesis A ===== -->
+  <rect x="60" y="176" width="330" height="88" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="225" y="198" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a5f">假说 A：稀释主导</text>
+  <text x="74" y="218" font-size="10.5" fill="#475569">· 四族都已切换（c_f = 1）</text>
+  <text x="74" y="234" font-size="10.5" fill="#475569">· 但实现率 r_f 塌了（四道稀释 / Day 41 §3.2）</text>
+  <text x="74" y="250" font-size="10.5" fill="#475569">· 第二刀方向：查稀释（trace 对照 / eager 支线）</text>
+
+  <!-- ===== Hypothesis B ===== -->
+  <rect x="570" y="176" width="330" height="88" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="735" y="198" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a5f">假说 B：覆盖缺失（静默回退）</text>
+  <text x="584" y="218" font-size="10.5" fill="#475569">· 只有 o_proj 真正切换（c_f = 1 仅一族）</text>
+  <text x="584" y="234" font-size="10.5" fill="#475569">· 三族 _fused_supported = False → 静默 fallback</text>
+  <text x="584" y="250" font-size="10.5" fill="#475569">· 第二刀方向：修探测 + 布局适配，按判据推广</text>
+
+  <!-- ===== Adjudication observation ===== -->
+  <line x1="225" y1="264" x2="400" y2="306" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="404,309 394,306 398,298" fill="#475569"/>
+  <line x1="735" y1="264" x2="560" y2="306" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="556,309 566,306 562,298" fill="#475569"/>
+
+  <rect x="230" y="312" width="500" height="72" rx="8" fill="#fefce8" stroke="#b45309" stroke-width="1.5"/>
+  <text x="480" y="334" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#92400e">裁决观测：trace 里数融合 kernel 次数 / step</text>
+  <text x="480" y="352" text-anchor="middle" font-size="10.5" fill="#475569">次数是整数、无噪声、一次测量定乾坤 —— 比"测时间"便宜且确定（最便宜的观测先上）</text>
+  <text x="480" y="370" text-anchor="middle" font-size="10.5" fill="#475569">预期（四族全切换）：144 = 4 族 × 36 次/step</text>
+
+  <!-- Result arrow -->
+  <line x1="480" y1="384" x2="480" y2="412" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="480,418 475,409 485,409" fill="#475569"/>
+
+  <!-- ===== Verdict ===== -->
+  <rect x="230" y="420" width="500" height="56" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="1.5"/>
+  <text x="480" y="442" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#064e3b">实测（示例）：融合 36 次 / 两步 108 次 → 假说 B 胜</text>
+  <text x="480" y="460" text-anchor="middle" font-size="10.5" fill="#475569">36 恰好 = o_proj 一族的调用数；启动日志里找到三行"fallback: unsupported combo"</text>
+
+  <!-- ===== Root cause + action ===== -->
+  <line x1="480" y1="476" x2="480" y2="500" stroke="#047857" stroke-width="1.8"/>
+  <polygon points="480,504 475,496 485,496" fill="#047857"/>
+
+  <rect x="60" y="508" width="840" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="480" y="530" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a5f">根因 → Cut #2：探测矩阵缺口（只验证过 per-channel 组合）</text>
+  <text x="480" y="548" text-anchor="middle" font-size="10.5" fill="#475569">修复 = 探测矩阵化（dtype × scale 布局 × transpose）+ 加载期布局适配（process_weights_after_loading）+ 按三条件门逐族推广</text>
+</svg>

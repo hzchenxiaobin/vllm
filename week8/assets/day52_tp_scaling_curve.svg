@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d52d" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
+    </marker>
+    <marker id="d52e" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect width="960" height="640" fill="#fafbfc"/>
+  <text x="480" y="32" text-anchor="middle" font-size="21" font-weight="700" fill="#0f172a">TP 扩展曲线：计算项 /n 收缩，通信项持平 → 必有负收益点</text>
+  <text x="480" y="56" text-anchor="middle" font-size="13" fill="#64748b">示例：7B FP16 @H100，batch=32，msg=256KB，NVLink bus_bw≈400GB/s（t_lat 10μs）→ 跨节点 IB≈50GB/s（t_lat 30μs）｜数量级示意</text>
+
+  <!-- plot area -->
+  <rect x="100" y="90" width="740" height="420" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <!-- inter-node boundary between TP=8 and TP=16: x positions: TP1=160,2=290,4=420,8=550,16=680 -->
+  <rect x="615" y="90" width="225" height="420" fill="#fef2f2" opacity="0.6"/>
+  <line x1="615" y1="90" x2="615" y2="510" stroke="#dc2626" stroke-width="2" stroke-dasharray="8,5"/>
+  <text x="628" y="112" font-size="12" font-weight="700" fill="#dc2626">跨节点：NVLink → IB</text>
+  <text x="628" y="128" font-size="11" fill="#dc2626">带宽 ↓8×、延迟 ↑</text>
+
+  <!-- axes -->
+  <line x1="100" y1="510" x2="860" y2="510" stroke="#475569" stroke-width="2" marker-end="url(#d52d)"/>
+  <line x1="100" y1="510" x2="100" y2="90" stroke="#475569" stroke-width="2" marker-end="url(#d52d)"/>
+  <text x="880" y="516" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">TP</text>
+  <text x="84" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#334155">×</text>
+
+  <!-- x ticks -->
+  <g font-size="13" fill="#475569" text-anchor="middle" font-weight="600">
+    <line x1="160" y1="510" x2="160" y2="517" stroke="#475569"/><text x="160" y="536">1</text>
+    <line x1="290" y1="510" x2="290" y2="517" stroke="#475569"/><text x="290" y="536">2</text>
+    <line x1="420" y1="510" x2="420" y2="517" stroke="#475569"/><text x="420" y="536">4</text>
+    <line x1="550" y1="510" x2="550" y2="517" stroke="#475569"/><text x="550" y="536">8</text>
+    <line x1="680" y1="510" x2="680" y2="517" stroke="#475569"/><text x="680" y="536">16</text>
+  </g>
+
+  <!-- y ticks (left: speedup 0-16): y = 510 - v*26.25 → 1=484, 2=457, 4=405, 8=300, 16=90 -->
+  <g font-size="12" fill="#475569" text-anchor="end">
+    <line x1="94" y1="510" x2="100" y2="510" stroke="#475569"/><text x="88" y="514">0</text>
+    <line x1="94" y1="457" x2="100" y2="457" stroke="#475569"/><text x="88" y="461">2</text>
+    <line x1="94" y1="405" x2="100" y2="405" stroke="#475569"/><text x="88" y="409">4</text>
+    <line x1="94" y1="352" x2="100" y2="352" stroke="#475569"/><text x="88" y="356">6</text>
+    <line x1="94" y1="300" x2="100" y2="300" stroke="#475569"/><text x="88" y="304">8</text>
+    <line x1="94" y1="195" x2="100" y2="195" stroke="#475569"/><text x="88" y="199">12</text>
+    <line x1="94" y1="90" x2="100" y2="90" stroke="#475569"/><text x="88" y="94">16</text>
+  </g>
+
+  <!-- right axis: comm share 0-100%: y = 510 - pct*4.2 → 0=510,20=426,40=342,60=258,80=174,100=90 -->
+  <g font-size="12" fill="#b91c1c" text-anchor="start">
+    <line x1="840" y1="426" x2="846" y2="426" stroke="#b91c1c"/><text x="848" y="430">20%</text>
+    <line x1="840" y1="342" x2="846" y2="342" stroke="#b91c1c"/><text x="848" y="346">40%</text>
+    <line x1="840" y1="258" x2="846" y2="258" stroke="#b91c1c"/><text x="848" y="262">60%</text>
+    <line x1="840" y1="174" x2="846" y2="174" stroke="#b91c1c"/><text x="848" y="178">80%</text>
+  </g>
+  <text x="848" y="86" font-size="12" font-weight="700" fill="#b91c1c">通信占比</text>
+
+  <!-- ideal linear: 1,2,4,8,16 → 484,457,405,300,90 -->
+  <polyline points="160,484 290,457 420,405 550,300 680,90" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8,6"/>
+  <text x="700" y="112" font-size="12" fill="#64748b">理想线性</text>
+
+  <!-- actual speedup: 1.00,1.67,2.86,4.40,2.35 → y: 484, 466-? compute: 510-1.67*26.25=466.2; 510-2.86*26.25=434.9; 510-4.40*26.25=394.5; 510-2.35*26.25=448.3 -->
+  <polyline points="160,484 290,466 420,435 550,395 680,448" fill="none" stroke="#2563eb" stroke-width="3.5"/>
+  <circle cx="160" cy="484" r="5" fill="#2563eb"/><circle cx="290" cy="466" r="5" fill="#2563eb"/>
+  <circle cx="420" cy="435" r="5" fill="#2563eb"/><circle cx="550" cy="395" r="6" fill="#2563eb"/>
+  <circle cx="680" cy="448" r="6" fill="#dc2626"/>
+  <text x="550" y="378" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">峰值 4.4×</text>
+  <text x="680" y="472" text-anchor="middle" font-size="13" font-weight="700" fill="#dc2626">2.35× 反降</text>
+  <line x1="680" y1="448" x2="680" y2="395" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#d52e)"/>
+  <text x="380" y="420" font-size="12" font-weight="700" fill="#1d4ed8">实际吞吐（1/TPOT 相对 TP=1）</text>
+
+  <!-- comm share: 0,16,29,45,85% → y: 510, 443, 388, 321, 153 -->
+  <polyline points="160,510 290,443 420,388 550,321 680,153" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="2,4"/>
+  <circle cx="290" cy="443" r="4" fill="#dc2626"/><circle cx="420" cy="388" r="4" fill="#dc2626"/>
+  <circle cx="550" cy="321" r="4" fill="#dc2626"/><circle cx="680" cy="153" r="5" fill="#dc2626"/>
+  <text x="562" y="306" font-size="12" fill="#b91c1c">45%</text>
+  <text x="694" y="150" font-size="12" fill="#b91c1c">85%</text>
+
+  <!-- 30% warning line (right axis): y = 510-30*4.2 = 384 -->
+  <line x1="100" y1="384" x2="840" y2="384" stroke="#b91c1c" stroke-width="1.2" stroke-dasharray="5,4"/>
+  <text x="108" y="378" font-size="11" font-weight="700" fill="#b91c1c">nsys NCCL 占比 30% 预警线</text>
+
+  <!-- annotations -->
+  <text x="200" y="150" font-size="12" fill="#334155">计算项 W/(n·BW) 按 1/n 收缩；</text>
+  <text x="200" y="166" font-size="12" fill="#334155">通信项 2L·[t_lat + 2(n−1)/n·msg/bus_bw] 持平</text>
+  <text x="200" y="182" font-size="12" fill="#334155">（msg 与 n 无关）→ 占比单调上升</text>
+
+  <!-- bottom formula -->
+  <rect x="100" y="556" width="740" height="66" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="470" y="580" text-anchor="middle" font-size="13" font-family="Consolas, monospace" fill="#0f172a">负收益判据：2L·[T_ar(n+1) − T_ar(n)] &gt; W/BW·[1/n − 1/(n+1)]</text>
+  <text x="470" y="604" text-anchor="middle" font-size="12" fill="#64748b">经验法则：TP 只在 NVLink 域内用（≤8）；跨节点换 PP / EP / DP；能单卡放下就别上 TP</text>
+</svg>

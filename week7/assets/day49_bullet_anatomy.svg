@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect width="960" height="560" fill="#ffffff"/>
+  <text x="480" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">Day 49：简历 bullet 解剖——四成分公式与六秒阅读动线</text>
+  <text x="480" y="48" text-anchor="middle" font-size="11" fill="#64748b">bullet = 强动词 + 对象/技术栈 + 机制动作 + 量化结果（+ 边界）｜每条 bullet 的存活窗口只有 6~10 秒</text>
+
+  <path d="M85,95 Q430,50 770,92" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrRed)"/>
+  <text x="430" y="66" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#dc2626">六秒扫读动线：第一眼动词 → 第二眼数字（两端决定去留，中间提供上下文）</text>
+
+  <rect x="40" y="100" width="90" height="66" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="85" y="126" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">优化</text>
+  <text x="85" y="142" text-anchor="middle" font-size="8.5" fill="#2563eb">强动词</text>
+
+  <rect x="130" y="100" width="240" height="66" rx="6" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+  <text x="250" y="126" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#5b21b6">vLLM V1 decode 路径</text>
+  <text x="250" y="144" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#5b21b6">热点 kernel</text>
+
+  <rect x="370" y="100" width="270" height="66" rx="6" fill="#fff7ed" stroke="#d97706" stroke-width="1.8"/>
+  <text x="505" y="120" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">访存模式：tiling 重排 +</text>
+  <text x="505" y="136" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">尾块冗余拷贝消除</text>
+  <text x="505" y="154" text-anchor="middle" font-size="8.5" fill="#d97706">机制动作（追问钩子）</text>
+
+  <rect x="640" y="100" width="280" height="66" rx="6" fill="#f0fdf4" stroke="#059669" stroke-width="1.8"/>
+  <text x="780" y="118" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#065f46">TPOT p99 -17.8%（21.3±0.4→17.5±0.5 ms，n=5）</text>
+  <text x="780" y="134" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#065f46">goodput +15.8% ｜ prefill 无回归</text>
+  <text x="780" y="152" text-anchor="middle" font-size="8.5" fill="#059669">A/B 级数字 + 边界陈述</text>
+
+  <line x1="85" y1="166" x2="85" y2="184" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="250" y1="166" x2="250" y2="184" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="505" y1="166" x2="505" y2="184" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="780" y1="166" x2="780" y2="184" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="40" y="188" width="90" height="86" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+  <text x="85" y="206" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">作用</text>
+  <text x="85" y="221" text-anchor="middle" font-size="9" fill="#334155">定性你的角色</text>
+  <text x="85" y="240" text-anchor="middle" font-size="10" font-weight="bold" fill="#dc2626">常见错误</text>
+  <text x="85" y="254" text-anchor="middle" font-size="9" fill="#dc2626">参与 / 协助 /</text>
+  <text x="85" y="267" text-anchor="middle" font-size="9" fill="#dc2626">熟悉（职责≠成果）</text>
+
+  <rect x="130" y="188" width="240" height="86" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+  <text x="250" y="206" text-anchor="middle" font-size="10" font-weight="bold" fill="#5b21b6">作用</text>
+  <text x="250" y="221" text-anchor="middle" font-size="9" fill="#334155">锚定到具体、可验证的系统</text>
+  <text x="250" y="240" text-anchor="middle" font-size="10" font-weight="bold" fill="#dc2626">常见错误</text>
+  <text x="250" y="254" text-anchor="middle" font-size="9" fill="#dc2626">泛称「大模型推理系统」，</text>
+  <text x="250" y="267" text-anchor="middle" font-size="9" fill="#dc2626">面试官无从查证</text>
+
+  <rect x="370" y="188" width="270" height="86" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+  <text x="505" y="206" text-anchor="middle" font-size="10" font-weight="bold" fill="#9a3412">作用</text>
+  <text x="505" y="221" text-anchor="middle" font-size="9" fill="#334155">点出技术路径，制造追问钩子</text>
+  <text x="505" y="240" text-anchor="middle" font-size="10" font-weight="bold" fill="#dc2626">常见错误</text>
+  <text x="505" y="254" text-anchor="middle" font-size="9" fill="#dc2626">名词堆砌（熟悉 A、B、C……），</text>
+  <text x="505" y="267" text-anchor="middle" font-size="9" fill="#dc2626">读不出你做了什么</text>
+
+  <rect x="640" y="188" width="280" height="86" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+  <text x="780" y="206" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">作用</text>
+  <text x="780" y="221" text-anchor="middle" font-size="9" fill="#334155">给动作盖钢印；百分比与绝对值成对</text>
+  <text x="780" y="240" text-anchor="middle" font-size="10" font-weight="bold" fill="#dc2626">常见错误</text>
+  <text x="780" y="254" text-anchor="middle" font-size="9" fill="#dc2626">无数字 / 数字无场景无误差 /</text>
+  <text x="780" y="267" text-anchor="middle" font-size="9" fill="#dc2626">「显著提升」等 D 级模糊词</text>
+
+  <text x="480" y="303" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">同一段工作，两种写法</text>
+
+  <rect x="40" y="315" width="440" height="132" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="60" y="337" font-size="12" font-weight="bold" fill="#991b1b">✗ 反例：职责描述</text>
+  <text x="60" y="358" font-size="10.5" fill="#7f1d1d">「负责 vLLM 推理引擎的性能优化工作，参与 kernel</text>
+  <text x="60" y="373" font-size="10.5" fill="#7f1d1d">开发与测试，显著提升了推理速度」</text>
+  <rect x="60" y="390" width="118" height="20" rx="10" fill="#ffffff" stroke="#dc2626" stroke-width="1"/>
+  <text x="119" y="404" text-anchor="middle" font-size="9" fill="#dc2626">动词弱：参与</text>
+  <rect x="188" y="390" width="128" height="20" rx="10" fill="#ffffff" stroke="#dc2626" stroke-width="1"/>
+  <text x="252" y="404" text-anchor="middle" font-size="9" fill="#dc2626">结果 D 级：显著提升</text>
+  <rect x="326" y="390" width="140" height="20" rx="10" fill="#ffffff" stroke="#dc2626" stroke-width="1"/>
+  <text x="396" y="404" text-anchor="middle" font-size="9" fill="#dc2626">无场景、无数字、无机制</text>
+  <text x="60" y="432" font-size="9" fill="#991b1b">六秒后读者只记得：做过推理优化——与上百份简历无法区分</text>
+
+  <rect x="500" y="315" width="440" height="132" rx="8" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="520" y="337" font-size="12" font-weight="bold" fill="#065f46">✓ 正例：成果描述</text>
+  <text x="520" y="358" font-size="10" fill="#065f46">「优化 vLLM V1 decode 路径热点 kernel 的访存模式（tiling</text>
+  <text x="520" y="372" font-size="10" fill="#065f46">重排 + 尾块拷贝消除），TPOT p99 -17.8%，goodput +15.8%，</text>
+  <text x="520" y="386" font-size="10" fill="#065f46">prefill 无回归」</text>
+  <rect x="520" y="398" width="86" height="20" rx="10" fill="#ffffff" stroke="#059669" stroke-width="1"/>
+  <text x="563" y="412" text-anchor="middle" font-size="9" fill="#059669">强动词</text>
+  <rect x="616" y="398" width="96" height="20" rx="10" fill="#ffffff" stroke="#059669" stroke-width="1"/>
+  <text x="664" y="412" text-anchor="middle" font-size="9" fill="#059669">机制 = 追问钩子</text>
+  <rect x="722" y="398" width="96" height="20" rx="10" fill="#ffffff" stroke="#059669" stroke-width="1"/>
+  <text x="770" y="412" text-anchor="middle" font-size="9" fill="#059669">A 级数字 ± σ</text>
+  <rect x="828" y="398" width="96" height="20" rx="10" fill="#ffffff" stroke="#059669" stroke-width="1"/>
+  <text x="876" y="412" text-anchor="middle" font-size="9" fill="#059669">边界：prefill 无回归</text>
+  <text x="520" y="432" font-size="9" fill="#065f46">六秒后读者留下四个钩子：decode kernel / 访存 / -18% / 有误差棒</text>
+
+  <rect x="40" y="468" width="900" height="66" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+  <text x="490" y="492" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">六秒测试（验收标准）</text>
+  <text x="490" y="510" text-anchor="middle" font-size="10" fill="#475569">给外行看 6 秒后收走，三问全中才算合格：做了什么 / 在哪做的 / 效果如何。</text>
+  <text x="490" y="525" text-anchor="middle" font-size="10" fill="#475569">百分比与绝对值成对出现（-17.8% ↔ 21.3→17.5 ms），让数字自证规模；每个数字挂 evidence.md 证据链（见正文 2.5）。</text>
+</svg>
