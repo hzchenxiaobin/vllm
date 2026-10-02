@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="460" viewBox="0 0 900 460" font-family="Helvetica, Arial, 'Noto Sans SC', sans-serif">
+  <rect width="900" height="460" fill="#ffffff"/>
+
+  <text x="450" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#1e293b">选题评估矩阵：五个候选方向的加权得分（示例打分）</text>
+  <text x="450" y="48" text-anchor="middle" font-size="11" fill="#64748b">Score = Σ w·s，s∈[1,5]，满分 55；权重：可量化×3 · 影响面×2 · 经验匹配×2 · 工作量×2 · 环境×1 · 合并×1</text>
+
+  <!-- gridlines -->
+  <g stroke="#e2e8f0" stroke-width="1">
+    <line x1="392" y1="66" x2="392" y2="356"/>
+    <line x1="500" y1="66" x2="500" y2="356"/>
+    <line x1="607" y1="66" x2="607" y2="356"/>
+    <line x1="715" y1="66" x2="715" y2="356"/>
+    <line x1="823" y1="66" x2="823" y2="356"/>
+  </g>
+  <line x1="284" y1="66" x2="284" y2="356" stroke="#94a3b8" stroke-width="1.5"/>
+  <g font-size="10.5" fill="#64748b" text-anchor="middle">
+    <text x="284" y="374">0</text>
+    <text x="392" y="374">11</text>
+    <text x="500" y="374">22</text>
+    <text x="607" y="374">33</text>
+    <text x="715" y="374">44</text>
+    <text x="823" y="374">55</text>
+  </g>
+
+  <!-- Row 1 -->
+  <text x="268" y="95" text-anchor="end" font-size="12.5" font-weight="bold" fill="#334155">方向 1 · 量化 GEMM（w8a8/w4a16）</text>
+  <text x="268" y="109" text-anchor="end" font-size="9.5" fill="#64748b">经验零损耗对接 · decode 小 M 主场</text>
+  <rect x="284" y="80" width="470" height="30" rx="3" fill="#e67e22"/>
+  <text x="762" y="100" font-size="13" font-weight="bold" fill="#b45309">48 · 主选</text>
+
+  <!-- Row 2 -->
+  <text x="268" y="151" text-anchor="end" font-size="12.5" font-weight="bold" fill="#334155">方向 2 · Attention / MLA 后端</text>
+  <text x="268" y="165" text-anchor="end" font-size="9.5" fill="#64748b">影响面最大 · 常需 CANN 配合，周期长</text>
+  <rect x="284" y="136" width="392" height="30" rx="3" fill="#4a7fb5"/>
+  <text x="684" y="156" font-size="13" font-weight="bold" fill="#1e3a5f">40 · 备选</text>
+
+  <!-- Row 3 -->
+  <text x="268" y="207" text-anchor="end" font-size="12.5" font-weight="bold" fill="#334155">方向 3 · torchair 图模式 / host 开销</text>
+  <text x="268" y="221" text-anchor="end" font-size="9.5" fill="#64748b">纯软改动迭代快 · 匹配度中等</text>
+  <rect x="284" y="192" width="392" height="30" rx="3" fill="#4a7fb5"/>
+  <text x="684" y="212" font-size="13" font-weight="bold" fill="#1e3a5f">40</text>
+
+  <!-- Row 4 -->
+  <text x="268" y="263" text-anchor="end" font-size="12.5" font-weight="bold" fill="#334155">方向 4 · 平台默认参数 / 调度小改进</text>
+  <text x="268" y="277" text-anchor="end" font-size="9.5" fill="#64748b">工作量最小 · 数据好出，练手保底</text>
+  <rect x="284" y="248" width="392" height="30" rx="3" fill="#64748b"/>
+  <text x="684" y="268" font-size="13" font-weight="bold" fill="#334155">40 · 保底</text>
+
+  <!-- Row 5 -->
+  <text x="268" y="319" text-anchor="end" font-size="12.5" font-weight="bold" fill="#334155">方向 5 · 算子补齐 / fallback 消除</text>
+  <text x="268" y="333" text-anchor="end" font-size="9.5" fill="#64748b">链路清晰易测 · 影响面中等</text>
+  <rect x="284" y="304" width="363" height="30" rx="3" fill="#4a7fb5"/>
+  <text x="655" y="324" font-size="13" font-weight="bold" fill="#1e3a5f">37</text>
+
+  <!-- notes -->
+  <line x1="284" y1="392" x2="823" y2="392" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="60" y="416" font-size="11" fill="#475569">示例结论：方向 1 显著领先（48/55）；方向 2/3/4 同分 40 → 用「经验匹配度」与「环境依赖」tie-break：方向 2 升为备选、方向 4 定为保底</text>
+  <text x="60" y="438" font-size="11" fill="#b45309">⚠ 以上为演示方法的示例分——正式打分必须基于实验 2 挖到的真实点位证据，自己重打一遍</text>
+</svg>

@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="b3" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="b3r" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#C0392B"/>
+    </marker>
+    <marker id="b3g" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#27AE60"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="640" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 2｜串行传输 vs 分层流水：把 KV 搬运藏进 prefill 计算</text>
+  <text x="30" y="52" font-size="11" fill="#7F8C8D">示例参数：Llama-3-70B BF16 · chunk = 2048 token · L = 80 层 · KV 总量 671 MB · F_eff = 500 TFLOPS</text>
+
+  <!-- time axis -->
+  <line x1="180" y1="80" x2="920" y2="80" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#b3)"/>
+  <text x="930" y="84" font-size="10" fill="#2C3E50">t</text>
+
+  <!-- ============ TOP: serial ============ -->
+  <text x="30" y="122" font-size="14" font-weight="bold" fill="#C0392B">串行传输（无流水）：传输全额暴露</text>
+
+  <!-- compute blocks -->
+  <g>
+    <rect x="180" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="216" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="252" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="288" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="324" y="110" width="26" height="30" fill="#F4F6F7" stroke="#BDC3C7"/>
+    <rect x="352" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="388" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="424" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="460" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="496" y="110" width="26" height="30" fill="#F4F6F7" stroke="#BDC3C7"/>
+    <rect x="524" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="560" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="596" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="632" y="110" width="34" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+  </g>
+  <text x="410" y="130" font-size="10" fill="#B9770E" text-anchor="middle">prefill 计算：80 层 × 7.2 ms/层 ≈ 574 ms</text>
+  <text x="410" y="158" font-size="9" fill="#9C640C" text-anchor="middle">（KV 逐层产出，但按兵不动）</text>
+
+  <!-- serial transfer bar -->
+  <rect x="670" y="110" width="120" height="30" fill="#FADBD8" stroke="#C0392B" stroke-width="2"/>
+  <text x="730" y="130" font-size="10" font-weight="bold" fill="#C0392B" text-anchor="middle">KV 全量传输</text>
+  <text x="730" y="158" font-size="9" fill="#C0392B" text-anchor="middle">671 MB ÷ 50 GB/s ≈ 13.4 ms（400G）</text>
+
+  <!-- handshake -->
+  <rect x="794" y="110" width="40" height="30" fill="#EAF7F0" stroke="#16A085" stroke-width="1.5"/>
+  <text x="814" y="130" font-size="9" fill="#0E6655" text-anchor="middle">握手</text>
+
+  <!-- decode start -->
+  <line x1="838" y1="100" x2="838" y2="175" stroke="#2E86C1" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="848" y="112" font-size="10" fill="#2E86C1">decode 开工</text>
+  <text x="848" y="126" font-size="9" fill="#2E86C1">TTLFT 尾部</text>
+  <text x="848" y="140" font-size="9" fill="#C0392B">≈ 13.4 + 1~2 ms</text>
+
+  <rect x="180" y="182" width="654" height="24" rx="4" fill="#FDEDEC" stroke="#C0392B"/>
+  <text x="507" y="198" font-size="10" fill="#C0392B" text-anchor="middle">问题：这段时间 decode 侧干等（WAITING_FOR_REMOTE_KVS 堆积）；8K prompt 时裸奔项达 54 ms，200G 网卡下 107 ms</text>
+
+  <!-- ============ divider ============ -->
+  <line x1="30" y1="228" x2="930" y2="228" stroke="#D5DBDB" stroke-width="1.5" stroke-dasharray="2 4"/>
+
+  <!-- ============ BOTTOM: pipelined ============ -->
+  <text x="30" y="262" font-size="14" font-weight="bold" fill="#1E8449">分层流水（layer-wise）：算第 i+1 层时，传第 i 层</text>
+
+  <!-- compute lane -->
+  <g>
+    <rect x="180" y="278" width="60" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="242" y="278" width="60" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="304" y="278" width="60" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="366" y="278" width="44" height="30" fill="#F4F6F7" stroke="#BDC3C7"/>
+    <rect x="412" y="278" width="60" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="474" y="278" width="60" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="536" y="278" width="60" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+    <rect x="598" y="278" width="60" height="30" fill="#FDEBD0" stroke="#E67E22"/>
+  </g>
+  <text x="415" y="298" font-size="10" fill="#B9770E" text-anchor="middle">prefill 计算级（Cube 对应物）：每层 7.2 ms</text>
+
+  <!-- transfer lane: offset one compute block -->
+  <g>
+    <rect x="242" y="330" width="14" height="30" fill="#D5F5E3" stroke="#27AE60"/>
+    <rect x="304" y="330" width="14" height="30" fill="#D5F5E3" stroke="#27AE60"/>
+    <rect x="366" y="330" width="14" height="30" fill="#D5F5E3" stroke="#27AE60"/>
+    <rect x="428" y="330" width="14" height="30" fill="#D5F5E3" stroke="#27AE60"/>
+    <rect x="490" y="330" width="14" height="30" fill="#D5F5E3" stroke="#27AE60"/>
+    <rect x="552" y="330" width="14" height="30" fill="#D5F5E3" stroke="#27AE60"/>
+    <rect x="614" y="330" width="14" height="30" fill="#D5F5E3" stroke="#27AE60"/>
+    <rect x="676" y="330" width="14" height="30" fill="#D5F5E3" stroke="#27AE60"/>
+  </g>
+  <text x="415" y="352" font-size="9" fill="#1E8449" text-anchor="middle">搬运级（MTE2 对应物）：每层 KV 8.4 MB ÷ 50 GB/s ≈ 0.17 ms —— 藏在 7.2 ms 计算下（1:42）</text>
+
+  <!-- link arrows compute->transfer -->
+  <g stroke="#27AE60" stroke-width="1" stroke-dasharray="3 2">
+    <line x1="240" y1="310" x2="248" y2="328"/>
+    <line x1="302" y1="310" x2="310" y2="328"/>
+    <line x1="364" y1="310" x2="372" y2="328"/>
+    <line x1="426" y1="310" x2="434" y2="328"/>
+  </g>
+
+  <!-- first-tile: layer 0 sent immediately -->
+  <rect x="180" y="330" width="14" height="30" fill="#82E0AA" stroke="#1E8449" stroke-width="2"/>
+  <text x="187" y="324" font-size="9" fill="#1E8449" text-anchor="middle" font-weight="bold">首tile:层0算完即发</text>
+
+  <!-- tail -->
+  <rect x="692" y="330" width="30" height="30" fill="#FADBD8" stroke="#C0392B" stroke-width="2"/>
+  <text x="707" y="350" font-size="9" fill="#C0392B" text-anchor="middle">尾</text>
+  <rect x="726" y="330" width="40" height="30" fill="#EAF7F0" stroke="#16A085" stroke-width="1.5"/>
+  <text x="746" y="350" font-size="9" fill="#0E6655" text-anchor="middle">握手</text>
+  <line x1="770" y1="268" x2="770" y2="392" stroke="#2E86C1" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="780" y="284" font-size="10" fill="#2E86C1">decode 开工</text>
+  <text x="780" y="298" font-size="9" fill="#1E8449">暴露尾延迟 ≈ 0.17 ms + 握手 1~2 ms</text>
+
+  <!-- decode side layer-wise gate -->
+  <rect x="180" y="384" width="600" height="46" rx="4" fill="#EBF5FB" stroke="#2E86C1" stroke-dasharray="4 3"/>
+  <text x="480" y="402" font-size="10" fill="#1A5276" text-anchor="middle">decode 侧：wait_for_layer_load = 按层 WaitFlag——第 j 层 forward 只等第 j 层 KV</text>
+  <text x="480" y="420" font-size="9" fill="#1A5276" text-anchor="middle">最后几层在路上时，前面层的权重 GEMM 已可开跑（SetFlag/WaitFlag 乒乓的集群版）</text>
+
+  <!-- ============ hiding condition box ============ -->
+  <rect x="30" y="452" width="900" height="78" rx="6" fill="#E9F7EF" stroke="#27AE60" stroke-width="1.5"/>
+  <text x="480" y="474" font-size="13" font-weight="bold" fill="#1E8449" text-anchor="middle">隐藏条件（§4.2 推导）：t_xfer ≤ t_comp ⟺ BW ≥ F_eff · (每 token KV 字节 / 每 token FLOPs)</text>
+  <g font-size="11" fill="#1E8449">
+    <text x="480" y="496" text-anchor="middle">Llama-3-70B：500 TFLOPS × 2.34e-6 B/FLOP ≈ 1.2 GB/s　　Qwen3-8B：400 TFLOPS × 9.2e-6 ≈ 3.7 GB/s</text>
+    <text x="480" y="516" text-anchor="middle">与 chunk 大小无关、与层数无关、与模型大小反相关（模型越大越好藏）——但别忘了聚合共享 / 网卡规格 / 是否真的流水的三个修正</text>
+  </g>
+
+  <!-- bottom strip -->
+  <rect x="30" y="556" width="900" height="56" rx="6" fill="#1e3a5f"/>
+  <text x="480" y="578" font-size="12" fill="#FFFFFF" text-anchor="middle">一句话：串行把 KV/BW 全额加在 TTLFT 上；分层流水把它摊进 574 ms 的 prefill 计算，尾延迟只剩"一层 + 一次握手"。</text>
+  <text x="480" y="598" font-size="11" fill="#AED6F1" text-anchor="middle">流水成败 = 元数据先行（先知道发给谁）+ MR 预注册（地址早就绪）+ 完成通知粒度粗（按请求收尾，不按 block）</text>
+</svg>

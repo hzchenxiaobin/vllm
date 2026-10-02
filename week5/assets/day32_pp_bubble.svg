@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="760" viewBox="0 0 960 760" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="760" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 2｜PP 的 bubble：填充/排空几何、1F1B 调度与 interleaved 改进（p=4 段）</text>
+
+  <!-- ============ Panel A: naive forward pipeline ============ -->
+  <rect x="20" y="52" width="545" height="252" rx="8" fill="#F8FAFC" stroke="#BDC3C7"/>
+  <text x="292" y="76" font-size="13" font-weight="bold" fill="#2C3E50" text-anchor="middle">A｜朴素流水线（推理视角：纯 forward，m=6 个 micro-batch）</text>
+
+  <g font-size="10" fill="#2C3E50">
+    <text x="78" y="104" text-anchor="end">stage 0</text>
+    <text x="78" y="140" text-anchor="end">stage 1</text>
+    <text x="78" y="176" text-anchor="end">stage 2</text>
+    <text x="78" y="212" text-anchor="end">stage 3</text>
+  </g>
+  <g font-size="9" fill="#7F8C8D">
+    <text x="90" y="238">t1</text><text x="140" y="238">t2</text><text x="190" y="238">t3</text><text x="240" y="238">t4</text><text x="290" y="238">t5</text><text x="340" y="238">t6</text><text x="390" y="238">t7</text><text x="440" y="238">t8</text><text x="490" y="238">t9</text>
+  </g>
+
+  <!-- stage rows: F blue, idle red -->
+  <g>
+    <!-- stage 0 -->
+    <rect x="90" y="88" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="113" y="107" font-size="10" fill="#2E86C1" text-anchor="middle">F1</text>
+    <rect x="140" y="88" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="163" y="107" font-size="10" fill="#2E86C1" text-anchor="middle">F2</text>
+    <rect x="190" y="88" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="213" y="107" font-size="10" fill="#2E86C1" text-anchor="middle">F3</text>
+    <rect x="240" y="88" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="263" y="107" font-size="10" fill="#2E86C1" text-anchor="middle">F4</text>
+    <rect x="290" y="88" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="313" y="107" font-size="10" fill="#2E86C1" text-anchor="middle">F5</text>
+    <rect x="340" y="88" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="363" y="107" font-size="10" fill="#2E86C1" text-anchor="middle">F6</text>
+    <rect x="390" y="88" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="413" y="107" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="440" y="88" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="463" y="107" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="490" y="88" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="513" y="107" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <!-- stage 1 -->
+    <rect x="90" y="124" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="113" y="143" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="140" y="124" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="163" y="143" font-size="10" fill="#2E86C1" text-anchor="middle">F1</text>
+    <rect x="190" y="124" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="213" y="143" font-size="10" fill="#2E86C1" text-anchor="middle">F2</text>
+    <rect x="240" y="124" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="263" y="143" font-size="10" fill="#2E86C1" text-anchor="middle">F3</text>
+    <rect x="290" y="124" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="313" y="143" font-size="10" fill="#2E86C1" text-anchor="middle">F4</text>
+    <rect x="340" y="124" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="363" y="143" font-size="10" fill="#2E86C1" text-anchor="middle">F5</text>
+    <rect x="390" y="124" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="413" y="143" font-size="10" fill="#2E86C1" text-anchor="middle">F6</text>
+    <rect x="440" y="124" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="463" y="143" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="490" y="124" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="513" y="143" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <!-- stage 2 -->
+    <rect x="90" y="160" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="113" y="179" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="140" y="160" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="163" y="179" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="190" y="160" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="213" y="179" font-size="10" fill="#2E86C1" text-anchor="middle">F1</text>
+    <rect x="240" y="160" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="263" y="179" font-size="10" fill="#2E86C1" text-anchor="middle">F2</text>
+    <rect x="290" y="160" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="313" y="179" font-size="10" fill="#2E86C1" text-anchor="middle">F3</text>
+    <rect x="340" y="160" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="363" y="179" font-size="10" fill="#2E86C1" text-anchor="middle">F4</text>
+    <rect x="390" y="160" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="413" y="179" font-size="10" fill="#2E86C1" text-anchor="middle">F5</text>
+    <rect x="440" y="160" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="463" y="179" font-size="10" fill="#2E86C1" text-anchor="middle">F6</text>
+    <rect x="490" y="160" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="513" y="179" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <!-- stage 3 -->
+    <rect x="90" y="196" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="113" y="215" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="140" y="196" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="163" y="215" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="190" y="196" width="46" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="213" y="215" font-size="10" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="240" y="196" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="263" y="215" font-size="10" fill="#2E86C1" text-anchor="middle">F1</text>
+    <rect x="290" y="196" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="313" y="215" font-size="10" fill="#2E86C1" text-anchor="middle">F2</text>
+    <rect x="340" y="196" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="363" y="215" font-size="10" fill="#2E86C1" text-anchor="middle">F3</text>
+    <rect x="390" y="196" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="413" y="215" font-size="10" fill="#2E86C1" text-anchor="middle">F4</text>
+    <rect x="440" y="196" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="463" y="215" font-size="10" fill="#2E86C1" text-anchor="middle">F5</text>
+    <rect x="490" y="196" width="46" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="513" y="215" font-size="10" fill="#2E86C1" text-anchor="middle">F6</text>
+  </g>
+
+  <text x="292" y="256" font-size="11" fill="#C0392B" text-anchor="middle" font-weight="bold">bubble = (p−1)/(m+p−1) = 3/9 = 33%</text>
+  <text x="292" y="274" font-size="10" fill="#7F8C8D" text-anchor="middle">填充期（前 3 片）+ 排空期（后 3 片）：两端各 p−1 个空位</text>
+  <text x="292" y="292" font-size="10" fill="#7F8C8D" text-anchor="middle">推理的 micro-batch = chunked prefill 的 chunk / decode batch 切片</text>
+
+  <!-- ============ Panel C: bubble bars ============ -->
+  <rect x="585" y="52" width="355" height="252" rx="8" fill="#F4ECF7" stroke="#8E44ED" stroke-width="1.5"/>
+  <text x="762" y="76" font-size="13" font-weight="bold" fill="#6C3483" text-anchor="middle">bubble 占比怎么压（p=4）</text>
+  <g font-size="10.5" fill="#2C3E50">
+    <text x="600" y="104">GPipe / 1F1B，m=6</text>
+    <rect x="760" y="92" width="132" height="16" fill="#C0392B" opacity="0.85"/>
+    <text x="898" y="105" font-weight="bold" fill="#C0392B">33%</text>
+
+    <text x="600" y="136">m=16（吞吐换气泡）</text>
+    <rect x="760" y="124" width="64" height="16" fill="#E67E22" opacity="0.85"/>
+    <text x="830" y="137" font-weight="bold" fill="#B9770E">16%</text>
+
+    <text x="600" y="168">m=64</text>
+    <rect x="760" y="156" width="18" height="16" fill="#27AE60" opacity="0.85"/>
+    <text x="784" y="169" font-weight="bold" fill="#1E8449">4.5%</text>
+
+    <text x="600" y="200">interleaved v=2，m=6</text>
+    <rect x="760" y="188" width="80" height="16" fill="#8E44ED" opacity="0.85"/>
+    <text x="846" y="201" font-weight="bold" fill="#6C3483">20%</text>
+
+    <text x="600" y="232">interleaved v=4，m=6</text>
+    <rect x="760" y="220" width="44" height="16" fill="#2E86C1" opacity="0.85"/>
+    <text x="810" y="233" font-weight="bold" fill="#2E86C1">11%</text>
+  </g>
+  <text x="762" y="262" font-size="10.5" fill="#6C3483" text-anchor="middle" font-weight="bold">bubble ≈ (p−1)/(v·m+p−1)</text>
+  <text x="762" y="280" font-size="9.5" fill="#6C3483" text-anchor="middle">v：每段再切出的虚拟段数（通信次数 ×v 为代价）</text>
+  <text x="762" y="296" font-size="9.5" fill="#6C3483" text-anchor="middle">m：micro-batch 数（显存/时延为代价）</text>
+
+  <!-- ============ Panel B: 1F1B ============ -->
+  <rect x="20" y="322" width="920" height="266" rx="8" fill="#F8FAFC" stroke="#BDC3C7"/>
+  <text x="480" y="346" font-size="13" font-weight="bold" fill="#2C3E50" text-anchor="middle">B｜1F1B（训练视角，F=forward 蓝，B=backward 绿）：bubble 不变，显存 O(m) → O(p)</text>
+
+  <g font-size="10" fill="#2C3E50">
+    <text x="58" y="374" text-anchor="end">stage 0</text>
+    <text x="58" y="410" text-anchor="end">stage 1</text>
+    <text x="58" y="446" text-anchor="end">stage 2</text>
+    <text x="58" y="482" text-anchor="end">stage 3</text>
+  </g>
+  <g font-size="8.5" fill="#7F8C8D">
+    <text x="66" y="508">t1</text><text x="111" y="508">t2</text><text x="156" y="508">t3</text><text x="201" y="508">t4</text><text x="246" y="508">t5</text><text x="291" y="508">t6</text><text x="336" y="508">t7</text><text x="381" y="508">t8</text><text x="426" y="508">t9</text><text x="471" y="508">t10</text><text x="516" y="508">t11</text><text x="561" y="508">t12</text><text x="606" y="508">t13</text><text x="651" y="508">t14</text><text x="696" y="508">t15</text><text x="741" y="508">t16</text><text x="786" y="508">t17</text><text x="831" y="508">t18</text>
+  </g>
+
+  <!-- helper: cell = 45x28, x from 66, rows y=358/394/430/466 -->
+  <!-- stage 0: F1F2F3F4 | idle idle idle | B1 F5 B2 F6 B3 | idle B4 idle B5 idle B6 -->
+  <g>
+    <rect x="66" y="358" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="86" y="377" font-size="9" fill="#2E86C1" text-anchor="middle">F1</text>
+    <rect x="111" y="358" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="131" y="377" font-size="9" fill="#2E86C1" text-anchor="middle">F2</text>
+    <rect x="156" y="358" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="176" y="377" font-size="9" fill="#2E86C1" text-anchor="middle">F3</text>
+    <rect x="201" y="358" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="221" y="377" font-size="9" fill="#2E86C1" text-anchor="middle">F4</text>
+    <rect x="246" y="358" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="266" y="377" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="291" y="358" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="311" y="377" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="336" y="358" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="356" y="377" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="381" y="358" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="401" y="377" font-size="9" fill="#1E8449" text-anchor="middle">B1</text>
+    <rect x="426" y="358" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="446" y="377" font-size="9" fill="#2E86C1" text-anchor="middle">F5</text>
+    <rect x="471" y="358" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="491" y="377" font-size="9" fill="#1E8449" text-anchor="middle">B2</text>
+    <rect x="516" y="358" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="536" y="377" font-size="9" fill="#2E86C1" text-anchor="middle">F6</text>
+    <rect x="561" y="358" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="581" y="377" font-size="9" fill="#1E8449" text-anchor="middle">B3</text>
+    <rect x="606" y="358" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="626" y="377" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="651" y="358" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="671" y="377" font-size="9" fill="#1E8449" text-anchor="middle">B4</text>
+    <rect x="696" y="358" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="716" y="377" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="741" y="358" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="761" y="377" font-size="9" fill="#1E8449" text-anchor="middle">B5</text>
+    <rect x="786" y="358" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="806" y="377" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="831" y="358" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="851" y="377" font-size="9" fill="#1E8449" text-anchor="middle">B6</text>
+  </g>
+  <!-- stage 1: idle F1F2F3 idle idle B1 F4 B2 F5 B3 F6 B4 idle B5 idle B6 idle -->
+  <g>
+    <rect x="66" y="394" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="86" y="413" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="111" y="394" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="131" y="413" font-size="9" fill="#2E86C1" text-anchor="middle">F1</text>
+    <rect x="156" y="394" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="176" y="413" font-size="9" fill="#2E86C1" text-anchor="middle">F2</text>
+    <rect x="201" y="394" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="221" y="413" font-size="9" fill="#2E86C1" text-anchor="middle">F3</text>
+    <rect x="246" y="394" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="266" y="413" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="291" y="394" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="311" y="413" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="336" y="394" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="356" y="413" font-size="9" fill="#1E8449" text-anchor="middle">B1</text>
+    <rect x="381" y="394" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="401" y="413" font-size="9" fill="#2E86C1" text-anchor="middle">F4</text>
+    <rect x="426" y="394" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="446" y="413" font-size="9" fill="#1E8449" text-anchor="middle">B2</text>
+    <rect x="471" y="394" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="491" y="413" font-size="9" fill="#2E86C1" text-anchor="middle">F5</text>
+    <rect x="516" y="394" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="536" y="413" font-size="9" fill="#1E8449" text-anchor="middle">B3</text>
+    <rect x="561" y="394" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="581" y="413" font-size="9" fill="#2E86C1" text-anchor="middle">F6</text>
+    <rect x="606" y="394" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="626" y="413" font-size="9" fill="#1E8449" text-anchor="middle">B4</text>
+    <rect x="651" y="394" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="671" y="413" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="696" y="394" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="716" y="413" font-size="9" fill="#1E8449" text-anchor="middle">B5</text>
+    <rect x="741" y="394" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="761" y="413" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="786" y="394" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="806" y="413" font-size="9" fill="#1E8449" text-anchor="middle">B6</text>
+    <rect x="831" y="394" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="851" y="413" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+  </g>
+  <!-- stage 2: idle idle F1 F2 idle B1 F3 B2 F4 B3 F5 B4 F6 B5 idle B6 idle idle -->
+  <g>
+    <rect x="66" y="430" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="86" y="449" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="111" y="430" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="131" y="449" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="156" y="430" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="176" y="449" font-size="9" fill="#2E86C1" text-anchor="middle">F1</text>
+    <rect x="201" y="430" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="221" y="449" font-size="9" fill="#2E86C1" text-anchor="middle">F2</text>
+    <rect x="246" y="430" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="266" y="449" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="291" y="430" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="311" y="449" font-size="9" fill="#1E8449" text-anchor="middle">B1</text>
+    <rect x="336" y="430" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="356" y="449" font-size="9" fill="#2E86C1" text-anchor="middle">F3</text>
+    <rect x="381" y="430" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="401" y="449" font-size="9" fill="#1E8449" text-anchor="middle">B2</text>
+    <rect x="426" y="430" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="446" y="449" font-size="9" fill="#2E86C1" text-anchor="middle">F4</text>
+    <rect x="471" y="430" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="491" y="449" font-size="9" fill="#1E8449" text-anchor="middle">B3</text>
+    <rect x="516" y="430" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="536" y="449" font-size="9" fill="#2E86C1" text-anchor="middle">F5</text>
+    <rect x="561" y="430" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="581" y="449" font-size="9" fill="#1E8449" text-anchor="middle">B4</text>
+    <rect x="606" y="430" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="626" y="449" font-size="9" fill="#2E86C1" text-anchor="middle">F6</text>
+    <rect x="651" y="430" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="671" y="449" font-size="9" fill="#1E8449" text-anchor="middle">B5</text>
+    <rect x="696" y="430" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="716" y="449" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="741" y="430" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="761" y="449" font-size="9" fill="#1E8449" text-anchor="middle">B6</text>
+    <rect x="786" y="430" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="806" y="449" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="831" y="430" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="851" y="449" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+  </g>
+  <!-- stage 3: idle x3, then F1 B1 F2 B2 ... F6 B6, idle x3 -->
+  <g>
+    <rect x="66" y="466" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="86" y="485" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="111" y="466" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="131" y="485" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="156" y="466" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="176" y="485" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="201" y="466" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="221" y="485" font-size="9" fill="#2E86C1" text-anchor="middle">F1</text>
+    <rect x="246" y="466" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="266" y="485" font-size="9" fill="#1E8449" text-anchor="middle">B1</text>
+    <rect x="291" y="466" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="311" y="485" font-size="9" fill="#2E86C1" text-anchor="middle">F2</text>
+    <rect x="336" y="466" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="356" y="485" font-size="9" fill="#1E8449" text-anchor="middle">B2</text>
+    <rect x="381" y="466" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="401" y="485" font-size="9" fill="#2E86C1" text-anchor="middle">F3</text>
+    <rect x="426" y="466" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="446" y="485" font-size="9" fill="#1E8449" text-anchor="middle">B3</text>
+    <rect x="471" y="466" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="491" y="485" font-size="9" fill="#2E86C1" text-anchor="middle">F4</text>
+    <rect x="516" y="466" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="536" y="485" font-size="9" fill="#1E8449" text-anchor="middle">B4</text>
+    <rect x="561" y="466" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="581" y="485" font-size="9" fill="#2E86C1" text-anchor="middle">F5</text>
+    <rect x="606" y="466" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="626" y="485" font-size="9" fill="#1E8449" text-anchor="middle">B5</text>
+    <rect x="651" y="466" width="41" height="28" fill="#EBF5FB" stroke="#2E86C1"/><text x="671" y="485" font-size="9" fill="#2E86C1" text-anchor="middle">F6</text>
+    <rect x="696" y="466" width="41" height="28" fill="#EAF7F1" stroke="#27AE60"/><text x="716" y="485" font-size="9" fill="#1E8449" text-anchor="middle">B6</text>
+    <rect x="741" y="466" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="761" y="485" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="786" y="466" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="806" y="485" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+    <rect x="831" y="466" width="41" height="28" fill="#FDEDEC" stroke="#C0392B"/><text x="851" y="485" font-size="9" fill="#C0392B" text-anchor="middle">闲</text>
+  </g>
+
+  <text x="480" y="530" font-size="10.5" fill="#2C3E50" text-anchor="middle">稳态（t7~t13）：每段 F/B 交替无空转——驻留 activation 从 O(m)=6 降到 O(p)=4；bubble 几何与 GPipe 相同（33%）</text>
+  <text x="480" y="550" font-size="10.5" fill="#7F8C8D" text-anchor="middle">推理没有 backward，但"流水线不囤货"的思想同样适用：decode 的 micro-batch 交替灌入，避免 stage 间缓存堆积</text>
+  <text x="480" y="570" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="bold">PP 对推理的代价：TTFT +(p−1)·t_fill；小 batch TPOT 被 bubble 放大；收益：显存 ÷p + 跨机几乎免费（边界只传 B·S·H·b）</text>
+</svg>

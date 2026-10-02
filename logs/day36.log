@@ -1,0 +1,501 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week6/ 2>/dev/null && ls /mnt/workspace/aiinfra/vllm/week6/assets/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/
+total 28
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 .
+drwxr-xr-x 18 root root  4096 Oct  2 12:40 ..
+-rw-r--r--  1 root root 17089 Oct  1 23:15 README.md
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+[0m
+[0m→ [0mRead week6/README.md
+week6 目录下还没有 day*.md，Day 36 是本周第一篇。让我快速确认一下仓库结构以便引用准确的源码路径。
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/vllm/v1/ 2>/dev/null | head -20; ls /mnt/workspace/aiinfra/vllm/vllm/v1/core/ 2>/dev/null; git -C /mnt/workspace/aiinfra/vllm log --oneline -3 2>/dev/null; cat /mnt/workspace/aiinfra/vllm/build.py 2>/dev/null | head -30
+9b87999 Add Day 10-21 tutorial notes (weeks 2-3) with assets and logs; update generator and progress
+9f00707 Add Day 03-19 tutorial notes (weeks 1-3) with logs; improve generator (cooldown, no-retry, low thinking variant)
+6684e08 Switch Pages to VitePress-style build system (weeks/day pages + Actions deploy)
+#!/usr/bin/env python3
+"""
+Build the website for GitHub Pages.
+
+Generates public/ (deployment root):
+  - Shared css/js (copied from static/)
+  - Landing page index.html (built by build.home)
+  - Plan page plan.html + prompt page prompt.html (built by build.weeks)
+  - week1~weekN overview + day pages (built by build.weeks)
+"""
+
+import shutil
+from pathlib import Path
+
+from build.common import (
+    WEEK_DIR_PATTERN,
+    copy_static_assets,
+    discover_week_dirs,
+)
+from build.home import build_home
+from build.weeks import (
+    build_plan_page,
+    build_prompt_page,
+    build_week,
+)
+
+
+def main() -> None:
+    repo_root = Path(__file__).parent
+    public_dir = repo_root / "public"
+[0m
+[0m$ [0mls week1/ week5/ 2>/dev/null | head -40; ls week5/assets/ 2>/dev/null | head
+week1/:
+assets
+day01_transformer_inference.md
+day02_memory_latency_hand_calc.md
+day03_roofline_model.md
+day04_paged_attention_paper.md
+day05_serving_metrics.md
+day06_env_setup_first_bench.md
+day07_first_principles_review.md
+README.md
+
+week5/:
+assets
+day29_pd_disaggregation_why.md
+day30_pd_disaggregation_how.md
+day31_pd_disaggregation_lab.md
+day32_distributed_parallelism.md
+day33_distributed_parallelism_lab.md
+day34_prefix_caching_and_routing.md
+day35_review_and_cluster_design.md
+README.md
+day29_chunk_window.svg
+day29_colocated_interference.svg
+day29_colocated_vs_disaggregated.svg
+day30_kvconnector_sequence.svg
+day30_layerwise_pipelining.svg
+day30_pd_architecture_overview.svg
+day30_three_systems.svg
+day31_itl_comparison.svg
+day31_pd_lab_topology.svg
+day31_request_lifecycle.svg
+[0m
+week6/ 目前只有 README.md（本周执行手册），Day 36 是本周首篇。我先快速确认一下 vllm-ascend 仓库的公开信息以保证引用准确，然后尽快动笔。
+[0m% [0mWebFetch https://github.com/vllm-project/vllm-ascend
+网络可用，已确认 vllm-ascend 仓库的当前状态（硬件插件定位、支持矩阵、版本策略等）。现在开始动笔：先写正文前半部分。
+[0m
+[0m← [0mWrite week6/day36_topic_selection_and_research.md
+Wrote file successfully.
+[0m
+前半部分已写入。现在创建第一张 SVG：分层架构图。
+[0m← [0mWrite week6/assets/day36_vllm_ascend_stack.svg
+Wrote file successfully.
+[0m
+架构图完成。现在追加正文中间部分（调研方法论 + 决策数学）。
+[0m← [0mEdit week6/day36_topic_selection_and_research.md
+Index: /mnt/workspace/aiinfra/vllm/week6/day36_topic_selection_and_research.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week6/day36_topic_selection_and_research.md
++++ /mnt/workspace/aiinfra/vllm/week6/day36_topic_selection_and_research.md
+@@ -145,5 +145,171 @@
+ 3. **论证语言通用**：性能 PR 的沟通语言就是 TTFT/TPOT/AI/bound/roofline——Day 1-5 建立的指标体系和第一性原理，直接就是 PR 描述里的话术。
+ 
+ ---
+ 
+-<!-- DAY36_APPEND_1 -->
++---
++
++## 4. 调研方法论：五条渠道与过滤器
++
++今天的核心流程一张图说清——**从五条信息渠道出发，经过滤器和加权评分，收敛成一份备忘录**：
++
++![Day 36 选题决策流程](assets/day36_selection_funnel.svg)
++
++### 4.1 五条渠道（按信息可靠度排序）
++
++| # | 渠道 | 具体操作 | 说明 |
++|---|---|---|---|
++| ① | **自己跑出来的坑** | Day 37 起冒烟 + 基线测试中遇到的报错、慢路径、fallback 日志 | **最可靠**——能复现的问题最扎实；今天先留个"随手记"文件 |
++| ② | **官方性能对比数据** | vllm-ascend 文档/博客中 GPU vs NPU benchmark 差距；user stories | 差距大的 case = 天然的优化空间 + **选题论证现成可用** |
++| ③ | **issues 列表** | 标签过滤 `good first issue` / `performance` / `help wanted`；关键词搜 `slow` / `fallback` / `OOM` / `regression` | 优先"**有人报、没人领、能复现**"的（标签集合以仓库实际为准） |
++| ④ | **支持矩阵缺口** | 官方 Support Matrix（量化方案 × 模型 × 精度）未勾选项 | 看对应 issue 是否有人在推进，避免撞车 |
++| ⑤ | **近期 merged PR 趋势** | 看维护者最近在合并什么 | **主要用于避雷**：避开正在大重构的区域——改了也合不进去 |
++
++几个实用入口（今天实验 2 会用到）：
++
++```bash
++# 仓库与文档
++https://github.com/vllm-project/vllm-ascend          # 仓库（README 有 roadmap 与新闻）
++https://docs.vllm.ai/projects/ascend/                 # 官方文档（含支持矩阵、贡献指南）
++https://discuss.vllm.ai/c/hardware-support/vllm-ascend-support   # 用户论坛（渠道①②的补充）
++
++# 每周三 15:00（UTC+8）有 vLLM Ascend 周会——选题定了之后建议旁听一次，
++# 直接了解维护者当前的关注方向（渠道⑤的实时版）
++```
++
++### 4.2 五问过滤器
++
++对候选池里每个点位过一遍，**不满足任一条直接淘汰**：
++
++| # | 问题 | 淘汰理由（如果不满足） |
++|---|---|---|
++| F1 | **有证据吗？**（issue # / benchmark 差距 / 日志现象） | 想象出来的瓶颈，剖析三天发现不存在 |
++| F2 | **剖析路径 ≤ 2 层吗？**（e2e 指标 → step 级 → kernel 级） | 瓶颈埋太深，两周走不完闭环 |
++| F3 | **前后数据能拿干净吗？**（microbench + e2e 两级） | 没有可量化数据，PR 无从论证 |
++| F4 | **环境能复现吗？**（Atlas A2 / HiDevLab / 官方镜像） | 复现不了 = 一切归零 |
++| F5 | **目标区域稳定吗？**（近 30 天无大重构） | 跟大重构撞车，PR 被挂起 |
++
++> **提示**：F2 是新手最容易忽视的过滤器。"优化整个 attention 后端"听起来诱人，但从 e2e 指标到可动手的代码点，中间隔着 metadata 构建、算子选路、CANN 内部三层——每多一层，不确定性乘一个系数。
++
++### 4.3 五个候选方向深度画像
++
++结合你的背景（昇腾 WeightQuantBatchMatmulV2 的 tiling / 流水线 / 量化优化 + 高并发分布式架构），五个候选方向的完整画像：
++
++| 维度 | 方向 1：量化 GEMM | 方向 2：Attention/MLA | 方向 3：torchair/host | 方向 4：默认参数/调度 | 方向 5：fallback 消除 |
++|---|---|---|---|---|---|
++| **背景** | 量化线性层最终调 CANN 量化融合 matmul，decode 小 M shape 与你做过的场景高度重合 | AscendAttention / DeepSeek MLA 的 NPU kernel 是热点也是难点 | 图下沉失败点、fallback eager、动态 shape 切图开销 | block_size、max_num_seqs、capture bucket 等 NPU 默认值；prefix caching 小 bug | e2e 日志 grep `fallback` / `not support`，挑高频的补实现 |
++| **切入点** | 特定 shape 走慢路径、tiling 不适配、反量化未融合、scale 处理开销 | 量化 KV attention、特定 seq len 性能塌陷、MLA absorb 路径算子适配 | graph 失败 fallback 点定位、host 每 step 开销 | 对照 GPU 默认值逐项基准 | 高频 fallback 算子补齐 |
++| **工作量** | 中 | **大** | 中 | **小** | 小-中 |
++| **风险** | 瓶颈若在 CANN 算子库内部，插件侧只能做调用方式/布局优化（**先确认边界！**） | 常需 CANN 配合，PR 周期长 | 图模式行为对版本敏感 | 天花板低、故事平淡 | 部分是纯功能补齐，性能叙事弱 |
++| **你的优势** | **ASW 蛇形滑窗 / L1 全载 / balanceRate 搜优直接迁移论证** | 有 paged attention 的机制理解（Day 4/17），但 kernel 层是新战场 | "无 Queue 手工流水线"的 host 直觉对口 | benchmark 方法论成熟（Day 6/13） | 链路清晰、容易测 |
++
++定性结论（后面用打分模型量化验证）：
++
++- **方向 1 是主赛道**：经验零损耗对接、影响面在主链路（每个 decode step 都走 GEMM）、证据好找（官方 benchmark 差距现成）；
++- **方向 4 是保底赛道**：工作量小、数据好出、随时能闭环——适合作为"第一个 PR 练手"或主赛道受阻时的降级；
++- **方向 2 是观察项**：影响面最大但风险也最大，**除非 W6 内就出现明确小切口（某个具体 issue + 能复现），否则不进**；
++- **方向 3 / 5 是机会项**：如果实验 2 里挖到强证据的点位，可以升级。
++
++---
++
++## 5. 决策数学：加权评分与 ROI
++
++"我觉得方向 1 好"不是论证。把直觉拆成显式模型，才能在面试里讲清楚"为什么是你、为什么是这个点"。
++
++### 5.1 加权评分模型
++
++对每个候选 $j$（注意：**打分对象是具体点位，不是抽象方向**——见实验 4），六维打分 $s_i \in [1,5]$，加权求和：
++
++$$
++\text{Score}_j = \sum_{i=1}^{6} w_i \cdot s_{j,i}, \qquad \text{满分} = 5\sum w_i = 55
++$$
++
++| 维度 | 权重 $w$ | 为什么是这个权重 |
++|---|---|---|
++| 可量化性 | **3** | 拿不到干净前后数据的性能 PR 等于没做 |
++| 影响面 | 2 | 主链路（GEMM/Attention）> 冷门算子；乘以"每 step 都走" |
++| 经验匹配度 | 2 | 决定"跨平台方法论"叙事的独特性——别人做不了你能做 |
++| 工作量可控 | 2 | 两周内必须走完"改-测-PR"闭环 |
++| 环境依赖 | 1 | 依赖 CANN 版本 / 特定卡型越多，复现与 review 越难 |
++| 合并概率 | 1 | 是否命中维护者关注方向、区域是否稳定 |
++
++### 5.2 示例打分（⚠️ 演示方法用，正式打分必须自己来）
++
++![五个候选方向的加权得分](assets/day36_scoring_bars.svg)
++
++对应的打分明细（示例分）：
++
++| 维度（×权重） | 方向 1 | 方向 2 | 方向 3 | 方向 4 | 方向 5 |
++|---|---|---|---|---|---|
++| 可量化性 ×3 | 5 → 15 | 5 → 15 | 4 → 12 | 5 → 15 | 4 → 12 |
++| 影响面 ×2 | 4 → 8 | 5 → 10 | 3 → 6 | 2 → 4 | 3 → 6 |
++| 经验匹配度 ×2 | 5 → 10 | 3 → 6 | 3 → 6 | 1 → 2 | 2 → 4 |
++| 工作量可控 ×2 | 4 → 8 | 2 → 4 | 4 → 8 | 5 → 10 | 4 → 8 |
++| 环境依赖 ×1 | 3 → 3 | 2 → 2 | 5 → 5 | 5 → 5 | 4 → 4 |
++| 合并概率 ×1 | 4 → 4 | 3 → 3 | 3 → 3 | 4 → 4 | 3 → 3 |
++| **合计（/55）** | **48** | **40** | **40** | **40** | **37** |
++
++**同分 40 怎么办？——这正是 tie-break 规则的作用：**
++
++1. **第一优先：经验匹配度**（叙事独特性——方向 2 > 方向 3 > 方向 4）→ 方向 2 升为备选；
++2. **第二优先：环境依赖 / 确定性**（方向 4 几乎无环境风险）→ 方向 4 定为保底。
++
++于是得到示例结论：**主选方向 1 类点位，备选方向 2 类点位，保底方向 4 类点位**。注意这个结论本身不重要——**重要的是你能在 3 分钟内向面试官复述这套打分逻辑**。
++
++### 5.3 ROI 期望值模型（处理不确定性）
++
++加权分是静态的；再加两层概率修正，处理"做不做得完、合不合得进去"的风险：
++
++$$
++E[\text{价值}] = P_{\text{完成}} \times P_{\text{合并}} \times \left(\Delta_{\text{microbench}} + \Delta_{\text{e2e}} \times \text{影响面}\right)
++$$
++
++$$
++\text{成本} = \text{预计工时} \times (1 + \text{环境风险系数}), \qquad \text{决策：选 } \frac{E[\text{价值}]}{\text{成本}} \text{ 最大者}
++$$
++
++三条决策规则：
++
++- **主选**：$E[\text{价值}]/\text{成本}$ 最大者；
++- **保底**：$P_{\text{完成}} \times P_{\text{合并}}$ 最高者（通常是方向 4——纯参数/小改动，几乎必然能闭环）；
++- **健康检查**：若主选与保底重合，说明选题过于保守，回候选池把方向 2/3 的点位再挖一遍。
++
++### 5.4 用第一性原理预验方向 1（联系 Day 1-3）
++
++选题阶段就能"预演"Day 40 的 bound 建模——这是检验"这个方向有没有理论空间"的快筛。对 decode 阶段单层量化 GEMM：
++
++$$
++\text{FLOPs} = 2MNK, \qquad \text{Bytes} \approx \underbrace{NK \cdot b_w}_{\text{权重（主导）}} + MK \cdot b_a + MN \cdot b_{out}
++$$
++
++小 M 下 $NK \gg MK$（例如 $N=K=4096$、$M=1$ 时权重是激活的 4096 倍），故算术强度：
++
++$$
++AI \approx \frac{2MNK}{NK \cdot b_w} = \frac{2M}{b_w} \;\; \text{ops/byte}
++$$
++
++对照机器平衡点 $AI^{*} = \text{PeakFLOPS} / \text{BW}_{hbm}$（Day 3 的 Roofline 分界；910B 具体峰值以 SKU 手册为准）：
++
++- $b_w = 1$（int8 权重）：$M=1 \Rightarrow AI=2$；$M=256 \Rightarrow AI=512$；
++- 纯数量级示例（**数字仅为演示**）：若某 SKU $AI^{*}\approx 250$ ops/byte，则 $M \gtrsim 125$ 才进入 compute-bound——**decode 的典型 M（1~256，多数时段偏低）牢牢落在 memory-bound 区**。
++
++三条推论，直接决定优化思路：
++
++1. **优化主战场是权重搬运与 L1/L2 复用**，不是算力——正是 tiling / L1 全载 / 滑窗调度的主场；
++2. **M 小 → 多核切不满、尾块占比高**——balanceRate 类 tiling 搜索有理论收益空间（你做 CalRebalanceBlock 的三条件剪枝直接迁移）；
++3. 这就是 **Day 2 的 decode 时延下界公式（≈ 参数字节 / HBM 带宽）在单层 GEMM 上的化身**——第一性原理贯穿到了选题环节。
++
++> 反过来用同样方法快筛方向 2：attention decode 的访存主体是 KV cache（Day 1 推导过），优化空间在 gather 与 KV 布局——理论空间同样存在，但改动路径穿过更多层（backend 接口 → kernel → CANN），F2 过滤器扣分由此而来。
++
++### 5.5 边界确认：你的改动落在哪一层
++
++| 剖析后的典型现象 | 瓶颈层 | 你能改吗 | 贡献形态 |
++|---|---|---|---|
++| step 内 kernel 之间 gap 大、host 占比高 | vllm-ascend（图模式、每 step Python 开销） | ✅ 直接改 | 标准 PR |
++| kernel 本身慢，但入参 / 布局 / dtype 可换 | torch_npu 接口层 | ✅ 部分可改（调用方式、布局避免、shape 归并） | 标准 PR |
++| kernel 内 tiling / 流水不优 | CANN 算子库内部 | ❌ 插件侧改不到 | **降级产出：issue + 瓶颈分析报告 + 优化建议**（同样是贡献，且是你最擅长的分析） |
++
++> **重要预期管理**：项目 A 的验收标准是"**形成可讲述的完整故事**"（问题 → 机制 → 数据 → 贡献），不是"一定改到 CANN"。你的独特优势恰恰是：即使瓶颈在 CANN 内部，你也能把"理论上限 + 差距分解 + 优化建议"写得比一般贡献者深一个量级。边界最终确认发生在 Day 38-40 剖析之后，**今天只在备忘录里写下初步假设**。
++
++---
++
++<!-- DAY36_APPEND_2 -->
+
+[0m
+中间部分已追加。创建第二张 SVG：选题决策漏斗。
+[0m← [0mWrite week6/assets/day36_selection_funnel.svg
+Wrote file successfully.
+[0m
+创建第三张 SVG：加权评分对比图。
+[0m← [0mWrite week6/assets/day36_scoring_bars.svg
+Wrote file successfully.
+[0m
+三张 SVG 完成。追加正文最后部分（动手实验、面试问题、总结、自测、产出物）。
+[0m← [0mEdit week6/day36_topic_selection_and_research.md
+Index: /mnt/workspace/aiinfra/vllm/week6/day36_topic_selection_and_research.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week6/day36_topic_selection_and_research.md
++++ /mnt/workspace/aiinfra/vllm/week6/day36_topic_selection_and_research.md
+@@ -311,5 +311,159 @@
+ > **重要预期管理**：项目 A 的验收标准是"**形成可讲述的完整故事**"（问题 → 机制 → 数据 → 贡献），不是"一定改到 CANN"。你的独特优势恰恰是：即使瓶颈在 CANN 内部，你也能把"理论上限 + 差距分解 + 优化建议"写得比一般贡献者深一个量级。边界最终确认发生在 Day 38-40 剖析之后，**今天只在备忘录里写下初步假设**。
+ 
+ ---
+ 
+-<!-- DAY36_APPEND_2 -->
++---
++
++## 6. 动手实验（今日主线，全部可在无 NPU 环境下完成）
++
++今天五个实验串起来就是漏斗图的一次完整执行。所有产出存到 `week6/`，它们是 Day 37-42 的输入。
++
++### 实验 1：仓库速览与目录地图修正（约 30 min）
++
++```bash
++git clone --depth 50 https://github.com/vllm-project/vllm-ascend.git
++cd vllm-ascend
++
++# 对照 §2.2 的地图逐目录验证，重点看四个文件的存在性与内容概貌：
++ls vllm_ascend/          # 平台插件主包
++ls vllm_ascend/attention/ vllm_ascend/quantization/ vllm_ascend/linear/ vllm_ascend/worker/
++cat CONTRIBUTING.md      # 贡献流程：DCO sign-off、lint、测试要求
++ls docs/ benchmarks/     # 渠道②④ 的信息源
++```
++
++**产出**：把 §2.2 的表格复制到自己的笔记里，补一列"main 分支实际文件名"，修正偏差（这一步同时建立 git 心理地图，Day 38 grep 热点时不会迷路）。
++
++### 实验 2：issue / 支持矩阵 / 论坛调研，建候选池（约 45 min）
++
++用 `gh` CLI（或网页）执行渠道 ③④：
++
++```bash
++# 有标签过滤（标签集合以仓库实际为准）
++gh issue list -R vllm-project/vllm-ascend --state open \
++  --label "good first issue" --limit 30
++gh issue list -R vllm-project/vllm-ascend --state open \
++  --label "performance" --limit 30
++
++# 关键词搜索
++gh issue list -R vllm-project/vllm-ascend --state open --search "slow" --limit 30
++gh issue list -R vllm-project/vllm-ascend --state open --search "fallback quantization" --limit 30
++
++# 看有没有人认领：点进 issue 看 assignees / 评论里的 "I'd like to work on this"
++```
++
++**产出**：候选池表（建议 ≥10 行），schema 如下：
++
++| # | 点位描述 | 来源渠道 | 证据 | 关联方向 | 有人认领？ | 初步印象分（1-5） |
++|---|---|---|---|---|---|---|
++| 1 | *（示例行，请以当日仓库实际 issue 填写）* 量化线性层某 shape 慢路径 | ③ issue #xxx | issue 内 benchmark 数据 | 方向 1 | 否 | 5 |
++| ... | | | | | | |
++
++> 同时把官方 **Support Matrix**（docs.vllm.ai/projects/ascend → user_guide/support_matrix）扫一遍：未勾选项 × 你方向 1/2 的交集，是高质量的候选来源。**不要编造 issue 编号**——今天表格里每一行都必须能点开链接。
++
++### 实验 3：重构区识别（约 20 min）
++
++```bash
++# 近 30 个 merged PR 按改动目录聚合
++gh pr list -R vllm-project/vllm-ascend --state merged --limit 30 \
++  --json title,files,mergedAt
++```
++
++**规则**：目标点位所在子目录近 30 天 merged PR ≥ 5 → 该区域正在活跃重构，F5 扣分或直接淘汰。
++**产出**：一小段"重构区/稳定区"笔记（哪些目录热、哪些冷），写进备忘录的风险栏。
++
++### 实验 4：评估矩阵打分（约 30 min）
++
++对候选池里过了五问过滤器的 3~5 个**具体点位**（不是抽象方向）按 §5.1 六维度打分：
++
++- 每个分数旁边写一句**一句话理由**（防止自己拍脑袋）；
++- 出现同分 → 走 tie-break 规则；
++- 用 §5.3 的期望值模型给主选算一个粗略 ROI（$P_{\text{完成}}$、$P_{\text{合并}}$ 各给一个估计值并说明依据）。
++
++**产出**：打分表 + 主选/备选/保底三件套。
++
++### 实验 5：写选题备忘录（约 30 min，今日核心产出）
++
++按以下模板写 `week6/day36_topic_memo.md`：
++
++```markdown
++# 选题备忘录 <日期>
++
++## 主选：<一句话问题描述，指向具体点位>
++- 证据：issue #xxx / 官方 benchmark 差距 X% / 日志现象
++- 影响面：<哪些模型 / 负载 / 路径；按 "每 step × 并发" 估算>
++- 初步假设：<瓶颈可能在哪一层、为什么；引用 §5.4 的 AI 推导（如适用）>
++- 验证方式：<microbench 脚本设计 + e2e 指标（TPOT/吞吐）>
++- 预计工作量：<天数>；里程碑：Day 38 剖析报告 → Day 42 第一轮数据
++- 边界确认（初步）：<改动预计落在 vllm-ascend 侧 / torch_npu 接口层 / CANN 内部？依据是什么？>
++- 风险与备选：<若 X 卡住则降级为备选/保底（方向 Y）>
++
++## 备选：<同结构>
++
++## 保底：<同结构，通常为方向 4 类小改动>
++
++## 附：候选池摘要 + 打分表 + 重构区笔记的引用
++```
++
++写完自检三问：**每条结论都有证据链接吗？边界假设写清楚了吗？降级路径明确吗？**
++
++---
++
++## 7. 面试高频问题
++
++**Q1：你的开源贡献为什么选这个点，而不是别的？**
++> 答题骨架（ROI 论证链）：证据（issue/benchmark 差距 X%）→ 影响面（主链路，每 step 都走）→ 理论空间（AI ≈ 2M/b_w < AI*，memory-bound，优化主战场在搬运与复用）→ 经验匹配（昇腾量化 GEMM tiling 方法直接迁移）→ 可完成性（剖析路径 ≤ 2 层，两周闭环）。**切忌**答成"因为我对它感兴趣"。
++
++**Q2：vllm-ascend 和 vLLM 主仓是什么关系？新硬件接入要做什么？**
++> vllm-ascend 是按 hardware-pluggable 架构（RFC #11162）实现的独立插件包，不 fork 主仓；vLLM 启动时通过平台接口发现它。新硬件要提供：Platform（设备检查/默认参数/选路）、Worker + ModelRunner（执行）、AttentionBackend（V1 接口：impl / metadata builder / kv cache shape 等）、量化 LinearMethod、分布式通信封装。**这正是 Day 17 思考题的答案，今天从"读题人"变成了"贡献者"。**
++
++**Q3：如果剖析后发现瓶颈在 CANN 算子库内部，你改不到，怎么办？**
++> 三层降级：① 框架层软优化（布局避免、shape 归并、调用量裁剪）照样出 PR；② 把 kernel 级分析（理论上限 + 差距分解 + tiling/流水优化建议 + 数据）作为 issue 提给 CANN/vllm-ascend 社区——**分析报告本身就是高价值贡献**，且这是我最擅长的部分；③ 切换到备选点位。关键是故事仍然完整：问题 → 机制 → 数据 → 贡献。
++
++**Q4：怎么判断一个性能优化点"值不值得做"？**
++> 显式模型，不是直觉：加权评分（可量化性 ×3 最重）+ 五问过滤器（证据/路径/数据/环境/区域稳定性）+ ROI 期望值（完成概率 × 合并概率 × 收益 / 成本）。可以现场画今天的漏斗图。
++
++**Q5：decode 阶段量化 GEMM 的性能特征是什么？为什么你的经验直接适用？**
++> 小 M（≤ max_num_seqs）、N 宽、K 大；AI ≈ 2M/b_w，典型 M 下远低于机器平衡点 → memory-bound，权重搬运主导。优化抓手：tiling 提升 L2 命中（ASW 蛇形滑窗）、小 M 的 L1 全载、多核均衡（balanceRate 搜索）、反量化融合。这些都是我在昇腾 WeightQuantBatchMatmulV2 上做过的，只是换了调用入口。
++
++---
++
++## 8. 今日总结
++
++| # | 今天建立的认识 | 一句话 |
++|---|---|---|
++| 1 | vllm-ascend = vLLM 的硬件插件 | 引擎核心硬件无关、你已吃透；插件层是独立 pip 包，PR 半径小 |
++| 2 | 选题 = 投资决策 | 加权评分 + 过滤器 + ROI 期望值，全部显式化 |
++| 3 | 证据 > 直觉 | 每个候选必须能回答"你的证据是什么" |
++| 4 | 边界决定可行性 | vllm-ascend 侧 / torch_npu 接口层 / CANN 内部，三层的贡献形态不同 |
++| 5 | 第一性原理贯穿到底 | Day 2/3 的 AI 与手算公式，今天直接用来预验选题的理论空间 |
++| 6 | 宁可小而完整 | 主选 + 备选 + 保底，两周内必有一条线闭环 |
++
++**与项目 A 后续的衔接**：今天的备忘录是 Day 37（环境 + 基线）的工作说明书，是 Day 38-40（剖析）的假设来源，是 Day 41-45（优化 + PR）的验收基线。选题阶段多花的一小时，剖析阶段省一天。
++
++---
++
++## 9. 今日自测题（不看笔记作答）
++
++1. vllm-ascend 通过什么机制被 vLLM 发现？EngineCore 及以上的调度逻辑会因为后端是 NPU 而改变吗？
++2. 画出量化线性层从 `vllm_ascend/quantization/` 到 CANN 算子库的调用链（四层），并指出哪一层是你能直接提 PR 的。
++3. 五问过滤器是哪五问？哪一问最容易被新手忽略？为什么？
++4. 用 AI ≈ 2M/b_w 推导：为什么 decode 阶段的 w8a8 GEMM 几乎必然 memory-bound？M 需要多大才可能翻过机器平衡点（用符号表达）？
++5. 你的评分矩阵里可量化性权重为什么是 3？如果某个候选"影响面极大但数据难拿干净"，你怎么决策？
++6. 口头 3 分钟：向面试官讲清楚"为什么选这个点"的完整论证链（Q1 的骨架）。
++
++---
++
++## 10. 今日产出物清单
++
++- [ ] **选题备忘录** `week6/day36_topic_memo.md`（主选 + 备选 + 保底，含证据/影响面/假设/验证/工作量/边界/风险）—— **今日核心产出**
++- [ ] 候选池表（≥10 个点位，含来源与证据链接）
++- [ ] 加权评分打分表（对具体点位，含一句话理由与 tie-break 记录）
++- [ ] vllm-ascend 目录地图（对照 main 修正过的版本）
++- [ ] 重构区/稳定区笔记（近 30 个 merged PR 聚合）
++
++---
++
++## 明日预告（Day 37：环境打通）
++
++选题定了，明天进入"改之前先量化"：按官方版本矩阵搭源码开发环境（容器/镜像优先，杜绝版本自创组合）、跑通最小单测与冒烟、把基线性能数据落表（TTFT/TPOT/吞吐 × 并发梯度 + AICore util/HBM 占用）。**记住止损线：环境问题单点超过 1 天 → 提 issue / 换官方镜像 / 启动 GPU + Triton 降级方案（项目 D）。**
++
+
+[0m
+验证文件写入与完整性。
+[0m$ [0mls -la week6/ week6/assets/ && wc -l week6/day36_topic_selection_and_research.md && grep -n "APPEND\|assets/day36" week6/day36_topic_selection_and_research.md; for f in week6/assets/day36_*.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('$f OK')"; done
+week6/:
+total 64
+drwxr-xr-x  3 root root  4096 Oct  2 15:16 .
+drwxr-xr-x 18 root root  4096 Oct  2 12:40 ..
+drwxr-xr-x  2 root root  4096 Oct  2 15:18 assets
+-rw-r--r--  1 root root 32350 Oct  2 15:19 day36_topic_selection_and_research.md
+-rw-r--r--  1 root root 17089 Oct  1 23:15 README.md
+
+week6/assets/:
+total 32
+drwxr-xr-x 2 root root 4096 Oct  2 15:18 .
+drwxr-xr-x 3 root root 4096 Oct  2 15:16 ..
+-rw-r--r-- 1 root root 4015 Oct  2 15:18 day36_scoring_bars.svg
+-rw-r--r-- 1 root root 8555 Oct  2 15:18 day36_selection_funnel.svg
+-rw-r--r-- 1 root root 8192 Oct  2 15:16 day36_vllm_ascend_stack.svg
+469 week6/day36_topic_selection_and_research.md
+82:![vLLM V1 × vllm-ascend × CANN 分层架构](assets/day36_vllm_ascend_stack.svg)
+155:![Day 36 选题决策流程](assets/day36_selection_funnel.svg)
+237:![五个候选方向的加权得分](assets/day36_scoring_bars.svg)
+week6/assets/day36_scoring_bars.svg OK
+week6/assets/day36_selection_funnel.svg OK
+week6/assets/day36_vllm_ascend_stack.svg OK
+[0m
+Day 36 教程已完成并验证。
+
+**文件路径**
+- 正文：`week6/day36_topic_selection_and_research.md`（469 行）
+- SVG ×3：`week6/assets/day36_vllm_ascend_stack.svg`（V1 × vllm-ascend × CANN 五层架构图，橙色标注方向 1 对口链路）、`day36_selection_funnel.svg`（五渠道 → 过滤 → 加权评分 → 备忘录的选题决策漏斗）、`day36_scoring_bars.svg`（五方向加权得分对比，含 tie-break 说明）
+
+**主要内容**：严格对应 README Day 36「选型与调研」——vllm-ascend 仓库地图与 V1 调用链（含量化 GEMM 链路）、五条调研渠道 + 五问过滤器、五个候选方向画像、加权评分/ROI/AI≈2M/b_w 预验等决策数学、5 个动手实验（产出选题备忘录模板）、6 道面试题与自测题。内容基于今日实抓的仓库信息（RFC #11162 插件机制、支持矩阵、版本矩阵），版本相关处均标注「以 main 为准」；并衔接了 Day 17 的接口思考题与 Day 1-3 的第一性原理。未修改 week6/ 已有文件。

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4A5568"/>
+    </marker>
+    <marker id="bg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#38A169"/>
+    </marker>
+  </defs>
+  <rect width="960" height="600" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">三条路线对比：草稿器拿什么信号预测、从哪来</text>
+
+  <!-- ==================== Column 1: draft model ==================== -->
+  <rect x="30" y="55" width="280" height="470" rx="12" fill="#FFFAF0" stroke="#DD6B20" stroke-width="1.5"/>
+  <text x="170" y="82" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#9C4221">① 独立 draft model</text>
+  <text x="170" y="100" text-anchor="middle" font-size="10" fill="#9C4221">Leviathan / Chen 2023</text>
+
+  <!-- target -->
+  <rect x="60" y="120" width="220" height="46" rx="8" fill="#1A365D"/>
+  <text x="170" y="140" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ffffff">target 模型（如 70B）</text>
+  <text x="170" y="156" text-anchor="middle" font-size="9.5" fill="#BEE3F8">只吐 token ids，内部状态不可见</text>
+
+  <!-- draft model -->
+  <rect x="60" y="200" width="220" height="58" rx="8" fill="#FEEBC8" stroke="#DD6B20"/>
+  <text x="170" y="222" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#9C4221">独立小模型（68M / 1B）</text>
+  <text x="170" y="238" text-anchor="middle" font-size="9.5" fill="#2D3748">自读自的权重（含 emb + lm_head）</text>
+  <text x="170" y="252" text-anchor="middle" font-size="9.5" fill="#2D3748">串行自回归猜 k 步</text>
+
+  <!-- signal -->
+  <line x1="170" y1="166" x2="170" y2="196" stroke="#C53030" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#b)"/>
+  <text x="180" y="185" font-size="9.5" fill="#C53030">条件信号：只有 token ids</text>
+  <text x="180" y="196" font-size="9.5" fill="#C53030">（信息瓶颈 ✗）</text>
+
+  <text x="170" y="290" text-anchor="middle" font-size="10.5" fill="#2D3748">c ≈ 0.02~0.3（看 draft 大小）</text>
+  <text x="170" y="308" text-anchor="middle" font-size="10.5" fill="#2D3748">接受率最低</text>
+  <rect x="55" y="325" width="230" height="88" rx="8" fill="#ffffff" stroke="#DD6B20" stroke-dasharray="4 2"/>
+  <text x="170" y="345" text-anchor="middle" font-size="10" font-weight="bold" fill="#9C4221">获取：随便挑 / 自己蒸馏</text>
+  <text x="170" y="362" text-anchor="middle" font-size="9.5" fill="#2D3748">+ 与 target 解耦，可独立迭代</text>
+  <text x="170" y="377" text-anchor="middle" font-size="9.5" fill="#2D3748">− 两套模型，部署/显存双开销</text>
+  <text x="170" y="392" text-anchor="middle" font-size="9.5" fill="#2D3748">− token 级预测天花板明显</text>
+  <text x="170" y="415" text-anchor="middle" font-size="9.5" fill="#4A5568">vLLM V0 时代 --speculative-model；</text>
+  <text x="170" y="429" text-anchor="middle" font-size="9.5" fill="#4A5568">V1 主线见右两条（以文档为准）</text>
+
+  <!-- ==================== Column 2: MTP ==================== -->
+  <rect x="340" y="55" width="280" height="470" rx="12" fill="#F0FFF4" stroke="#38A169" stroke-width="1.5"/>
+  <text x="480" y="82" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#276749">② MTP（DeepSeek-V3 系）</text>
+  <text x="480" y="100" text-anchor="middle" font-size="10" fill="#276749">Multi-Token Prediction</text>
+
+  <rect x="370" y="120" width="220" height="46" rx="8" fill="#1A365D"/>
+  <text x="480" y="140" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ffffff">target 主干</text>
+  <text x="480" y="156" text-anchor="middle" font-size="9.5" fill="#BEE3F8">emb(t) 与末层 hidden h(t) 都交出来</text>
+
+  <rect x="370" y="200" width="220" height="58" rx="8" fill="#C6F6D5" stroke="#276749"/>
+  <text x="480" y="222" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#276749">MTP 模块（1 层 transformer）</text>
+  <text x="480" y="238" text-anchor="middle" font-size="9.5" fill="#2D3748">输入 concat[emb(t); h(t)]</text>
+  <text x="480" y="252" text-anchor="middle" font-size="9.5" fill="#2D3748">共享 embedding + 输出头</text>
+
+  <line x1="470" y1="166" x2="470" y2="196" stroke="#38A169" stroke-width="2" marker-end="url(#bg)"/>
+  <line x1="500" y1="166" x2="500" y2="196" stroke="#38A169" stroke-width="2" marker-end="url(#bg)"/>
+  <text x="510" y="185" font-size="9.5" fill="#276749">feature 级信号（✓）</text>
+
+  <text x="480" y="290" text-anchor="middle" font-size="10.5" fill="#2D3748">c 极小（1 层 + 共享 emb）</text>
+  <text x="480" y="308" text-anchor="middle" font-size="10.5" fill="#2D3748">接受率高：联合训练对齐分布</text>
+  <rect x="365" y="325" width="230" height="88" rx="8" fill="#ffffff" stroke="#276749" stroke-dasharray="4 2"/>
+  <text x="480" y="345" text-anchor="middle" font-size="10" font-weight="bold" fill="#276749">获取：训练期原生</text>
+  <text x="480" y="362" text-anchor="middle" font-size="9.5" fill="#2D3748">+ "预测 t+2"是辅助损失，还反哺</text>
+  <text x="480" y="377" text-anchor="middle" font-size="9.5" fill="#2D3748">  主模型表征（DeepSeek-V3）</text>
+  <text x="480" y="392" text-anchor="middle" font-size="9.5" fill="#2D3748">+ 权重随主模型发布，开关即用</text>
+  <text x="480" y="407" text-anchor="middle" font-size="9.5" fill="#2D3748">− 后挂不可能：必须训练期介入</text>
+  <text x="480" y="430" text-anchor="middle" font-size="9.5" fill="#4A5568">vLLM V1：method "deepseek_mtp"</text>
+
+  <!-- ==================== Column 3: EAGLE-3 ==================== -->
+  <rect x="650" y="55" width="280" height="470" rx="12" fill="#EBF8FF" stroke="#2B6CB0" stroke-width="1.5"/>
+  <text x="790" y="82" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2B6CB0">③ EAGLE-1/2/3</text>
+  <text x="790" y="100" text-anchor="middle" font-size="10" fill="#2B6CB0">事后蒸馏的草稿头 + 动态草稿树</text>
+
+  <rect x="680" y="120" width="220" height="46" rx="8" fill="#1A365D"/>
+  <text x="790" y="140" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ffffff">target 主干（任何已训好模型）</text>
+  <text x="790" y="156" text-anchor="middle" font-size="9.5" fill="#BEE3F8">EAGLE-3：浅层 + 深层 hidden 都交出来</text>
+
+  <rect x="680" y="200" width="220" height="58" rx="8" fill="#BEE3F8" stroke="#2B6CB0"/>
+  <text x="790" y="222" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">草稿头（1 层 + 特征融合）</text>
+  <text x="790" y="238" text-anchor="middle" font-size="9.5" fill="#2D3748">EAGLE-3：融合 emb + 中间层 + 末层</text>
+  <text x="790" y="252" text-anchor="middle" font-size="9.5" fill="#2D3748">TopKProposer 逐层长出草稿树</text>
+
+  <line x1="780" y1="166" x2="780" y2="196" stroke="#2B6CB0" stroke-width="2" marker-end="url(#b)"/>
+  <line x1="805" y1="166" x2="805" y2="196" stroke="#2B6CB0" stroke-width="2" marker-end="url(#b)"/>
+  <text x="815" y="185" font-size="9.5" fill="#2B6CB0">多层特征（✓✓）</text>
+
+  <text x="790" y="290" text-anchor="middle" font-size="10.5" fill="#2D3748">c 极小；接受率最高档（2.3~3×）</text>
+  <text x="790" y="308" text-anchor="middle" font-size="10.5" fill="#2D3748">动态树：按置信度剪枝，verify 用 tree mask</text>
+  <rect x="675" y="325" width="230" height="88" rx="8" fill="#ffffff" stroke="#2B6CB0" stroke-dasharray="4 2"/>
+  <text x="790" y="345" text-anchor="middle" font-size="10" font-weight="bold" fill="#2B6CB0">获取：后训练蒸馏</text>
+  <text x="790" y="362" text-anchor="middle" font-size="9.5" fill="#2D3748">+ 给存量模型"补装"，社区现成头</text>
+  <text x="790" y="377" text-anchor="middle" font-size="9.5" fill="#2D3748">  （yuhuili/EAGLE3-* 系列）</text>
+  <text x="790" y="392" text-anchor="middle" font-size="9.5" fill="#2D3748">− 绑定 target，换模型要重训</text>
+  <text x="790" y="407" text-anchor="middle" font-size="9.5" fill="#2D3748">− 树形 verify 工程更复杂</text>
+  <text x="790" y="430" text-anchor="middle" font-size="9.5" fill="#4A5568">vLLM V1：method "eagle"</text>
+
+  <!-- bottom summary -->
+  <rect x="30" y="540" width="900" height="44" rx="8" fill="#1A365D"/>
+  <text x="480" y="558" text-anchor="middle" font-size="11" fill="#ffffff">本质差异：token 级条件（①）&lt; feature 级条件（②③）——草稿器看得见 target 的内部状态，接受率才有质变；</text>
+  <text x="480" y="574" text-anchor="middle" font-size="11" fill="#BEE3F8">②③ 的差别在"来源"：MTP 训练期原生（自研模型路线），EAGLE 事后补装（用开源模型路线）</text>
+</svg>

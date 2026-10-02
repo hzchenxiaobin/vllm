@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="670" viewBox="0 0 980 670" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d31" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d31g" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#27AE60"/>
+    </marker>
+    <marker id="d31s" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#7F8C8D"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="670" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 1｜最小 P/D 分离部署拓扑：三个进程 + 两条通道（Lab B 主线 / Lab A 变体）</text>
+
+  <!-- client -->
+  <rect x="390" y="56" width="200" height="48" rx="6" fill="#F8F9F9" stroke="#34495E" stroke-width="1.5"/>
+  <text x="490" y="76" font-size="12" font-weight="bold" fill="#2C3E50" text-anchor="middle">客户端</text>
+  <text x="490" y="93" font-size="9" fill="#566573" text-anchor="middle">curl / itl_probe.py / vllm bench serve</text>
+  <line x1="490" y1="104" x2="490" y2="132" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d31)"/>
+
+  <!-- proxy -->
+  <rect x="360" y="136" width="260" height="58" rx="6" fill="#F4ECF7" stroke="#8E44ED" stroke-width="1.5"/>
+  <text x="490" y="158" font-size="12" font-weight="bold" fill="#6C3483" text-anchor="middle">toy_proxy_server.py :8192</text>
+  <text x="490" y="176" font-size="9" fill="#6C3483" text-anchor="middle">demo 级 router（round-robin，两跳转发）</text>
+
+  <!-- proxy -> P -->
+  <line x1="370" y1="194" x2="215" y2="292" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d31)"/>
+  <text x="196" y="228" font-size="10" font-weight="bold" fill="#2C3E50" text-anchor="middle">① 预热请求</text>
+  <text x="196" y="242" font-size="9" fill="#2C3E50" text-anchor="middle">max_tokens=1</text>
+
+  <!-- proxy -> D (request) -->
+  <line x1="710" y1="194" x2="735" y2="292" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d31)"/>
+  <text x="715" y="228" font-size="10" font-weight="bold" fill="#2C3E50" text-anchor="start">② 完整请求</text>
+  <!-- D -> proxy (token stream back) -->
+  <line x1="790" y1="292" x2="768" y2="196" stroke="#7F8C8D" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d31s)"/>
+  <text x="800" y="250" font-size="9" fill="#7F8C8D" text-anchor="start">③ token 流</text>
+  <text x="800" y="263" font-size="9" fill="#7F8C8D" text-anchor="start">（透传客户端）</text>
+
+  <!-- P instance -->
+  <rect x="70" y="296" width="280" height="100" rx="6" fill="#FDEBD0" stroke="#E67E22" stroke-width="1.5"/>
+  <text x="210" y="316" font-size="12" font-weight="bold" fill="#B9770E" text-anchor="middle">Prefill 实例</text>
+  <text x="210" y="332" font-size="10" fill="#B9770E" text-anchor="middle">vllm serve :8100 · GPU 0 · kv_role=kv_producer</text>
+  <text x="210" y="348" font-size="9" fill="#B9770E" text-anchor="middle">收到预热请求 → 只算 prefill</text>
+  <text x="210" y="362" font-size="9" fill="#B9770E" text-anchor="middle">save_kv_layer → request_finished</text>
+  <text x="210" y="376" font-size="9" fill="#B9770E" text-anchor="middle">发布 KV，返回 1 个 token</text>
+
+  <!-- D instance -->
+  <rect x="630" y="296" width="280" height="100" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5"/>
+  <text x="770" y="316" font-size="12" font-weight="bold" fill="#1A5276" text-anchor="middle">Decode 实例</text>
+  <text x="770" y="332" font-size="10" fill="#1A5276" text-anchor="middle">vllm serve :8200 · GPU 1 · kv_role=kv_consumer</text>
+  <text x="770" y="348" font-size="9" fill="#1A5276" text-anchor="middle">start_load_kv → wait_for_layer_load</text>
+  <text x="770" y="362" font-size="9" fill="#1A5276" text-anchor="middle">WAITING_FOR_REMOTE_KVS → running</text>
+  <text x="770" y="376" font-size="9" fill="#1A5276" text-anchor="middle">纯 decode · batch 形态稳定 · ITL 平稳</text>
+
+  <!-- KV data path -->
+  <line x1="354" y1="340" x2="626" y2="340" stroke="#27AE60" stroke-width="4" marker-end="url(#d31g)"/>
+  <text x="490" y="326" font-size="11" font-weight="bold" fill="#27AE60" text-anchor="middle">④ KV 数据网：KV blocks（UCX 传输）</text>
+  <text x="490" y="360" font-size="9" fill="#27AE60" text-anchor="middle">D 主动拉取（单边读）· 同机走 sm/IPC，跨机走 RDMA/TCP</text>
+
+  <!-- metadata side channel -->
+  <line x1="354" y1="399" x2="626" y2="399" stroke="#7F8C8D" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d31s)"/>
+  <line x1="626" y1="391" x2="354" y2="391" stroke="#7F8C8D" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d31s)"/>
+  <text x="490" y="416" font-size="9" fill="#7F8C8D" text-anchor="middle">⑤ 元数据网（side channel）：TCP 5600 ↔ 5601，握手 / block 清单 / 完成通知</text>
+
+  <!-- config P -->
+  <rect x="40" y="430" width="330" height="145" rx="6" fill="#FFF9F0" stroke="#E67E22" stroke-width="1"/>
+  <text x="52" y="448" font-size="9" font-family="monospace" fill="#B9770E"># 终端 1 · Prefill（Lab B）</text>
+  <text x="52" y="462" font-size="9" font-family="monospace" fill="#B9770E">CUDA_VISIBLE_DEVICES=0</text>
+  <text x="52" y="476" font-size="9" font-family="monospace" fill="#B9770E">UCX_NET_DEVICES=all</text>
+  <text x="52" y="490" font-size="9" font-family="monospace" fill="#B9770E">VLLM_NIXL_SIDE_CHANNEL_PORT=5600</text>
+  <text x="52" y="504" font-size="9" font-family="monospace" fill="#B9770E">vllm serve Qwen/Qwen3-8B --port 8100 \</text>
+  <text x="52" y="518" font-size="9" font-family="monospace" fill="#B9770E">  --enforce-eager \</text>
+  <text x="52" y="532" font-size="9" font-family="monospace" fill="#B9770E">  --kv-transfer-config '{</text>
+  <text x="52" y="546" font-size="9" font-family="monospace" fill="#B9770E">    "kv_connector": "NixlConnector",</text>
+  <text x="52" y="560" font-size="9" font-family="monospace" fill="#B9770E">    "kv_role": "kv_producer",</text>
+  <text x="52" y="571" font-size="9" font-family="monospace" fill="#B9770E">    "kv_load_failure_policy": "fail"}'</text>
+
+  <!-- observability middle box -->
+  <rect x="385" y="430" width="210" height="145" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1"/>
+  <text x="490" y="450" font-size="10" font-weight="bold" fill="#2C3E50" text-anchor="middle">TTFT 三处时钟（§3.2）</text>
+  <text x="490" y="470" font-size="9" fill="#2C3E50" text-anchor="middle">P:8100/metrics</text>
+  <text x="490" y="483" font-size="9" fill="#2C3E50" text-anchor="middle">→ T_prefill</text>
+  <text x="490" y="505" font-size="9" fill="#2C3E50" text-anchor="middle">KV Transfer metrics</text>
+  <text x="490" y="518" font-size="9" fill="#2C3E50" text-anchor="middle">→ TTLFT（xfer P90）</text>
+  <text x="490" y="540" font-size="9" fill="#2C3E50" text-anchor="middle">D:8200/metrics</text>
+  <text x="490" y="553" font-size="9" fill="#2C3E50" text-anchor="middle">→ T_first_decode</text>
+  <text x="490" y="575" font-size="9" fill="#7F8C8D" text-anchor="middle">三段加和 ≈ 客户端 TTFT</text>
+
+  <!-- config D -->
+  <rect x="610" y="430" width="330" height="145" rx="6" fill="#F0F8FD" stroke="#2E86C1" stroke-width="1"/>
+  <text x="622" y="448" font-size="9" font-family="monospace" fill="#1A5276"># 终端 2 · Decode（Lab B）</text>
+  <text x="622" y="462" font-size="9" font-family="monospace" fill="#1A5276">CUDA_VISIBLE_DEVICES=1</text>
+  <text x="622" y="476" font-size="9" font-family="monospace" fill="#1A5276">UCX_NET_DEVICES=all</text>
+  <text x="622" y="490" font-size="9" font-family="monospace" fill="#1A5276">VLLM_NIXL_SIDE_CHANNEL_PORT=5601</text>
+  <text x="622" y="504" font-size="9" font-family="monospace" fill="#1A5276">vllm serve Qwen/Qwen3-8B --port 8200 \</text>
+  <text x="622" y="518" font-size="9" font-family="monospace" fill="#1A5276">  --enforce-eager \</text>
+  <text x="622" y="532" font-size="9" font-family="monospace" fill="#1A5276">  --kv-transfer-config '{</text>
+  <text x="622" y="546" font-size="9" font-family="monospace" fill="#1A5276">    "kv_connector": "NixlConnector",</text>
+  <text x="622" y="560" font-size="9" font-family="monospace" fill="#1A5276">    "kv_role": "kv_consumer",</text>
+  <text x="622" y="571" font-size="9" font-family="monospace" fill="#1A5276">    "kv_load_failure_policy": "fail"}'</text>
+
+  <!-- Lab A variant -->
+  <rect x="40" y="592" width="900" height="64" rx="6" fill="#FEF9E7" stroke="#F39C12" stroke-width="1"/>
+  <text x="52" y="612" font-size="10" font-weight="bold" fill="#B9770E">Lab A 变体（ExampleConnector，教学路径）：P --kv-transfer-config '{"kv_connector":"ExampleConnector","kv_role":"kv_producer","kv_connector_extra_config":{"shared_storage_path":"local_storage"}}'</text>
+  <text x="52" y="628" font-size="10" fill="#B9770E">KV 落盘 local_storage/ → D（kv_consumer）读回。零网络依赖、单卡可跑，无性能意义——"用最慢的介质跑通最快的认知"（Day 30 Step 5 的预习即此）。</text>
+  <text x="52" y="644" font-size="9" fill="#B9770E">注意：同机跑两个 vLLM 进程时加 VLLM_ENABLE_V1_MULTIPROCESSING=0（示例脚本 run.sh 即如此），日志不分裂、便于观察两侧钩子日志。</text>
+</svg>

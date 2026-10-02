@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 720" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4A5568"/>
+    </marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#C53030"/>
+    </marker>
+  </defs>
+  <rect width="980" height="720" fill="#ffffff"/>
+  <text x="490" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">第 4 周知识地图：两条攻击路径 + 一个底座，瞄准同一个 decode 瓶颈</text>
+
+  <!-- hub: decode bottleneck -->
+  <rect x="215" y="52" width="550" height="92" rx="12" fill="#1A365D"/>
+  <text x="490" y="78" text-anchor="middle" font-size="14.5" font-weight="bold" fill="#ffffff">decode 每 token 有效成本 = 每 step 读取字节 ÷ 每 step 发射 token 数</text>
+  <text x="490" y="100" text-anchor="middle" font-size="11" fill="#BEE3F8">memory-bound：AI ≈ 1 FLOP/Byte，离 ridge ≈ 300 差两个数量级（Day 1/2/3）</text>
+  <text x="490" y="122" text-anchor="middle" font-size="11" fill="#BEE3F8">要读的字节 = 权重 W + KV（M_KV）——分子与分母各有一条攻击路径</text>
+
+  <!-- left path label -->
+  <text x="240" y="185" text-anchor="middle" font-size="13" font-weight="bold" fill="#2B6CB0">路径一（Day 22-24）：压分子</text>
+  <text x="240" y="203" text-anchor="middle" font-size="10.5" fill="#2B6CB0">每 step 读取字节 ÷2 ~ ÷4</text>
+  <!-- right path label -->
+  <text x="740" y="185" text-anchor="middle" font-size="13" font-weight="bold" fill="#2F855A">路径二（Day 25-26）：抬分母</text>
+  <text x="740" y="203" text-anchor="middle" font-size="10.5" fill="#2F855A">每 step 发射 token × E[τ]</text>
+
+  <!-- arrows from hub to two paths -->
+  <line x1="350" y1="144" x2="255" y2="215" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+  <line x1="630" y1="144" x2="725" y2="215" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+
+  <!-- left column: quantization chain -->
+  <rect x="45" y="218" width="390" height="64" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="65" y="242" font-size="11.5" font-weight="bold" fill="#2B6CB0">Day 22 量化基础</text>
+  <text x="65" y="260" font-size="10" fill="#2D3748">统一框架 · 粒度光谱 · W8A8/W4A16/FP8 · outlier 三算法</text>
+  <text x="65" y="275" font-size="10" fill="#2D3748">roofline 手推：decode 赚带宽，prefill 赚算力</text>
+
+  <rect x="45" y="296" width="390" height="64" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="65" y="320" font-size="11.5" font-weight="bold" fill="#2B6CB0">Day 23 KV cache 量化</text>
+  <text x="65" y="338" font-size="10" fill="#2D3748">容量优先的第二战场：同显存并发/上下文 ×2</text>
+  <text x="65" y="353" font-size="10" fill="#2D3748">K 比 V 敏感（softmax 指数放大）→ FP8 KV 默认推荐</text>
+
+  <rect x="45" y="374" width="390" height="64" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="65" y="398" font-size="11.5" font-weight="bold" fill="#2B6CB0">Day 24 量化动手 + 专题总结</text>
+  <text x="65" y="416" font-size="10" fill="#2D3748">llm-compressor 产出 ckpt · 三道闸验收闭环</text>
+  <text x="65" y="431" font-size="10" fill="#2D3748">收益传导链：权重÷2 → KV 池+8.2GB → blocks ×1.16 → goodput↑</text>
+
+  <rect x="85" y="452" width="310" height="40" rx="8" fill="#2B6CB0"/>
+  <text x="240" y="470" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ffffff">产出 ①：A4《量化》</text>
+  <text x="240" y="485" text-anchor="middle" font-size="9.5" fill="#BEE3F8">原理 / 场景 / 权衡 / 失效模式</text>
+
+  <line x1="240" y1="282" x2="240" y2="296" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+  <line x1="240" y1="360" x2="240" y2="374" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+  <line x1="240" y1="438" x2="240" y2="452" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+
+  <!-- right column: speculative chain -->
+  <rect x="545" y="218" width="390" height="64" rx="8" fill="#C6F6D5" stroke="#276749"/>
+  <text x="565" y="242" font-size="11.5" font-weight="bold" fill="#276749">Day 25 投机解码原理</text>
+  <text x="565" y="260" font-size="10" fill="#22543D">β-γ-c 收益框架 · E[τ]=(1-β^(k+1))/(1-β) · S=E[τ]/(γ+kc)</text>
+  <text x="565" y="275" font-size="10" fill="#22543D">rejection sampling 无损 · 四路线（draft/MTP/EAGLE-3/n-gram）</text>
+
+  <rect x="545" y="296" width="390" height="64" rx="8" fill="#C6F6D5" stroke="#276749"/>
+  <text x="565" y="320" font-size="11.5" font-weight="bold" fill="#276749">Day 26 投机解码实验</text>
+  <text x="565" y="338" font-size="10" fill="#22543D">先预测再测量：S_pred vs S_meas，差值 = 每 step 工程开销</text>
+  <text x="565" y="353" font-size="10" fill="#22543D">负收益两条路径亲手复现 · k* 实测 ≈ 3~4 · 熔断观察</text>
+
+  <rect x="545" y="374" width="390" height="64" rx="8" fill="#C6F6D5" stroke="#276749" stroke-dasharray="5,3"/>
+  <text x="565" y="398" font-size="11.5" font-weight="bold" fill="#276749">Day 28（今天）：复盘收官</text>
+  <text x="565" y="416" font-size="10" fill="#22543D">把两天的公式与实验数据压进一页 A4</text>
+  <text x="565" y="431" font-size="10" fill="#22543D">口头自测：负收益判据 + 五条独立路径</text>
+
+  <rect x="585" y="452" width="310" height="40" rx="8" fill="#2F855A"/>
+  <text x="740" y="470" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#ffffff">产出 ②：A4《投机解码》（今天定稿）</text>
+  <text x="740" y="485" text-anchor="middle" font-size="9.5" fill="#C6F6D5">原理 / 场景 / 权衡 / 失效模式</text>
+
+  <line x1="740" y1="282" x2="740" y2="296" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+  <line x1="740" y1="360" x2="740" y2="374" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+  <line x1="740" y1="438" x2="740" y2="452" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+
+  <!-- interaction note between the two paths -->
+  <rect x="440" y="300" width="100" height="120" rx="8" fill="#FFF5F5" stroke="#C53030" stroke-dasharray="4,3"/>
+  <text x="490" y="322" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#C53030">两路径交互</text>
+  <text x="490" y="340" text-anchor="middle" font-size="9" fill="#742A2A">量化×投机：</text>
+  <text x="490" y="354" text-anchor="middle" font-size="9" fill="#742A2A">收益重叠取小</text>
+  <text x="490" y="368" text-anchor="middle" font-size="9" fill="#742A2A">非相乘</text>
+  <text x="490" y="386" text-anchor="middle" font-size="9" fill="#742A2A">FP8 后 W↓</text>
+  <text x="490" y="400" text-anchor="middle" font-size="9" fill="#742A2A">KV 占比↑</text>
+  <text x="490" y="414" text-anchor="middle" font-size="9" fill="#742A2A">最优 k 变小</text>
+  <line x1="440" y1="330" x2="435" y2="330" stroke="#C53030" stroke-width="1.4" marker-end="url(#r)"/>
+  <line x1="540" y1="330" x2="545" y2="330" stroke="#C53030" stroke-width="1.4" marker-end="url(#r)"/>
+
+  <!-- substrate: Day 27 -->
+  <rect x="45" y="530" width="890" height="70" rx="10" fill="#E9D8FD" stroke="#6B46C1"/>
+  <text x="490" y="555" text-anchor="middle" font-size="13" font-weight="bold" fill="#44337A">底座（Day 27 · 项目 B mini 引擎）：两条路径的收益都要经调度链路传导</text>
+  <text x="490" y="575" text-anchor="middle" font-size="10.5" fill="#44337A">token budget 记账（投机每请求 1+k 位）· chunked prefill（verify = micro-prefill）· preemption（KV 不足时一切收益归零）</text>
+  <text x="490" y="591" text-anchor="middle" font-size="10.5" fill="#44337A">static vs continuous batching 对比数据：证明"调度方式决定的吞吐差距"大于任何单点 kernel 优化</text>
+
+  <line x1="240" y1="492" x2="240" y2="530" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+  <line x1="740" y1="492" x2="740" y2="530" stroke="#4A5568" stroke-width="1.6" marker-end="url(#b)"/>
+
+  <!-- footer: forward hooks -->
+  <rect x="45" y="630" width="890" height="64" rx="10" fill="#FFFFF0" stroke="#B7791F"/>
+  <text x="65" y="653" font-size="11.5" font-weight="bold" fill="#975A16">向后衔接</text>
+  <text x="65" y="671" font-size="10.5" fill="#975A16">Day 29-31 P/D 分离：投机解码只该作用于 D 侧低并发档（P 侧 compute-bound 无闲置算力）· Day 35 四份 A4 白板互讲</text>
+  <text x="65" y="687" font-size="10.5" fill="#975A16">Day 46 消融实验组③：接受率-收益曲线（Day 26 数据直接复用）· Week 8 白板四件套：两份 A4 是现成素材</text>
+</svg>

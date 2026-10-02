@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#45556b"/>
+    </marker>
+  </defs>
+
+  <text x="480" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#1e3a5f">量化统一框架：缩放 + 取整 + 截断 ｜ 粒度光谱</text>
+
+  <!-- ======== 上半部分：量化-反量化流水线 ======== -->
+  <rect x="30" y="52" width="900" height="150" rx="8" fill="#f4f7fb" stroke="#c8d4e0"/>
+  <text x="52" y="78" font-size="14" font-weight="bold" fill="#1e3a5f">① 统一数学框架（对任意 dtype 成立）</text>
+
+  <rect x="60" y="95" width="120" height="52" rx="6" fill="#ffffff" stroke="#2a6f97" stroke-width="1.5"/>
+  <text x="120" y="116" text-anchor="middle" font-size="13" fill="#1e3a5f">浮点 x</text>
+  <text x="120" y="134" text-anchor="middle" font-size="11" fill="#5a6b7d">BF16 / FP32</text>
+
+  <line x1="180" y1="121" x2="228" y2="121" stroke="#45556b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="204" y="112" text-anchor="middle" font-size="10" fill="#5a6b7d">÷ s，+ z</text>
+
+  <rect x="230" y="95" width="130" height="52" rx="6" fill="#e8f4f2" stroke="#2a9d8f" stroke-width="1.5"/>
+  <text x="295" y="116" text-anchor="middle" font-size="13" fill="#1d5c56">round + clamp</text>
+  <text x="295" y="134" text-anchor="middle" font-size="11" fill="#4a7a74">取整 + 截断</text>
+
+  <line x1="360" y1="121" x2="408" y2="121" stroke="#45556b" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <rect x="410" y="95" width="130" height="52" rx="6" fill="#fff4ec" stroke="#e78a4e" stroke-width="1.5"/>
+  <text x="475" y="116" text-anchor="middle" font-size="13" fill="#8a4a1c">整数 / FP8 格点</text>
+  <text x="475" y="134" text-anchor="middle" font-size="11" fill="#a06838">INT8 / INT4 / E4M3</text>
+
+  <line x1="540" y1="121" x2="588" y2="121" stroke="#45556b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="564" y="112" text-anchor="middle" font-size="10" fill="#5a6b7d">− z，× s</text>
+
+  <rect x="590" y="95" width="120" height="52" rx="6" fill="#ffffff" stroke="#2a6f97" stroke-width="1.5"/>
+  <text x="650" y="116" text-anchor="middle" font-size="13" fill="#1e3a5f">反量化 x̂</text>
+  <text x="650" y="134" text-anchor="middle" font-size="11" fill="#5a6b7d">误差 x̂ − x</text>
+
+  <rect x="745" y="88" width="170" height="66" rx="6" fill="#fdf1f1" stroke="#d64545" stroke-width="1.2"/>
+  <text x="830" y="108" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#a33232">两类误差</text>
+  <text x="830" y="124" text-anchor="middle" font-size="10.5" fill="#a33232">round 噪声：良性，+6dB/bit</text>
+  <text x="830" y="140" text-anchor="middle" font-size="10.5" fill="#a33232">clip 截断：恶性，outlier 拖垮</text>
+
+  <!-- ======== 下半部分：粒度光谱 ======== -->
+  <text x="52" y="238" font-size="14" font-weight="bold" fill="#1e3a5f">② 粒度光谱：scale 作用的"值组"从大到小</text>
+
+  <!-- per-tensor -->
+  <g>
+    <rect x="45" y="258" width="180" height="240" rx="8" fill="#ffffff" stroke="#c8d4e0"/>
+    <text x="135" y="282" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a5f">per-tensor</text>
+    <g>
+      <rect x="75" y="298" width="22" height="18" fill="#7fb3d5"/><rect x="97" y="298" width="22" height="18" fill="#7fb3d5"/><rect x="119" y="298" width="22" height="18" fill="#7fb3d5"/><rect x="141" y="298" width="22" height="18" fill="#7fb3d5"/><rect x="163" y="298" width="22" height="18" fill="#7fb3d5"/>
+      <rect x="75" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="97" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="119" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="141" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="163" y="316" width="22" height="18" fill="#7fb3d5"/>
+      <rect x="75" y="334" width="22" height="18" fill="#7fb3d5"/><rect x="97" y="334" width="22" height="18" fill="#7fb3d5"/><rect x="119" y="334" width="22" height="18" fill="#7fb3d5"/><rect x="141" y="334" width="22" height="18" fill="#7fb3d5"/><rect x="163" y="334" width="22" height="18" fill="#7fb3d5"/>
+    </g>
+    <text x="135" y="380" text-anchor="middle" font-size="11" fill="#5a6b7d">1 个 scale 管全张量</text>
+    <text x="135" y="398" text-anchor="middle" font-size="11" fill="#a33232">1 个 outlier 毁掉所有值</text>
+    <text x="135" y="424" text-anchor="middle" font-size="11" fill="#2a6f97">kernel 最简单</text>
+    <text x="135" y="442" text-anchor="middle" font-size="10.5" fill="#5a6b7d">FP8 TC 原生支持</text>
+    <text x="135" y="472" text-anchor="middle" font-size="10" fill="#8a94a3">用于：FP8 起步配置</text>
+  </g>
+
+  <!-- per-channel -->
+  <g>
+    <rect x="250" y="258" width="180" height="240" rx="8" fill="#ffffff" stroke="#c8d4e0"/>
+    <text x="340" y="282" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a5f">per-channel（权重）</text>
+    <g>
+      <rect x="280" y="298" width="22" height="18" fill="#e78a4e"/><rect x="302" y="298" width="22" height="18" fill="#7fb3d5"/><rect x="324" y="298" width="22" height="18" fill="#2a9d8f"/><rect x="346" y="298" width="22" height="18" fill="#e6c86e"/><rect x="368" y="298" width="22" height="18" fill="#7fb3d5"/>
+      <rect x="280" y="316" width="22" height="18" fill="#e78a4e"/><rect x="302" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="324" y="316" width="22" height="18" fill="#2a9d8f"/><rect x="346" y="316" width="22" height="18" fill="#e6c86e"/><rect x="368" y="316" width="22" height="18" fill="#7fb3d5"/>
+      <rect x="280" y="334" width="22" height="18" fill="#e78a4e"/><rect x="302" y="334" width="22" height="18" fill="#7fb3d5"/><rect x="324" y="334" width="22" height="18" fill="#2a9d8f"/><rect x="346" y="334" width="22" height="18" fill="#e6c86e"/><rect x="368" y="334" width="22" height="18" fill="#7fb3d5"/>
+    </g>
+    <text x="340" y="380" text-anchor="middle" font-size="11" fill="#5a6b7d">每列（输出通道）1 个 scale</text>
+    <text x="340" y="398" text-anchor="middle" font-size="11" fill="#2a9d8f">outlier 被按列隔离</text>
+    <text x="340" y="424" text-anchor="middle" font-size="11" fill="#2a6f97">几乎零 kernel 代价</text>
+    <text x="340" y="442" text-anchor="middle" font-size="10.5" fill="#5a6b7d">scale 沿 reduction 维广播</text>
+    <text x="340" y="472" text-anchor="middle" font-size="10" fill="#8a94a3">用于：权重侧标配</text>
+  </g>
+
+  <!-- per-token -->
+  <g>
+    <rect x="455" y="258" width="180" height="240" rx="8" fill="#ffffff" stroke="#c8d4e0"/>
+    <text x="545" y="282" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a5f">per-token（激活）</text>
+    <g>
+      <rect x="485" y="298" width="22" height="18" fill="#e78a4e"/><rect x="507" y="298" width="22" height="18" fill="#e78a4e"/><rect x="529" y="298" width="22" height="18" fill="#e78a4e"/><rect x="551" y="298" width="22" height="18" fill="#e78a4e"/><rect x="573" y="298" width="22" height="18" fill="#e78a4e"/>
+      <rect x="485" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="507" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="529" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="551" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="573" y="316" width="22" height="18" fill="#7fb3d5"/>
+      <rect x="485" y="334" width="22" height="18" fill="#2a9d8f"/><rect x="507" y="334" width="22" height="18" fill="#2a9d8f"/><rect x="529" y="334" width="22" height="18" fill="#2a9d8f"/><rect x="551" y="334" width="22" height="18" fill="#2a9d8f"/><rect x="573" y="334" width="22" height="18" fill="#2a9d8f"/>
+    </g>
+    <text x="545" y="380" text-anchor="middle" font-size="11" fill="#5a6b7d">每行（每个 token）1 个 scale</text>
+    <text x="545" y="398" text-anchor="middle" font-size="11" fill="#2a9d8f">行内 outlier 仍可能残留</text>
+    <text x="545" y="424" text-anchor="middle" font-size="11" fill="#e78a4e">必须在线动态计算</text>
+    <text x="545" y="442" text-anchor="middle" font-size="10.5" fill="#5a6b7d">GEMM 前插一个 cast kernel</text>
+    <text x="545" y="472" text-anchor="middle" font-size="10" fill="#8a94a3">用于：激活侧标配</text>
+  </g>
+
+  <!-- group-wise -->
+  <g>
+    <rect x="660" y="258" width="180" height="240" rx="8" fill="#ffffff" stroke="#c8d4e0"/>
+    <text x="750" y="282" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a5f">group-wise（W4）</text>
+    <g>
+      <rect x="685" y="298" width="22" height="18" fill="#e78a4e"/><rect x="707" y="298" width="22" height="18" fill="#e78a4e"/><rect x="729" y="298" width="22" height="18" fill="#e6c86e"/><rect x="751" y="298" width="22" height="18" fill="#e6c86e"/><rect x="773" y="298" width="22" height="18" fill="#7fb3d5"/><rect x="795" y="298" width="22" height="18" fill="#7fb3d5"/>
+      <rect x="685" y="316" width="22" height="18" fill="#e78a4e"/><rect x="707" y="316" width="22" height="18" fill="#e78a4e"/><rect x="729" y="316" width="22" height="18" fill="#e6c86e"/><rect x="751" y="316" width="22" height="18" fill="#e6c86e"/><rect x="773" y="316" width="22" height="18" fill="#7fb3d5"/><rect x="795" y="316" width="22" height="18" fill="#7fb3d5"/>
+      <rect x="685" y="334" width="22" height="18" fill="#e78a4e"/><rect x="707" y="334" width="22" height="18" fill="#e78a4e"/><rect x="729" y="334" width="22" height="18" fill="#e6c86e"/><rect x="751" y="334" width="22" height="18" fill="#e6c86e"/><rect x="773" y="334" width="22" height="18" fill="#7fb3d5"/><rect x="795" y="334" width="22" height="18" fill="#7fb3d5"/>
+    </g>
+    <text x="750" y="380" text-anchor="middle" font-size="11" fill="#5a6b7d">每 128 连续元素 1 个 scale</text>
+    <text x="750" y="398" text-anchor="middle" font-size="11" fill="#2a9d8f">隔离最彻底，精度最好</text>
+    <text x="750" y="424" text-anchor="middle" font-size="11" fill="#a33232">反量化必须融合进 GEMM</text>
+    <text x="750" y="442" text-anchor="middle" font-size="10.5" fill="#5a6b7d">Marlin / Machete / AWQ kernel</text>
+    <text x="750" y="472" text-anchor="middle" font-size="10" fill="#8a94a3">用于：W4A16 专属</text>
+  </g>
+
+  <!-- 底部箭头 -->
+  <line x1="60" y1="530" x2="890" y2="530" stroke="#45556b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="150" y="549" font-size="11" fill="#5a6b7d">scale 粒度变细 →</text>
+  <text x="640" y="549" font-size="11" fill="#5a6b7d">精度提高，kernel 更贵 →</text>
+</svg>

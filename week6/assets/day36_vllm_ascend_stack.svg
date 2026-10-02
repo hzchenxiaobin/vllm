@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="735" viewBox="0 0 940 735" font-family="Helvetica, Arial, 'Noto Sans SC', sans-serif">
+  <defs>
+    <marker id="arrowD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="940" height="735" fill="#ffffff"/>
+
+  <text x="470" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#1e293b">vLLM V1 × vllm-ascend × CANN：分层架构与项目 A 的主战场</text>
+  <text x="470" y="50" text-anchor="middle" font-size="11.5" fill="#64748b">Day 8 的 V1 进程视角向下延伸一层：从平台插件到昇腾硬件（目录 / 接口名以 main 分支为准）</text>
+
+  <rect x="642" y="58" width="12" height="10" fill="#fff7ed" stroke="#e67e22" stroke-dasharray="3,2"/>
+  <text x="660" y="67" font-size="11" fill="#b45309">橙色 = 方向 1（量化 GEMM）直接对口链路</text>
+
+  <line x1="48" y1="86" x2="48" y2="688" stroke="#475569" stroke-width="2" marker-end="url(#arrowD)"/>
+  <text x="34" y="390" font-size="12" fill="#475569" transform="rotate(-90 34 390)" text-anchor="middle">调用链方向</text>
+
+  <!-- Band 1 -->
+  <rect x="90" y="80" width="800" height="66" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="104" y="100" font-size="12" font-weight="bold" fill="#1e3a5f">① 客户端 / 入口层</text>
+  <rect x="110" y="106" width="760" height="32" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="490" y="126" text-anchor="middle" font-size="12" fill="#334155">OpenAI 兼容 API · vllm serve · vllm bench serve（Day 6 压测入口 / Day 37 基线入口）</text>
+  <line x1="470" y1="146" x2="470" y2="164" stroke="#475569" stroke-width="2" marker-end="url(#arrowD)"/>
+
+  <!-- Band 2 -->
+  <rect x="90" y="166" width="800" height="130" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="104" y="186" font-size="12" font-weight="bold" fill="#1e3a5f">② vLLM V1 引擎核心 —— 硬件无关（vLLM 主仓，Day 8-16 已吃透）</text>
+  <rect x="110" y="194" width="370" height="40" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="295" y="218" text-anchor="middle" font-size="12" fill="#334155">AsyncLLM + Processor（前端进程）</text>
+  <rect x="500" y="194" width="370" height="40" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="685" y="218" text-anchor="middle" font-size="12" fill="#334155">EngineCore（独立进程，step 循环）</text>
+  <rect x="110" y="244" width="240" height="40" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="230" y="268" text-anchor="middle" font-size="11.5" fill="#334155">Scheduler（Day 10-12）</text>
+  <rect x="360" y="244" width="240" height="40" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="480" y="268" text-anchor="middle" font-size="11.5" fill="#334155">KV Cache Manager（Day 15-16）</text>
+  <rect x="610" y="244" width="260" height="40" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="740" y="268" text-anchor="middle" font-size="11.5" fill="#334155">采样编排 / 输出处理</text>
+  <line x1="470" y1="296" x2="470" y2="314" stroke="#475569" stroke-width="2" marker-end="url(#arrowD)"/>
+  <text x="486" y="308" font-size="10.5" font-style="italic" fill="#64748b">Platform 插件接口（hardware-pluggable，RFC #11162；entry point 注册）</text>
+
+  <!-- Band 3 -->
+  <rect x="90" y="316" width="800" height="170" rx="8" fill="#fffbeb" stroke="#fcd34d"/>
+  <text x="104" y="336" font-size="12" font-weight="bold" fill="#92400e">③ 平台插件层 —— vllm-ascend（独立 pip 包 · 项目 A 主战场）</text>
+  <rect x="110" y="344" width="250" height="42" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="235" y="361" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">NPUPlatform</text>
+  <text x="235" y="377" text-anchor="middle" font-size="9.5" fill="#64748b">设备检查 / 默认参数 / 后端选路</text>
+  <rect x="372" y="344" width="250" height="42" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="497" y="361" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">NPUWorker + NPUModelRunner</text>
+  <text x="497" y="377" text-anchor="middle" font-size="9.5" fill="#64748b">graph runner（对标 Day 18 CG）</text>
+  <rect x="634" y="344" width="236" height="42" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="752" y="361" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">torchair/（整图下沉）</text>
+  <text x="752" y="377" text-anchor="middle" font-size="9.5" fill="#64748b">host 开销优化（方向 3）</text>
+  <rect x="110" y="398" width="182" height="42" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="201" y="415" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">attention/</text>
+  <text x="201" y="431" text-anchor="middle" font-size="9.5" fill="#64748b">FA-ACL · AscendAttn · MLA</text>
+  <rect x="302" y="398" width="182" height="42" rx="5" fill="#fff7ed" stroke="#e67e22" stroke-width="2"/>
+  <text x="393" y="415" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#b45309">quantization/</text>
+  <text x="393" y="431" text-anchor="middle" font-size="9.5" fill="#b45309">w8a8 · w4a16 · FP8（方向 1）</text>
+  <rect x="494" y="398" width="182" height="42" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="585" y="415" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">linear/</text>
+  <text x="585" y="431" text-anchor="middle" font-size="9.5" fill="#64748b">Row/ColumnParallel（TP）</text>
+  <rect x="686" y="398" width="182" height="42" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="777" y="415" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">distributed/</text>
+  <text x="777" y="431" text-anchor="middle" font-size="9.5" fill="#64748b">HCCL 封装（Day 32-33）</text>
+  <line x1="470" y1="486" x2="470" y2="512" stroke="#475569" stroke-width="2" marker-end="url(#arrowD)"/>
+  <text x="486" y="504" font-size="10.5" font-style="italic" fill="#64748b">torch_npu / aclnn 算子调用</text>
+
+  <!-- Band 4 -->
+  <rect x="90" y="516" width="800" height="96" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="104" y="536" font-size="12" font-weight="bold" fill="#1e3a5f">④ 昇腾软件栈：CANN / torch_npu</text>
+  <rect x="110" y="542" width="230" height="52" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="225" y="563" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">torch_npu</text>
+  <text x="225" y="580" text-anchor="middle" font-size="9.5" fill="#64748b">PyTorch NPU 适配层</text>
+  <rect x="352" y="542" width="300" height="52" rx="5" fill="#fff7ed" stroke="#e67e22" stroke-width="2"/>
+  <text x="502" y="563" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#b45309">aclnn 算子库</text>
+  <text x="502" y="580" text-anchor="middle" font-size="9.5" fill="#b45309">WeightQuantBatchMatmul 家族（你调过的）等</text>
+  <rect x="664" y="542" width="206" height="52" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="767" y="563" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">HCCL 通信库</text>
+  <text x="767" y="580" text-anchor="middle" font-size="9.5" fill="#64748b">all-reduce / all-gather</text>
+  <line x1="470" y1="612" x2="470" y2="636" stroke="#475569" stroke-width="2" marker-end="url(#arrowD)"/>
+
+  <!-- Band 5 -->
+  <rect x="90" y="640" width="800" height="54" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="104" y="660" font-size="12" font-weight="bold" fill="#1e3a5f">⑤ 硬件：Atlas A2（910B）/ A3 系列</text>
+  <rect x="110" y="656" width="760" height="30" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="490" y="675" text-anchor="middle" font-size="11.5" fill="#334155">Cube / Vector 计算单元 · L1 / L2 · HBM（Day 38-40 剖析的最终落点）</text>
+
+  <text x="470" y="720" text-anchor="middle" font-size="10.5" font-style="italic" fill="#94a3b8">目录与接口名以 vllm-ascend main 分支为准；本图是 Day 36 选题所需的作战地图，非完整组件清单</text>
+</svg>

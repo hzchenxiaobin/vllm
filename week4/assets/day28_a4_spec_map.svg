@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 760" font-family="Helvetica, Arial, sans-serif">
+  <rect width="980" height="760" fill="#ffffff"/>
+  <text x="490" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">专题 A4：《投机解码》一页地图 —— 原理 / 场景 / 权衡 / 失效模式</text>
+
+  <!-- center node -->
+  <rect x="375" y="350" width="230" height="60" rx="12" fill="#1A365D"/>
+  <text x="490" y="377" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">投机解码</text>
+  <text x="490" y="396" text-anchor="middle" font-size="10.5" fill="#BEE3F8">一次权重读取，批发 E[τ] 个 token</text>
+
+  <!-- Q1: 原理 (top-left) -->
+  <rect x="30" y="60" width="440" height="260" rx="10" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="50" y="88" font-size="14" font-weight="bold" fill="#2B6CB0">① 原理（为什么是免费的）</text>
+
+  <text x="50" y="113" font-size="11" font-weight="bold" fill="#2D3748">第一性：用闲置算力换访存效率</text>
+  <text x="50" y="130" font-size="10.5" fill="#2D3748">decode AI ≈ 1 FLOP/Byte，离 ridge ≈ 300 差两个数量级 → verify 把 M 从 1 变 k+1，</text>
+  <text x="50" y="146" font-size="10.5" fill="#2D3748">只要仍在带宽侧：权重只读一遍，时间几乎不变，产出 k+1 个候选</text>
+
+  <text x="50" y="171" font-size="11" font-weight="bold" fill="#2D3748">三公式（面试现场推）</text>
+  <text x="50" y="188" font-size="10.5" fill="#2D3748">E[τ] = (1-β^(k+1))/(1-β) ≈ 1 + kβ（期望发射数，β=接受率，k=草稿长度）</text>
+  <text x="50" y="204" font-size="10.5" fill="#2D3748">γ(k) = (W+(k+1)·M_KV)/(W+M_KV)（verify 的 KV 膨胀因子）</text>
+  <text x="50" y="220" font-size="10.5" fill="#2D3748">S = E[τ] / (γ + k·c)（c = 草稿单步成本比；γ→1、c→0 时退化为简化式）</text>
+
+  <text x="50" y="245" font-size="11" font-weight="bold" fill="#2D3748">无损性</text>
+  <text x="50" y="262" font-size="10.5" fill="#2D3748">rejection sampling：以 min(1, p/q) 接受，拒绝时从残差 norm(max(0,p-q)) 重采样</text>
+  <text x="50" y="278" font-size="10.5" fill="#2D3748">→ 逐 token 边缘分布 = target（理论无损）；greedy = 最长前缀匹配</text>
+
+  <text x="50" y="303" font-size="11" font-weight="bold" fill="#2D3748">保底与衰减</text>
+  <text x="50" y="313" font-size="10.5" fill="#2D3748">bonus token：最差 τ=1（赌错也有一步产出）；β₁&gt;β₂&gt;… 深度衰减使 iid 公式高估</text>
+
+  <!-- Q2: 场景 (top-right) -->
+  <rect x="510" y="60" width="440" height="260" rx="10" fill="#C6F6D5" stroke="#276749"/>
+  <text x="530" y="88" font-size="14" font-weight="bold" fill="#276749">② 场景（什么时候开）</text>
+
+  <text x="530" y="112" font-size="10.5" font-weight="bold" fill="#22543D">负载 → 决策</text>
+  <text x="530" y="130" font-size="10.5" fill="#22543D">代码补全 / RAG 引用 / Agent 模板化 → 开，n-gram 起步（c=0 零草稿成本）</text>
+  <text x="530" y="148" font-size="10.5" fill="#22543D">模型自带 MTP 头（DeepSeek 系）→ 开 deepseek_mtp（零额外部署）</text>
+  <text x="530" y="166" font-size="10.5" fill="#22543D">存量模型想要高 β → EAGLE-3（草稿头训练仅几 GPU 时，特征级条件）</text>
+  <text x="530" y="184" font-size="10.5" fill="#22543D">开放创作 / 高温度 / β&lt;0.5 → 不开（收益趋零，成本照付）</text>
+  <text x="530" y="202" font-size="10.5" fill="#22543D">高并发大 batch → 谨慎：熔断（speculative_disable_by_batch_size）兜底</text>
+
+  <text x="530" y="230" font-size="10.5" font-weight="bold" fill="#22543D">最佳档位</text>
+  <text x="530" y="248" font-size="10.5" fill="#22543D">低并发交互式（TPOT SLO 紧、ITL 敏感）：收益最大、γ≈1、算力大量闲置</text>
+
+  <text x="530" y="276" font-size="10.5" font-weight="bold" fill="#22543D">上线前必做</text>
+  <text x="530" y="294" font-size="10.5" fill="#22543D">负载体检（ngram 模拟器估 β）→ k 扫参 1~5 找实测 k* → 三道验收 → 监控+熔断</text>
+
+  <!-- Q3: 权衡 (bottom-left) -->
+  <rect x="30" y="450" width="440" height="260" rx="10" fill="#FFFAF0" stroke="#DD6B20"/>
+  <text x="50" y="478" font-size="14" font-weight="bold" fill="#9C4221">③ 权衡（四路线 × 系统耦合）</text>
+
+  <text x="50" y="502" font-size="10.5" font-weight="bold" fill="#7B341E">四路线一句话</text>
+  <text x="50" y="520" font-size="10.5" fill="#7B341E">n-gram：c=0 免费午餐，只吃重复性 · MTP：同分布、免部署、需训练期改造</text>
+  <text x="50" y="538" font-size="10.5" fill="#7B341E">EAGLE-3：特征级自回归 + 树形草稿，β 最高 · 独立 draft：域失配 β 低，维护两模型</text>
+
+  <text x="50" y="566" font-size="10.5" font-weight="bold" fill="#7B341E">β-k-c 三角</text>
+  <text x="50" y="584" font-size="10.5" fill="#7B341E">k* 实测 ≈3~4（理论 4~5 被衰减与固定开销左移）；β&lt;0.5 时 k≤2 或关</text>
+
+  <text x="50" y="612" font-size="10.5" font-weight="bold" fill="#7B341E">系统耦合（实现复杂度的来源）</text>
+  <text x="50" y="630" font-size="10.5" fill="#7B341E">token budget ÷(1+k) · KV lookahead 分配/被拒回收 · tree mask 注意力</text>
+  <text x="50" y="648" font-size="10.5" fill="#7B341E">CUDA Graph bucket ×(1+k)（显存与 capture 数都涨）</text>
+
+  <text x="50" y="676" font-size="10.5" font-weight="bold" fill="#7B341E">量化 × 投机</text>
+  <text x="50" y="694" font-size="10.5" fill="#7B341E">乘性叠加但收益重叠取小；FP8 后 W↓、KV 占比↑ → γ 权重变大 → 最优 k 变小</text>
+
+  <!-- Q4: 失效模式 (bottom-right) -->
+  <rect x="510" y="450" width="440" height="260" rx="10" fill="#FFF5F5" stroke="#C53030"/>
+  <text x="530" y="478" font-size="14" font-weight="bold" fill="#C53030">④ 失效模式（症状 → 处置）</text>
+
+  <text x="530" y="502" font-size="10.5" fill="#742A2A">acceptance 持续 &lt;0.4 → 负载不适配 → 换路线（ngram↔EAGLE）或关闭</text>
+  <text x="530" y="520" font-size="10.5" fill="#742A2A">k 增大吞吐不升反降 → E 有上界 1/(1-β)，成本线性涨 → k 砍回实测 k*</text>
+  <text x="530" y="538" font-size="10.5" fill="#742A2A">高并发收益消失 → γ 膨胀 + 越过 ridge + budget 挤压 → 熔断自动退回</text>
+  <text x="530" y="556" font-size="10.5" fill="#742A2A">启动报词表不一致 → draft 与 target tokenizer 不匹配（配置期校验拦截）</text>
+  <text x="530" y="574" font-size="10.5" fill="#742A2A">TPOT 改善但低于预测 → 每 step 固定开销 5~15%（采样验收/KV 回滚/记账）→ nsys 分离</text>
+  <text x="530" y="592" font-size="10.5" fill="#742A2A">TTFT 微增 → 草稿头加载 + graph capture 变多（预期内，非 bug）</text>
+  <text x="530" y="610" font-size="10.5" fill="#742A2A">显存 OOM / preemption 增多 → draft 权重 + lookahead KV + graph → 调小 k / max_num_seqs</text>
+  <text x="530" y="628" font-size="10.5" fill="#742A2A">输出质量投诉 → 理论无损≠工程无损：温度边界/grammar 约束/实现 bug → 输出 diff 抽检</text>
+
+  <text x="530" y="658" font-size="10.5" font-weight="bold" fill="#C53030">验收口径（背下来）</text>
+  <text x="530" y="676" font-size="10.5" fill="#742A2A">S_TPOT 对照 S_pred（差值=工程开销清单）· S_thr ≥ 1（吞吐不亏）· acceptance 达负载预期</text>
+  <text x="530" y="694" font-size="10.5" fill="#742A2A">TTFT 不显著劣化 · counter 一律时间窗差分</text>
+
+  <!-- connectors -->
+  <line x1="470" y1="320" x2="470" y2="350" stroke="#2B6CB0" stroke-width="1.4"/>
+  <line x1="510" y1="320" x2="510" y2="350" stroke="#276749" stroke-width="1.4"/>
+  <line x1="470" y1="410" x2="470" y2="450" stroke="#DD6B20" stroke-width="1.4"/>
+  <line x1="510" y1="410" x2="510" y2="450" stroke="#C53030" stroke-width="1.4"/>
+</svg>

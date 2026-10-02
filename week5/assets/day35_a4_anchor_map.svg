@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="700" viewBox="0 0 980 700" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d35a" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d35g" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#1E8449"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="700" fill="#FFFFFF"/>
+  <text x="30" y="30" font-size="18" font-weight="bold" fill="#1e3a5f">图 1｜四份 A4 的手算锚点地图：decode 时延公式串起四个专题，全部汇入下午的设计题</text>
+  <text x="30" y="50" font-size="10" fill="#7F8C8D">四个专题 = 同一个约束的四个自由度：量化压分子、投机解码抬产出、P/D 分离解耦负载、并行决定权重怎么切分与搬动——复盘的价值就是把它们排进同一条决策链</text>
+
+  <!-- ============ top: decode formula ============ -->
+  <rect x="140" y="72" width="700" height="64" rx="8" fill="#F4F6F7" stroke="#2C3E50" stroke-width="1.6"/>
+  <text x="490" y="98" font-size="16" font-weight="bold" fill="#1e3a5f" text-anchor="middle">T_step(decode)  ≈  ( W  +  B · KV ) / BW</text>
+  <text x="490" y="122" font-size="10" fill="#566573" text-anchor="middle">W: 权重字节（读一遍）　KV: 每 token KV 字节　B: batch　BW: HBM 带宽　｜　且算力余量 ≫ 计算需求</text>
+  <!-- term tags -->
+  <rect x="318" y="60" width="60" height="18" rx="3" fill="#C0392B"/>
+  <text x="348" y="73" font-size="9" fill="#FFFFFF" text-anchor="middle">压 W</text>
+  <rect x="384" y="60" width="60" height="18" rx="3" fill="#CA6F1E"/>
+  <text x="414" y="73" font-size="9" fill="#FFFFFF" text-anchor="middle">压 KV</text>
+  <rect x="626" y="60" width="76" height="18" rx="3" fill="#2E86C1"/>
+  <text x="664" y="73" font-size="9" fill="#FFFFFF" text-anchor="middle">算力余量</text>
+
+  <!-- arrows formula -> cards -->
+  <line x1="240" y1="136" x2="140" y2="176" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d35a)"/>
+  <line x1="400" y1="136" x2="380" y2="176" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d35a)"/>
+  <line x1="580" y1="136" x2="600" y2="176" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d35a)"/>
+  <line x1="740" y1="136" x2="840" y2="176" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d35a)"/>
+
+  <!-- ============ four A4 cards ============ -->
+  <!-- Card 1: quantization -->
+  <rect x="30" y="180" width="220" height="210" rx="8" fill="#FDEDEC" stroke="#C0392B" stroke-width="1.6"/>
+  <rect x="30" y="180" width="220" height="26" rx="8" fill="#C0392B"/>
+  <text x="140" y="198" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">A4 #1 量化（Day 22-24）</text>
+  <text x="140" y="224" font-size="10" font-weight="bold" fill="#922B21" text-anchor="middle">自由度：压分子 W↓ KV↓</text>
+  <text x="42" y="244" font-size="9.5" fill="#566573">▪ W8A8 / W4A16 / FP8(block-wise)</text>
+  <text x="42" y="258" font-size="9.5" fill="#566573">▪ outlier → SmoothQuant / AWQ</text>
+  <rect x="42" y="270" width="196" height="58" rx="4" fill="#FFFFFF" stroke="#E6B0AA" stroke-width="1"/>
+  <text x="140" y="286" font-size="9.5" font-weight="bold" fill="#922B21" text-anchor="middle">手算锚点：KV 显存</text>
+  <text x="140" y="300" font-size="9" fill="#566573" text-anchor="middle">2·L·H_kv·D·b = 2·64·8·128·1B</text>
+  <text x="140" y="314" font-size="9" fill="#922B21" text-anchor="middle">= 128 KB/token（32B FP8）</text>
+  <text x="42" y="344" font-size="9" fill="#7F8C8D">失效：长上下文召回率↓（K 过 softmax）</text>
+  <text x="42" y="358" font-size="9" fill="#7F8C8D">落点：--kv-cache-dtype fp8</text>
+  <text x="42" y="372" font-size="9" fill="#7F8C8D">收益：并发上限 ×2</text>
+
+  <!-- Card 2: speculative decoding -->
+  <rect x="270" y="180" width="220" height="210" rx="8" fill="#EAF2F8" stroke="#2E86C1" stroke-width="1.6"/>
+  <rect x="270" y="180" width="220" height="26" rx="8" fill="#2E86C1"/>
+  <text x="380" y="198" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">A4 #2 投机解码（Day 25-28）</text>
+  <text x="380" y="224" font-size="10" font-weight="bold" fill="#1A5276" text-anchor="middle">自由度：每字节产出 token ↑</text>
+  <text x="282" y="244" font-size="9.5" fill="#566573">▪ draft / MTP / EAGLE-3 三路线</text>
+  <text x="282" y="258" font-size="9.5" fill="#566573">▪ 验证无损（拒绝采样修正）</text>
+  <rect x="282" y="270" width="196" height="58" rx="4" fill="#FFFFFF" stroke="#AED6F1" stroke-width="1"/>
+  <text x="380" y="286" font-size="9.5" font-weight="bold" fill="#1A5276" text-anchor="middle">手算锚点：加速比</text>
+  <text x="380" y="300" font-size="9" fill="#566573" text-anchor="middle">E=(1−0.8⁵)/0.2=3.36</text>
+  <text x="380" y="314" font-size="9" fill="#1A5276" text-anchor="middle">S≈3.36/(1+4×0.15)≈2.1×</text>
+  <text x="282" y="344" font-size="9" fill="#7F8C8D">失效：α&lt;0.5 → 吞吐反降（Day 26）</text>
+  <text x="282" y="358" font-size="9" fill="#7F8C8D">落点：--speculative-config</text>
+  <text x="282" y="372" font-size="9" fill="#7F8C8D">代价：吃空闲算力，满载失效</text>
+
+  <!-- Card 3: P/D disaggregation -->
+  <rect x="510" y="180" width="220" height="210" rx="8" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.6"/>
+  <rect x="510" y="180" width="220" height="26" rx="8" fill="#F39C12"/>
+  <text x="620" y="198" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">A4 #3 P/D 分离（Day 29-31）</text>
+  <text x="620" y="224" font-size="10" font-weight="bold" fill="#7E5109" text-anchor="middle">自由度：两类负载解耦</text>
+  <text x="522" y="244" font-size="9.5" fill="#566573">▪ 干扰三路径：排队/争抢/形态互斥</text>
+  <text x="522" y="258" font-size="9.5" fill="#566573">▪ 三张网 + KV 逐层推送</text>
+  <rect x="522" y="270" width="196" height="58" rx="4" fill="#FFFFFF" stroke="#F7DC6F" stroke-width="1"/>
+  <text x="620" y="286" font-size="9.5" font-weight="bold" fill="#7E5109" text-anchor="middle">手算锚点：chunk 窗口</text>
+  <text x="620" y="300" font-size="9" fill="#566573" text-anchor="middle">M*=W/P·peak/2BW≈295</text>
+  <text x="620" y="314" font-size="9" fill="#7E5109" text-anchor="middle">窗口 [295,452]，BF16 为空</text>
+  <text x="522" y="344" font-size="9" fill="#7F8C8D">失效：跨节点传输&gt;重算；配比锁死</text>
+  <text x="522" y="358" font-size="9" fill="#7F8C8D">落点：KVConnectorBase_V1</text>
+  <text x="522" y="372" font-size="9" fill="#7F8C8D">收益：goodput 1.5-3×</text>
+
+  <!-- Card 4: distributed -->
+  <rect x="750" y="180" width="220" height="210" rx="8" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.6"/>
+  <rect x="750" y="180" width="220" height="26" rx="8" fill="#1E8449"/>
+  <text x="860" y="198" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">A4 #4 分布式（Day 32-33）</text>
+  <text x="860" y="224" font-size="10" font-weight="bold" fill="#145A32" text-anchor="middle">自由度：W 切分与通信代价</text>
+  <text x="762" y="244" font-size="9.5" fill="#566573">▪ TP/PP/EP = 三种通信合同</text>
+  <text x="762" y="258" font-size="9.5" fill="#566573">▪ 单卡放得下 → 别上 TP</text>
+  <rect x="762" y="270" width="196" height="58" rx="4" fill="#FFFFFF" stroke="#A9DFBF" stroke-width="1"/>
+  <text x="860" y="286" font-size="9.5" font-weight="bold" fill="#145A32" text-anchor="middle">手算锚点：AR 通信量</text>
+  <text x="860" y="300" font-size="9" fill="#566573" text-anchor="middle">2·2(p−1)/p·B·H·b·L</text>
+  <text x="860" y="314" font-size="9" fill="#145A32" text-anchor="middle">=1.17 GB/step/GPU（70B TP8）</text>
+  <text x="762" y="344" font-size="9" fill="#7F8C8D">失效：小 batch 通信占比 30-40%</text>
+  <text x="762" y="358" font-size="9" fill="#7F8C8D">落点：-tp/-pp/-ep</text>
+  <text x="762" y="372" font-size="9" fill="#7F8C8D">背书：2×TP1 胜 1×TP2（Day 33）</text>
+
+  <!-- ============ arrows cards -> design ============ -->
+  <line x1="140" y1="390" x2="300" y2="470" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35a)"/>
+  <line x1="380" y1="390" x2="390" y2="470" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35a)"/>
+  <line x1="620" y1="390" x2="600" y2="470" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35a)"/>
+  <line x1="860" y1="390" x2="690" y2="470" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35a)"/>
+
+  <!-- ============ Day 34 side card ============ -->
+  <rect x="30" y="470" width="220" height="120" rx="8" fill="#F5EEF8" stroke="#8E44AD" stroke-width="1.6"/>
+  <rect x="30" y="470" width="220" height="26" rx="8" fill="#8E44AD"/>
+  <text x="140" y="488" font-size="11.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第五块拼图（Day 34）</text>
+  <text x="140" y="510" font-size="10" font-weight="bold" fill="#5B2C6F" text-anchor="middle">prefix caching + cache-aware 路由</text>
+  <text x="42" y="528" font-size="9" fill="#566573">▪ 共享前缀 → 有效 KV↓、副本 ×1</text>
+  <text x="42" y="542" font-size="9" fill="#566573">▪ 会话亲和 + 前缀打分路由</text>
+  <text x="42" y="556" font-size="9" fill="#5B2C6F">▪ 设计题的"转机"：prefill 卡数砍半</text>
+  <text x="42" y="570" font-size="9" fill="#7F8C8D">▪ cache_salt：多租户隔离</text>
+  <line x1="250" y1="530" x2="300" y2="530" stroke="#8E44AD" stroke-width="1.6" marker-end="url(#d35a)"/>
+
+  <!-- ============ design question box ============ -->
+  <rect x="300" y="440" width="670" height="180" rx="10" fill="#EBF5FB" stroke="#1e3a5f" stroke-width="2"/>
+  <text x="635" y="466" font-size="14" font-weight="bold" fill="#1e3a5f" text-anchor="middle">下午设计题：日活千万客服机器人推理集群（§4）</text>
+  <text x="635" y="486" font-size="10" fill="#566573" text-anchor="middle">决策链顺序（反了就是面试挂点）：需求量化 → 单卡能力 → 裸卡数 → 优化转机 → 架构形态</text>
+  <!-- steps -->
+  <rect x="322" y="500" width="116" height="52" rx="4" fill="#FFFFFF" stroke="#85C1E9" stroke-width="1"/>
+  <text x="380" y="518" font-size="9.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">① 需求量化</text>
+  <text x="380" y="532" font-size="8.5" fill="#566573" text-anchor="middle">2200 RPS / 21K 并发</text>
+  <text x="380" y="544" font-size="8.5" fill="#566573" text-anchor="middle">TTFT 1.5s / TPOT 80ms</text>
+  <rect x="450" y="500" width="116" height="52" rx="4" fill="#FFFFFF" stroke="#85C1E9" stroke-width="1"/>
+  <text x="508" y="518" font-size="9.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">② 选型</text>
+  <text x="508" y="532" font-size="8.5" fill="#566573" text-anchor="middle">32B FP8 单卡放下</text>
+  <text x="508" y="544" font-size="8.5" fill="#566573" text-anchor="middle">→ 不上 TP（A4 #4）</text>
+  <rect x="578" y="500" width="116" height="52" rx="4" fill="#FFFFFF" stroke="#85C1E9" stroke-width="1"/>
+  <text x="636" y="518" font-size="9.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">③ 裸卡数</text>
+  <text x="636" y="532" font-size="8.5" fill="#566573" text-anchor="middle">decode 117 卡</text>
+  <text x="636" y="544" font-size="8.5" fill="#566573" text-anchor="middle">prefill 267 卡（上界）</text>
+  <rect x="706" y="500" width="116" height="52" rx="4" fill="#FFFFFF" stroke="#F39C12" stroke-width="1.4"/>
+  <text x="764" y="518" font-size="9.5" font-weight="bold" fill="#7E5109" text-anchor="middle">④ 转机</text>
+  <text x="764" y="532" font-size="8.5" fill="#7E5109" text-anchor="middle">命中率 60-70%</text>
+  <text x="764" y="544" font-size="8.5" fill="#7E5109" text-anchor="middle">prefill → ~90 卡</text>
+  <rect x="834" y="500" width="116" height="52" rx="4" fill="#FFFFFF" stroke="#85C1E9" stroke-width="1"/>
+  <text x="892" y="518" font-size="9.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">⑤ 架构</text>
+  <text x="892" y="532" font-size="8.5" fill="#566573" text-anchor="middle">P/D 双池 + 有状态</text>
+  <text x="892" y="544" font-size="8.5" fill="#566573" text-anchor="middle">router（A4 #3+Day34）</text>
+  <!-- step arrows -->
+  <line x1="438" y1="526" x2="448" y2="526" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35a)"/>
+  <line x1="566" y1="526" x2="576" y2="526" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35a)"/>
+  <line x1="694" y1="526" x2="704" y2="526" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35a)"/>
+  <line x1="822" y1="526" x2="832" y2="526" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35a)"/>
+  <text x="635" y="578" font-size="9.5" fill="#566573" text-anchor="middle">量化（A4 #1）出现在 ②：FP8 权重 + FP8 KV 是一切容量估算的前提；投机解码（A4 #2）是⑤之后的"看情况"项（通道/时段策略）</text>
+  <text x="635" y="596" font-size="9.5" fill="#7F8C8D" text-anchor="middle">面试口径：每个数字都要能回答"怎么算的"和"如果它变了，架构哪里要动"</text>
+
+  <!-- footer -->
+  <rect x="30" y="636" width="940" height="44" rx="6" fill="#F4F6F7" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="500" y="654" font-size="10" font-weight="bold" fill="#1e3a5f" text-anchor="middle">四份 A4 互讲的验收标准：每份 5 分钟、四段式完整、手算锚点 30 秒内落地——录音回听，卡壳处今晚重读对应 Day 的笔记</text>
+  <text x="500" y="670" font-size="9.5" fill="#7F8C8D" text-anchor="middle">本图即 Day 56"最终材料"里的知识总图雏形：面试前只看自己画的图，不看新东西（打卡规则第 3 条的落点）</text>
+</svg>

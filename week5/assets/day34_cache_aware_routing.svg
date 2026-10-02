@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d34a" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d34r" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#C0392B"/>
+    </marker>
+    <marker id="d34g" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#1E8449"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="640" fill="#FFFFFF"/>
+  <text x="30" y="30" font-size="18" font-weight="bold" fill="#1e3a5f">图 1｜cache-aware routing：router 用 prefix 索引把"相同前缀的请求"送到"持有该 KV 的实例"</text>
+  <text x="30" y="50" font-size="10" fill="#7F8C8D">索引由各实例的 KV events（block hash 增/删）异步喂给 router——Day 30"元数据网"的消费者；打分函数在"亲和收益"与"负载均衡"之间折中</text>
+
+  <!-- ============ top: clients ============ -->
+  <rect x="30" y="80" width="130" height="46" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5"/>
+  <text x="95" y="99" font-size="11" font-weight="bold" fill="#1e3a5f" text-anchor="middle">客户端</text>
+  <text x="95" y="114" font-size="9" fill="#566573" text-anchor="middle">多轮对话 / 重试</text>
+
+  <!-- requests arrow -->
+  <line x1="160" y1="103" x2="245" y2="103" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d34a)"/>
+  <text x="202" y="95" font-size="9" fill="#566573" text-anchor="middle">请求</text>
+
+  <!-- ============ router box ============ -->
+  <rect x="250" y="70" width="300" height="150" rx="8" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.8"/>
+  <text x="400" y="92" font-size="13" font-weight="bold" fill="#7E5109" text-anchor="middle">Router（有状态调度层）</text>
+
+  <!-- prefix index -->
+  <rect x="268" y="104" width="128" height="56" rx="4" fill="#FFFFFF" stroke="#B9770E" stroke-width="1"/>
+  <text x="332" y="120" font-size="10" font-weight="bold" fill="#7E5109" text-anchor="middle">prefix → 实例 索引</text>
+  <text x="332" y="134" font-size="8.5" fill="#566573" text-anchor="middle">{h1,h2} → 实例A</text>
+  <text x="332" y="146" font-size="8.5" fill="#566573" text-anchor="middle">{h3} → 实例B</text>
+
+  <!-- scoring fn -->
+  <rect x="406" y="104" width="128" height="56" rx="4" fill="#FFFFFF" stroke="#B9770E" stroke-width="1"/>
+  <text x="470" y="120" font-size="10" font-weight="bold" fill="#7E5109" text-anchor="middle">打分路由</text>
+  <text x="470" y="134" font-size="9" fill="#566573" text-anchor="middle">score(i) = α·h_i(P) − β·q_i</text>
+  <text x="470" y="147" font-size="8.5" fill="#7F8C8D" text-anchor="middle">h_i: 可命中token数 q_i: 队列</text>
+
+  <!-- kv events input -->
+  <rect x="268" y="170" width="266" height="34" rx="4" fill="#FDF2E9" stroke="#CA6F1E" stroke-width="1"/>
+  <text x="401" y="184" font-size="9.5" font-weight="bold" fill="#935116" text-anchor="middle">KV events 订阅（block hash 增/删/移除）</text>
+  <text x="401" y="197" font-size="8.5" fill="#7F8C8D" text-anchor="middle">实例异步上报 → 索引保持最终一致（有陈旧窗口）</text>
+
+  <!-- ============ instances ============ -->
+  <!-- instance A -->
+  <rect x="640" y="66" width="300" height="88" rx="8" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.6"/>
+  <text x="790" y="86" font-size="12" font-weight="bold" fill="#145A32" text-anchor="middle">实例 A（Qwen3-8B, TP=1）</text>
+  <rect x="658" y="96" width="264" height="44" rx="4" fill="#FFFFFF" stroke="#82B98A" stroke-width="1"/>
+  <text x="790" y="112" font-size="9.5" fill="#145A32" text-anchor="middle">本地 KV 池 + block hash 表（Day 15-16）</text>
+  <text x="790" y="128" font-size="9" fill="#566573" text-anchor="middle">缓存: [h1][h2] ← 共享前缀 P 的唯一副本</text>
+
+  <!-- instance B -->
+  <rect x="640" y="176" width="300" height="88" rx="8" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.6"/>
+  <text x="790" y="196" font-size="12" font-weight="bold" fill="#145A32" text-anchor="middle">实例 B（Qwen3-8B, TP=1）</text>
+  <rect x="658" y="206" width="264" height="44" rx="4" fill="#FFFFFF" stroke="#82B98A" stroke-width="1"/>
+  <text x="790" y="222" font-size="9.5" fill="#145A32" text-anchor="middle">本地 KV 池 + block hash 表</text>
+  <text x="790" y="238" font-size="9" fill="#566573" text-anchor="middle">缓存: [h3] ← 不同前缀，无 P 副本</text>
+
+  <!-- routing arrows: router -> A (green, hit) -->
+  <path d="M550,120 C590,120 600,110 640,110" fill="none" stroke="#1E8449" stroke-width="2.2" marker-end="url(#d34g)"/>
+  <text x="596" y="102" font-size="9" fill="#1E8449">命中 h1,h2</text>
+  <!-- router -> B (neutral, no hit) -->
+  <path d="M550,150 C590,150 600,200 640,210" fill="none" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d34a)"/>
+  <text x="600" y="188" font-size="9" fill="#566573">未持有 P</text>
+
+  <!-- kv events arrows: instances -> router (dashed orange) -->
+  <path d="M640,140 C600,150 590,165 556,180" fill="none" stroke="#CA6F1E" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#d34a)"/>
+  <path d="M640,230 C600,220 580,205 556,192" fill="none" stroke="#CA6F1E" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#d34a)"/>
+  <text x="612" y="248" font-size="9" fill="#CA6F1E">events（元数据网）</text>
+
+  <!-- ============ bottom panels: RR vs affinity ============ -->
+  <text x="30" y="292" font-size="13" font-weight="bold" fill="#1e3a5f">两种路由策略的对比（同一共享前缀 P 被请求多次）</text>
+
+  <!-- Panel A: round robin -->
+  <rect x="30" y="306" width="450" height="150" rx="6" fill="#FDEDEC" stroke="#C0392B" stroke-width="1.4"/>
+  <text x="255" y="328" font-size="11.5" font-weight="bold" fill="#922B21" text-anchor="middle">(a) round-robin / 随机路由：副本扩散</text>
+  <!-- instance boxes -->
+  <rect x="52" y="342" width="120" height="52" rx="4" fill="#FFFFFF" stroke="#E6B0AA" stroke-width="1"/>
+  <text x="112" y="360" font-size="9.5" fill="#922B21" text-anchor="middle">实例 A</text>
+  <rect x="80" y="368" width="64" height="16" fill="#F5B7B1"/>
+  <text x="112" y="380" font-size="8" fill="#641E16" text-anchor="middle">[P]</text>
+  <rect x="188" y="342" width="120" height="52" rx="4" fill="#FFFFFF" stroke="#E6B0AA" stroke-width="1"/>
+  <text x="248" y="360" font-size="9.5" fill="#922B21" text-anchor="middle">实例 B</text>
+  <rect x="216" y="368" width="64" height="16" fill="#F5B7B1"/>
+  <text x="248" y="380" font-size="8" fill="#641E16" text-anchor="middle">[P]</text>
+  <rect x="324" y="342" width="120" height="52" rx="4" fill="#FFFFFF" stroke="#E6B0AA" stroke-width="1"/>
+  <text x="384" y="360" font-size="9.5" fill="#922B21" text-anchor="middle">实例 C</text>
+  <rect x="352" y="368" width="64" height="16" fill="#F5B7B1"/>
+  <text x="384" y="380" font-size="8" fill="#641E16" text-anchor="middle">[P]</text>
+  <text x="255" y="416" font-size="9" fill="#922B21" text-anchor="middle">P 的副本 ×N：显存放大 N 倍</text>
+  <text x="255" y="430" font-size="9" fill="#922B21" text-anchor="middle">低重复时命中率 ≈ (k−1)/N；容量高压下挤占长尾前缀</text>
+  <text x="255" y="444" font-size="9" fill="#7F8C8D" text-anchor="middle">（k→∞ 时副本扩散完成，命中率也趋近 1——但显存已花掉）</text>
+
+  <!-- Panel B: affinity -->
+  <rect x="500" y="306" width="450" height="150" rx="6" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.4"/>
+  <text x="725" y="328" font-size="11.5" font-weight="bold" fill="#145A32" text-anchor="middle">(b) cache-aware（亲和）路由：集群级去重</text>
+  <rect x="522" y="342" width="120" height="52" rx="4" fill="#FFFFFF" stroke="#82B98A" stroke-width="1"/>
+  <text x="582" y="360" font-size="9.5" fill="#145A32" text-anchor="middle">实例 A</text>
+  <rect x="550" y="368" width="64" height="16" fill="#ABEBC6"/>
+  <text x="582" y="380" font-size="8" fill="#145A32" text-anchor="middle">[P] 唯一</text>
+  <rect x="658" y="342" width="120" height="52" rx="4" fill="#FFFFFF" stroke="#82B98A" stroke-width="1"/>
+  <text x="718" y="360" font-size="9.5" fill="#145A32" text-anchor="middle">实例 B</text>
+  <rect x="794" y="342" width="120" height="52" rx="4" fill="#FFFFFF" stroke="#82B98A" stroke-width="1"/>
+  <text x="854" y="360" font-size="9.5" fill="#145A32" text-anchor="middle">实例 C</text>
+  <!-- requests converging to A -->
+  <path d="M690,392 C660,400 620,392 592,384" fill="none" stroke="#1E8449" stroke-width="1.8" marker-end="url(#d34g)"/>
+  <path d="M830,392 C780,404 660,400 594,388" fill="none" stroke="#1E8449" stroke-width="1.8" marker-end="url(#d34g)"/>
+  <text x="725" y="416" font-size="9" fill="#145A32" text-anchor="middle">副本 ×1：命中 = k−1 次（除首个）</text>
+  <text x="725" y="430" font-size="9" fill="#145A32" text-anchor="middle">代价：热点前缀 → 实例 A 过载（负载不均）</text>
+  <text x="725" y="444" font-size="9" fill="#7F8C8D" text-anchor="middle">→ 用打分函数 α·h_i − β·q_i 折中；过载阈值触发回退</text>
+
+  <!-- ============ footer note ============ -->
+  <rect x="30" y="476" width="920" height="60" rx="6" fill="#F4F6F7" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="490" y="497" font-size="10.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">前提：block hash 跨实例可复现（sha256 + 固定种子 NONE_HASH）——router 可以自己算出请求的 block hash 去查索引，不必先问实例</text>
+  <text x="490" y="514" font-size="9.5" fill="#566573" text-anchor="middle">隔离边界：跨租户时 hash 链被 cache_salt 分叉（图 2）；故障域：实例 A 挂掉 = P 丢失 → 下一请求重算（或从分层存储取回，图 3）</text>
+  <text x="490" y="528" font-size="9.5" fill="#7F8C8D" text-anchor="middle">与 P/D 分离的分工：路由管"prefill 算前命中"；Day 31 的 KV transfer 管"算后搬运"——两者正交可叠加</text>
+</svg>

@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="660" viewBox="0 0 980 660" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d35b" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d35o" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#F39C12"/>
+    </marker>
+    <marker id="d35r" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#C0392B"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="660" fill="#FFFFFF"/>
+  <text x="30" y="30" font-size="18" font-weight="bold" fill="#1e3a5f">图 2｜从 DAU 到卡数：需求量化 → 并发 → 双池容量 → 转机（每一步都可辩护）</text>
+  <text x="30" y="50" font-size="10" fill="#7F8C8D">面试口径：每个数字都要能回答"怎么算的"（假设是什么）与"它变了架构哪里要动"（敏感度）——两条支线的分叉点就是输入:输出 = 10:1 的负载画像</text>
+
+  <!-- ============ Row 1: demand chain ============ -->
+  <text x="30" y="82" font-size="12" font-weight="bold" fill="#1e3a5f">① 需求量化链（每步都是一条可挑战的假设）</text>
+  <rect x="30" y="94" width="100" height="48" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.4"/>
+  <text x="80" y="114" font-size="11" font-weight="bold" fill="#1e3a5f" text-anchor="middle">DAU</text>
+  <text x="80" y="130" font-size="11" fill="#1e3a5f" text-anchor="middle">10M</text>
+
+  <line x1="130" y1="118" x2="146" y2="118" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d35b)"/>
+  <text x="138" y="108" font-size="8" fill="#7F8C8D" text-anchor="middle">×2会话</text>
+  <text x="138" y="138" font-size="8" fill="#7F8C8D" text-anchor="middle">×6轮</text>
+
+  <rect x="148" y="94" width="118" height="48" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.4"/>
+  <text x="207" y="114" font-size="10" font-weight="bold" fill="#1e3a5f" text-anchor="middle">原始轮次</text>
+  <text x="207" y="130" font-size="11" fill="#1e3a5f" text-anchor="middle">120M 轮/天</text>
+
+  <line x1="266" y1="118" x2="282" y2="118" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d35b)"/>
+  <text x="274" y="108" font-size="8" fill="#7F8C8D" text-anchor="middle">×1/6</text>
+  <text x="274" y="138" font-size="8" fill="#7F8C8D" text-anchor="middle">升级</text>
+
+  <rect x="284" y="94" width="150" height="48" rx="6" fill="#EAF2F8" stroke="#2E86C1" stroke-width="1.4"/>
+  <text x="359" y="110" font-size="10" font-weight="bold" fill="#1A5276" text-anchor="middle">分级路由（FAQ/8B</text>
+  <text x="359" y="122" font-size="10" font-weight="bold" fill="#1A5276" text-anchor="middle">消化 5/6 轮次）</text>
+  <text x="359" y="137" font-size="11" fill="#1A5276" text-anchor="middle">20M LLM 请求/天</text>
+
+  <line x1="434" y1="118" x2="450" y2="118" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d35b)"/>
+  <text x="442" y="108" font-size="8" fill="#7F8C8D" text-anchor="middle">×20%</text>
+  <text x="442" y="138" font-size="8" fill="#7F8C8D" text-anchor="middle">÷3600</text>
+
+  <rect x="452" y="94" width="120" height="48" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.4"/>
+  <text x="512" y="114" font-size="10" font-weight="bold" fill="#1e3a5f" text-anchor="middle">峰值小时均值</text>
+  <text x="512" y="130" font-size="11" fill="#1e3a5f" text-anchor="middle">1111 req/s</text>
+
+  <line x1="572" y1="118" x2="588" y2="118" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d35b)"/>
+  <text x="580" y="108" font-size="8" fill="#7F8C8D" text-anchor="middle">×2 突增</text>
+
+  <rect x="590" y="94" width="130" height="48" rx="6" fill="#D6EAF8" stroke="#21618C" stroke-width="2"/>
+  <text x="655" y="114" font-size="10" font-weight="bold" fill="#1e3a5f" text-anchor="middle">峰值 RPS</text>
+  <text x="655" y="130" font-size="12" font-weight="bold" fill="#1e3a5f" text-anchor="middle">≈ 2200 req/s</text>
+
+  <!-- SLO + profile side box -->
+  <rect x="740" y="94" width="230" height="48" rx="6" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.4"/>
+  <text x="855" y="111" font-size="10" font-weight="bold" fill="#7E5109" text-anchor="middle">SLO：TTFT p99 &lt; 1.5s，TPOT p99 &lt; 80ms</text>
+  <text x="855" y="127" font-size="9.5" fill="#7E5109" text-anchor="middle">画像：输入 1.5K / 输出 150 tok（10:1）</text>
+  <text x="855" y="139" font-size="9" fill="#7F8C8D" text-anchor="middle">RAG 客服：system prompt + 检索 + 多轮历史</text>
+
+  <!-- ============ Row 2: Little's law ============ -->
+  <text x="30" y="172" font-size="12" font-weight="bold" fill="#1e3a5f">② 并发（Little 定律：L = λ · W）</text>
+  <rect x="30" y="184" width="690" height="44" rx="6" fill="#F4F6F7" stroke="#2C3E50" stroke-width="1.4"/>
+  <text x="375" y="202" font-size="11" fill="#1e3a5f" text-anchor="middle">驻留 W ≈ TTFT + 输出 × TPOT_target = 0.5s + 150 × 60ms ≈ 9.5s　（用设计值 60ms，不用 SLO 80ms——用 SLO 算容量 = 设计在崩溃边缘）</text>
+  <text x="375" y="220" font-size="11.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">L = 2200 × 9.5 ≈ 21,000 路并发 decode 流</text>
+
+  <!-- split arrows -->
+  <path d="M420,228 C420,248 260,250 200,262" fill="none" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d35b)"/>
+  <path d="M420,228 C420,248 580,250 640,262" fill="none" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d35b)"/>
+  <text x="250" y="252" font-size="9.5" fill="#7F8C8D">并发上限驱动</text>
+  <text x="590" y="252" font-size="9.5" fill="#7F8C8D">吞吐驱动</text>
+
+  <!-- ============ Row 3 left: decode branch ============ -->
+  <rect x="30" y="266" width="420" height="196" rx="8" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.6"/>
+  <text x="240" y="290" font-size="12.5" font-weight="bold" fill="#145A32" text-anchor="middle">③ decode 池容量（memory-bound，KV 预算决定）</text>
+
+  <rect x="48" y="302" width="384" height="66" rx="4" fill="#FFFFFF" stroke="#A9DFBF" stroke-width="1"/>
+  <text x="240" y="319" font-size="9.5" font-weight="bold" fill="#145A32" text-anchor="middle">单卡并发上限（Day 2 公式）</text>
+  <text x="240" y="333" font-size="9" fill="#566573" text-anchor="middle">KV/token = 2·L·H_kv·D·b = 2·64·8·128·1B = 128 KB（FP8）</text>
+  <text x="240" y="346" font-size="9" fill="#566573" text-anchor="middle">每请求足迹 = 1.65K tok × 128 KB ≈ 210 MB</text>
+  <text x="240" y="359" font-size="9" fill="#145A32" text-anchor="middle">KV 预算 = 80 − 33(权重) − 7(其他) ≈ 40 GB → 40GB ÷ 210MB ≈ 180 路/卡</text>
+
+  <rect x="48" y="374" width="384" height="50" rx="4" fill="#FFFFFF" stroke="#A9DFBF" stroke-width="1"/>
+  <text x="240" y="391" font-size="9.5" font-weight="bold" fill="#145A32" text-anchor="middle">TPOT 核对（&lt; 80ms 才算过）</text>
+  <text x="240" y="405" font-size="9" fill="#566573" text-anchor="middle">(33 + 180×0.21) GB ÷ 3.35 TB/s ≈ 21 ms 理论</text>
+  <text x="240" y="417" font-size="9" fill="#145A32" text-anchor="middle">× 1.5-2 效率折减 → ~40 ms ✓ 余量给 p99 尾部</text>
+
+  <rect x="88" y="428" width="304" height="26" rx="4" fill="#D5F5E3" stroke="#1E8449" stroke-width="1.6"/>
+  <text x="240" y="446" font-size="12" font-weight="bold" fill="#145A32" text-anchor="middle">decode 池 = 21K ÷ 180 ≈ 117 卡</text>
+
+  <!-- ============ Row 3 right: prefill branch ============ -->
+  <rect x="530" y="266" width="440" height="196" rx="8" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.6"/>
+  <text x="750" y="290" font-size="12.5" font-weight="bold" fill="#7E5109" text-anchor="middle">④ prefill 池容量（compute-bound，算力决定）</text>
+
+  <rect x="548" y="302" width="180" height="66" rx="4" fill="#FFFFFF" stroke="#F7DC6F" stroke-width="1"/>
+  <text x="638" y="318" font-size="9.5" font-weight="bold" fill="#7E5109" text-anchor="middle">吞吐需求（裸算）</text>
+  <text x="638" y="332" font-size="9" fill="#566573" text-anchor="middle">2200 req/s × 1500 tok</text>
+  <text x="638" y="345" font-size="9.5" font-weight="bold" fill="#7E5109" text-anchor="middle">= 3.3M tok/s</text>
+  <text x="638" y="358" font-size="8.5" fill="#7F8C8D" text-anchor="middle">10:1 画像的直接后果</text>
+
+  <rect x="740" y="302" width="212" height="66" rx="4" fill="#FFFFFF" stroke="#F7DC6F" stroke-width="1"/>
+  <text x="846" y="318" font-size="9.5" font-weight="bold" fill="#7E5109" text-anchor="middle">单卡 prefill 吞吐</text>
+  <text x="846" y="332" font-size="9" fill="#566573" text-anchor="middle">0.4 × 1979 TF ÷ (2 × 32 GF/tok)</text>
+  <text x="846" y="345" font-size="9.5" font-weight="bold" fill="#7E5109" text-anchor="middle">≈ 12.4K tok/s（40% MFU）</text>
+  <text x="846" y="358" font-size="8.5" fill="#7F8C8D" text-anchor="middle">FP8 峰值算力 1979 TFLOPS</text>
+
+  <line x1="728" y1="335" x2="738" y2="335" stroke="#2C3E50" stroke-width="1.3" marker-end="url(#d35b)"/>
+
+  <!-- naive result -->
+  <rect x="548" y="374" width="180" height="50" rx="4" fill="#FDEDEC" stroke="#C0392B" stroke-width="1.4"/>
+  <text x="638" y="392" font-size="10" font-weight="bold" fill="#922B21" text-anchor="middle">裸算（吓一跳）</text>
+  <text x="638" y="407" font-size="10" fill="#922B21" text-anchor="middle">3.3M ÷ 12.4K</text>
+  <text x="638" y="419" font-size="10.5" font-weight="bold" fill="#922B21" text-anchor="middle">= 267 卡</text>
+
+  <!-- turning point arrow -->
+  <line x1="728" y1="399" x2="738" y2="399" stroke="#F39C12" stroke-width="2" marker-end="url(#d35o)"/>
+  <rect x="740" y="374" width="212" height="50" rx="4" fill="#FDF2E9" stroke="#F39C12" stroke-width="1.6"/>
+  <text x="846" y="390" font-size="10" font-weight="bold" fill="#935116" text-anchor="middle">转机：prefix caching（Day 34）</text>
+  <text x="846" y="404" font-size="8.5" fill="#566573" text-anchor="middle">system prompt 全共享 + 多轮递增 + 亲和路由</text>
+  <text x="846" y="415" font-size="8.5" fill="#566573" text-anchor="middle">命中率 60-70% → 新增 ~500 tok/req</text>
+
+  <!-- final prefill -->
+  <rect x="620" y="428" width="260" height="26" rx="4" fill="#D5F5E3" stroke="#1E8449" stroke-width="1.6"/>
+  <text x="750" y="446" font-size="12" font-weight="bold" fill="#145A32" text-anchor="middle">prefill 池 = 1.1M ÷ 12.4K ≈ 90 卡</text>
+  <path d="M846,424 C846,430 800,432 780,428" fill="none" stroke="#1E8449" stroke-width="1.6" marker-end="url(#d35b)"/>
+
+  <!-- ============ bottom: total ============ -->
+  <path d="M240,462 C240,486 380,490 440,496" fill="none" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d35b)"/>
+  <path d="M750,462 C750,486 620,490 560,496" fill="none" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d35b)"/>
+
+  <rect x="230" y="500" width="540" height="56" rx="8" fill="#EBF5FB" stroke="#1e3a5f" stroke-width="2"/>
+  <text x="500" y="522" font-size="13" font-weight="bold" fill="#1e3a5f" text-anchor="middle">总规模：117 + 90 ≈ 207 卡 ≈ 26 节点（8×H100）</text>
+  <text x="500" y="542" font-size="10.5" fill="#1e3a5f" text-anchor="middle">＋ ~15% 冗余与多 AZ 容灾 → ~30 节点　｜　容量配比 prefill : decode ≈ 90 : 117 ≈ 1 : 1.3（随分流比动态调）</text>
+
+  <!-- sensitivity notes -->
+  <rect x="30" y="576" width="940" height="66" rx="6" fill="#F4F6F7" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="500" y="596" font-size="10" font-weight="bold" fill="#1e3a5f" text-anchor="middle">敏感度（面试官最爱问"如果假设变了呢"）：命中率 30% → prefill 回到 ~180 卡｜分流比 1/3 → 全链规模 ×2｜输出变 300 tok → 并发与 decode 卡数 ×1.9</text>
+  <text x="500" y="614" font-size="9.5" fill="#566573" text-anchor="middle">decode 侧的隐藏改善：共享前缀块被同卡多请求引用计数 → 唯一 KV 更小、单卡驻留更多会话——117 是保守上界，改善当余量</text>
+  <text x="500" y="630" font-size="9.5" fill="#7F8C8D" text-anchor="middle">夜间负载低谷：P/D 分离收益消失（Day 29 的 5 条"不值得"开始生效）→ 合并为 colocated 池弹性缩容</text>
+</svg>

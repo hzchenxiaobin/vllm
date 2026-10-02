@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 680" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4A5568"/>
+    </marker>
+  </defs>
+  <rect width="940" height="680" fill="#ffffff"/>
+  <text x="470" y="32" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">vLLM V1：--kv-cache-dtype fp8 的端到端链路（写路径与读路径）</text>
+
+  <!-- Left column: config chain -->
+  <rect x="30" y="60" width="280" height="46" rx="8" fill="#2B6CB0"/>
+  <text x="170" y="88" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">CLI：--kv-cache-dtype fp8</text>
+  <line x1="170" y1="106" x2="170" y2="122" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="30" y="124" width="280" height="54" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="170" y="146" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">EngineArgs.kv_cache_dtype</text>
+  <text x="170" y="163" text-anchor="middle" font-size="10" fill="#718096">vllm/engine/arg_utils.py</text>
+  <line x1="170" y1="178" x2="170" y2="194" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="30" y="196" width="280" height="54" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="170" y="218" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">CacheConfig.kv_cache_dtype</text>
+  <text x="170" y="235" text-anchor="middle" font-size="10" fill="#718096">vllm/config/cache.py</text>
+  <line x1="170" y1="250" x2="170" y2="266" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="30" y="268" width="280" height="64" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="170" y="289" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">GPUModelRunner：dtype 解析</text>
+  <text x="170" y="306" text-anchor="middle" font-size="10.5" fill="#2D3748">fp8 → torch.float8_e4m3fn</text>
+  <text x="170" y="322" text-anchor="middle" font-size="10" fill="#718096">vllm/v1/worker/gpu_model_runner.py</text>
+  <line x1="170" y1="332" x2="170" y2="348" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="30" y="350" width="280" height="72" rx="8" fill="#FEEBC8" stroke="#DD6B20"/>
+  <text x="170" y="371" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#9C4221">KV cache 张量按 FP8 分配</text>
+  <text x="170" y="388" text-anchor="middle" font-size="10.5" fill="#9C4221">blocks = KV池 ÷ (bs·2L·H_kv·d·1B)</text>
+  <text x="170" y="405" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#C05621">→ 块数精确 ×2（Day 15）</text>
+  <line x1="170" y1="422" x2="170" y2="438" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="30" y="440" width="280" height="60" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="170" y="461" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">KVCacheManager / Block Table</text>
+  <text x="170" y="478" text-anchor="middle" font-size="10.5" fill="#2D3748">逻辑零改动：仍按 block 编号管理</text>
+  <text x="170" y="493" text-anchor="middle" font-size="10" fill="#718096">（Day 15-16 的全部机制原样可用）</text>
+  <line x1="170" y1="500" x2="170" y2="516" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="30" y="518" width="280" height="60" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="170" y="539" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">Attention 层</text>
+  <text x="170" y="556" text-anchor="middle" font-size="10.5" fill="#2D3748">构造时从 CacheConfig 取 dtype</text>
+  <text x="170" y="571" text-anchor="middle" font-size="10" fill="#718096">vllm/attention/layer.py</text>
+
+  <!-- Write path panel -->
+  <rect x="350" y="60" width="570" height="220" rx="10" fill="#F7FAFC" stroke="#4A5568"/>
+  <text x="365" y="86" font-size="13" font-weight="bold" fill="#1A365D">写路径 —— 每个 step 追加新 token 的 KV</text>
+
+  <rect x="365" y="110" width="125" height="58" rx="8" fill="#EDF2F7" stroke="#4A5568"/>
+  <text x="427" y="134" text-anchor="middle" font-size="11" font-weight="bold" fill="#2D3748">k_proj / v_proj</text>
+  <text x="427" y="152" text-anchor="middle" font-size="10" fill="#4A5568">(BF16)</text>
+  <line x1="490" y1="139" x2="501" y2="139" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="505" y="110" width="125" height="58" rx="8" fill="#EDF2F7" stroke="#4A5568"/>
+  <text x="567" y="134" text-anchor="middle" font-size="11" font-weight="bold" fill="#2D3748">RoPE</text>
+  <text x="567" y="152" text-anchor="middle" font-size="10" fill="#4A5568">旋转后缓存</text>
+  <line x1="630" y1="139" x2="641" y2="139" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="645" y="110" width="125" height="58" rx="8" fill="#FED7D7" stroke="#C53030"/>
+  <text x="707" y="134" text-anchor="middle" font-size="11" font-weight="bold" fill="#C53030">写块 kernel</text>
+  <text x="707" y="152" text-anchor="middle" font-size="10" fill="#9B2C2C">cast BF16 → FP8</text>
+  <line x1="770" y1="139" x2="781" y2="139" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="785" y="110" width="125" height="58" rx="8" fill="#BEE3F8" stroke="#2B6CB0"/>
+  <text x="847" y="134" text-anchor="middle" font-size="11" font-weight="bold" fill="#2B6CB0">KV Block</text>
+  <text x="847" y="152" text-anchor="middle" font-size="10" fill="#2B6CB0">FP8 字节 ÷2</text>
+
+  <text x="365" y="196" font-size="10.5" fill="#718096">写入时 cast · scale 默认 1.0 —— E4M3（±448）直接覆盖幅值，免校准（Day 22 逻辑重演）</text>
+  <text x="365" y="214" font-size="10.5" fill="#718096">prefix caching 的 block hash 不含 dtype（Day 16）—— 单实例无坑，跨实例需部署约束</text>
+  <text x="365" y="232" font-size="10.5" fill="#718096">chunked prefill 分块写入走同一路径（Day 11）· CUDA Graph 无坑（Day 18）</text>
+
+  <!-- Read path panel -->
+  <rect x="350" y="310" width="570" height="290" rx="10" fill="#F7FAFC" stroke="#4A5568"/>
+  <text x="365" y="336" font-size="13" font-weight="bold" fill="#1A365D">读路径 —— decode 每 step 全量重读 KV（收益兑现处）</text>
+
+  <rect x="365" y="356" width="125" height="64" rx="8" fill="#EDF2F7" stroke="#4A5568"/>
+  <text x="427" y="380" text-anchor="middle" font-size="11" font-weight="bold" fill="#2D3748">paged gather</text>
+  <text x="427" y="396" text-anchor="middle" font-size="10" fill="#4A5568">读 FP8 KV</text>
+  <text x="427" y="411" text-anchor="middle" font-size="10" fill="#718096">（Day 17）</text>
+  <line x1="490" y1="388" x2="501" y2="388" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="505" y="356" width="125" height="64" rx="8" fill="#FED7D7" stroke="#C53030"/>
+  <text x="567" y="380" text-anchor="middle" font-size="11" font-weight="bold" fill="#C53030">SM 内 dequant</text>
+  <text x="567" y="396" text-anchor="middle" font-size="10" fill="#9B2C2C">FA3: descale_k/v</text>
+  <text x="567" y="411" text-anchor="middle" font-size="10" fill="#9B2C2C">FlashInfer 同理</text>
+  <line x1="630" y1="388" x2="641" y2="388" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="645" y="356" width="125" height="64" rx="8" fill="#EDF2F7" stroke="#4A5568"/>
+  <text x="707" y="384" text-anchor="middle" font-size="11" font-weight="bold" fill="#2D3748">BF16 点积</text>
+  <text x="707" y="400" text-anchor="middle" font-size="10" fill="#4A5568">QKᵀ / Σp·v</text>
+  <line x1="770" y1="388" x2="781" y2="388" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <rect x="785" y="356" width="125" height="64" rx="8" fill="#C6F6D5" stroke="#276749"/>
+  <text x="847" y="384" text-anchor="middle" font-size="11" font-weight="bold" fill="#276749">输出 O</text>
+  <text x="847" y="400" text-anchor="middle" font-size="10" fill="#276749">(BF16)</text>
+
+  <rect x="365" y="445" width="320" height="84" rx="8" fill="#FFF5F5" stroke="#C53030" stroke-dasharray="5 3"/>
+  <text x="380" y="468" font-size="11.5" font-weight="bold" fill="#C53030">反例：独立反量化 kernel</text>
+  <text x="380" y="486" font-size="10.5" fill="#9B2C2C">KV 读两遍、写一遍 → 带宽收益清零</text>
+  <text x="380" y="502" font-size="10.5" fill="#9B2C2C">gather 必须融合 dequant（Day 17 原则）</text>
+
+  <rect x="705" y="445" width="200" height="84" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="720" y="468" font-size="11.5" font-weight="bold" fill="#2B6CB0">Backend 支持矩阵</text>
+  <text x="720" y="486" font-size="10.5" fill="#2D3748">FA3 (Hopper) ✓ · FlashInfer ✓</text>
+  <text x="720" y="502" font-size="10.5" fill="#2D3748">FA2 (SM80) ✗ 报错 · TRITON 有限</text>
+
+  <rect x="365" y="545" width="540" height="42" rx="8" fill="#FFFAF0" stroke="#DD6B20"/>
+  <text x="378" y="562" font-size="11.5" font-weight="bold" fill="#9C4221">scale 来源</text>
+  <text x="378" y="579" font-size="10.5" fill="#9C4221">① 默认 1.0（RTN） ② checkpoint attn.k_scale/v_scale → get_kv_scale（compressed-tensors kv_cache_scheme）</text>
+
+  <!-- connecting arrows -->
+  <line x1="312" y1="330" x2="346" y2="180" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+  <text x="322" y="262" font-size="9.5" fill="#718096">启动时（一次）</text>
+  <line x1="312" y1="548" x2="346" y2="450" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+  <text x="316" y="508" font-size="9.5" fill="#718096">每 step</text>
+  <line x1="847" y1="282" x2="847" y2="352" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a3)"/>
+  <text x="860" y="322" font-size="10" fill="#718096">FP8 KV</text>
+
+  <text x="30" y="628" font-size="10" fill="#A0AEC0">以 vLLM V1（≥0.9）为准；模块与函数名随版本微调（新版本块数计算迁入 coordination 路径）</text>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4A5568"/>
+    </marker>
+    <marker id="a2r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#C53030"/>
+    </marker>
+    <marker id="a2o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#DD6B20"/>
+    </marker>
+  </defs>
+  <rect width="900" height="620" fill="#ffffff"/>
+  <text x="450" y="32" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">K 与 V 的量化误差走完全不同的传播路径</text>
+
+  <!-- K annotation panel -->
+  <rect x="195" y="52" width="690" height="92" rx="8" fill="#FFF5F5" stroke="#C53030" stroke-dasharray="5 3"/>
+  <text x="215" y="74" font-size="12.5" font-weight="bold" fill="#C53030">K 路径（非线性，全局耦合）：softmax 输出 ≈ p_j · exp(Δℓ_j − Σ_k p_k·Δℓ_k)</text>
+  <text x="215" y="94" font-size="11.5" fill="#9B2C2C">• 指数放大：Δℓ = 0.1 → 该 token 权重相对偏移 ~10%；Δℓ = 1 → ~2.7 倍</text>
+  <text x="215" y="112" font-size="11.5" fill="#9B2C2C">• 归一化耦合：一个 token 的误差按概率质量"偷走"全体 token 的权重</text>
+  <text x="215" y="130" font-size="11.5" fill="#9B2C2C">• 排序翻转：改变"看哪里"，翻转概率随 ctx 长度累积 → 长程召回最受伤</text>
+
+  <!-- pipeline boxes -->
+  <rect x="40" y="160" width="90" height="60" rx="8" fill="#EDF2F7" stroke="#4A5568"/>
+  <text x="85" y="188" text-anchor="middle" font-size="14" font-weight="bold" fill="#2D3748">q</text>
+  <text x="85" y="206" text-anchor="middle" font-size="10" fill="#4A5568">(BF16)</text>
+
+  <rect x="40" y="290" width="90" height="60" rx="8" fill="#FED7D7" stroke="#C53030"/>
+  <text x="85" y="313" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#C53030">K cache</text>
+  <text x="85" y="331" text-anchor="middle" font-size="10" fill="#9B2C2C">(FP8)</text>
+
+  <rect x="200" y="185" width="130" height="60" rx="8" fill="#BEE3F8" stroke="#2B6CB0"/>
+  <text x="265" y="212" text-anchor="middle" font-size="13" font-weight="bold" fill="#2B6CB0">QKᵀ / √d</text>
+  <text x="265" y="230" text-anchor="middle" font-size="10" fill="#2B6CB0">logits ℓ_ij</text>
+
+  <rect x="390" y="185" width="130" height="60" rx="8" fill="#FC8181" stroke="#C53030"/>
+  <text x="455" y="212" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">softmax</text>
+  <text x="455" y="230" text-anchor="middle" font-size="10" fill="#FFF5F5">exp 放大器</text>
+
+  <rect x="580" y="235" width="130" height="60" rx="8" fill="#BEE3F8" stroke="#2B6CB0"/>
+  <text x="645" y="262" text-anchor="middle" font-size="13" font-weight="bold" fill="#2B6CB0">Σ p_j · v_j</text>
+  <text x="645" y="280" text-anchor="middle" font-size="10" fill="#2B6CB0">凸组合（平均器）</text>
+
+  <rect x="770" y="235" width="90" height="60" rx="8" fill="#C6F6D5" stroke="#276749"/>
+  <text x="815" y="262" text-anchor="middle" font-size="14" font-weight="bold" fill="#276749">O</text>
+  <text x="815" y="280" text-anchor="middle" font-size="10" fill="#276749">(BF16)</text>
+
+  <rect x="390" y="380" width="130" height="60" rx="8" fill="#FEEBC8" stroke="#DD6B20"/>
+  <text x="455" y="403" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#DD6B20">V cache</text>
+  <text x="455" y="421" text-anchor="middle" font-size="10" fill="#9C4221">(FP8)</text>
+
+  <!-- arrows -->
+  <line x1="130" y1="190" x2="196" y2="212" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a2)"/>
+  <line x1="130" y1="320" x2="196" y2="242" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a2)"/>
+  <line x1="330" y1="215" x2="386" y2="215" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a2)"/>
+  <text x="358" y="202" text-anchor="middle" font-size="10" font-weight="bold" fill="#C53030">Δℓ_j</text>
+  <line x1="520" y1="225" x2="576" y2="252" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a2)"/>
+  <text x="548" y="230" text-anchor="middle" font-size="10" fill="#4A5568">p（权重）</text>
+  <line x1="478" y1="378" x2="616" y2="297" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a2)"/>
+  <line x1="710" y1="265" x2="766" y2="265" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <!-- error bolts -->
+  <polygon points="148,250 158,266 152,266 162,284 150,270 156,270" fill="#C53030"/>
+  <text x="112" y="248" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#C53030">Δk 量化噪声</text>
+  <polygon points="528,338 538,354 532,354 542,372 530,358 536,358" fill="#DD6B20"/>
+  <text x="495" y="336" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#DD6B20">Δv 量化噪声</text>
+
+  <!-- V annotation panel -->
+  <rect x="390" y="460" width="495" height="88" rx="8" fill="#FFFAF0" stroke="#DD6B20" stroke-dasharray="5 3"/>
+  <text x="405" y="482" font-size="12.5" font-weight="bold" fill="#DD6B20">V 路径（线性，有界）：ΔO = Σ_j p_j·Δv_j ，Var(ΔO) ≤ σ_v² · max_j p_j</text>
+  <text x="405" y="502" font-size="11.5" fill="#9C4221">• 凸组合平均：attention 越分散，噪声被摊得越薄（均匀时 Σ p² = 1/n）</text>
+  <text x="405" y="520" font-size="11.5" fill="#9C4221">• 误差不改变 p 本身 —— 不威胁"看哪里"，只微扰"看到什么"</text>
+
+  <!-- verdict bar -->
+  <rect x="60" y="570" width="780" height="36" rx="8" fill="#1A365D"/>
+  <text x="450" y="592" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#ffffff">敏感度 K &gt; V ｜ KIVI 据此选择粒度：K per-channel（outlier 在 channel 维）· V per-token（突发在 token 维）</text>
+</svg>

@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="700" viewBox="0 0 980 700" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d33t" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d33r" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#C0392B"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="700" fill="#FFFFFF"/>
+  <text x="30" y="30" font-size="18" font-weight="bold" fill="#1e3a5f">图 3｜nsys 时间线：TP=2 的一个 decode step 里，通信藏在哪里、怎么算占比</text>
+
+  <!-- ============ GPU swimlanes ============ -->
+  <text x="30" y="62" font-size="12" font-weight="bold" fill="#1e3a5f">① 时间线形态（默认配置：CUDA Graph 开 + custom all-reduce 开）</text>
+
+  <!-- GPU 0 lane -->
+  <text x="86" y="92" font-size="10" fill="#2C3E50" text-anchor="end">GPU 0</text>
+  <rect x="100" y="78" width="840" height="30" rx="3" fill="#F8F9F9" stroke="#D5DBDB" stroke-width="1"/>
+  <!-- step 1 graph replay -->
+  <rect x="108" y="83" width="360" height="20" fill="#D6EAF8" stroke="#2E86C1" stroke-width="1"/>
+  <text x="288" y="97" font-size="9" fill="#1A5276" text-anchor="middle">CUDA Graph replay（step N · B 个 seq 的整个 forward）</text>
+  <!-- inside: gemm/ar/gemm/ar pattern -->
+  <rect x="480" y="78" width="8" height="30" fill="#AEB6BF"/>
+  <!-- step 2 -->
+  <rect x="496" y="83" width="360" height="20" fill="#D6EAF8" stroke="#2E86C1" stroke-width="1"/>
+  <text x="676" y="97" font-size="9" fill="#1A5276" text-anchor="middle">step N+1（同样一次 replay）</text>
+  <rect x="864" y="78" width="8" height="30" fill="#AEB6BF"/>
+  <text x="905" y="97" font-size="9" fill="#566573">间隙 ≈</text>
+  <text x="905" y="109" font-size="9" fill="#566573">CPU 调度</text>
+
+  <!-- GPU 1 lane -->
+  <text x="86" y="142" font-size="10" fill="#2C3E50" text-anchor="end">GPU 1</text>
+  <rect x="100" y="128" width="840" height="30" rx="3" fill="#F8F9F9" stroke="#D5DBDB" stroke-width="1"/>
+  <rect x="108" y="133" width="360" height="20" fill="#FDEBD0" stroke="#E67E22" stroke-width="1"/>
+  <text x="288" y="147" font-size="9" fill="#B9770E" text-anchor="middle">镜像的 graph replay（同样的 kernel 序列，权重各持一半）</text>
+  <rect x="480" y="128" width="8" height="30" fill="#AEB6BF"/>
+  <rect x="496" y="133" width="360" height="20" fill="#FDEBD0" stroke="#E67E22" stroke-width="1"/>
+  <rect x="864" y="128" width="8" height="30" fill="#AEB6BF"/>
+
+  <text x="490" y="174" font-size="9" fill="#7F8C8D" text-anchor="middle">两卡 lockstep：每层 row-parallel 的 all-reduce 强制同步，慢卡拖住快卡——p99 对 straggler 敏感的根源（Day 32 论证一）</text>
+
+  <!-- ============ zoom into one layer ============ -->
+  <text x="30" y="208" font-size="12" font-weight="bold" fill="#1e3a5f">② 放大一层（--cuda-graph-trace=node 后，graph 内 kernel 逐个可见）</text>
+
+  <rect x="100" y="222" width="840" height="96" rx="4" fill="#FDFEFE" stroke="#AEB6BF" stroke-width="1"/>
+  <!-- kernel blocks inside a layer -->
+  <rect x="116" y="240" width="120" height="26" fill="#D6EAF8" stroke="#2E86C1" stroke-width="1"/>
+  <text x="176" y="257" font-size="9" fill="#1A5276" text-anchor="middle">qkv/gate-up GEMM</text>
+  <rect x="248" y="240" width="90" height="26" fill="#D5F5E3" stroke="#27AE60" stroke-width="1"/>
+  <text x="293" y="257" font-size="9" fill="#1E8449" text-anchor="middle">attention</text>
+  <rect x="350" y="240" width="90" height="26" fill="#D6EAF8" stroke="#2E86C1" stroke-width="1"/>
+  <text x="395" y="257" font-size="9" fill="#1A5276" text-anchor="middle">o_proj GEMM</text>
+  <!-- AR 1 -->
+  <rect x="452" y="240" width="70" height="26" fill="#FADBD8" stroke="#C0392B" stroke-width="1.4"/>
+  <text x="487" y="257" font-size="9" fill="#922B21" text-anchor="middle">AR ①</text>
+  <rect x="534" y="240" width="110" height="26" fill="#D6EAF8" stroke="#2E86C1" stroke-width="1"/>
+  <text x="589" y="257" font-size="9" fill="#1A5276" text-anchor="middle">down_proj GEMM</text>
+  <!-- AR 2 -->
+  <rect x="656" y="240" width="70" height="26" fill="#FADBD8" stroke="#C0392B" stroke-width="1.4"/>
+  <text x="691" y="257" font-size="9" fill="#922B21" text-anchor="middle">AR ②</text>
+  <rect x="738" y="240" width="80" height="26" fill="#F4ECF7" stroke="#8E44ED" stroke-width="1"/>
+  <text x="778" y="257" font-size="9" fill="#6C3483" text-anchor="middle">norm/rmsnorm</text>
+  <text x="828" y="257" font-size="10" fill="#566573">→ 下一层</text>
+
+  <!-- sync marks on both AR -->
+  <line x1="487" y1="270" x2="487" y2="298" stroke="#C0392B" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="691" y1="270" x2="691" y2="298" stroke="#C0392B" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="490" y="310" font-size="9" fill="#922B21" text-anchor="middle">vllm::cross_device_reduce_1stage + vllm::multi_gpu_barrier（custom AR）</text>
+  <text x="490" y="325" font-size="9" fill="#7F8C8D" text-anchor="middle">×2 次/层 ×36 层 = 72 次/step；消息大小 = B·H·b（B=64 时约 512KB，时延主导）</text>
+
+  <!-- ============ kernel name lookup ============ -->
+  <text x="30" y="358" font-size="12" font-weight="bold" fill="#1e3a5f">③ trace 里搜什么名字（三种面孔，见 §5 源码）</text>
+
+  <rect x="60" y="370" width="280" height="120" rx="5" fill="#FDEBD0" stroke="#E67E22" stroke-width="1.2"/>
+  <text x="76" y="390" font-size="10" font-weight="bold" fill="#B9770E">默认路径（CG 开 + custom AR）</text>
+  <text x="76" y="408" font-size="8.5" font-family="monospace" fill="#B9770E">vllm::cross_device_reduce_1stage</text>
+  <text x="76" y="421" font-size="8.5" font-family="monospace" fill="#B9770E">vllm::cross_device_reduce_2stage</text>
+  <text x="76" y="434" font-size="8.5" font-family="monospace" fill="#B9770E">vllm::multi_gpu_barrier</text>
+  <text x="76" y="455" font-size="8.5" fill="#7F8C8D">IPC 注册缓冲区 + flag 自旋等</text>
+  <text x="76" y="467" font-size="8.5" fill="#7F8C8D">待，graph 内可重放</text>
+  <text x="76" y="482" font-size="8.5" fill="#C0392B">⚠ kernel 时长含等待时间（上界口径）</text>
+
+  <rect x="360" y="370" width="280" height="120" rx="5" fill="#FADBD8" stroke="#C0392B" stroke-width="1.2"/>
+  <text x="376" y="390" font-size="10" font-weight="bold" fill="#922B21">--disable-custom-all-reduce</text>
+  <text x="376" y="408" font-size="8.5" font-family="monospace" fill="#922B21">ncclDevKernel_AllReduce_Sum_</text>
+  <text x="376" y="421" font-size="8.5" font-family="monospace" fill="#922B21">  bf16_RING_LL128(...)</text>
+  <text x="376" y="434" font-size="8.5" font-family="monospace" fill="#922B21">ncclDevKernel_AllGather(...)</text>
+  <text x="376" y="455" font-size="8.5" fill="#7F8C8D">走 PyNccl / NCCL：大消息更稳，</text>
+  <text x="376" y="467" font-size="8.5" fill="#7F8C8D">小消息时延高于 custom AR</text>
+  <text x="376" y="482" font-size="8.5" fill="#C0392B">A/B 对比即 Lab B-2 实验</text>
+
+  <rect x="660" y="370" width="280" height="120" rx="5" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.2"/>
+  <text x="676" y="390" font-size="10" font-weight="bold" fill="#1A5276">计算主体（分母）</text>
+  <text x="676" y="408" font-size="8.5" font-family="monospace" fill="#1A5276">nvjet_... / cutlass...gemm...</text>
+  <text x="676" y="421" font-size="8.5" font-family="monospace" fill="#1A5276">void flash_fwd... / fmha...</text>
+  <text x="676" y="434" font-size="8.5" font-family="monospace" fill="#1A5276">rmsnorm / rotary / sampling</text>
+  <text x="676" y="455" font-size="8.5" fill="#7F8C8D">GEMM kernel 名随 CUDA/cuBLAS</text>
+  <text x="676" y="467" font-size="8.5" fill="#7F8C8D">版本变化，不必逐个认</text>
+  <text x="676" y="482" font-size="8.5" fill="#7F8C8D">分母 = 全部 kernel 时长之和</text>
+
+  <!-- ============ ratio formula ============ -->
+  <text x="30" y="522" font-size="12" font-weight="bold" fill="#1e3a5f">④ 占比计算与两个口径陷阱</text>
+  <rect x="60" y="534" width="880" height="150" rx="5" fill="#F8F9F9" stroke="#7F8C8D" stroke-width="1"/>
+  <text x="80" y="558" font-size="11" fill="#2C3E50" font-weight="bold">通信占比 = (Σ 通信 kernel 时长) ÷ (Σ 全部 kernel 时长)，再与三条独立证据交叉验证：</text>
+  <text x="80" y="580" font-size="9.5" fill="#2C3E50">证据 1｜kernel 计数：数 AR kernel 个数 ÷ 72 = step 数；再用 (输出 tok/s ÷ B) 反推 step 率，两者应一致（差 &gt;10% 说明窗口里混进了 prefill）；</text>
+  <text x="80" y="598" font-size="9.5" fill="#2C3E50">证据 2｜墙钟对拍：占比 × step 墙钟 ≈ 每 step 通信时间，应落在 2L·t_ar + 带宽项 的预测区间（图 2 的两个标注）;</text>
+  <text x="80" y="616" font-size="9.5" fill="#2C3E50">证据 3｜两卡镜像：GPU 0 / GPU 1 的 AR kernel 应严格对齐（lockstep），错位说明混入了非 TP 通信或 profiling 扰动。</text>
+  <text x="80" y="640" font-size="9.5" fill="#C0392B">陷阱 1：custom AR 的 kernel 时长含自旋等待（等对端 flag），是"同步墙上时钟"而非"数据搬运时间"——拿它算带宽会严重低估；</text>
+  <text x="80" y="658" font-size="9.5" fill="#C0392B">陷阱 2：kernel 时长和 ≠ 墙钟（有 launch 间隙与并行），占比口径要用"占 GPU kernel 时间的比例"，报告时写清分母定义。</text>
+  <text x="80" y="678" font-size="9" fill="#7F8C8D">Qwen3-8B · TP=2 · B≈64 的预测区间：通信 kernel ≈ decode GPU kernel 时间的 15%~35%（时延项主导；70B 大模型该项占比反而更低——"模型越小税越重"）</text>
+</svg>

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="580" viewBox="0 0 960 580" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#45556b"/>
+    </marker>
+  </defs>
+
+  <text x="480" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#1e3a5f">Roofline 视角的量化收益（H100 SXM：HBM 3.35 TB/s）</text>
+
+  <!-- ======== 绘图区 ======== -->
+  <!-- prefill 区阴影 -->
+  <rect x="560" y="80" width="140" height="340" fill="#fdf3e7" opacity="0.55"/>
+  <text x="630" y="440" text-anchor="middle" font-size="10.5" fill="#b07830">prefill 区（大 M）</text>
+
+  <!-- 网格 -->
+  <g stroke="#e3e9f0" stroke-width="1">
+    <line x1="105.7" y1="80" x2="105.7" y2="420"/><line x1="197.1" y1="80" x2="197.1" y2="420"/>
+    <line x1="288.5" y1="80" x2="288.5" y2="420"/><line x1="379.9" y1="80" x2="379.9" y2="420"/>
+    <line x1="471.3" y1="80" x2="471.3" y2="420"/><line x1="562.7" y1="80" x2="562.7" y2="420"/><line x1="654" y1="80" x2="654" y2="420"/>
+    <line x1="60" y1="318" x2="700" y2="318"/><line x1="60" y1="216" x2="700" y2="216"/><line x1="60" y1="114" x2="700" y2="114"/>
+  </g>
+
+  <!-- 坐标轴 -->
+  <line x1="60" y1="420" x2="700" y2="420" stroke="#45556b" stroke-width="1.4"/>
+  <line x1="60" y1="80" x2="60" y2="420" stroke="#45556b" stroke-width="1.4"/>
+
+  <!-- x 轴刻度 -->
+  <g font-size="10.5" fill="#5a6b7d">
+    <text x="105.7" y="438" text-anchor="middle">1</text>
+    <text x="197.1" y="438" text-anchor="middle">4</text>
+    <text x="288.5" y="438" text-anchor="middle">16</text>
+    <text x="379.9" y="438" text-anchor="middle">64</text>
+    <text x="471.3" y="438" text-anchor="middle">256</text>
+    <text x="562.7" y="438" text-anchor="middle">1024</text>
+    <text x="654" y="438" text-anchor="middle">4096</text>
+    <text x="380" y="460" text-anchor="middle" font-size="12" fill="#1e3a5f">算术强度 AI（FLOP / Byte，log 轴）</text>
+  </g>
+  <!-- y 轴刻度 -->
+  <g font-size="10.5" fill="#5a6b7d">
+    <text x="52" y="424" text-anchor="end">1</text>
+    <text x="52" y="322" text-anchor="end">10</text>
+    <text x="52" y="220" text-anchor="end">100</text>
+    <text x="52" y="118" text-anchor="end">1000</text>
+    <text x="20" y="250" text-anchor="middle" font-size="12" fill="#1e3a5f" transform="rotate(-90 20 250)">可达算力（TFLOP/s，log 轴）</text>
+  </g>
+
+  <!-- 带宽斜坡（公共）：3.35 TB/s × AI -->
+  <line x1="105.7" y1="366.4" x2="480.4" y2="114.5" stroke="#45556b" stroke-width="2" stroke-dasharray="none"/>
+  <line x1="480.4" y1="114.5" x2="526.1" y2="83.8" stroke="#45556b" stroke-width="2"/>
+
+  <!-- BF16 屋顶 -->
+  <line x1="480.4" y1="114.5" x2="700" y2="114.5" stroke="#2a6f97" stroke-width="2.5"/>
+  <text x="600" y="108" text-anchor="middle" font-size="11.5" fill="#2a6f97" font-weight="bold">BF16 屋顶 989.5 TFLOPS</text>
+
+  <!-- FP8 屋顶 -->
+  <line x1="526.1" y1="83.8" x2="700" y2="83.8" stroke="#e78a4e" stroke-width="2.5"/>
+  <text x="615" y="77" text-anchor="middle" font-size="11.5" fill="#e78a4e" font-weight="bold">FP8 屋顶 1979 TFLOPS（×2）</text>
+
+  <!-- ridge 点 -->
+  <circle cx="480.4" cy="114.5" r="6" fill="#ffffff" stroke="#2a6f97" stroke-width="2.5"/>
+  <circle cx="526.1" cy="83.8" r="6" fill="#ffffff" stroke="#e78a4e" stroke-width="2.5"/>
+  <text x="480.4" y="136" text-anchor="middle" font-size="10" fill="#2a6f97">BF16 ridge = 295</text>
+  <text x="540" y="100" text-anchor="start" font-size="10" fill="#e78a4e">FP8 ridge = 591</text>
+
+  <!-- batch 增大箭头（沿斜坡） -->
+  <line x1="240" y1="273" x2="400" y2="160" stroke="#45556b" stroke-width="1.4" marker-end="url(#arr3)"/>
+  <text x="285" y="195" font-size="10.5" fill="#5a6b7d">batch B 增大：AI = 2B / b_w</text>
+
+  <!-- B=1 工作点 -->
+  <circle cx="105.7" cy="366.4" r="6" fill="#2a6f97"/>
+  <circle cx="151.4" cy="335.7" r="6" fill="#e78a4e"/>
+  <circle cx="197.1" cy="305" r="6" fill="#8e6bbf"/>
+
+  <!-- 工作点标注：连线到右侧说明 -->
+  <line x1="105.7" y1="366.4" x2="745" y2="366.4" stroke="#2a6f97" stroke-width="0.8" stroke-dasharray="4 3"/>
+  <line x1="151.4" y1="335.7" x2="745" y2="335.7" stroke="#e78a4e" stroke-width="0.8" stroke-dasharray="4 3"/>
+  <line x1="197.1" y1="305" x2="745" y2="305" stroke="#8e6bbf" stroke-width="0.8" stroke-dasharray="4 3"/>
+
+  <!-- ======== 右侧图例 / 关键结论 ======== -->
+  <rect x="745" y="90" width="200" height="330" rx="8" fill="#f4f7fb" stroke="#c8d4e0"/>
+  <text x="845" y="114" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a5f">decode B=1 工作点</text>
+
+  <circle cx="762" cy="140" r="5" fill="#2a6f97"/>
+  <text x="772" y="137" font-size="11" fill="#1e3a5f">BF16：AI = 1</text>
+  <text x="772" y="152" font-size="10.5" fill="#5a6b7d">70B → 41.8 ms/token</text>
+
+  <circle cx="762" cy="176" r="5" fill="#e78a4e"/>
+  <text x="772" y="173" font-size="11" fill="#1e3a5f">FP8：AI = 2</text>
+  <text x="772" y="188" font-size="10.5" fill="#5a6b7d">70B → 20.9 ms/token</text>
+
+  <circle cx="762" cy="212" r="5" fill="#8e6bbf"/>
+  <text x="772" y="209" font-size="11" fill="#1e3a5f">INT4：AI = 4</text>
+  <text x="772" y="224" font-size="10.5" fill="#5a6b7d">70B → 10.4 ms/token</text>
+
+  <line x1="760" y1="244" x2="930" y2="244" stroke="#c8d4e0"/>
+  <text x="845" y="266" text-anchor="middle" font-size="12" font-weight="bold" fill="#a33232">撞 ridge 的临界 batch</text>
+  <text x="762" y="290" font-size="11" fill="#1e3a5f">BF16：AI = B → B ≈ 295</text>
+  <text x="762" y="312" font-size="11" fill="#1e3a5f">FP8：AI = 2B → B ≈ 296</text>
+  <text x="762" y="334" font-size="11" fill="#5b3d8c">W4A16：AI = 4B，但算术</text>
+  <text x="762" y="350" font-size="11" fill="#5b3d8c">仍在 BF16 → B ≈ 74 撞墙</text>
+  <text x="762" y="378" font-size="10.5" fill="#a33232">W4 带宽红利提前耗尽：</text>
+  <text x="762" y="394" font-size="10.5" fill="#a33232">高并发 decode 下可能</text>
+  <text x="762" y="410" font-size="10.5" fill="#a33232">反不如 FP8</text>
+
+  <!-- 底部结论条 -->
+  <rect x="25" y="480" width="910" height="80" rx="8" fill="#eef4f9" stroke="#c8d4e0"/>
+  <text x="480" y="505" text-anchor="middle" font-size="12.5" fill="#1e3a5f" font-weight="bold">一句话结论</text>
+  <text x="480" y="528" text-anchor="middle" font-size="12" fill="#1e3a5f">decode（左下）：收益 = 权重字节 ÷ b_w 缩小倍数，与算力无关 → W4 &gt; FP8 &gt; BF16</text>
+  <text x="480" y="548" text-anchor="middle" font-size="12" fill="#1e3a5f">prefill（右侧 compute 区）：收益 = tensor core 峰值 → FP8/INT8 ×2；W4A16 无算力收益</text>
+</svg>

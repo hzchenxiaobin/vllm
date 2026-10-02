@@ -1,0 +1,10 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "week6/**"[90m 5 matches[0m
+[0m→ [0mRead week6/day36_topic_selection_and_research.md[90m [limit=120][0m
+[0m→ [0mRead week6/README.md
+[0m→ [0mRead week6/day36_topic_selection_and_research.md[90m [offset=330][0m
+[0m✱ [0mGrep "^#{2,3} "[90m in week6/day36_topic_selection_and_research.md · 66 matches[0m

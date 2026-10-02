@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="600" viewBox="0 0 980 600" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d34c" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d34o" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#CA6F1E"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="600" fill="#FFFFFF"/>
+  <text x="30" y="30" font-size="18" font-weight="bold" fill="#1e3a5f">图 3｜全局 KV 池与分层存储：GPU → CPU → SSD → 远端，MultiConnector 串成查找链</text>
+  <text x="30" y="50" font-size="10" fill="#7F8C8D">判据（右下框）：BW_tier ≥ peak · kv_bytes/tok / (2P·MFU)——低于该带宽的层，取回比重算还慢</text>
+
+  <!-- ============ left: tier stack ============ -->
+  <text x="60" y="90" font-size="12.5" font-weight="bold" fill="#1e3a5f">容量 / 带宽阶梯（量级示意，以 spec 为准）</text>
+
+  <!-- tier bars: width ~ log scale of bandwidth -->
+  <!-- GPU HBM -->
+  <rect x="60" y="108" width="380" height="58" rx="4" fill="#F5B041" stroke="#B9770E" stroke-width="1.4"/>
+  <text x="80" y="130" font-size="11" font-weight="bold" fill="#7E5109">① GPU HBM</text>
+  <text x="80" y="146" font-size="9.5" fill="#7E5109">80~141 GB/卡 · 2~4.8 TB/s · ~100 ns</text>
+  <text x="80" y="159" font-size="9" fill="#935116">热工作集：当前 decode + 高频前缀（Day 15 的 KV pool）</text>
+
+  <!-- CPU DDR -->
+  <rect x="60" y="174" width="310" height="58" rx="4" fill="#ABEBC6" stroke="#1E8449" stroke-width="1.4"/>
+  <text x="80" y="196" font-size="11" font-weight="bold" fill="#145A32">② 主机 DDR</text>
+  <text x="80" y="212" font-size="9.5" fill="#145A32">0.5~2 TB · 100~400 GB/s（聚合）</text>
+  <text x="80" y="225" font-size="9" fill="#196F3D">warm 前缀 · P/D 中转缓冲 · LMCache 本地层</text>
+
+  <!-- NVMe -->
+  <rect x="60" y="240" width="245" height="58" rx="4" fill="#AED6F1" stroke="#2E86C1" stroke-width="1.4"/>
+  <text x="80" y="262" font-size="11" font-weight="bold" fill="#1A5276">③ NVMe SSD</text>
+  <text x="80" y="278" font-size="9.5" fill="#1A5276">4~30 TB · 5~14 GB/s（Gen4/5）· 10-100 μs</text>
+  <text x="80" y="291" font-size="9" fill="#21618C">cold / 长尾前缀（判据临界区！）</text>
+
+  <!-- remote -->
+  <rect x="60" y="306" width="190" height="58" rx="4" fill="#D2B4DE" stroke="#7D3C98" stroke-width="1.4"/>
+  <text x="80" y="328" font-size="11" font-weight="bold" fill="#4A235A">④ 远端 / 对象存储</text>
+  <text x="80" y="344" font-size="9.5" fill="#4A235A">PB 级 · 1~10 GB/s + 高时延</text>
+  <text x="80" y="357" font-size="9" fill="#6C3483">归档 · 跨集群共享（低于判据：只配冷备）</text>
+
+  <!-- bandwidth axis -->
+  <line x1="60" y1="380" x2="470" y2="380" stroke="#2C3E50" stroke-width="1.4" marker-end="url(#d34c)"/>
+  <text x="265" y="398" font-size="9.5" fill="#566573" text-anchor="middle">带宽（对数感觉）→ 容量反方向放大（TB → PB）</text>
+
+  <!-- ============ right: lookup chain ============ -->
+  <text x="530" y="90" font-size="12.5" font-weight="bold" fill="#1e3a5f">请求到达实例后的查找链（MultiConnector）</text>
+
+  <rect x="530" y="104" width="150" height="40" rx="5" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.4"/>
+  <text x="605" y="121" font-size="10" font-weight="bold" fill="#1e3a5f" text-anchor="middle">请求（前缀 P）</text>
+  <text x="605" y="135" font-size="8.5" fill="#566573" text-anchor="middle">block hash 序列已知（§6.1）</text>
+
+  <line x1="605" y1="144" x2="605" y2="164" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d34c)"/>
+
+  <!-- hop 1 -->
+  <rect x="520" y="168" width="170" height="46" rx="5" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.4"/>
+  <text x="605" y="186" font-size="10" font-weight="bold" fill="#7E5109" text-anchor="middle">跳1：GPU 本地 prefix cache</text>
+  <text x="605" y="201" font-size="8.5" fill="#566573" text-anchor="middle">Day 16 的 BlockPool 查表 · 命中即零成本</text>
+  <text x="700" y="196" font-size="9.5" fill="#1E8449">命中 → 直接用</text>
+
+  <line x1="605" y1="214" x2="605" y2="234" stroke="#C0392B" stroke-width="1.4" marker-end="url(#d34c)"/>
+  <text x="622" y="229" font-size="8.5" fill="#C0392B">未命中 ↓</text>
+
+  <!-- hop 2 -->
+  <rect x="520" y="238" width="170" height="46" rx="5" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.4"/>
+  <text x="605" y="256" font-size="10" font-weight="bold" fill="#7E5109" text-anchor="middle">跳2：CPU 层（DDR）</text>
+  <text x="605" y="271" font-size="8.5" fill="#566573" text-anchor="middle">LMCache / CPUOffloading · 100+ GB/s</text>
+  <text x="700" y="266" font-size="9.5" fill="#1E8449">命中 → 拷回 HBM</text>
+
+  <line x1="605" y1="284" x2="605" y2="304" stroke="#C0392B" stroke-width="1.4" marker-end="url(#d34c)"/>
+  <text x="622" y="299" font-size="8.5" fill="#C0392B">未命中 ↓</text>
+
+  <!-- hop 3 -->
+  <rect x="520" y="308" width="170" height="46" rx="5" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.4"/>
+  <text x="605" y="326" font-size="10" font-weight="bold" fill="#7E5109" text-anchor="middle">跳3：NVMe / 远端层</text>
+  <text x="605" y="341" font-size="8.5" fill="#566573" text-anchor="middle">5~14 GB/s（先过判据！）</text>
+  <text x="700" y="336" font-size="9.5" fill="#1E8449">命中 → 判据内才取回</text>
+
+  <line x1="605" y1="354" x2="605" y2="374" stroke="#C0392B" stroke-width="1.4" marker-end="url(#d34c)"/>
+  <text x="622" y="369" font-size="8.5" fill="#C0392B">未命中 ↓</text>
+
+  <!-- recompute -->
+  <rect x="520" y="378" width="170" height="40" rx="5" fill="#FDEDEC" stroke="#C0392B" stroke-width="1.4"/>
+  <text x="605" y="395" font-size="10" font-weight="bold" fill="#922B21" text-anchor="middle">全量 prefill 重算</text>
+  <text x="605" y="409" font-size="8.5" fill="#922B21" text-anchor="middle">写回各层（write-through policy）</text>
+
+  <!-- connector mapping note -->
+  <rect x="530" y="432" width="420" height="56" rx="6" fill="#F4F6F7" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="740" y="450" font-size="9.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">接缝对应（Day 30 的 KVConnectorBase_V1）</text>
+  <text x="740" y="466" font-size="9" fill="#566573" text-anchor="middle">每跳 lookup ≙ get_num_new_matched_tokens；写回 ≙ save_kv_layer / wait_for_save</text>
+  <text x="740" y="480" font-size="9" fill="#566573" text-anchor="middle">MultiConnector（multi_connector.py）就是这条链的组合器；Mooncake/NIXL 是链上的传输后端</text>
+
+  <!-- ============ bottom: criterion box ============ -->
+  <rect x="60" y="430" width="440" height="150" rx="6" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.4"/>
+  <text x="280" y="452" font-size="11.5" font-weight="bold" fill="#7E5109" text-anchor="middle">"值得取回"判据（与命中长度 p 无关，p 被约掉）</text>
+  <text x="280" y="476" font-size="12" fill="#7E5109" text-anchor="middle" font-family="Georgia, serif" font-style="italic">BW_tier ≥ peak · kv_bytes/tok / (2P · MFU)</text>
+  <line x1="90" y1="488" x2="470" y2="488" stroke="#F39C12" stroke-width="0.8"/>
+  <text x="280" y="506" font-size="9.5" fill="#566573" text-anchor="middle">70B @ H100 FP8，GQA kv=320KB/tok，MFU=50% → 阈值 ≈ 9 GB/s</text>
+  <text x="280" y="522" font-size="9.5" fill="#145A32" text-anchor="middle">DDR（100+ GB/s）✓ 大幅过线 · NVMe Gen5（~14 GB/s）✓ 临界过线</text>
+  <text x="280" y="538" font-size="9.5" fill="#922B21" text-anchor="middle">对象存储（1-2 GB/s）✗ 只配冷归档</text>
+  <text x="280" y="558" font-size="9" fill="#7F8C8D" text-anchor="middle">杠杆：模型越小阈值越高；KV 量化（Day 23）压低分子 → 让 NVMe/远端层可用</text>
+
+  <!-- link between tiers and chain -->
+  <path d="M470,150 C495,160 500,180 516,190" fill="none" stroke="#CA6F1E" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#d34o)"/>
+  <path d="M430,220 C470,230 490,255 516,262" fill="none" stroke="#CA6F1E" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#d34o)"/>
+  <path d="M370,285 C420,295 470,320 516,330" fill="none" stroke="#CA6F1E" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#d34o)"/>
+  <path d="M330,345 C410,360 460,385 516,396" fill="none" stroke="#CA6F1E" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#d34o)"/>
+  <text x="440" y="168" font-size="8.5" fill="#CA6F1E">同层</text>
+</svg>

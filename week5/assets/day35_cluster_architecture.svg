@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="760" viewBox="0 0 1000 760" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d35c" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d35d" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#F39C12"/>
+    </marker>
+    <marker id="d35e" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#1E8449"/>
+    </marker>
+    <marker id="d35f" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#7F8C8D"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="760" fill="#FFFFFF"/>
+  <text x="30" y="30" font-size="18" font-weight="bold" fill="#1e3a5f">图 3｜日活千万客服机器人：推理集群完整架构（每个组件回指到 Day 22-34 的决策依据）</text>
+  <text x="30" y="50" font-size="10" fill="#7F8C8D">规模基线：峰值 2200 req/s · 21K 并发流 · SLO TTFT p99&lt;1.5s / TPOT p99&lt;80ms · prefill ~90 卡 + decode ~117 卡 ≈ 30 节点（8×H100，含冗余）</text>
+
+  <!-- ============ client ============ -->
+  <rect x="30" y="100" width="110" height="46" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5"/>
+  <text x="85" y="119" font-size="11" font-weight="bold" fill="#1e3a5f" text-anchor="middle">客户端</text>
+  <text x="85" y="134" font-size="9" fill="#566573" text-anchor="middle">App / Web 客服</text>
+
+  <line x1="140" y1="123" x2="168" y2="123" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d35c)"/>
+
+  <!-- ============ gateway ============ -->
+  <rect x="172" y="88" width="170" height="74" rx="8" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.6"/>
+  <text x="257" y="108" font-size="11.5" font-weight="bold" fill="#7E5109" text-anchor="middle">网关（无状态 × 多AZ）</text>
+  <text x="257" y="124" font-size="9" fill="#566573" text-anchor="middle">限流 / 鉴权 / 灰度 / 重试幂等</text>
+  <text x="257" y="138" font-size="9" fill="#566573" text-anchor="middle">削峰队列（吸收 ×2 分钟级突增）</text>
+  <text x="257" y="152" font-size="9" fill="#7F8C8D" text-anchor="middle">排队位置透出 → 用户预期管理</text>
+
+  <line x1="342" y1="123" x2="370" y2="123" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d35c)"/>
+
+  <!-- ============ router ============ -->
+  <rect x="372" y="76" width="270" height="156" rx="8" fill="#F5EEF8" stroke="#8E44AD" stroke-width="1.8"/>
+  <text x="507" y="97" font-size="12" font-weight="bold" fill="#5B2C6F" text-anchor="middle">Router（有状态，Day 34）</text>
+  <rect x="386" y="106" width="242" height="32" rx="4" fill="#FFFFFF" stroke="#BB8FCE" stroke-width="1"/>
+  <text x="507" y="120" font-size="9" font-weight="bold" fill="#5B2C6F" text-anchor="middle">prefix → 实例 索引（block hash）</text>
+  <text x="507" y="132" font-size="8.5" fill="#7F8C8D" text-anchor="middle">sha256 跨实例可复现 → router 离线算 hash 查索引</text>
+  <rect x="386" y="142" width="242" height="32" rx="4" fill="#FFFFFF" stroke="#BB8FCE" stroke-width="1"/>
+  <text x="507" y="156" font-size="9" font-weight="bold" fill="#5B2C6F" text-anchor="middle">打分路由 score(i) = α·h_i − β·q_i</text>
+  <text x="507" y="168" font-size="8.5" fill="#7F8C8D" text-anchor="middle">亲和收益 vs 队列深度；过载熔断优先于打分</text>
+  <rect x="386" y="178" width="242" height="44" rx="4" fill="#FFFFFF" stroke="#BB8FCE" stroke-width="1"/>
+  <text x="507" y="192" font-size="9" font-weight="bold" fill="#5B2C6F" text-anchor="middle">分级路由（意图识别）</text>
+  <text x="507" y="204" font-size="8.5" fill="#566573" text-anchor="middle">简单意图 → 8B 池（~5/6 轮次）</text>
+  <text x="507" y="216" font-size="8.5" fill="#566573" text-anchor="middle">复杂意图 → P/D 主链路（~1/6，即 2200 RPS）</text>
+
+  <!-- ============ small model pool ============ -->
+  <line x1="642" y1="105" x2="688" y2="105" stroke="#1E8449" stroke-width="1.8" marker-end="url(#d35e)"/>
+  <text x="665" y="97" font-size="8.5" fill="#1E8449" text-anchor="middle">FAQ/订单</text>
+  <rect x="690" y="75" width="280" height="64" rx="8" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.5"/>
+  <text x="830" y="94" font-size="11.5" font-weight="bold" fill="#145A32" text-anchor="middle">小模型池（8B，TP=1 × N 卡）</text>
+  <text x="830" y="109" font-size="9" fill="#566573" text-anchor="middle">FAQ / 订单接口 / 简单意图：~5/6 轮次在此消化</text>
+  <text x="830" y="123" font-size="9" fill="#145A32" text-anchor="middle">既是容量假设的来源，也是突发时的秒级降级阀</text>
+  <text x="830" y="135" font-size="8.5" fill="#7F8C8D" text-anchor="middle">升级阈值上调 1/6→1/10 → 容量需求即时 −40%</text>
+
+  <!-- ============ prefill pool ============ -->
+  <line x1="642" y1="215" x2="688" y2="215" stroke="#2C3E50" stroke-width="1.8" marker-end="url(#d35c)"/>
+  <text x="665" y="205" font-size="8.5" fill="#566573" text-anchor="middle">1.5K tok</text>
+  <rect x="690" y="165" width="280" height="92" rx="8" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.8"/>
+  <text x="830" y="185" font-size="11.5" font-weight="bold" fill="#7E5109" text-anchor="middle">prefill 池（~90 卡，vllm serve TP=1）</text>
+  <text x="830" y="200" font-size="9" fill="#566573" text-anchor="middle">FP8 权重 · 大 chunk 奔 MFU（chunk ≥ 295 不伤效率）</text>
+  <text x="830" y="214" font-size="9" fill="#566573" text-anchor="middle">prefix caching 命中 60-70% → 新增 ~500 tok/req</text>
+  <text x="830" y="228" font-size="9" fill="#145A32" text-anchor="middle">独立扩缩容：配比 90:117 ≈ 1:1.3 随分流比调</text>
+  <text x="830" y="242" font-size="8.5" fill="#7F8C8D" text-anchor="middle">chunked prefill 兜底窗口 [295,452]（Day 29）</text>
+
+  <!-- KV transfer arrow -->
+  <line x1="830" y1="259" x2="830" y2="306" stroke="#F39C12" stroke-width="2.4" marker-end="url(#d35d)"/>
+  <text x="842" y="278" font-size="9" font-weight="bold" fill="#935116">KV 逐层推送（push）</text>
+  <text x="842" y="290" font-size="8.5" fill="#7F8C8D">藏进 prefill 计算 · 只传未命中块 ≈64MB/req</text>
+  <text x="842" y="301" font-size="8.5" fill="#7F8C8D">聚合 ~140 GB/s → 网络设计主约束</text>
+
+  <!-- ============ decode pool ============ -->
+  <rect x="690" y="310" width="280" height="92" rx="8" fill="#EBF5FB" stroke="#21618C" stroke-width="1.8"/>
+  <text x="830" y="330" font-size="11.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">decode 池（~117 卡，vllm serve TP=1）</text>
+  <text x="830" y="345" font-size="9" fill="#566573" text-anchor="middle">稳定 batch + full CUDA Graph · FP8 KV · 180 路/卡</text>
+  <text x="830" y="359" font-size="9" fill="#145A32" text-anchor="middle">TPOT ~40ms &lt; 80ms SLO（余量给 p99 尾部）</text>
+  <text x="830" y="373" font-size="9" fill="#566573" text-anchor="middle">会话亲和驻留：同会话多轮复用已驻 KV</text>
+  <text x="830" y="387" font-size="8.5" fill="#7F8C8D" text-anchor="middle">单卡放得下 → 不上 TP（Day 32-33 背书）</text>
+
+  <!-- KV events dashed arrow decode -> router -->
+  <path d="M690,360 C640,360 620,260 590,236" fill="none" stroke="#8E44AD" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#d35c)"/>
+  <text x="612" y="300" font-size="8.5" fill="#8E44AD">KV events（元数据网，异步）</text>
+
+  <!-- streaming output note -->
+  <text x="830" y="416" font-size="8.5" fill="#7F8C8D" text-anchor="middle">流式输出（SSE）经网关回客户端 · TTFT 0.5s + 150×60ms ≈ 9.5s 驻留</text>
+
+  <!-- ============ monitoring band ============ -->
+  <rect x="30" y="440" width="340" height="96" rx="8" fill="#F4F6F7" stroke="#2C3E50" stroke-width="1.5"/>
+  <text x="200" y="462" font-size="11.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">监控面（Prometheus + Grafana）</text>
+  <text x="200" y="480" font-size="9" fill="#566573" text-anchor="middle">goodput 看板：TTFT/TPOT p99 · 命中率</text>
+  <text x="200" y="494" font-size="9" fill="#566573" text-anchor="middle">preemption 计数 · 队列深度 · KV transfer 延迟</text>
+  <text x="200" y="510" font-size="9.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">→ goodput HPA（非 raw throughput 扩缩容）</text>
+  <text x="200" y="524" font-size="8.5" fill="#7F8C8D" text-anchor="middle">利用率高 ≠ SLO 达标（Day 5）</text>
+  <path d="M690,395 C560,420 400,440 374,470" fill="none" stroke="#7F8C8D" stroke-width="1.3" stroke-dasharray="5,4" marker-end="url(#d35f)"/>
+  <text x="480" y="432" font-size="8.5" fill="#7F8C8D">/metrics</text>
+
+  <!-- ============ tiered KV band ============ -->
+  <rect x="390" y="440" width="580" height="96" rx="8" fill="#FDEBD0" stroke="#CA6F1E" stroke-width="1.5"/>
+  <text x="680" y="462" font-size="11.5" font-weight="bold" fill="#935116" text-anchor="middle">全局能力层：分层 KV + 多租户</text>
+  <text x="680" y="480" font-size="9" fill="#566573" text-anchor="middle">HBM（40GB/卡）→ DRAM（~400GB/节点）→ NVMe ｜ 判据 BW_tier ≥ peak·kv_per_tok/(2P·MFU)</text>
+  <text x="680" y="494" font-size="9" fill="#566573" text-anchor="middle">重会谈（回访用户）从 DRAM 取回比重算便宜；实例故障后前缀可从下层恢复</text>
+  <text x="680" y="512" font-size="9.5" font-weight="bold" fill="#935116" text-anchor="middle">cache_salt：per-request 多租户隔离（防时延侧信道 / 跨租户串扰，合规硬要求）</text>
+  <text x="680" y="526" font-size="8.5" fill="#7F8C8D" text-anchor="middle">vLLM 落点：MultiConnector 查找链 + LMCache / Mooncake 后端（Day 34 §5）</text>
+  <line x1="830" y1="404" x2="830" y2="438" stroke="#CA6F1E" stroke-width="1.6" marker-end="url(#d35d)"/>
+  <text x="845" y="424" font-size="8.5" fill="#CA6F1E">驻留 / 取回</text>
+
+  <!-- ============ elasticity box ============ -->
+  <rect x="30" y="560" width="460" height="118" rx="8" fill="#EAF2F8" stroke="#2E86C1" stroke-width="1.5"/>
+  <text x="260" y="582" font-size="11.5" font-weight="bold" fill="#1A5276" text-anchor="middle">弹性：对突增 3× 的四道防线（面试必追问）</text>
+  <text x="52" y="602" font-size="9.5" fill="#566573">① 队列削峰（秒级）：网关排队 + 等待时长透出</text>
+  <text x="52" y="618" font-size="9.5" fill="#566573">② 分级收紧（秒级）：升级率 1/6 → 1/10，容量 −40%</text>
+  <text x="52" y="634" font-size="9.5" fill="#566573">③ goodput HPA（分钟级）：预测性扩容对接营销日历</text>
+  <text x="52" y="650" font-size="9.5" fill="#566573">④ 限流兜底：保存量会话 TPOT，拒新不雪崩</text>
+  <text x="52" y="668" font-size="9" fill="#7F8C8D" text-anchor="start">goodput 思维最终形态：不服务超过容量的请求 &gt; 低质量服务</text>
+
+  <!-- ============ cost box ============ -->
+  <rect x="510" y="560" width="460" height="118" rx="8" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.5"/>
+  <text x="740" y="582" font-size="11.5" font-weight="bold" fill="#145A32" text-anchor="middle">成本三板斧（每个都给量化收益）</text>
+  <text x="532" y="602" font-size="9.5" fill="#566573">① FP8 权重：33GB 单卡放下 → 并发 90→180 路（×2）</text>
+  <text x="532" y="618" font-size="9.5" fill="#566573">② FP8 KV：128KB/tok → vs BF16 并发合计 ×4</text>
+  <text x="532" y="634" font-size="9.5" fill="#566573">③ prefix caching：prefill 卡数 267→90（−66%）</text>
+  <text x="532" y="652" font-size="9" fill="#7F8C8D">开放项：投机解码分时段（低负载开 / 高峰关）· 分通道（VIP 开）</text>
+  <text x="532" y="668" font-size="9" fill="#7F8C8D">更大的杠杆在产品侧：引导结构化短回复 = 直接砍 decode 卡数</text>
+
+  <!-- ============ footer ============ -->
+  <rect x="30" y="696" width="940" height="48" rx="6" fill="#F4F6F7" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="500" y="716" font-size="10" font-weight="bold" fill="#1e3a5f" text-anchor="middle">P/D 裁决（Day 29 判据）：TPOT SLO 严（80ms）+ 输入:输出 10:1 失衡 + 规模 200+ 卡 + 高带宽网络 → 高峰分离部署</text>
+  <text x="500" y="732" font-size="9.5" fill="#7F8C8D" text-anchor="middle">夜间低谷合并为 colocated 池弹性缩容（低负载时分离收益消失）——动态配比，不是教条站队</text>
+</svg>

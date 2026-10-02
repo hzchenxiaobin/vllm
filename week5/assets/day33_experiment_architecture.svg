@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="640" viewBox="0 0 980 640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d33a" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d33b" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#C0392B"/>
+    </marker>
+    <marker id="d33c" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#7F8C8D"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="640" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 1｜Day 33 实验总体架构：一个客户端、两套服务形态、三路数据采集</text>
+
+  <!-- client -->
+  <rect x="330" y="52" width="320" height="62" rx="6" fill="#F8F9F9" stroke="#34495E" stroke-width="1.5"/>
+  <text x="490" y="74" font-size="12" font-weight="bold" fill="#2C3E50" text-anchor="middle">压测客户端（Day 6 姿势复用）</text>
+  <text x="490" y="92" font-size="9" fill="#566573" text-anchor="middle">vllm bench serve · ShareGPT · --max-concurrency 扫描</text>
+  <text x="490" y="106" font-size="9" fill="#566573" text-anchor="middle">--percentile-metrics ttft,tpot,itl --save-result</text>
+
+  <!-- client -> TP1 -->
+  <line x1="400" y1="114" x2="230" y2="196" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d33a)"/>
+  <text x="262" y="146" font-size="10" font-weight="bold" fill="#2C3E50" text-anchor="middle">形态 A（基线）</text>
+  <!-- client -> TP2 -->
+  <line x1="580" y1="114" x2="750" y2="196" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d33a)"/>
+  <text x="715" y="146" font-size="10" font-weight="bold" fill="#2C3E50" text-anchor="middle">形态 B（对照）</text>
+
+  <!-- TP1 instance -->
+  <rect x="60" y="200" width="330" height="128" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5"/>
+  <text x="225" y="222" font-size="12" font-weight="bold" fill="#1A5276" text-anchor="middle">1 × TP1 实例（GPU 0）</text>
+  <text x="225" y="240" font-size="9" font-family="monospace" fill="#1A5276" text-anchor="middle">CUDA_VISIBLE_DEVICES=0</text>
+  <text x="225" y="254" font-size="9" font-family="monospace" fill="#1A5276" text-anchor="middle">vllm serve Qwen/Qwen3-8B --port 8000</text>
+  <text x="225" y="274" font-size="9" fill="#1A5276" text-anchor="middle">权重 16.4GB 全在一张卡 · 无集合通信</text>
+  <text x="225" y="290" font-size="9" fill="#1A5276" text-anchor="middle">KV 池 ≈ (80−17−开销) GB</text>
+  <text x="225" y="310" font-size="9" fill="#7F8C8D" text-anchor="middle">预测锚点：TPOT 下界 16.4GB/3.35TB/s ≈ 4.9ms</text>
+
+  <!-- TP2 instance -->
+  <rect x="590" y="200" width="330" height="128" rx="6" fill="#FDEBD0" stroke="#E67E22" stroke-width="1.5"/>
+  <text x="755" y="222" font-size="12" font-weight="bold" fill="#B9770E" text-anchor="middle">1 × TP2 实例（GPU 0 + 1）</text>
+  <text x="755" y="240" font-size="9" font-family="monospace" fill="#B9770E" text-anchor="middle">CUDA_VISIBLE_DEVICES=0,1 vllm serve ... -tp 2</text>
+  <text x="755" y="254" font-size="9" font-family="monospace" fill="#B9770E" text-anchor="middle">--port 8010（或包进 nsys，见下）</text>
+  <text x="755" y="274" font-size="9" fill="#B9770E" text-anchor="middle">权重 ÷2 = 8.2GB/卡 · 每 step 72 次 all-reduce</text>
+  <text x="755" y="290" font-size="9" fill="#B9770E" text-anchor="middle">KV 池/卡 ≈ (80−8.5−开销) GB（÷2 但基数变大）</text>
+  <text x="755" y="310" font-size="9" fill="#7F8C8D" text-anchor="middle">预测锚点：2.45ms 计算 + 0.6~1.1ms 时延项</text>
+
+  <!-- allreduce between GPUs inside TP2 -->
+  <line x1="640" y1="328" x2="870" y2="328" stroke="#C0392B" stroke-width="2.5" stroke-dasharray="8,4"/>
+  <text x="755" y="344" font-size="9" fill="#C0392B" text-anchor="middle">NVLink all-reduce ×2L=72 次/step（custom AR 或 NCCL）</text>
+
+  <!-- data collection row -->
+  <text x="490" y="378" font-size="11" font-weight="bold" fill="#2C3E50" text-anchor="middle">三路数据采集（对拍时缺一不可）</text>
+
+  <!-- collection 1: result json -->
+  <rect x="60" y="392" width="270" height="118" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1"/>
+  <text x="195" y="412" font-size="10" font-weight="bold" fill="#2C3E50" text-anchor="middle">① 客户端指标（结果 JSON）</text>
+  <text x="195" y="430" font-size="9" fill="#2C3E50" text-anchor="middle">吞吐 tok/s · TTFT p50/p99</text>
+  <text x="195" y="444" font-size="9" fill="#2C3E50" text-anchor="middle">TPOT/ITL p50/p99 · E2E</text>
+  <text x="195" y="466" font-size="9" fill="#7F8C8D" text-anchor="middle">九档并发 × 两种形态 = 两张曲线</text>
+  <text x="195" y="482" font-size="9" fill="#7F8C8D" text-anchor="middle">（Day 6 同款 for C in ... 扫描）</text>
+  <text x="195" y="500" font-size="9" fill="#7F8C8D" text-anchor="middle">seed=C，防 prefix caching 命中</text>
+
+  <!-- collection 2: server metrics -->
+  <rect x="355" y="392" width="270" height="118" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1"/>
+  <text x="490" y="412" font-size="10" font-weight="bold" fill="#2C3E50" text-anchor="middle">② 服务端 /metrics</text>
+  <text x="490" y="430" font-size="9" fill="#2C3E50" text-anchor="middle">vllm:num_requests_running（实际 B）</text>
+  <text x="490" y="444" font-size="9" fill="#2C3E50" text-anchor="middle">vllm:gpu_cache_usage_perc</text>
+  <text x="490" y="458" font-size="9" fill="#2C3E50" text-anchor="middle">vllm:time_per_output_token_seconds</text>
+  <text x="490" y="480" font-size="9" fill="#7F8C8D" text-anchor="middle">交叉验证客户端口径（Day 5 纪律：</text>
+  <text x="490" y="494" font-size="9" fill="#7F8C8D" text-anchor="middle">客户端秒表 vs 服务端分母）</text>
+
+  <!-- collection 3: nsys -->
+  <rect x="650" y="392" width="270" height="118" rx="6" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.2"/>
+  <text x="785" y="412" font-size="10" font-weight="bold" fill="#B9770E" text-anchor="middle">③ nsys trace（只包形态 B）</text>
+  <text x="785" y="430" font-size="9" font-family="monospace" fill="#B9770E" text-anchor="middle">--capture-range=cudaProfilerApi</text>
+  <text x="785" y="444" font-size="9" font-family="monospace" fill="#B9770E" text-anchor="middle">--cuda-graph-trace=node</text>
+  <text x="785" y="462" font-size="9" fill="#7F8C8D" text-anchor="middle">找三类 kernel：vllm::cross_device_reduce_*</text>
+  <text x="785" y="476" font-size="9" fill="#7F8C8D" text-anchor="middle">vllm::multi_gpu_barrier / ncclDevKernel_*</text>
+  <text x="785" y="494" font-size="9" fill="#7F8C8D" text-anchor="middle">求和 ÷ GPU kernel 总时长 = 通信占比</text>
+
+  <!-- arrows from instances to collection -->
+  <line x1="225" y1="328" x2="195" y2="390" stroke="#7F8C8D" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d33c)"/>
+  <line x1="490" y1="330" x2="490" y2="390" stroke="#7F8C8D" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d33c)"/>
+  <line x1="755" y1="348" x2="785" y2="390" stroke="#C0392B" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d33b)"/>
+
+  <!-- bottom: lab D variant -->
+  <rect x="60" y="530" width="860" height="92" rx="6" fill="#F4ECF7" stroke="#8E44ED" stroke-width="1"/>
+  <text x="76" y="552" font-size="10" font-weight="bold" fill="#6C3483">Lab D 变体（选做，喂给 Day 34）：同样两张卡，改跑 2 × TP1 实例 + 手动分流</text>
+  <text x="76" y="570" font-size="9" font-family="monospace" fill="#6C3483">CUDA_VISIBLE_DEVICES=0 vllm serve ... --port 8000 &amp;   CUDA_VISIBLE_DEVICES=1 vllm serve ... --port 8010 &amp;</text>
+  <text x="76" y="584" font-size="9" font-family="monospace" fill="#6C3483">两个 bench 客户端各打一半 prompt → 聚合吞吐 vs 1×TP2 对比</text>
+  <text x="76" y="604" font-size="9" fill="#6C3483">预测：2×TP1 聚合吞吐 &gt; 1×TP2（差值 ≈ 通信税）；还多出独立扩缩容 / cache-aware routing（Day 34）两个 TP 给不了的自由度</text>
+</svg>

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="665" viewBox="0 0 960 665" font-family="Helvetica, Arial, 'Noto Sans SC', sans-serif">
+  <defs>
+    <marker id="arrowF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/>
+    </marker>
+  </defs>
+  <rect width="960" height="665" fill="#ffffff"/>
+
+  <text x="480" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1e293b">Day 36 选题决策流程：五条渠道 → 过滤 → 加权评分 → 备忘录</text>
+  <text x="480" y="48" text-anchor="middle" font-size="11" fill="#64748b">证据驱动：每个环节的输出都可追溯到具体的 issue / benchmark / 日志，而非直觉</text>
+
+  <!-- Row 1: five channels -->
+  <g font-size="11" font-weight="bold" fill="#334155" text-anchor="middle">
+    <rect x="62" y="64" width="156" height="68" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="140" y="86">① 自己跑出来的坑</text>
+    <rect x="232" y="64" width="156" height="68" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="310" y="86">② 官方 benchmark</text>
+    <rect x="402" y="64" width="156" height="68" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="480" y="86">③ issues 列表</text>
+    <rect x="572" y="64" width="156" height="68" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="650" y="86">④ 支持矩阵缺口</text>
+    <rect x="742" y="64" width="156" height="68" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="820" y="86">⑤ merged PR 趋势</text>
+  </g>
+  <g font-size="9.5" fill="#64748b" text-anchor="middle">
+    <text x="140" y="104">最可靠（能复现）</text>
+    <text x="140" y="118">Day 37 起持续积累</text>
+    <text x="310" y="104">GPU vs NPU 差距表</text>
+    <text x="310" y="118">差距大 = 选题论证</text>
+    <text x="480" y="104">标签 + 关键词过滤</text>
+    <text x="480" y="118">slow / fallback / OOM</text>
+    <text x="650" y="104">量化 × 模型 × 精度</text>
+    <text x="650" y="118">未勾选项查撞车</text>
+    <text x="820" y="104">看维护者在合并什么</text>
+    <text x="820" y="118">主要用于避雷</text>
+  </g>
+
+  <!-- converge arrows -->
+  <g stroke="#94a3b8" stroke-width="1.6">
+    <line x1="140" y1="132" x2="466" y2="156" marker-end="url(#arrowF)"/>
+    <line x1="310" y1="132" x2="472" y2="156" marker-end="url(#arrowF)"/>
+    <line x1="480" y1="132" x2="480" y2="156" marker-end="url(#arrowF)"/>
+    <line x1="650" y1="132" x2="488" y2="156" marker-end="url(#arrowF)"/>
+    <line x1="820" y1="132" x2="494" y2="156" marker-end="url(#arrowF)"/>
+  </g>
+
+  <!-- Row 2: candidate pool -->
+  <text x="188" y="186" text-anchor="end" font-size="11" font-style="italic" fill="#94a3b8">≈10 个</text>
+  <rect x="200" y="158" width="560" height="46" rx="6" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+  <text x="480" y="186" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e293b">候选池：10 ± 个具体点位</text>
+  <text x="480" y="198" text-anchor="middle" font-size="9.5" fill="#64748b">每条记录：来源渠道 / 证据（issue #、benchmark 差距、日志）/ 关联方向</text>
+  <line x1="480" y1="204" x2="480" y2="228" stroke="#475569" stroke-width="2" marker-end="url(#arrowF)"/>
+
+  <!-- Row 3: filter -->
+  <rect x="220" y="230" width="520" height="72" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="480" y="252" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#b91c1c">五问过滤器（不满足任一 → 淘汰）</text>
+  <text x="480" y="270" text-anchor="middle" font-size="10" fill="#64748b">F1 有证据 · F2 剖析路径 ≤ 2 层 · F3 前后数据能拿干净</text>
+  <text x="480" y="286" text-anchor="middle" font-size="10" fill="#64748b">F4 环境能复现 · F5 目标区域稳定（近 30 天无大重构）</text>
+
+  <!-- reject box -->
+  <rect x="790" y="230" width="160" height="150" rx="6" fill="#fef2f2" stroke="#ef4444" stroke-dasharray="4,3"/>
+  <text x="870" y="252" text-anchor="middle" font-size="11" font-weight="bold" fill="#b91c1c">淘汰项</text>
+  <g font-size="9.5" fill="#7f1d1d" text-anchor="middle">
+    <text x="870" y="272">· 无 issue / 数据支撑</text>
+    <text x="870" y="290">· 瓶颈埋太深（&gt;2 层）</text>
+    <text x="870" y="308">· 出不了干净数据</text>
+    <text x="870" y="326">· 环境复现不了</text>
+    <text x="870" y="344">· 目标区域大重构</text>
+    <text x="870" y="362">· 已有人在推进</text>
+  </g>
+  <line x1="742" y1="266" x2="786" y2="266" stroke="#ef4444" stroke-width="1.6" marker-end="url(#arrowR)"/>
+
+  <line x1="480" y1="302" x2="480" y2="324" stroke="#475569" stroke-width="2" marker-end="url(#arrowF)"/>
+
+  <!-- Row 4: scoring -->
+  <text x="228" y="362" text-anchor="end" font-size="11" font-style="italic" fill="#94a3b8">3~5 个</text>
+  <rect x="240" y="326" width="480" height="62" rx="6" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+  <text x="480" y="348" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e293b">加权评分矩阵：Score = Σ w·s（满分 55）</text>
+  <text x="480" y="366" text-anchor="middle" font-size="9.5" fill="#64748b">可量化×3 · 影响面×2 · 经验匹配×2 · 工作量×2 · 环境依赖×1 · 合并概率×1</text>
+  <text x="480" y="380" text-anchor="middle" font-size="9.5" fill="#64748b">打分对象是「具体点位」，不是抽象方向</text>
+  <line x1="480" y1="388" x2="480" y2="412" stroke="#475569" stroke-width="2" marker-end="url(#arrowF)"/>
+
+  <!-- Row 5: tie-break -->
+  <rect x="260" y="414" width="440" height="52" rx="6" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+  <text x="480" y="436" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e293b">同分 tie-break</text>
+  <text x="480" y="454" text-anchor="middle" font-size="10" fill="#64748b">① 经验匹配度（叙事独特性） → ② 环境依赖（确定性）</text>
+  <line x1="480" y1="466" x2="480" y2="488" stroke="#475569" stroke-width="2" marker-end="url(#arrowF)"/>
+
+  <!-- Row 6: outcomes -->
+  <text x="248" y="522" text-anchor="end" font-size="11" font-style="italic" fill="#94a3b8">1+1+1</text>
+  <rect x="80" y="490" width="240" height="58" rx="6" fill="#fff7ed" stroke="#e67e22" stroke-width="2"/>
+  <text x="200" y="512" text-anchor="middle" font-size="12" font-weight="bold" fill="#b45309">主选（1 个）</text>
+  <text x="200" y="530" text-anchor="middle" font-size="9.5" fill="#b45309">预期 ROI 最高 —— 方向 1 类点位</text>
+  <rect x="360" y="490" width="240" height="58" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="480" y="512" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a5f">备选（1 个）</text>
+  <text x="480" y="530" text-anchor="middle" font-size="9.5" fill="#475569">tie-break 落选，主选受阻随时顶上</text>
+  <rect x="640" y="490" width="240" height="58" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="760" y="512" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">保底（1 个）</text>
+  <text x="760" y="530" text-anchor="middle" font-size="9.5" fill="#475569">确定性最高 —— 方向 4 类点位</text>
+  <g stroke="#475569" stroke-width="2">
+    <line x1="200" y1="548" x2="200" y2="572" marker-end="url(#arrowF)"/>
+    <line x1="480" y1="548" x2="480" y2="572" marker-end="url(#arrowF)"/>
+    <line x1="760" y1="548" x2="760" y2="572" marker-end="url(#arrowF)"/>
+  </g>
+
+  <!-- Row 7: output -->
+  <rect x="160" y="574" width="640" height="52" rx="6" fill="#ecfdf5" stroke="#34d399" stroke-width="1.8"/>
+  <text x="480" y="596" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#065f46">产出：选题备忘录（问题 / 影响面 / 假设 / 验证 / 工作量 / 边界 / 风险）</text>
+  <text x="480" y="614" text-anchor="middle" font-size="10" fill="#047857">→ Day 37 环境与基线 → Day 38-40 瓶颈剖析报告 → Day 41-45 优化 + PR</text>
+
+  <text x="480" y="652" text-anchor="middle" font-size="10.5" font-style="italic" fill="#94a3b8">「宁可小而完整」：主选 + 备选 + 保底，保证两周内必有一条线走完 改-测-PR 闭环</text>
+</svg>

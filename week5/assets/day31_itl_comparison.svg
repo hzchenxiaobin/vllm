@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="640" viewBox="0 0 980 640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d33s" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#7F8C8D"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="640" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 3｜ITL 探针预期结果：colocated 尖刺 vs P/D 平稳（假设 H1 的实验证据）</text>
+
+  <!-- ============ Panel A: colocated ============ -->
+  <text x="70" y="60" font-size="12" font-weight="bold" fill="#C0392B">A. colocated TP=2（同一实例混跑：chunk 与 decode 同 step）</text>
+  <rect x="70" y="70" width="850" height="190" fill="#FDF2F0" stroke="#E5E8E8" stroke-width="1"/>
+  <!-- SLO line: 100 ms -> y=243 -->
+  <line x1="70" y1="243" x2="920" y2="243" stroke="#C0392B" stroke-width="1.2" stroke-dasharray="6,4"/>
+  <text x="80" y="238" font-size="9" fill="#C0392B">SLO: ITL ≤ 100 ms</text>
+  <!-- ITL series: baseline 20ms (y≈257), spikes after burst -->
+  <path d="M 70 257 L 316 257 L 320 158 L 325 158 L 329 257
+           L 331 257 L 335 115 L 341 115 L 345 257
+           L 351 257 L 355 192 L 359 257
+           L 475 257 L 479 209 L 483 257 L 920 257"
+        fill="none" stroke="#C0392B" stroke-width="2"/>
+  <text x="360" y="110" font-size="9" fill="#C0392B">尖刺高度 ≈ max(chunk 计算时长, 排队延迟)</text>
+  <text x="360" y="124" font-size="9" fill="#C0392B">（Day 29 干扰路径①批同步排队 + ②访存争抢）</text>
+  <!-- y ticks -->
+  <text x="62" y="263" font-size="9" fill="#566573" text-anchor="end">0</text>
+  <text x="62" y="246" font-size="9" fill="#566573" text-anchor="end">100</text>
+  <text x="62" y="178" font-size="9" fill="#566573" text-anchor="end">500</text>
+  <text x="62" y="94"  font-size="9" fill="#566573" text-anchor="end">1000</text>
+  <!-- result chip -->
+  <rect x="710" y="82" width="205" height="30" rx="4" fill="#C0392B" opacity="0.12"/>
+  <text x="812" y="101" font-size="10" font-weight="bold" fill="#C0392B" text-anchor="middle">ITL p99 ≈ 850 ms（击穿 SLO）</text>
+  <line x1="70" y1="260" x2="920" y2="260" stroke="#566573" stroke-width="1"/>
+
+  <!-- burst marker between panels -->
+  <line x1="325" y1="70"  x2="325" y2="285" stroke="#7F8C8D" stroke-width="1.2" stroke-dasharray="4,4" marker-end="url(#d33s)"/>
+  <line x1="325" y1="380" x2="325" y2="550" stroke="#7F8C8D" stroke-width="1.2" stroke-dasharray="4,4" marker-end="url(#d33s)"/>
+  <text x="495" y="312" font-size="10" font-weight="bold" fill="#7F8C8D" text-anchor="middle">↓ t ≈ 3 s：4 × 8K-token 长 prompt 突发到达</text>
+  <text x="495" y="328" font-size="9" fill="#7F8C8D" text-anchor="middle">（A：混入同一实例的调度队列　/　B：全部落在 P 池，D 无感知）</text>
+
+  <!-- ============ Panel B: P/D ============ -->
+  <text x="70" y="366" font-size="12" font-weight="bold" fill="#27AE60">B. P/D 分离 1P1D（D 实例只跑 decode）</text>
+  <rect x="70" y="380" width="850" height="170" fill="#F0FAF5" stroke="#E5E8E8" stroke-width="1"/>
+  <!-- SLO line: 100 ms -> y=533 -->
+  <line x1="70" y1="533" x2="920" y2="533" stroke="#C0392B" stroke-width="1.2" stroke-dasharray="6,4"/>
+  <text x="80" y="528" font-size="9" fill="#C0392B">SLO: ITL ≤ 100 ms</text>
+  <!-- ITL series: baseline 15ms (y≈547.5) with tiny KV-load bumps -->
+  <path d="M 70 547 L 318 547 L 323 544 L 340 544 L 345 547 L 920 547"
+        fill="none" stroke="#27AE60" stroke-width="2"/>
+  <text x="360" y="500" font-size="9" fill="#27AE60">仅多几次 KV 加载（访存拷贝级扰动，非计算干扰）</text>
+  <text x="360" y="514" font-size="9" fill="#27AE60">D 的 running 队列里只有 decode → step 时长稳定</text>
+  <!-- y ticks -->
+  <text x="62" y="553" font-size="9" fill="#566573" text-anchor="end">0</text>
+  <text x="62" y="536" font-size="9" fill="#566573" text-anchor="end">100</text>
+  <text x="62" y="468" font-size="9" fill="#566573" text-anchor="end">500</text>
+  <text x="62" y="384" font-size="9" fill="#566573" text-anchor="end">1000</text>
+  <!-- result chip -->
+  <rect x="710" y="392" width="205" height="30" rx="4" fill="#27AE60" opacity="0.12"/>
+  <text x="812" y="411" font-size="10" font-weight="bold" fill="#27AE60" text-anchor="middle">ITL p99 ≈ 18 ms（平稳达标）</text>
+  <line x1="70" y1="550" x2="920" y2="550" stroke="#566573" stroke-width="1"/>
+
+  <!-- axis labels -->
+  <text x="495" y="572" font-size="10" fill="#566573" text-anchor="middle">decode 流的 token 序号（0 → 512）</text>
+  <text x="24" y="310" font-size="10" fill="#566573" text-anchor="middle" transform="rotate(-90 24 310)">ITL（ms，两面板同比例尺）</text>
+
+  <!-- bottom note -->
+  <rect x="40" y="588" width="900" height="42" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1"/>
+  <text x="52" y="606" font-size="10" fill="#2C3E50">同一突发负载下：A 的 decode step 被 chunked prefill 混排拖长（尾时延不可控）；B 的突发由 P 池消化，D 保持平稳。</text>
+  <text x="52" y="622" font-size="10" fill="#2C3E50">代价转移：B 中那 4 条突发请求的 TTFT 增加了 TTLFT（KV 传输 + D 排队）——这就是"收益在 goodput，不在 raw throughput"的微观机制。</text>
+</svg>

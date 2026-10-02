@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 660" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#FED7D7"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#FC8181" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="960" height="660" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">负收益解剖：低接受率 × 大 k，与高并发 × γ 膨胀（S &lt; 1 的两条独立路径）</text>
+
+  <!-- ============ path a: low beta ============ -->
+  <rect x="40" y="50" width="880" height="252" rx="10" fill="#FFFAF0" stroke="#DD6B20" stroke-width="1.2"/>
+  <text x="60" y="76" font-size="13" font-weight="bold" fill="#9C4221">路径 a：低 β × 大 k —— ngram × 开放对话（k=5，并发 8）</text>
+
+  <!-- baseline timeline -->
+  <text x="60" y="104" font-size="11.5" font-weight="bold" fill="#276749">baseline decode</text>
+  <g font-size="10.5" fill="#22543D">
+    <rect x="180" y="88" width="150" height="26" rx="4" fill="#C6F6D5" stroke="#38A169"/><text x="255" y="105" text-anchor="middle">step：读 W → 1 token</text>
+    <rect x="338" y="88" width="150" height="26" rx="4" fill="#C6F6D5" stroke="#38A169"/><text x="413" y="105" text-anchor="middle">step：读 W → 1 token</text>
+    <rect x="496" y="88" width="150" height="26" rx="4" fill="#C6F6D5" stroke="#38A169"/><text x="571" y="105" text-anchor="middle">step：读 W → 1 token</text>
+    <rect x="654" y="88" width="150" height="26" rx="4" fill="#C6F6D5" stroke="#38A169"/><text x="729" y="105" text-anchor="middle">step：读 W → 1 token</text>
+    <text x="820" y="105" fill="#276749">4 token / 4T</text>
+  </g>
+
+  <!-- spec timeline -->
+  <text x="60" y="152" font-size="11.5" font-weight="bold" fill="#2C5282">speculative</text>
+  <g font-size="10.5">
+    <rect x="180" y="136" width="140" height="26" rx="4" fill="#E2E8F0" stroke="#718096"/><text x="250" y="153" text-anchor="middle" fill="#2D3748">draft ×5（CPU 查表，c≈0）</text>
+    <rect x="328" y="136" width="300" height="26" rx="4" fill="#BEE3F8" stroke="#2B6CB0"/>
+    <rect x="500" y="136" width="128" height="26" rx="0" fill="url(#hatch)" stroke="#FC8181"/>
+    <text x="430" y="153" text-anchor="middle" fill="#2A4365">verify：1 次 forward 吃 6 个位置（读 W + 6·M_KV）</text>
+    <rect x="636" y="136" width="130" height="26" rx="4" fill="#FEEBC8" stroke="#DD6B20"/><text x="701" y="153" text-anchor="middle" fill="#7B341E">验收+采样+KV 回收</text>
+    <text x="780" y="153" fill="#C53030" font-weight="bold">→ 1 token</text>
+  </g>
+  <text x="565" y="182" font-size="10" fill="#C53030" text-anchor="middle">↑ 6 个位置里 5 个被拒：算力"免费"，但 KV 读取与验收开销不免费</text>
+
+  <!-- mechanism boxes -->
+  <g font-size="10.5" fill="#2D3748">
+    <rect x="60"  y="200" width="268" height="80" rx="6" fill="#FFF5F5" stroke="#FC8181"/>
+    <text x="74" y="222" font-weight="bold" fill="#C53030">分子塌掉</text>
+    <text x="74" y="242">β ≈ 0.1 → E[τ] = 1 + 0.1×5 ≈ 1.1</text>
+    <text x="74" y="260">每轮只比 baseline 多发 0.1 个 token，</text>
+    <text x="74" y="276">草稿几乎全被扔掉</text>
+
+    <rect x="348" y="200" width="268" height="80" rx="6" fill="#FFF5F5" stroke="#FC8181"/>
+    <text x="362" y="222" font-weight="bold" fill="#C53030">分母照样涨</text>
+    <text x="362" y="242">γ(5) = (W+6·M_KV)/(W+M_KV) ≈ 1.21</text>
+    <text x="362" y="260">+ 采样 6 个位置 + block 释放的</text>
+    <text x="362" y="276">每 step 固定开销（数百 μs 级）</text>
+
+    <rect x="636" y="200" width="262" height="80" rx="6" fill="#F7FAFC" stroke="#A0AEC0"/>
+    <text x="650" y="222" font-weight="bold" fill="#2D3748">判定式</text>
+    <text x="650" y="242">S ≈ 1.11 / (1.21 + 开销) &lt; 1</text>
+    <text x="650" y="260">→ 吞吐下降、TPOT 持平或反升</text>
+    <text x="650" y="276">→ 结论：这条负载直接关掉</text>
+  </g>
+
+  <!-- ============ path b: high concurrency ============ -->
+  <rect x="40" y="318" width="880" height="252" rx="10" fill="#EBF8FF" stroke="#2B6CB0" stroke-width="1.2"/>
+  <text x="60" y="344" font-size="13" font-weight="bold" fill="#2C5282">路径 b：高并发 × γ 膨胀 —— EAGLE × 代码补全（B=128，k=3，β 依然很高！）</text>
+
+  <!-- baseline timeline -->
+  <text x="60" y="372" font-size="11.5" font-weight="bold" fill="#276749">baseline decode</text>
+  <g font-size="10.5">
+    <rect x="180" y="356" width="500" height="26" rx="4" fill="#C6F6D5" stroke="#38A169"/>
+    <text x="430" y="373" text-anchor="middle" fill="#22543D">step：B=128 token/step；读 W(15 GB) + M_KV(14 GB)；仍偏内存受限</text>
+    <text x="700" y="373" fill="#276749">128 token / T</text>
+  </g>
+
+  <!-- spec timeline -->
+  <text x="60" y="420" font-size="11.5" font-weight="bold" fill="#2C5282">speculative</text>
+  <g font-size="10.5">
+    <rect x="180" y="404" width="170" height="26" rx="4" fill="#E2E8F0" stroke="#718096"/><text x="265" y="421" text-anchor="middle" fill="#2D3748">draft ×3（c≈0.16）</text>
+    <rect x="358" y="404" width="322" height="26" rx="4" fill="url(#hatch)" stroke="#FC8181"/>
+    <text x="519" y="421" text-anchor="middle" fill="#C53030" font-weight="bold">verify：B×(k+1)=512 token/step，FLOPs ×4，越过 ridge</text>
+    <text x="700" y="421" fill="#C53030" font-weight="bold">128 token / &gt;T</text>
+  </g>
+  <text x="519" y="450" font-size="10" fill="#C53030" text-anchor="middle">↑ compute-bound 之后"多算免费"的前提消失——verify 时间被计算量推着涨（Day 3 屋顶线：AI=B(1+k) 越过 ridge point）</text>
+
+  <!-- mechanism boxes -->
+  <g font-size="10.5" fill="#2D3748">
+    <rect x="60"  y="468" width="268" height="82" rx="6" fill="#FFF5F5" stroke="#FC8181"/>
+    <text x="74" y="490" font-weight="bold" fill="#C53030">γ 膨胀</text>
+    <text x="74" y="510">M_KV = B·ctx·m_token ≈ 14 GB ≈ W</text>
+    <text x="74" y="528">γ(3) = (W+4·M_KV)/(W+M_KV) ≈ 2.4</text>
+    <text x="74" y="546">verify 的 KV 读取按 4 倍付账</text>
+
+    <rect x="348" y="468" width="268" height="82" rx="6" fill="#FFF5F5" stroke="#FC8181"/>
+    <text x="362" y="490" font-weight="bold" fill="#C53030">budget 挤压</text>
+    <text x="362" y="510">每请求每步占 1+k=4 token</text>
+    <text x="362" y="528">同 budget 下最大 running 数 ÷4</text>
+    <text x="362" y="546">（Day 10/11 的记账直接改写）</text>
+
+    <rect x="636" y="468" width="262" height="82" rx="6" fill="#F7FAFC" stroke="#A0AEC0"/>
+    <text x="650" y="490" font-weight="bold" fill="#2D3748">判定式与动作</text>
+    <text x="650" y="510">S = E[τ]/(γ+kc) ≈ 3.2/2.9 ≈ 1.1</text>
+    <text x="650" y="528">再叠 compute-bound → 实测 &lt; 1</text>
+    <text x="650" y="546">→ 动作：调小 k / 熔断 / P/D 分离</text>
+  </g>
+
+  <!-- bottom note -->
+  <rect x="40" y="586" width="880" height="56" rx="8" fill="#F7FAFC" stroke="#A0AEC0" stroke-width="1"/>
+  <text x="480" y="608" text-anchor="middle" font-size="11.5" fill="#2D3748">通用判定：S &lt; 1 ⟺ E[τ] &lt; γ + k·c + 工程开销——分子由负载（β）决定，分母由档位（B·ctx 与 k）决定，两者可以独立地把你拖下水</text>
+  <text x="480" y="628" text-anchor="middle" font-size="11" fill="#718096">检测：acceptance 持续 &lt; 0.4 / 输出吞吐对比 baseline / TPOT-并发曲线上扬；动作：调小 k → 设 speculative_disable_by_batch_size → 关闭（或 W5：只在 D 侧低并发档开启）</text>
+</svg>

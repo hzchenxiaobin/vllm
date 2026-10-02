@@ -1,0 +1,631 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls week5/ 2>/dev/null
+assets
+day29_pd_disaggregation_why.md
+day30_pd_disaggregation_how.md
+day31_pd_disaggregation_lab.md
+day32_distributed_parallelism.md
+README.md
+[0m
+[0m→ [0mRead week5/day32_distributed_parallelism.md[90m [limit=80][0m
+[0m→ [0mRead week5/day31_pd_disaggregation_lab.md[90m [limit=60][0m
+[0m
+[0m$ [0mls week5/assets/
+day29_chunk_window.svg
+day29_colocated_interference.svg
+day29_colocated_vs_disaggregated.svg
+day30_kvconnector_sequence.svg
+day30_layerwise_pipelining.svg
+day30_pd_architecture_overview.svg
+day30_three_systems.svg
+day31_itl_comparison.svg
+day31_pd_lab_topology.svg
+day31_request_lifecycle.svg
+day32_ep_alltoall.svg
+day32_pp_bubble.svg
+day32_tp_allreduce.svg
+[0m
+Let me look at key sections of Day 32 to ensure Day 33 properly connects to its predictions and formulas.
+[0m$ [0mgrep -n "^#\|^##\|^###" week5/day32_distributed_parallelism.md | head -50
+1:# Day 32｜分布式并行（一）：all-reduce、bubble 与 all-to-all——把通信算清楚
+13:## 0. 前情回顾与本日位置
+31:## 1. 今日学习目标
+44:## 2. 核心概念速查
+64:## 3. 原理深入（一）：TP——把权重切开，把 all-reduce 加进每层关键路径
+66:### 3.1 切分方式：为什么恰好是"每层 2 次 all-reduce"
+94:### 3.2 通信量：ring all-reduce 的算术
+115:### 3.3 本日核心手算：TPOT 分解与通信占比 ρ
+160:### 3.4 NVLink 拓扑约束：TP 为什么"住"在单机里
+178:### 3.5 "能单卡放下就别上 TP"——三条论证与例外清单
+202:### 3.6 TP 收益与代价清单（一页对照）
+218:## 4. 原理深入（二）：PP——用 bubble 换显存容量
+220:### 4.1 推理为什么要 PP：通信最便宜，代价是吞吐分母
+230:### 4.2 bubble 的算术：`(p-1)/(m+p-1)`
+266:### 4.3 PP 对推理指标的影响
+278:### 4.4 vLLM V1 对 PP 的支持状态（诚实标注）
+284:## 5. 原理深入（三）：MoE 的 EP 与 all-to-all
+286:### 5.1 MoE 三十秒入门（本系列首次）
+293:### 5.2 为什么 MoE 不用 TP 切专家，而用 EP
+303:### 5.3 all-to-all dispatch / combine 的通信量
+318:### 5.4 DeepSeek 式混合并行：DP attention + EP + 双流重叠
+328:### 5.5 三种通信模式总对比（本日收束）
+343:## 6. vLLM V1 源码走读：并行的接缝在哪里
+345:### 6.1 配置与进程拓扑
+376:### 6.2 all-reduce 的调用点与小消息优化
+398:### 6.3 PP 的源码形态（简）
+402:### 6.4 昇腾经验迁移：HCCL ↔ NCCL 对照表
+416:## 7. 动手实验（今天 50 min：微基准 + 观察为主，大实验留给 Day 33）
+418:### Lab A｜all-reduce 微基准：把 `t_ar` 和 `BW_link` 测出来（25 min）
+423:# bench_allreduce.py — 启动: torchrun --nproc_per_node=2 bench_allreduce.py
+457:### Lab B｜观察 vLLM TP=2 的启动日志与切分（15 min）
+460:# 单卡基线（如果之前 Day 6 没存，现在补）
+462:# 双卡 TP=2
+475:### Lab C｜为 Day 33 准备（10 min）
+494:## 8. 面试高频问题
+522:## 9. 今日总结
+540:## 10. 今日自测题（不看笔记作答）
+552:## 11. 今日产出物
+[0m
+[0m→ [0mRead week5/day32_distributed_parallelism.md[90m [limit=105, offset=115][0m
+[0m→ [0mRead week5/day32_distributed_parallelism.md[90m [limit=146, offset=416][0m
+[0m
+[0m$ [0mls vllm/distributed/device_communicators/ 2>/dev/null; ls vllm/v1/worker/ 2>/dev/null | head; ls vllm/distributed/ 2>/dev/null | head -20
+(no output)
+[0m
+我对 Day 32 的内容已经有了充分的了解。在开始写作之前，让我先确认几个准确的 vLLM 源码参考。
+[0m$ [0mgrep -n "class VllmOperatorProfiler\|profiler\|torch.profiler" vllm/v1/worker/gpu_model_runner.py | head -10; grep -rn "def start_profile" vllm/v1/worker/gpu_model_runner.py vllm/v1/engine/core.py 2>/dev/null | head
+grep: vllm/v1/worker/gpu_model_runner.py: No such file or directory
+[0m
+[0m$ [0mls; ls vllm 2>/dev/null | head -30
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+[0m
+[0m$ [0mls public/ 2>/dev/null | head; find public -maxdepth 2 -name "*.py" 2>/dev/null | head
+css
+index.html
+js
+plan.html
+prompt.html
+week1
+week2
+week3
+week4
+week5
+[0m
+vLLM 源代码不在这个工作区——本仓库纯粹是教程内容，所以源码引用遵循既定的 Day 32 惯例。让我快速检查一下 Day 6/31 中使用的 bench 命令风格，以保持一致性。
+[0m$ [0mgrep -n "bench serve" week5/day31_pd_disaggregation_lab.md | head -8; grep -rn "nsys" week5/day31_pd_disaggregation_lab.md week4/*.md 2>/dev/null | head -8
+23:| Day 6 | `vllm bench serve` 压测姿势（ShareGPT、并发扫描、p99 指标） | Lab C 的基线测试与扫并发直接复用 |
+75:| **H2** | P/D 分离**不提升** raw throughput（甚至略降）：多一跳 proxy、KV 要搬一次、两个实例各持一份权重 | Lab C-2：`vllm bench serve` 同负载对比吞吐 | 官方文档口径 + Day 29"收益在 goodput 不在吞吐" |
+121:| 客户端（vllm bench serve） | TTFT/ITL/TPOT 分位、吞吐 | H2/H3 的主证据 |
+396:vllm bench serve \
+403:  --save-result pd_r4.json        # 参数名以 vllm bench serve --help 为准
+week5/day31_pd_disaggregation_lab.md:557:> **明日预告（Day 32）**：分布式并行（一）——TP 的 all-reduce 通信模式与 NVLink 拓扑约束（今天 TP=2 基线里藏着的通信开销，明天用 nsys 把它挖出来）、PP 的 bubble、MoE 的 EP 与 all-to-all。为什么"能单卡放下就别上 TP"——你会用今天的实验数据回答这个问题。
+week4/day24_quantization_hands_on.md:287:> 密集模型的线性层不会逐层打日志；想逐层确认用 `VLLM_LOGGING_LEVEL=DEBUG` 看加载细节，或者更硬核的方式——`torch.cuda` 侧抓 kernel 名（nsys）。**不要靠"跑得快"反推路径正确**：W8A8-static 走错成 dynamic 也能跑，只是精度悄悄变了。
+week4/day25_speculative_decoding.md:226:| 4 | **草稿器太贵** | $c$ 大（小 target 上 emb/head 占比高） | nsys 看 draft forward 耗时占比 | 换 feature 级头（EAGLE/MTP）或 ngram |
+week4/day26_speculative_decoding_experiments.md:413:- **nsys 抓一个投机 step**（Day 19 方法）：看 draft / verify / 采样回收三段在 GPU 时间线上的占比，把 3.3 节的开销清单落到 kernel 级；
+week4/day28_speculative_decoding_review.md:4:> **衔接回顾**：Day 25（β-γ-c 收益框架、三公式、四路线、vLLM V1 投机 step 源码链路）、Day 26（三组实验实测数据、k 扫参、负收益两条路径的亲手复现、S_pred vs S_meas 的工程开销闭环）、Day 22-24（量化三连与第一份 A4《量化》——今天产出第二份，两份配成一对面试弹药）、Day 27（mini 引擎收官：budget 记账、chunked prefill、preemption——投机的所有系统耦合昨天刚在代码里摸过一遍）、以及更早的地基：Day 2/3（decode 时延下界与 ridge point）、Day 5（TPOT/吞吐口径纪律）、Day 10/11（token budget）、Day 15（KV block 分配/回收）、Day 18（CUDA Graph bucket）、Day 19（nsys 找 bubble）。
+week4/day28_speculative_decoding_review.md:177:| TPOT 改善但明显低于 S_pred | 每 step 固定开销 5~15%（采样验收 / KV 回滚 / 记账 / graph 衔接） | nsys 分离（Day 19 方法），接受为工程常数 |
+week4/day28_speculative_decoding_review.md:208:| 5 | **固定开销与配置性失效** | 每 step 采样验收 / 被拒草稿 KV 回收 / lookahead 记账 / graph 衔接，合计 5~15%；tokenizer 不匹配、draft 权重 + graph 显存挤爆 KV 池 | $S_{\text{pred}} - S_{\text{meas}}$ 差值大；启动报错或 preemption 增多 | nsys 分离固定成本（Day 19）；换配对草稿；调小 k / `max_num_seqs` |
+[0m
+让我查看一下 Day 6 的基准测试命令风格以及第 1 周的实验惯例，另外看看 Day 31 是如何组织其实验部分的。
+[0m$ [0mgrep -n "bench serve" week1/day06*.md | head; ls week1/ | head -10
+10:> **版本口径**：本篇 CLI 参数与源码坐标按 **v0.10 ~ v0.11 主线**核对（2026-10）；vLLM 迭代快，参数默认值与模块路径随版本演进（如 V1 的 `processor.py` 在 main 上正被重构为 `input_processor.py`），**一切以你机器上 `vllm serve --help` 与 `vllm bench serve --help` 的输出为准**——对不上的地方先怀疑版本，再怀疑理解
+20:- [ ] 讲清 **`vllm bench serve` 的完整链路**（CLI → 数据集采样 → aiohttp 流式发送 → `calculate_metrics`），并知道 TTFT/TPOT 是**客户端口径**、与服务端 `/metrics` 差在哪
+33:| **`vllm bench serve`** | 官方在线服务压测 CLI（旧教程里的 `benchmarks/benchmark_serving.py` 已被整合取代） | 能说出内部三步：采样→发送→统计 |
+109:对照上图，`vllm bench serve` 的秒表全部按在**客户端**：
+222:### 4.1 `vllm bench serve`：从 CLI 到 aiohttp
+225:vllm bench serve（终端 CLI）
+252:> **历史注**：老教程/老博客里常见的 `python benchmarks/benchmark_serving.py` 已被整合为 CLI 子命令（实现搬进 `vllm/benchmarks/` 包）；根目录同名脚本在仓库里仍可见但已非推荐入口。**认准 `vllm bench serve`**——README 的 Day 6 用的也是它。
+379:vllm bench serve \
+396:vllm bench serve --model Qwen/Qwen3-8B --base-url http://localhost:8000 \
+402:  vllm bench serve \
+assets
+day01_transformer_inference.md
+day02_memory_latency_hand_calc.md
+day03_roofline_model.md
+day04_paged_attention_paper.md
+day05_serving_metrics.md
+day06_env_setup_first_bench.md
+day07_first_principles_review.md
+README.md
+[0m
+[0m→ [0mRead week1/day06_env_setup_first_bench.md[90m [limit=50, offset=375][0m
+我先看一下现有的 SVG，以匹配其技术风格。
+[0m→ [0mRead week5/assets/day31_pd_lab_topology.svg
+现在我已经准备好所有需要的内容了。让我先创建 SVG，首先从实验架构图开始。
+[0m
+[0m← [0mWrite week5/assets/day33_experiment_architecture.svg
+Wrote file successfully.
+[0m
+SVG 1 已完成。接下来是第二张图表：预测曲线。
+[0m← [0mWrite week5/assets/day33_prediction_curves.svg
+Wrote file successfully.
+[0m
+接下来是第三个 SVG：nsys 时间线图。
+[0m← [0mWrite week5/assets/day33_nccl_timeline.svg
+Wrote file successfully.
+[0m
+SVGs 已完成。现在开始编写教程，第 1 部分（从标题到实验设计）。
+[0m← [0mWrite week5/day33_distributed_parallelism_lab.md
+Wrote file successfully.
+[0m
+第一部分已编写完成。现在正在附加第二部分（实验）。
+[0m$ [0mcat >> week5/day33_distributed_parallelism_lab.md << 'APPEND_EOF'
+
+## 4. 动手实验
+
+### Lab A｜TP=1 vs TP=2：吞吐 / TTFT / TPOT 并发扫描（60 min）
+
+**Step 1｜起服务（先跑 TP1 基线）**：
+
+```bash
+# 终端 1 · 形态 A：单卡
+CUDA_VISIBLE_DEVICES=0 vllm serve Qwen/Qwen3-8B \
+  --max-model-len 16384 --port 8000 \
+  --no-enable-prefix-caching 2>&1 | tee /tmp/day33_tp1.log
+```
+
+就绪后先做 **Day 32 Lab B 的四行 sanity check**（world size / custom AR / 权重显存 / KV blocks）——对不上就停下排查，别让坏基线污染一上午。TP1 侧注意两行：权重 ~16.4GB；`GPU KV cache size` 记下来（后面算 KV 池扩缩）。
+
+**Step 2｜TP1 扫描**（Day 6 骨架减档）：
+
+```bash
+mkdir -p results/day33
+# 预热（不落盘）：编译缓存 / CUDA graph bucket / 连接池热起来
+vllm bench serve --model Qwen/Qwen3-8B --tokenizer Qwen/Qwen3-8B \
+  --base-url http://localhost:8000 \
+  --dataset-name sharegpt --dataset-path ~/bench/ShareGPT_V3_Vicuna_unfiltered_cleaned_split.json \
+  --num-prompts 16 --max-concurrency 4 --seed 0 --temperature 0
+
+for C in 1 4 16 64 256; do
+  vllm bench serve --model Qwen/Qwen3-8B --tokenizer Qwen/Qwen3-8B \
+    --base-url http://localhost:8000 \
+    --dataset-name sharegpt --dataset-path ~/bench/ShareGPT_V3_Vicuna_unfiltered_cleaned_split.json \
+    --num-prompts 200 --max-concurrency $C --seed $C --temperature 0 \
+    --percentile-metrics ttft,tpot,itl --metric-percentiles 50,99 \
+    --save-result --save-detailed \
+    --result-dir results/day33 --result-filename tp1_c${C}.json \
+    --metadata concurrency=$C 2>&1 | tee results/day33/tp1_c${C}.log
+done
+```
+
+扫描时另开终端盯 `/metrics`（Day 5 纪律）：确认 `vllm:num_requests_running` 真的到了 C（没到说明被 `max_num_seqs` 截断，记下来）；顺手抄 `vllm:time_per_output_token_seconds` 与客户端 TPOT 对拍。
+
+**Step 3｜换形态 B（TP=2）重复**：停掉服务，起 TP2，**同样的命令、只把 result 前缀换成 `tp2_`**：
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 vllm serve Qwen/Qwen3-8B \
+  --max-model-len 16384 --port 8000 -tp 2 \
+  --no-enable-prefix-caching 2>&1 | tee /tmp/day33_tp2.log
+```
+
+日志里多确认一行：custom all-reduce 是否启用（搜 `Custom allreduce` / `custom allreduce`）。若显示 disabled（比如 `VLLM_DISABLE_CUSTOM_ALL_REDUCE` 被设置或互联不满足条件），记下来——它会把 `t_ar` 抬高一截，Lab B 里正好做 A/B。
+
+**Step 4｜出图与填表**：
+
+```python
+# plot_day33.py — 把 results/day33/*.json 汇成两条曲线（matplotlib）
+import json, glob, re
+import matplotlib.pyplot as plt
+
+def load(prefix):
+    xs, tp, ttft, tpot = [], [], [], []
+    for f in sorted(glob.glob(f"results/day33/{prefix}_c*.json"),
+                    key=lambda s: int(re.search(r"_c(\d+)", s).group(1))):
+        d = json.load(open(f))
+        xs.append(d["max_concurrency"]); tp.append(d["output_throughput"])
+        ttft.append(d["median_ttft_ms"]); tpot.append(d["median_tpot_ms"])
+    return xs, tp, ttft, tpot
+# 字段名以 json 实际内容为准（--save-result 的 schema 随版本微调）；
+# 中位数字段若不存在，用 percentile 明细里的 50 分位。
+
+fig, ax = plt.subplots(1, 2, figsize=(11, 4))
+for prefix, label in [("tp1", "TP=1"), ("tp2", "TP=2")]:
+    xs, tp, ttft, tpot = load(prefix)
+    ax[0].plot(xs, tp, marker="o", label=label)
+    ax[1].plot(xs, tpot, marker="o", label=label)
+ax[0].set_xscale("log"); ax[0].set_xlabel("concurrency"); ax[0].set_ylabel("tok/s"); ax[0].legend()
+ax[1].set_xscale("log"); ax[1].set_xlabel("concurrency"); ax[1].set_ylabel("TPOT p50 (ms)"); ax[1].legend()
+plt.tight_layout(); plt.savefig("results/day33/tp1_vs_tp2.png", dpi=150)
+```
+
+把图 2 的两条预测曲线（手画或重画）与实测叠放，填 Lab C 的主表（§4 Lab C）。
+
+> **常见坑**：① TP2 下 `max_num_seqs` / KV blocks 变多，C=256 档的实际 running 可能高于 TP1（KV 池/卡变大）——这不是干扰，是 TP 的真实收益之一（Day 32 §3.5"隐性优势"），但要记录；② 两形态间机器温度/时钟有漂移，先跑哪边各留 5 分钟冷却；③ `--save-detailed` 的逐请求明细留着，Lab B 的 nsys 窗口要对得上其中一段。
+
+### Lab B｜nsys 抓通信占比（50 min）
+
+**Step 1｜把 TP2 服务包进 nsys**（只抓形态 B；TP1 无集合通信，没必要抓）：
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 nsys profile \
+  -o /tmp/day33_tp2 \
+  --trace=cuda,nvtx \
+  --cuda-graph-trace=node \
+  --capture-range=cudaProfilerApi --capture-range-end=stop \
+  -f true \
+  vllm serve Qwen/Qwen3-8B --max-model-len 16384 --port 8000 -tp 2 \
+  --no-enable-prefix-caching
+```
+
+参数逐个说清：`--capture-range=cudaProfilerApi` 表示**不从头录**，等 `cudaProfilerStart()` 被调用才开始（vLLM 的 `/start_profile` 会触发它，官方 profiling 文档就是这么配合的）；`--capture-range-end=stop` 在 `cudaProfilerStop()` 后落盘；`--cuda-graph-trace=node` 把 graph replay 展开到节点级（§3.3 的坑）。
+
+> **版本敏感**：不同版本 `/start_profile` 的参数（`activities`、`num_steps` 等）有差异，以 `curl localhost:8000/docs` 与官方 profiling 文档为准。若你的版本 `/start_profile` 与 capture-range 配合不上，退路是定时窗：`nsys profile --delay <启动秒数> --duration 30 ...` 硬切一段（会带上一小段空闲，分母口径要在报告里写明）。
+
+**Step 2｜用中并发档做采样负载**：C=64 是好窗口——batch 稳定、decode 占比高、TTFT 干扰小：
+
+```bash
+# 服务就绪后，先起 capture 区间，再打负载，再关区间
+curl -X POST http://localhost:8000/start_profile
+vllm bench serve --model Qwen/Qwen3-8B --tokenizer Qwen/Qwen3-8B \
+  --base-url http://localhost:8000 \
+  --dataset-name sharegpt --dataset-path ~/bench/ShareGPT_V3_Vicuna_unfiltered_cleaned_split.json \
+  --num-prompts 64 --max-concurrency 64 --seed 33 --temperature 0 \
+  --percentile-metrics ttft,tpot,itl
+curl -X POST http://localhost:8000/stop_profile
+# 等 nsys 落盘：Removing ... / report saved 提示出现再动终端
+```
+
+**Step 3｜统计 kernel 时间占比**——两条路，都走一遍：
+
+```bash
+# 路线 1：报告表（快，适合现场看）
+nsys stats --report cuda_gpu_kern_sum /tmp/day33_tp2.nsys-rep | head -40
+
+# 路线 2：导出 sqlite 精确求和（进 A4 的数字用这条）
+nsys export --type sqlite -o /tmp/day33_tp2.sqlite /tmp/day33_tp2.nsys-rep
+sqlite3 /tmp/day33_tp2.sqlite "
+SELECT s.value AS kernel,
+       COUNT(*) AS n,
+       ROUND(SUM(k.end-k.start)/1e6, 1) AS total_ms
+FROM CUPTI_ACTIVITY_KIND_KERNEL k JOIN StringIds s ON k.demangledName=s.id
+GROUP BY s.value ORDER BY total_ms DESC LIMIT 25;"
+```
+
+然后算三个数（对照图 3 的公式与陷阱）：
+
+```text
+通信 kernel 时长 = Σ(vllm::cross_device_reduce_* ) + Σ(vllm::multi_gpu_barrier)
+                  （或 Σ(ncclDevKernel_*)，取决于开关）
+通信占比        = 通信 kernel 时长 ÷ Σ 全部 kernel 时长
+AR 计数交叉验证 = count(cross_device_*) ÷ 72 → step 数 ≈ 采样窗口输出 token 数 ÷ 64
+```
+
+**Step 4｜A/B：custom AR vs NCCL**（10 min，性价比极高的一步）：停服，加 `--disable-custom-all-reduce` 重跑 Step 1-3（nsys 输出文件名换 `nccl`）。比较：① 同档 TPOT 差多少（custom AR 的 `t_ar` 优势）；② trace 里 `ncclDevKernel_*` 的个数与时长（NCCL kernel 通常把同步等待也计在 kernel 里，时长的"水分"更大——口径陷阱 1 的现场教材）。
+
+**Step 5｜打开 nsys UI 看一眼时间线**（5 min）：双卡泳道对齐看 lockstep；放大一个 step，数一数 72 个红色小块的分布——"每层两次、贯穿全程"这件事，看一眼胜过背十遍（图 3①② 就是它的示意图）。
+
+![nsys 时间线与占比计算](assets/day33_nccl_timeline.svg)
+
+### Lab C｜预测 → 实测 → 差异解释（20 min，本日灵魂）
+
+把 Lab A/B 的数填进主表（示例结构，数字填你自己的）：
+
+| 指标 | 档位 | 预测（§3.2） | 实测 | 差异 | 机制解释 |
+|---|---|---|---|---|---|
+| TPOT p50 加速比 | C=1 | 1.3~1.5× | ___ | ___ | 偏离时按下面清单逐项排 |
+| TPOT p50 加速比 | C=256 | 1.3~1.5× | ___ | ___ | |
+| 吞吐加速比 | C=256 | 1.3~1.6× | ___ | ___ | |
+| per-GPU 效率 | C=256 | 65~80% | ___ | ___ | TP2 吞吐 ÷ 2 ÷ TP1 吞吐 |
+| TTFT 加速比 | 任意 | ≈1.8× | ___ | ___ | prefill 近线性的证据 |
+| 通信 kernel 占比 | C=64 | 15~35% | ___ | ___ | 时延项主导，对 t_ar 敏感 |
+| AR 计数 ÷ 72 vs tok/s÷64 | C=64 | 一致 | ___ | ___ | 不一致 → 窗口混入 prefill |
+
+**差异解释清单**（实测偏离预测时按序排查，这是 Day 13 三段对照法的展开）：
+
+1. **实测 TPOT 改善 > 预测上界（如 >1.6×）**：多半是 TP1 侧基线被拖脏——`max_num_seqs` 或 KV 不够导致 TP1 实际 running < C（查 `/metrics`），或 TP1 档先跑机器已热降频。修：重跑基线，两边互换顺序再测一轮。
+2. **实测 < 预测下界（如 <1.2×）**：按顺序查——互联是 PCIe（`nvidia-smi topo -m`，ρ 放大 10 倍）；custom AR 没启用（日志）；两卡时钟差异大（lockstep 的 max 效应）；TP2 的 `max_num_seqs`/KV 更大导致实际 batch 更大（吞吐档位公平性被破坏，应把两边 `max_num_seqs` 钉成同值重跑）。
+3. **通信占比 > 35%**：先查口径——把 `multi_gpu_barrier`（纯等待）计入通信会系统性高估；再查 `t_ar` 是否被 NCCL 路径或 profiling 开销放大（nsys 本身会给小 kernel 加开销，量级 ~1μs/个，72 个/step 时不可忽略——这正是要交叉验证的原因）。
+4. **TTFT 改善远 <1.8×**：查 prefill 是否被 chunked（长 prompt 切块后调度形态变化）、或 TP2 的首 token 路径上还有未被并行化的串行段（tokenizer、采样、日志）。
+5. **AR 计数对不上**：窗口混入 prefill step（prefill forward 也做 AR，但每 step token 数不同）——用 `--num-prompts 64 --max-concurrency 64` 的稳态窗口重抓。
+
+> **PCIe 机器专属剧情**（Day 32 坑位 ① 的兑现）：如果你的两张卡走 PCIe，预测表先重算——`BW_link` 从 ~700GB/s 掉到 ~20-30GB/s（Day 32 Lab A 你已经测出来了），时延也翻倍。此时 TP2 的 TPOT 可能不降反升（税 > 计算收益），这是一份同样值钱（甚至更值钱）的实验结果："在什么硬件上 TP=2 会负收益"——面试里能甩出这条边界数据的候选人不多。
+
+### Lab D（选做）｜2×TP1 + 分流 vs 1×TP2：把"论证二"跑成数据（30 min）
+
+Day 32 §3.5 论证二的口头版：同样两张卡，两个独立 TP1 实例的聚合吞吐 > 一个 TP2 实例。今天 30 分钟可以拿到数字版（也是 Day 34 路由的预告片）：
+
+```bash
+# 终端 1/2：两个 TP1 实例（注意端口与卡各占其一）
+CUDA_VISIBLE_DEVICES=0 vllm serve Qwen/Qwen3-8B --max-model-len 16384 \
+  --port 8000 --no-enable-prefix-caching &
+CUDA_VISIBLE_DEVICES=1 vllm serve Qwen/Qwen3-8B --max-model-len 16384 \
+  --port 8010 --no-enable-prefix-caching &
+
+# 终端 3/4：两个客户端各打一半（同 seed 同数据集，--num-prompts 100 ≈ Lab A 的一半）
+for PORT in 8000 8010; do
+  vllm bench serve --model Qwen/Qwen3-8B --tokenizer Qwen/Qwen3-8B \
+    --base-url http://localhost:$PORT \
+    --dataset-name sharegpt --dataset-path ~/bench/ShareGPT_V3_Vicuna_unfiltered_cleaned_split.json \
+    --num-prompts 100 --max-concurrency 32 --seed 64 --temperature 0 \
+    --percentile-metrics ttft,tpot,itl \
+    --save-result --result-dir results/day33 --result-filename 2xtp1_$PORT.json &
+done; wait
+```
+
+对照读数（C_total=64，与 Lab A 的 C=64 档对齐）：
+
+| 读数 | 1×TP2（Lab A） | 2×TP1 分流 | 预期 |
+|---|---|---|---|
+| 聚合吞吐 | ___ | 两个 json 的 output_throughput 相加 | 2×TP1 > TP2，差值 ≈ 通信税 |
+| TPOT p50 | ___ | 两实例各报各的 | 2×TP1 更低（无 AR、无 lockstep） |
+| p99 | ___ | ___ | 2×TP1 更稳（无跨卡同步抖动） |
+
+> 诚实标注两个不公平点（写进实验记录，面试被追问时的加分项）：① 2×TP1 每个 instance 只吃一半流量，C=32 比 C=64 的 batch 小，TPOT 占便宜——严格对齐要再跑一组 `2×TP1 各 C=64` 与 `1×TP2 C=128` 的双倍流量对照；② 2×TP1 的 KV 池总量更小（权重各复制一份）。结论口径建议："同卡数、同流量下，2×TP1 的聚合吞吐与 TPOT 均优于 1×TP2，代价是多一份权重与运维复杂度"。
+
+---
+APPEND_EOF
+echo "appended part 2, total lines: $(wc -l < week5/day33_distributed_parallelism_lab.md)"
+appended part 2, total lines: 351
+[0m
+现在是第三部分（源码研读、A4 总结、面试问答、收尾）。
+[0m$ [0mcat >> week5/day33_distributed_parallelism_lab.md << 'APPEND_EOF'
+
+## 5. 源码走读：从 trace 里的 kernel 名反查调用链
+
+今天实验里出现的每一个名字，都能沿调用链摸回源码。反过来，知道链路才能解释 A/B 差异。（坐标沿用 Day 32 §6 的 main 分支口径，版本漂移处已标注。）
+
+### 5.1 all-reduce 的三张面孔与选择逻辑
+
+一次 decode forward 中，AR 的调用链（Day 32 §6.2 已走读，今天补 trace 侧对照）：
+
+```text
+vllm/model_executor/layers/linear.py :: RowParallelLinear.forward()
+  └─ vllm/distributed/communication_op.py :: tensor_model_parallel_all_reduce()
+       └─ vllm/distributed/parallel_state.py :: GroupCoordinator.all_reduce()
+            ├─ ① device_communicators/custom_all_reduce.py :: CustomAllreduce.custom_all_reduce()
+            │     条件 should_custom_ar()：消息 ≤ max_size（默认 8MB 量级）、
+            │     world_size ≤ 8、full_nvlink（或 P2P）——命中 → vllm::cross_device_reduce_1/2stage
+            ├─ ② device_communicators/pynccl.py :: PyNccl.all_reduce()
+            │     NCCL 裸绑定（无 torch 侧调度）→ ncclDevKernel_AllReduce_*
+            └─ ③ torch.distributed.all_reduce() → 同样落 NCCL kernel（兜底）
+```
+
+对照今天的 trace：默认配置你看到 ①（`vllm::` 前缀）；`--disable-custom-all-reduce` 后落到 ②/③（`ncclDevKernel_` 前缀）。**Step 4 A/B 差异的机制解释**就藏在这里：custom AR 用 IPC 注册缓冲区 + flag 自旋，砍掉了 NCCL 通信器内部的调度与协议协商开销，小消息（decode 的 B·H·b 正是典型小消息）时延显著更低；代价是它要独占一块注册显存、且只覆盖 ≤8 卡 NVLink 域——"域内用专线，域外走公网"。
+
+### 5.2 为什么 decode trace 里可能搜不到 "nccl"
+
+这是今天最容易迷惑的点，串起 Day 18：decode 默认走 CUDA Graph，**capture 时用哪个通信实现，replay 时就永远是它**。custom AR 的注册缓冲区设计天然 graph-safe（kernel 只读写固定地址，每次 replay 前 vLLM 把数据拷进缓冲区）；NCCL 的常规路径不是为 capture 设计的（内部有 host 侧状态机）。所以：
+
+| 配置 | decode trace 里看到的 | 说明 |
+|---|---|---|
+| 默认（CG + custom AR） | `vllm::cross_device_reduce_*`（graph 节点级） | 生产路径 |
+| CG + `--disable-custom-all-reduce` | PyNccl 的 graph-capture 模式（若版本支持）或回退 | 版本敏感，行为可能变化 |
+| `--enforce-eager` + 关 custom AR | `ncclDevKernel_*` 明晃晃一大排 | 最直观的教学形态 |
+
+实验建议：**主测量用默认配置**（测的是生产路径），**教学观察用 eager + NCCL**（看得最清楚），两份 trace 对照着看，"通信藏在 graph 里"这件事就有体感了。
+
+### 5.3 profiling 的接缝：`/start_profile` 怎么落到 cudaProfilerApi
+
+```text
+API server（前端进程）POST /start_profile
+  └─ RPC → vllm/v1/engine/core.py :: EngineCore
+       └─ vllm/v1/engine/profiler.py :: Profiler.start_profile()
+            ├─ torch.profiler（activities=[CPU, GPU]）→ trace 落盘 VLLM_TORCH_PROFILER_DIR
+            └─ 触发 cudaProfilerStart() → 与 nsys 的 --capture-range=cudaProfilerApi 握手
+```
+
+两套 profiler 的分工：**torch profiler**（`/start_profile` 直接用）输出带 Python 栈的 trace，适合找 CPU 侧瓶颈（Day 19 的用法）；**nsys** 用 capture-range 只借 `cudaProfilerStart/Stop` 这对信号开窗，kernel 级时间线更完整、开销更低——今天抓通信占比选它。`--num-steps` 之类的按 step 采样参数在 V1 里演进较快，以你版本的 API 文档为准（诚实标注：这块是我明确不确定、动手前必须 `curl localhost:8000/docs` 核对的）。
+
+### 5.4 昇腾经验迁移（接 Day 32 §6.4）
+
+今天的方法论在昇腾上完全成立，只换名字：nsys ↔ msprof / Ascend Profiler，`ncclDevKernel_*` ↔ HCCL 算子名，`nvidia-smi topo -m` ↔ `npu-smi info` 拓扑查询；"graph 里只能放注册缓冲区的通信 kernel" ↔ HCCL 融合算子进图（你做过的流水线优化里，通信进图、双缓冲藏等待是同一件事）。**"用 profiler 把集合通信时间从 step 里剥出来"是跨平台通用技能**——Day 36 选 vllm-ascend 性能切入点时，今天的实验流程可以原样搬过去做基线。
+
+---
+
+## 6. A4 专题总结《分布式推理》（本周第 4 份，收官）
+
+四份 A4 的最后一份。Day 35 复盘日要模拟白板互讲，今天写的时候就要按"能讲"的标准写。四段式骨架 + 参考要点（浓缩 Day 32 全天 + 今天数据，一页 A4 装得下）：
+
+**① 原理（三行公式 + 一张图）**
+
+- TP：col+row 配对 → 每层恰好 2 次 AR；ring 每 GPU `2(p-1)/p·V`；`T_step(p)` 三项分解（计算 ÷p、带宽项随 (p−1)·B、时延项 2L·t_ar 不随 batch 缩）。配 Day 32 图 1。
+- PP：bubble `(p-1)/(m+p-1)`；边界只传 activation（PCIe 都够）——用显存容量换吞吐分母。
+- EP：整专家分布 + all-to-all dispatch/combine（`2E·H·b`/token），只在 MoE 层、可重叠；DeepSeek：DP attention + EP + 双流。
+
+**② 场景（决策树，倒着背）**
+
+- 显存放不下 → 量化先试 → 机内 TP（NVSwitch 域 ≤8）→ 跨机 PP/EP → 多实例 + 路由提 goodput；
+- prefill 算力不够 TTFT SLO → 敢堆 TP（通信 <1%）；decode 池 → 低 TP、多实例（今天的实验数据就是 decode 侧证据）；
+- 单卡放得下 → 默认多实例（Lab D 的数据）。
+
+**③ 权衡（把今天的数字填进去）**
+
+| 维度 | TP=2 实测（我自己的数） | 2×TP1 对照 |
+|---|---|---|
+| TPOT p50 加速/绝对值 | ___ | ___ |
+| 聚合吞吐 / per-GPU 效率 | ___ | ___ |
+| TTFT | ___ | ___ |
+| KV 池/卡 | ÷2 且基数变大（+） | 每卡全量但两份权重（−） |
+| p99 / lockstep | 同步抖动（−） | 独立，更稳（+） |
+| 运维 | 单实例简单 | 扩缩容 / 路由自由（Day 34） |
+
+**④ 失效模式（每条配"怎么发现"）**
+
+- 跨机/PCIe 开 TP：ρ ×10~18 → TPOT 不降反升（发现：`nvidia-smi topo -m` + nsys 通信占比 >50%）；
+- 大 batch + 大 TP 度：带宽项抬头（发现：吞吐加速比随 C 增大而下降的斜率）；
+- 小模型上 TP：时延项占比高（发现：今天 8B 实验，TPOT 改善 <1.5×）；
+- straggler 拖 p99：lockstep 取 max（发现：nsys 双卡泳道 AR 错位 / p99-p50 差距大）；
+- TP > kv_heads：KV 复制，显存收益打折（Day 32 §3.1 坑位，8 卡 TP 跑 8 KV 头模型时踩）。
+
+---
+
+## 7. 面试高频问题
+
+**Q1：你说"能单卡放下就别上 TP"——你的实验数据是什么？**
+> 要点：甩今天的表。TPOT 加速 1.3~1.5×（时延项 2L·t_ar，8B 模型上占 20~35%）；吞吐 per-GPU 效率 65~80%；2×TP1 分流对照聚合吞吐更高且 p99 更稳；例外：显存墙 / prefill 算力不够（TTFT 改善 ~2×，prefill 通信 <1%）。**有自己数字的候选人，和只有文档结论的候选人，可信度差一个档。**
+
+**Q2：怎么测出 TP 的通信占比？口径陷阱有哪些？**
+> 要点：nsys `--capture-range=cudaProfilerApi` 配 `/start_profile` 开窗 + `--cuda-graph-trace=node` 展开 graph；kernel 名搜 `vllm::cross_device_reduce_*`（custom AR）或 `ncclDevKernel_*`；占比 = Σ通信 kernel ÷ Σ全部 kernel。陷阱：① custom AR kernel 时长含自旋等待（是同步时钟不是搬运时间）；② kernel 时长和 ≠ 墙钟；③ 默认 trace 不展开 graph，会误判"没有通信"；④ 窗口混入 prefill 会污染计数——用 AR 个数 ÷ 2L 与 tok/s ÷ B 交叉验证。
+
+**Q3：为什么小模型上 TP 更不划算？**
+> 要点：通信税分两项，时延项 `2L·t_ar` 只看层数、不看宽度与 batch——是按层收的人头税。计算项随模型变小线性缩，税不缩：8B/TP2 时延项占 20~35%，70B/TP2 只占 ~12%。推论：同样的 TP 拓扑，模型越大扩展性越好（但显存墙也在同方向收紧）。
+
+**Q4：custom all-reduce 为什么比 NCCL 快？什么时候用不了？**
+> 要点：IPC 注册缓冲区 + flag 自旋（one/two-shot），砍掉通信器协议开销，小消息时延低且 graph-safe（kernel 只读写固定地址）。限制：消息上限（~8MB 量级）、world ≤8、要求 full NVLink/P2P——域外或大消息回落 PyNccl/NCCL。A/B 数据：今天 Step 4 的 TPOT 差。
+
+**Q5：TP 的 p99 为什么比单卡差？**
+> 要点：每层 2 次 AR 强制 lockstep，step 时延 = max(两卡)，慢卡拖快卡——时钟漂移、邻居噪声、不均衡负载都进 p99；单请求时还有 2L·t_ar 的固定串行段。发现手段：nsys 双卡泳道看 AR 对齐性；对策：decode 池降 TP 度、多实例隔离噪声。
+
+**Q6（场景题）：双卡 NVLink 的机器跑 8B 模型，你会怎么部署？给出量化依据。**
+> 要点：默认 `2×TP1 + router`（Lab D 数据：聚合吞吐↑、TPOT↓、p99 稳、可独立扩缩容 + Day 34 cache-aware routing）；例外：单请求低时延场景若 TTFT/TPOT 仍不达标、且 2×TP1 已饱和 → 才考虑 TP2（buy FLOPs）；模型 >单卡显存 → 别无选择。答题结构：先问 SLO 与显存，再给形态，最后甩自己的实验数字。
+
+**Q7（经验迁移题）：把今天的实验搬到昇腾上要换哪些件？**
+> 要点：nsys→msprof；NCCL kernel 名→HCCL 算子名；custom AR→HCCL 融合算子/通信进图；`nvidia-smi topo -m`→`npu-smi info`；方法论不变：单变量 A/B + 预测先行 + kernel 级通信剥离 + 计数交叉验证。落点：Day 36 vllm-ascend 的性能基线就这么做。
+
+---
+
+## 8. 今日总结
+
+| # | 要点 | 一句话 |
+|---|---|---|
+| 1 | 实验方法论 | 预测 → 实测 → 机制 → 复盘 四段闭环；单变量，五个钉子（模型/负载/seed/缓存/编译） |
+| 2 | TPOT 加速 1.3~1.5× | 时延项 `2L·t_ar` 人头税；模型越小税越重（8B 占 20~35% vs 70B ~12%） |
+| 3 | 吞吐加速 1.3~1.6× | per-GPU 效率 65~80%；lockstep 拖 p99；TTFT 却近 2×（prefill <1%） |
+| 4 | 通信占比测量 | nsys capture-range + graph-trace=node；搜 `vllm::cross_device_reduce_*` / `ncclDevKernel_*`；两个口径陷阱 |
+| 5 | 三张面孔 | custom AR（域内专线、graph-safe）→ PyNccl → torch.distributed（兜底）；A/B 实测时延差 |
+| 6 | 2×TP1 对照 | 同卡数聚合吞吐更高、p99 更稳——"别上 TP"的数据版；Day 34 路由的预告片 |
+| 7 | 失效边界 | PCIe/跨机 ρ×10~18；大 batch 大 TP 带宽项抬头；TP>kv_heads KV 复制 |
+| 8 | 产出 | 四份 A4 收官：《分布式推理》；Day 35 复盘互讲 |
+
+**带走的三张图**：图 1（实验架构与三路采集）、图 2（预测曲线与通信税标注——面试画板首选）、图 3（nsys 时间线与占比计算）。
+
+---
+
+## 9. 今日自测题（不看笔记作答）
+
+1. 背公式并代入自己的数：你的机器上 Qwen3-8B TP=2、C=64 的 `T_step` 三项各是多少毫秒？与实测 TPOT 差多少、差在哪一项？
+2. nsys 抓 TP2 decode，为什么必须加 `--cuda-graph-trace=node`？不加的话 trace 里看到什么、会得出什么错误结论？
+3. 你测出通信 kernel 占比 40%，比预测上限还高——列出至少三个排查步骤（提示：口径、路径、窗口纯净性、profiler 开销）。
+4. custom AR 和 NCCL 各自的适用域是什么？为什么 custom AR 能被 capture 进 CUDA Graph 而 NCCL 常规路径不行？
+5. 场景题：老板说"再加一张卡把 TPOT 砍半"，你用今天哪个数据/哪个实验反驳或支持他？什么条件下他是对的？
+
+（答案都在 §3-§5 与 Lab C 清单；答不上来的小节今晚重读。）
+
+---
+
+## 10. 今日产出物
+
+- [ ] **TP1 vs TP2 并发扫描数据**：`results/day33/tp{1,2}_c*.json` 十个文件 + 两张对照曲线图（吞吐 / TPOT）——A4 的数据底座
+- [ ] **预测-实测对拍主表**（Lab C）：七行指标 + 差异解释，三段对照法记录格式
+- [ ] **nsys 剖析记录**：`/tmp/day33_tp2.nsys-rep`（留档）+ 通信占比数字 + AR 计数交叉验证 + custom AR vs NCCL 的 A/B 对比一行结论
+- [ ] **A4 专题总结《分布式推理》**（§6 骨架填满，四份 A4 收官）——Day 35 复盘日互讲素材
+- [ ] （选做）**2×TP1 vs 1×TP2 对照数据**（Lab D）——Day 34 cache-aware routing 的引子
+- [ ] 打卡一句话：今天的实测里哪一个数字最出乎意料？为什么（用一句机制解释）？
+
+> **明日预告（Day 34：prefix caching 与路由）**：今天 Lab D 里两个 TP1 实例是"手动分流"——谁来决定一个请求去哪个实例？随机轮询浪费了最值钱的资源：**已经躺在某个实例 KV 池里的前缀**。明天把 Day 16 的 block hash、今天的多实例形态、Day 31 的 router 三条线拧在一起：cache-aware routing 的命中率的算术、`cache_salt` 防跨租户缓存泄漏、以及"GPU→CPU→SSD 分层 KV 池"的集群视角。今天"2×TP1 聚合吞吐更高"的结论，明天会再涨一截。
+APPEND_EOF
+echo "done, total lines: $(wc -l < week5/day33_distributed_parallelism_lab.md)"
+done, total lines: 505
+[0m
+[0m$ [0mgrep -n "^#\|^##\|^###" week5/day33_distributed_parallelism_lab.md; echo "---"; grep -n "assets/" week5/day33_distributed_parallelism_lab.md
+1:# Day 33｜分布式并行（二）：双卡 TP=2 vs 单卡实验——用 nsys 把通信占比挖出来
+13:## 0. 前情回顾与本日位置
+34:## 1. 今日学习目标
+47:## 2. 核心概念速查
+65:## 3. 实验设计：预测先行（不写预测的实验是"跑着看"）
+69:### 3.1 实验矩阵与控制变量
+84:### 3.2 手算预测表：把 Day 32 公式代进 Qwen3-8B
+125:### 3.3 nsys 里该看到什么：先把"红色"认出来
+150:## 4. 动手实验
+152:### Lab A｜TP=1 vs TP=2：吞吐 / TTFT / TPOT 并发扫描（60 min）
+157:# 终端 1 · 形态 A：单卡
+169:# 预热（不落盘）：编译缓存 / CUDA graph bucket / 连接池热起来
+202:# plot_day33.py — 把 results/day33/*.json 汇成两条曲线（matplotlib）
+214:# 字段名以 json 实际内容为准（--save-result 的 schema 随版本微调）；
+215:# 中位数字段若不存在，用 percentile 明细里的 50 分位。
+231:### Lab B｜nsys 抓通信占比（50 min）
+253:# 服务就绪后，先起 capture 区间，再打负载，再关区间
+261:# 等 nsys 落盘：Removing ... / report saved 提示出现再动终端
+267:# 路线 1：报告表（快，适合现场看）
+270:# 路线 2：导出 sqlite 精确求和（进 A4 的数字用这条）
+295:### Lab C｜预测 → 实测 → 差异解释（20 min，本日灵魂）
+319:### Lab D（选做）｜2×TP1 + 分流 vs 1×TP2：把"论证二"跑成数据（30 min）
+324:# 终端 1/2：两个 TP1 实例（注意端口与卡各占其一）
+330:# 终端 3/4：两个客户端各打一半（同 seed 同数据集，--num-prompts 100 ≈ Lab A 的一半）
+353:## 5. 源码走读：从 trace 里的 kernel 名反查调用链
+357:### 5.1 all-reduce 的三张面孔与选择逻辑
+375:### 5.2 为什么 decode trace 里可能搜不到 "nccl"
+387:### 5.3 profiling 的接缝：`/start_profile` 怎么落到 cudaProfilerApi
+399:### 5.4 昇腾经验迁移（接 Day 32 §6.4）
+405:## 6. A4 专题总结《分布式推理》（本周第 4 份，收官）
+442:## 7. 面试高频问题
+467:## 8. 今日总结
+484:## 9. 今日自测题（不看笔记作答）
+496:## 10. 今日产出物
+---
+141:![Day 33 实验架构](assets/day33_experiment_architecture.svg)
+146:![预测曲线](assets/day33_prediction_curves.svg)
+293:![nsys 时间线与占比计算](assets/day33_nccl_timeline.svg)
+[0m
+现在我来验证完整文件和 SVG 的格式是否正确。
+[0m$ [0mfor f in week5/assets/day33_*.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('$f OK')"; done
+week5/assets/day33_experiment_architecture.svg OK
+week5/assets/day33_nccl_timeline.svg OK
+week5/assets/day33_prediction_curves.svg OK
+[0m
+需要修复一个问题：第一张图片的引用被包裹在了一个代码块中。我来检查并修复它。
+[0m→ [0mRead week5/day33_distributed_parallelism_lab.md[90m [limit=15, offset=136][0m
+[0m
+[0m← [0mEdit week5/day33_distributed_parallelism_lab.md
+Index: /mnt/workspace/aiinfra/vllm/week5/day33_distributed_parallelism_lab.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week5/day33_distributed_parallelism_lab.md
++++ /mnt/workspace/aiinfra/vllm/week5/day33_distributed_parallelism_lab.md
+@@ -134,13 +134,11 @@
+ | `nvjet_*` / `cutlass*gemm*` / `*flash*` / `*rmsnorm*` | 计算主体（分母） | 一直在 |
+ 
+ **一个容易扑空的坑**：默认配置下 decode 走 CUDA Graph，而 graph 里的 kernel 在 nsys 默认设置下**不逐个展开**——trace 里只有一大块 replay，你搜 `nccl` 一个都搜不到，误以为"没有通信"。必须加 `--cuda-graph-trace=node`（这是 vLLM 官方 profiling 文档明确提醒的）。这也是 Day 18"通信必须用注册缓冲区 kernel 才能进 graph"的 trace 侧印证：你看到的会是 `vllm::` 开头的 custom AR，而不是 NCCL。
+ 
+-```markdown
+-实验架构与数据流全景（图 1）：
++实验架构与数据流全景（图 1）——一个客户端、两套服务形态、三路数据采集：
+ 
+ ![Day 33 实验架构](assets/day33_experiment_architecture.svg)
+-```
+ 
+ 预测曲线的形状先画出来（图 2），实测点往上叠：
+ 
+ ![预测曲线](assets/day33_prediction_curves.svg)
+
+[0m
+[0m$ [0mgrep -c '^```' week5/day33_distributed_parallelism_lab.md; tail -5 week5/day33_distributed_parallelism_lab.md; ls -la week5/day33_distributed_parallelism_lab.md week5/assets/day33_*.svg
+22
+- [ ] **A4 专题总结《分布式推理》**（§6 骨架填满，四份 A4 收官）——Day 35 复盘日互讲素材
+- [ ] （选做）**2×TP1 vs 1×TP2 对照数据**（Lab D）——Day 34 cache-aware routing 的引子
+- [ ] 打卡一句话：今天的实测里哪一个数字最出乎意料？为什么（用一句机制解释）？
+
+> **明日预告（Day 34：prefix caching 与路由）**：今天 Lab D 里两个 TP1 实例是"手动分流"——谁来决定一个请求去哪个实例？随机轮询浪费了最值钱的资源：**已经躺在某个实例 KV 池里的前缀**。明天把 Day 16 的 block hash、今天的多实例形态、Day 31 的 router 三条线拧在一起：cache-aware routing 的命中率的算术、`cache_salt` 防跨租户缓存泄漏、以及"GPU→CPU→SSD 分层 KV 池"的集群视角。今天"2×TP1 聚合吞吐更高"的结论，明天会再涨一截。
+-rw-r--r-- 1 root root  8212 Oct  2 14:24 week5/assets/day33_experiment_architecture.svg
+-rw-r--r-- 1 root root  9806 Oct  2 14:26 week5/assets/day33_nccl_timeline.svg
+-rw-r--r-- 1 root root  8433 Oct  2 14:25 week5/assets/day33_prediction_curves.svg
+-rw-r--r-- 1 root root 39332 Oct  2 14:31 week5/day33_distributed_parallelism_lab.md
+[0m
+Day 33 已完成，文件已确认写入：
+
+**主文件**：`week5/day33_distributed_parallelism_lab.md`（503 行）
+- **§0-§3**：衔接 Day 29-32（兑现 Day 32 Lab C 的三行预测），实验矩阵与控制变量、Qwen3-8B TP=2 的手算预测表（`T_step(p)` 三项分解，核心洞察：8B 模型 TP2 通信几乎纯时延项“人头税”）、nsys kernel 名对照表
+- **§4 实验**：Lab A 并发扫描（吞吐/TPOT/TTFT）→ Lab B nsys 抓通信占比（capture-range + `--cuda-graph-trace=node` + sqlite 求和 + custom AR vs NCCL A/B）→ Lab C 预测-实测对拍与差异解释清单 → Lab D（选做）2×TP1 vs 1×TP2 聚合吞吐对照
+- **§5-§10**：源码走读（AR 三张面孔调用链、CG 内为何搜不到 nccl、profiler 接缝）、A4 专题总结《分布式推理》骨架（四份 A4 收官）、7 道面试题、总结/自测/产出物 + Day 34 预告
+
+**SVG**（3 张，均通过 XML 校验）：`week5/assets/day33_experiment_architecture.svg`、`day33_prediction_curves.svg`、`day33_nccl_timeline.svg`

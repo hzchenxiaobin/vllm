@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Helvetica, Arial, sans-serif">
+  <rect width="960" height="560" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">加速比 S = E[τ] / (γ + k·c)：β 决定天花板，负载档位决定能否兑现</text>
+
+  <!-- ============ left panel: beta scan ============ -->
+  <text x="260" y="62" text-anchor="middle" font-size="13" font-weight="bold" fill="#2D3748">左：β 扫描（γ=1，c=0.05，理想低延迟档）</text>
+  <!-- axes -->
+  <line x1="70" y1="460" x2="460" y2="460" stroke="#4A5568" stroke-width="1.5"/>
+  <line x1="70" y1="460" x2="70" y2="80" stroke="#4A5568" stroke-width="1.5"/>
+  <!-- gridlines S=1,2,3,4 -->
+  <g stroke="#CBD5E0" stroke-width="1" stroke-dasharray="3 3">
+    <line x1="70" y1="414" x2="450" y2="414"/>
+    <line x1="70" y1="321" x2="450" y2="321"/>
+    <line x1="70" y1="229" x2="450" y2="229"/>
+    <line x1="70" y1="136" x2="450" y2="136"/>
+  </g>
+  <!-- S=1 reference -->
+  <line x1="70" y1="414" x2="450" y2="414" stroke="#C53030" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <g font-size="10" fill="#4A5568">
+    <text x="62" y="418" text-anchor="end">1.0</text>
+    <text x="62" y="325" text-anchor="end">2.0</text>
+    <text x="62" y="233" text-anchor="end">3.0</text>
+    <text x="62" y="140" text-anchor="end">4.0</text>
+    <text x="30" y="270" transform="rotate(-90 30 270)" text-anchor="middle">加速比 S</text>
+  </g>
+  <!-- x ticks -->
+  <g font-size="10" fill="#4A5568">
+    <text x="70" y="476" text-anchor="middle">0</text>
+    <text x="117" y="476" text-anchor="middle">1</text>
+    <text x="165" y="476" text-anchor="middle">2</text>
+    <text x="212" y="476" text-anchor="middle">3</text>
+    <text x="260" y="476" text-anchor="middle">4</text>
+    <text x="307" y="476" text-anchor="middle">5</text>
+    <text x="355" y="476" text-anchor="middle">6</text>
+    <text x="402" y="476" text-anchor="middle">7</text>
+    <text x="450" y="476" text-anchor="middle">8</text>
+    <text x="260" y="494" text-anchor="middle">草稿长度 k（num_speculative_tokens）</text>
+  </g>
+
+  <!-- curves -->
+  <polyline points="70,414 117,339 165,279 212,230 260,191 307,159 355,135 402,116 450,101" fill="none" stroke="#805AD5" stroke-width="2.5"/>
+  <polyline points="70,414 117,348 165,301 212,269 260,247 307,234 355,224 402,222 450,221" fill="none" stroke="#2B6CB0" stroke-width="2.5"/>
+  <polyline points="70,414 117,356 165,322 212,303 260,293 307,289 355,289 402,291 450,294" fill="none" stroke="#38A169" stroke-width="2.5"/>
+  <polyline points="70,414 117,374 165,359 212,355 260,357 307,360 355,365 402,369 450,374" fill="none" stroke="#DD6B20" stroke-width="2.5"/>
+  <polyline points="70,414 117,391 165,390 212,391 260,395 307,401 355,405 402,411 450,416" fill="none" stroke="#C53030" stroke-width="2.5"/>
+  <!-- peak markers -->
+  <circle cx="212" cy="355" r="4" fill="#DD6B20"/>
+  <circle cx="165" cy="390" r="4" fill="#C53030"/>
+
+  <!-- legend -->
+  <g font-size="10.5">
+    <line x1="95" y1="95" x2="120" y2="95" stroke="#805AD5" stroke-width="2.5"/><text x="126" y="99" fill="#553C9A">β=0.9（代码补全/RAG 类）持续上升</text>
+    <line x1="95" y1="113" x2="120" y2="113" stroke="#2B6CB0" stroke-width="2.5"/><text x="126" y="117" fill="#2B6CB0">β=0.8 饱和在 k≈6</text>
+    <line x1="95" y1="131" x2="120" y2="131" stroke="#38A169" stroke-width="2.5"/><text x="126" y="135" fill="#276749">β=0.7 峰值 k≈4-5</text>
+    <line x1="95" y1="149" x2="120" y2="149" stroke="#DD6B20" stroke-width="2.5"/><text x="126" y="153" fill="#9C4221">β=0.5 峰值 k=3（S≈1.63）</text>
+    <line x1="95" y1="167" x2="120" y2="167" stroke="#C53030" stroke-width="2.5"/><text x="126" y="171" fill="#C53030">β=0.3 峰值 k=2，k=8 后跌破 1</text>
+  </g>
+
+  <!-- ============ right panel: load regime scan ============ -->
+  <text x="710" y="62" text-anchor="middle" font-size="13" font-weight="bold" fill="#2D3748">右：负载档位扫描（β=0.8，c=0.15，Qwen3-8B EAGLE）</text>
+  <line x1="520" y1="460" x2="910" y2="460" stroke="#4A5568" stroke-width="1.5"/>
+  <line x1="520" y1="460" x2="520" y2="80" stroke="#4A5568" stroke-width="1.5"/>
+  <g stroke="#CBD5E0" stroke-width="1" stroke-dasharray="3 3">
+    <line x1="520" y1="367" x2="900" y2="367"/>
+    <line x1="520" y1="275" x2="900" y2="275"/>
+    <line x1="520" y1="182" x2="900" y2="182"/>
+  </g>
+  <line x1="520" y1="367" x2="900" y2="367" stroke="#C53030" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <g font-size="10" fill="#4A5568">
+    <text x="512" y="371" text-anchor="end">1.0</text>
+    <text x="512" y="279" text-anchor="end">1.5</text>
+    <text x="512" y="186" text-anchor="end">2.0</text>
+    <text x="486" y="270" transform="rotate(-90 486 270)" text-anchor="middle">加速比 S</text>
+  </g>
+  <g font-size="10" fill="#4A5568">
+    <text x="520" y="476" text-anchor="middle">0</text>
+    <text x="567" y="476" text-anchor="middle">1</text>
+    <text x="615" y="476" text-anchor="middle">2</text>
+    <text x="662" y="476" text-anchor="middle">3</text>
+    <text x="710" y="476" text-anchor="middle">4</text>
+    <text x="757" y="476" text-anchor="middle">5</text>
+    <text x="805" y="476" text-anchor="middle">6</text>
+    <text x="852" y="476" text-anchor="middle">7</text>
+    <text x="900" y="476" text-anchor="middle">8</text>
+    <text x="710" y="494" text-anchor="middle">草稿长度 k</text>
+  </g>
+
+  <polyline points="520,367 567,264 615,208 662,181 710,168 757,169 805,173 852,182 900,196" fill="none" stroke="#38A169" stroke-width="2.5"/>
+  <polyline points="520,367 567,310 615,295 662,295 710,303 757,314 805,326 852,339 900,352" fill="none" stroke="#2B6CB0" stroke-width="2.5"/>
+  <polyline points="520,367 567,355 615,362 662,375 710,387 757,399 805,410 852,420 900,430" fill="none" stroke="#C53030" stroke-width="2.5"/>
+  <circle cx="710" cy="168" r="4" fill="#38A169"/>
+
+  <g font-size="10.5">
+    <line x1="545" y1="95" x2="570" y2="95" stroke="#38A169" stroke-width="2.5"/><text x="576" y="99" fill="#276749">B=1, ctx=512：γ≈1，峰值 S≈2.1（k≈4）</text>
+    <line x1="545" y1="113" x2="570" y2="113" stroke="#2B6CB0" stroke-width="2.5"/><text x="576" y="117" fill="#2B6CB0">B=16, ctx=2048：γ 随 k 抬升，峰值 k≈2-3</text>
+    <line x1="545" y1="131" x2="570" y2="131" stroke="#C53030" stroke-width="2.5"/><text x="576" y="135" fill="#C53030">B=32, ctx=4096：全程 &lt; 1，应直接关闭</text>
+  </g>
+
+  <!-- bottom note -->
+  <text x="480" y="530" text-anchor="middle" font-size="11" fill="#4A5568">左图：接受率 β 决定 E[τ] 的天花板 1/(1-β)，边际收益随 k 指数衰减；右图：大 batch / 长上下文使 verify 的 KV 读取按 (k+1) 倍付账（γ→k+1），投机变负收益</text>
+  <text x="480" y="548" text-anchor="middle" font-size="11" fill="#4A5568">（曲线按 E[τ]=(1-β^(k+1))/(1-β)、γ(k)=(W+(k+1)·M_KV)/(W+M_KV) 逐点计算；实际系统还有调度/CUDA Graph 等固定开销，见 3.5 节）</text>
+</svg>

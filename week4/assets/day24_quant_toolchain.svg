@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4A5568"/>
+    </marker>
+  </defs>
+  <rect width="960" height="720" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">量化全链路：llm-compressor（产）→ compressed-tensors（存）→ vLLM V1（服）</text>
+
+  <!-- ============ Stage 1: produce ============ -->
+  <rect x="30" y="52" width="420" height="330" rx="10" fill="#F7FAFC" stroke="#4A5568"/>
+  <text x="45" y="76" font-size="13.5" font-weight="bold" fill="#276749">① 产：oneshot()（离线，一次性，GPU 小时级）</text>
+
+  <rect x="50" y="92" width="180" height="62" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="140" y="113" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">基座模型（BF16）</text>
+  <text x="140" y="130" text-anchor="middle" font-size="10" fill="#718096">AutoModelForCausalLM</text>
+  <text x="140" y="145" text-anchor="middle" font-size="10" fill="#718096">targets="Linear" 命中全部投影层</text>
+
+  <rect x="250" y="92" width="180" height="62" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="340" y="113" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">校准数据</text>
+  <text x="340" y="130" text-anchor="middle" font-size="10" fill="#718096">ultrachat 512 条 × 2048 tok</text>
+  <text x="340" y="145" text-anchor="middle" font-size="10" fill="#718096">分布要贴目标负载（3.3 节）</text>
+
+  <line x1="140" y1="154" x2="220" y2="178" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="340" y1="154" x2="270" y2="178" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <rect x="115" y="182" width="260" height="56" rx="8" fill="#C6F6D5" stroke="#276749"/>
+  <text x="245" y="203" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#276749">校准前向（trace）</text>
+  <text x="245" y="221" text-anchor="middle" font-size="10" fill="#276749">逐层捕获输入 → 喂给 Modifier（GPTQ 的 H 就在这算）</text>
+  <line x1="245" y1="238" x2="245" y2="252" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <rect x="50" y="254" width="150" height="52" rx="8" fill="#EDF2F7" stroke="#4A5568"/>
+  <text x="125" y="274" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#2D3748">SmoothQuantModifier</text>
+  <text x="125" y="291" text-anchor="middle" font-size="9.5" fill="#718096">搬家（可选，INT8 前置）</text>
+
+  <rect x="210" y="254" width="150" height="52" rx="8" fill="#EDF2F7" stroke="#4A5568"/>
+  <text x="285" y="274" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#2D3748">GPTQModifier</text>
+  <text x="285" y="291" text-anchor="middle" font-size="9.5" fill="#718096">W4A16 边量边修</text>
+
+  <rect x="50" y="314" width="310" height="52" rx="8" fill="#FEEBC8" stroke="#DD6B20"/>
+  <text x="205" y="334" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#9C4221">QuantizationModifier</text>
+  <text x="205" y="351" text-anchor="middle" font-size="9.5" fill="#9C4221">FP8_DYNAMIC：权重 per-channel 静态 · 激活留运行时动态</text>
+
+  <text x="370" y="282" font-size="10" fill="#718096">顺序敏感：</text>
+  <text x="370" y="296" font-size="10" fill="#718096">先搬家后量化</text>
+
+  <!-- arrow to stage 2 -->
+  <line x1="450" y1="300" x2="492" y2="300" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="452" y="288" font-size="9.5" fill="#718096">save_compressed()</text>
+
+  <!-- ============ Stage 2: store ============ -->
+  <rect x="495" y="52" width="435" height="330" rx="10" fill="#F7FAFC" stroke="#4A5568"/>
+  <text x="510" y="76" font-size="13.5" font-weight="bold" fill="#1A365D">② 存：compressed-tensors checkpoint（描述式配置）</text>
+
+  <rect x="515" y="95" width="190" height="120" rx="8" fill="#FFFFFF" stroke="#2B6CB0"/>
+  <text x="610" y="114" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">config.json</text>
+  <text x="610" y="133" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#2D3748">"quant_method":</text>
+  <text x="610" y="146" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#2D3748"> "compressed-tensors"</text>
+  <text x="610" y="164" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#2D3748">config_groups:</text>
+  <text x="610" y="177" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#2D3748"> weights: 8bit/float/channel</text>
+  <text x="610" y="190" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#2D3748"> activations: dynamic/token</text>
+  <text x="610" y="207" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#2D3748">kv_cache_scheme: "FP8"(可选)</text>
+
+  <rect x="725" y="95" width="185" height="120" rx="8" fill="#FFFFFF" stroke="#2B6CB0"/>
+  <text x="817" y="114" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2B6CB0">*.safetensors</text>
+  <text x="817" y="133" text-anchor="middle" font-size="9.5" fill="#2D3748">pack 后的低比特权重</text>
+  <text x="817" y="148" text-anchor="middle" font-size="9.5" fill="#2D3748">per-channel / group scale</text>
+  <text x="817" y="163" text-anchor="middle" font-size="9.5" fill="#2D3748">W4: int32 打包 (8×4bit)</text>
+  <text x="817" y="181" text-anchor="middle" font-size="9.5" fill="#9C4221">attn.k_scale / v_scale</text>
+  <text x="817" y="196" text-anchor="middle" font-size="9.5" fill="#9C4221">（kv_cache_scheme 产物，</text>
+  <text x="817" y="209" text-anchor="middle" font-size="9.5" fill="#9C4221">Day 23 scale 来源②）</text>
+
+  <rect x="515" y="232" width="395" height="62" rx="8" fill="#FFFAF0" stroke="#DD6B20"/>
+  <text x="530" y="253" font-size="11" font-weight="bold" fill="#9C4221">描述式 ≠ 方言式（对比 GPTQ/AWQ 存量 ckpt）</text>
+  <text x="530" y="270" font-size="10" fill="#9C4221">config 只声明"是什么"，kernel 选择留给运行时统一解释——一个 CompressedTensors 路径覆盖所有 recipe</text>
+  <text x="530" y="285" font-size="10" fill="#9C4221">lm_head 未出现在 config_groups（ignore 的落盘证据）</text>
+
+  <rect x="515" y="306" width="395" height="58" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="530" y="327" font-size="11" font-weight="bold" fill="#2B6CB0">大小对照（Qwen3-8B）</text>
+  <text x="530" y="344" font-size="10" fill="#2D3748">BF16 16.4 GB → FP8 8.2 GB → W4 ≈ 4.5 GB（含 group scale 开销）</text>
+  <text x="530" y="358" font-size="10" fill="#2D3748">启动日志 "Loading model weights took X GiB" 直接可验</text>
+
+  <!-- arrow down to stage 3 -->
+  <line x1="480" y1="390" x2="480" y2="420" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="497" y="410" font-size="10" fill="#718096">vllm serve ./ckpt（quantization 自动识别，无需 --quantization）</text>
+
+  <!-- ============ Stage 3: serve ============ -->
+  <rect x="30" y="425" width="900" height="240" rx="10" fill="#F7FAFC" stroke="#4A5568"/>
+  <text x="45" y="449" font-size="13.5" font-weight="bold" fill="#C05621">③ 服：vLLM V1 加载链（细化 Day 22 §6.1 的通用链）</text>
+
+  <rect x="50" y="465" width="200" height="56" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="150" y="485" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#2B6CB0">quant_method 注册表命中</text>
+  <text x="150" y="502" text-anchor="middle" font-size="9.5" fill="#718096">layers/quantization/__init__.py</text>
+
+  <rect x="270" y="465" width="200" height="56" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="370" y="485" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#2B6CB0">CompressedTensorsConfig</text>
+  <text x="370" y="502" text-anchor="middle" font-size="9.5" fill="#718096">解析 config_groups → 定 scheme 分支</text>
+
+  <rect x="490" y="465" width="200" height="56" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="590" y="485" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#2B6CB0">CompressedTensorsLinearMethod</text>
+  <text x="590" y="502" text-anchor="middle" font-size="9.5" fill="#718096">create_weights / weight_loader</text>
+
+  <rect x="710" y="465" width="200" height="56" rx="8" fill="#FED7D7" stroke="#C53030"/>
+  <text x="810" y="485" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#C53030">process_weights_after_loading</text>
+  <text x="810" y="502" text-anchor="middle" font-size="9.5" fill="#9B2C2C">W4 → Marlin 布局 repack（加载期一次）</text>
+
+  <line x1="250" y1="493" x2="268" y2="493" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="470" y1="493" x2="488" y2="493" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="690" y1="493" x2="708" y2="493" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <rect x="50" y="545" width="420" height="100" rx="8" fill="#C6F6D5" stroke="#276749"/>
+  <text x="65" y="566" font-size="11.5" font-weight="bold" fill="#276749">运行时 apply()（热路径，每个 step）</text>
+  <text x="65" y="585" font-size="10" fill="#276749">W8A8-dynamic：per-token 激活量化 kernel 现算 scale（quantization/utils/）</text>
+  <text x="65" y="601" font-size="10" fill="#276749">→ FP8 GEMM（CUTLASS / CUTLASS-MixedInput）× per-channel weight scale</text>
+  <text x="65" y="617" font-size="10" fill="#276749">W4A16：Marlin fused-dequant GEMM（寄存器内还原 BF16 进 tensor core）</text>
+  <text x="65" y="633" font-size="10" fill="#276749">KV：FA3 descale_k/v 施加 checkpoint 的 k_scale（Day 23 读路径）</text>
+
+  <rect x="490" y="545" width="420" height="100" rx="8" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="505" y="566" font-size="11.5" font-weight="bold" fill="#2B6CB0">怎么确认走对了 kernel（日志证据）</text>
+  <text x="505" y="585" font-size="10" fill="#2D3748">· "Loading model weights took 8.2 GiB"（权重减半的直接证据）</text>
+  <text x="505" y="601" font-size="10" fill="#2D3748">· "# GPU blocks" / "Maximum concurrency" 上升（KV 池变大，Day 23）</text>
+  <text x="505" y="617" font-size="10" fill="#2D3748">· MoE 模型可见 "Using CompressedTensorsW8A8DynamicFusedMoE ..."</text>
+  <text x="505" y="633" font-size="10" fill="#2D3748">· W4A16 可见 marlin 相关字样（措辞随版本）</text>
+
+  <text x="30" y="690" font-size="10" fill="#A0AEC0">以 vLLM V1（≥0.9）与 llmcompressor 0.x 为准；oneshot 导入路径（llmcompressor.transformers vs llmcompressor 顶层）随版本变动，以官方 examples 为准</text>
+  <text x="30" y="706" font-size="10" fill="#A0AEC0">H100-80G · Qwen3-8B：预算 73.6 GB = 权重 + KV 池 + 预留 5 GB</text>
+</svg>

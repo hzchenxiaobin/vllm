@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="600" viewBox="0 0 980 600" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d34b" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d34x" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#C0392B"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="600" fill="#FFFFFF"/>
+  <text x="30" y="30" font-size="18" font-weight="bold" fill="#1e3a5f">图 2｜cache_salt：只进第一个 block 的 extra_keys，Merkle 链让两租户的整条 hash 链分叉</text>
+  <text x="30" y="50" font-size="10" fill="#7F8C8D">源码落点：vllm/v1/core/kv_cache_utils.py :: generate_block_hash_extra_keys —— [("cache_salt", request.cache_salt)] 仅当 start_token_idx == 0 且 salt 非空</text>
+
+  <!-- ============ tenant A chain ============ -->
+  <text x="60" y="92" font-size="12.5" font-weight="bold" fill="#145A32">租户 A：cache_salt = "tenant-A"</text>
+
+  <!-- salt badge into block 1 -->
+  <rect x="60" y="104" width="120" height="54" rx="5" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.5"/>
+  <text x="120" y="122" font-size="10" font-weight="bold" fill="#145A32" text-anchor="middle">block 1</text>
+  <text x="120" y="136" font-size="8.5" fill="#566573" text-anchor="middle">tokens [t1..t16]</text>
+  <text x="120" y="149" font-size="8.5" fill="#1E8449" text-anchor="middle">extra: ("cache_salt","A")</text>
+
+  <line x1="180" y1="131" x2="222" y2="131" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d34b)"/>
+  <text x="201" y="123" font-size="8" fill="#7F8C8D" text-anchor="middle">h1ᴬ</text>
+
+  <rect x="226" y="104" width="120" height="54" rx="5" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.5"/>
+  <text x="286" y="122" font-size="10" font-weight="bold" fill="#145A32" text-anchor="middle">block 2</text>
+  <text x="286" y="136" font-size="8.5" fill="#566573" text-anchor="middle">tokens [t17..t32]</text>
+  <text x="286" y="149" font-size="8.5" fill="#7F8C8D" text-anchor="middle">extra: None</text>
+
+  <line x1="346" y1="131" x2="388" y2="131" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d34b)"/>
+  <text x="367" y="123" font-size="8" fill="#7F8C8D" text-anchor="middle">h2ᴬ</text>
+
+  <rect x="392" y="104" width="120" height="54" rx="5" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.5"/>
+  <text x="452" y="122" font-size="10" font-weight="bold" fill="#145A32" text-anchor="middle">block 3</text>
+  <text x="452" y="136" font-size="8.5" fill="#566573" text-anchor="middle">tokens [t33..t48]</text>
+  <text x="452" y="149" font-size="8.5" fill="#7F8C8D" text-anchor="middle">extra: None</text>
+
+  <text x="530" y="128" font-size="9.5" fill="#145A32">hash 链：h1ᴬ = H(salt_A, ⊥, tokens₁)</text>
+  <text x="530" y="143" font-size="9.5" fill="#145A32">h2ᴬ = H(h1ᴬ, tokens₂)   h3ᴬ = H(h2ᴬ, tokens₃)</text>
+
+  <!-- ============ tenant B chain ============ -->
+  <text x="60" y="196" font-size="12.5" font-weight="bold" fill="#922B21">租户 B：cache_salt = "tenant-B"（相同 token 序列！）</text>
+
+  <rect x="60" y="208" width="120" height="54" rx="5" fill="#FDEDEC" stroke="#C0392B" stroke-width="1.5"/>
+  <text x="120" y="226" font-size="10" font-weight="bold" fill="#922B21" text-anchor="middle">block 1'</text>
+  <text x="120" y="240" font-size="8.5" fill="#566573" text-anchor="middle">tokens [t1..t16]</text>
+  <text x="120" y="253" font-size="8.5" fill="#C0392B" text-anchor="middle">extra: ("cache_salt","B")</text>
+
+  <line x1="180" y1="235" x2="222" y2="235" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d34b)"/>
+  <text x="201" y="227" font-size="8" fill="#7F8C8D" text-anchor="middle">h1ᴮ</text>
+
+  <rect x="226" y="208" width="120" height="54" rx="5" fill="#FDEDEC" stroke="#C0392B" stroke-width="1.5"/>
+  <text x="286" y="226" font-size="10" font-weight="bold" fill="#922B21" text-anchor="middle">block 2'</text>
+  <text x="286" y="240" font-size="8.5" fill="#566573" text-anchor="middle">tokens [t17..t32]</text>
+  <text x="286" y="253" font-size="8.5" fill="#7F8C8D" text-anchor="middle">extra: None</text>
+
+  <line x1="346" y1="235" x2="388" y2="235" stroke="#2C3E50" stroke-width="1.6" marker-end="url(#d34b)"/>
+  <text x="367" y="227" font-size="8" fill="#7F8C8D" text-anchor="middle">h2ᴮ</text>
+
+  <rect x="392" y="208" width="120" height="54" rx="5" fill="#FDEDEC" stroke="#C0392B" stroke-width="1.5"/>
+  <text x="452" y="226" font-size="10" font-weight="bold" fill="#922B21" text-anchor="middle">block 3'</text>
+  <text x="452" y="240" font-size="8.5" fill="#566573" text-anchor="middle">tokens [t33..t48]</text>
+  <text x="452" y="253" font-size="8.5" fill="#7F8C8D" text-anchor="middle">extra: None</text>
+
+  <text x="530" y="232" font-size="9.5" fill="#922B21">h1ᴮ = H(salt_B, ⊥, tokens₁) ≠ h1ᴬ</text>
+  <text x="530" y="247" font-size="9.5" fill="#922B21">链式传播 → h2ᴮ ≠ h2ᴬ，h3ᴮ ≠ h3ᴬ（全链分叉）</text>
+
+  <!-- divergence annotation -->
+  <line x1="120" y1="160" x2="120" y2="204" stroke="#C0392B" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#d34x)"/>
+  <text x="134" y="185" font-size="9" fill="#C0392B">salt 只在这里不同</text>
+  <text x="134" y="197" font-size="8.5" fill="#7F8C8D">其后每块 tokens 完全相同</text>
+
+  <!-- zero sharing badge -->
+  <rect x="530" y="196" width="420" height="66" rx="6" fill="#FEF9E7" stroke="#F39C12" stroke-width="1.2"/>
+  <text x="740" y="217" font-size="10.5" font-weight="bold" fill="#7E5109" text-anchor="middle">结果：两租户的 block hash 完全不相交</text>
+  <text x="740" y="233" font-size="9.5" fill="#566573" text-anchor="middle">租户 B 的请求在 A 缓存过的实例上查不到任何 hash → 零命中、零共享</text>
+  <text x="740" y="248" font-size="9.5" fill="#566573" text-anchor="middle">隔离发生在"地址空间"层：不需要为租户划分独立 KV 池（无碎片、无容量浪费）</text>
+
+  <!-- ============ attack path without salt ============ -->
+  <text x="30" y="306" font-size="13" font-weight="bold" fill="#1e3a5f">不开 salt 时的攻击路径（威胁模型，§4.1）</text>
+
+  <rect x="30" y="322" width="900" height="118" rx="6" fill="#F4ECF7" stroke="#7D3C98" stroke-width="1.4"/>
+  <!-- attacker -->
+  <rect x="50" y="340" width="190" height="80" rx="5" fill="#FFFFFF" stroke="#7D3C98" stroke-width="1"/>
+  <text x="145" y="360" font-size="10.5" font-weight="bold" fill="#4A235A" text-anchor="middle">攻击者（租户 B）</text>
+  <text x="145" y="376" font-size="9" fill="#566573" text-anchor="middle">构造候选前缀 P_guess</text>
+  <text x="145" y="390" font-size="9" fill="#566573" text-anchor="middle">（逐 block 二分 / 字典猜测</text>
+  <text x="145" y="404" font-size="9" fill="#566573" text-anchor="middle"> 他人 system prompt）</text>
+
+  <line x1="240" y1="380" x2="320" y2="380" stroke="#C0392B" stroke-width="1.8" marker-end="url(#d34x)"/>
+  <text x="280" y="370" font-size="9" fill="#C0392B" text-anchor="middle">发送请求</text>
+
+  <!-- victim cache -->
+  <rect x="324" y="340" width="230" height="80" rx="5" fill="#FFFFFF" stroke="#7D3C98" stroke-width="1"/>
+  <text x="439" y="360" font-size="10.5" font-weight="bold" fill="#4A235A" text-anchor="middle">受害者（租户 A）已缓存 P</text>
+  <text x="439" y="376" font-size="9" fill="#566573" text-anchor="middle">无 salt：hash(P_guess) == hash(P)</text>
+  <text x="439" y="390" font-size="9" fill="#C0392B" text-anchor="middle">猜对 → 命中 → TTFT 显著变短</text>
+  <text x="439" y="404" font-size="9" fill="#C0392B" text-anchor="middle">猜错 → 未命中 → TTFT 正常</text>
+
+  <!-- timing signal -->
+  <line x1="554" y1="380" x2="634" y2="380" stroke="#C0392B" stroke-width="1.8" marker-end="url(#d34x)"/>
+  <text x="594" y="370" font-size="9" fill="#C0392B" text-anchor="middle">TTFT 差</text>
+
+  <rect x="638" y="340" width="272" height="80" rx="5" fill="#FFFFFF" stroke="#7D3C98" stroke-width="1"/>
+  <text x="774" y="358" font-size="10.5" font-weight="bold" fill="#4A235A" text-anchor="middle">时延侧信道：1-bit/token 的 oracle</text>
+  <text x="774" y="374" font-size="9" fill="#566573" text-anchor="middle">70B @ H100、4k 前缀全命中省 ≈0.3~2.9 s</text>
+  <text x="774" y="388" font-size="9" fill="#566573" text-anchor="middle">测量噪声 ≪ 信号 → 可靠区分命中/未命中</text>
+  <text x="774" y="404" font-size="9" fill="#7F8C8D" text-anchor="middle">→ 反复探测即可重构受害者的 prompt</text>
+
+  <!-- blocked note -->
+  <rect x="30" y="452" width="900" height="44" rx="6" fill="#EAF7EE" stroke="#1E8449" stroke-width="1.2"/>
+  <text x="480" y="470" font-size="10.5" font-weight="bold" fill="#145A32" text-anchor="middle">开 salt 后：hash(P_guess, salt_B) ≠ hash(P, salt_A) —— 上面第二格的"命中"永不发生，侧信道与语义串扰同时被切断</text>
+  <text x="480" y="487" font-size="9.5" fill="#566573" text-anchor="middle">注意：salt 不进模型输入（零语义影响、零额外 token），只参与 block hash 计算——对比"在 prompt 里拼 magic token"的方案后者会改变注意力语义</text>
+
+  <!-- footer: second use -->
+  <rect x="30" y="510" width="900" height="72" rx="6" fill="#F4F6F7" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="480" y="532" font-size="10.5" font-weight="bold" fill="#1e3a5f" text-anchor="middle">salt 的第二个工程用途：缓存版本控制（失效器）</text>
+  <text x="480" y="549" font-size="9.5" fill="#566573" text-anchor="middle">模板/模型/量化精度升级时换一个 salt → 旧 KV 全部自然失效（hash 链分叉），无需清池、无需重启</text>
+  <text x="480" y="565" font-size="9.5" fill="#566573" text-anchor="middle">代价要心里有数：换 salt 后的第一个请求必为全量 prefill——发布时刻会出现短暂的 TTFT 尖峰（灰度/预热可平滑）</text>
+</svg>

@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/>
+    </marker>
+  </defs>
+  <rect width="960" height="640" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">Day 26 实验设计：一个模型 · 两条负载 · 三个问题（先预测 → 再测量 → 后归因）</text>
+
+  <!-- ======== fixed variables bar ======== -->
+  <rect x="40" y="48" width="880" height="66" rx="8" fill="#F7FAFC" stroke="#A0AEC0" stroke-width="1.2"/>
+  <text x="58" y="70" font-size="12" font-weight="bold" fill="#2D3748">固定变量（对照组之间唯一的差异 = 投机配置）</text>
+  <g font-size="10.5" fill="#2D3748">
+    <rect x="58"  y="80" width="200" height="22" rx="4" fill="#E2E8F0"/><text x="158" y="95" text-anchor="middle">target: Qwen2.5-7B + EAGLE-3 头</text>
+    <rect x="266" y="80" width="92"  height="22" rx="4" fill="#E2E8F0"/><text x="312" y="95" text-anchor="middle">dtype: BF16</text>
+    <rect x="366" y="80" width="146" height="22" rx="4" fill="#E2E8F0"/><text x="439" y="95" text-anchor="middle">temperature: 0（greedy）</text>
+    <rect x="520" y="80" width="130" height="22" rx="4" fill="#E2E8F0"/><text x="585" y="95" text-anchor="middle">max-model-len: 4096</text>
+    <rect x="658" y="80" width="138" height="22" rx="4" fill="#E2E8F0"/><text x="727" y="95" text-anchor="middle">并发档: 8（实验 3 例外）</text>
+    <rect x="804" y="80" width="100" height="22" rx="4" fill="#E2E8F0"/><text x="854" y="95" text-anchor="middle">同一请求集</text>
+  </g>
+
+  <!-- ======== load cards ======== -->
+  <rect x="40" y="140" width="430" height="138" rx="10" fill="#EBF8FF" stroke="#2B6CB0" stroke-width="1.5"/>
+  <text x="60" y="164" font-size="13" font-weight="bold" fill="#2C5282">负载 A · 代码补全（高接受率）</text>
+  <g font-size="11" fill="#2D3748">
+    <text x="60" y="188">· 真实源码前缀 → 模型续写（vLLM 仓库本身即可当语料）</text>
+    <text x="60" y="208">· 结构强、命名/API 复用、缩进模式 → 自重复度高</text>
+    <text x="60" y="228">· 预期 EAGLE-3 β ≈ 0.75 ~ 0.90</text>
+    <text x="60" y="248">· 预期 ngram β ≈ 0.1 ~ 0.3（Day 25 模拟器：普通源码 E[τ]≈1.2）</text>
+    <text x="60" y="268" fill="#718096">（越高重复 → 草稿越像 target → β 越大）</text>
+  </g>
+
+  <rect x="490" y="140" width="430" height="138" rx="10" fill="#FFFAF0" stroke="#DD6B20" stroke-width="1.5"/>
+  <text x="510" y="164" font-size="13" font-weight="bold" fill="#9C4221">负载 B · 开放对话（低接受率）</text>
+  <g font-size="11" fill="#2D3748">
+    <text x="510" y="188">· 创意写作 / 开放问答（生成内容几乎不抄上下文）</text>
+    <text x="510" y="208">· 分布平坦、下一个 token 天然难猜</text>
+    <text x="510" y="228">· 预期 EAGLE-3 β ≈ 0.50 ~ 0.70</text>
+    <text x="510" y="248">· 预期 ngram β ≈ 0.05 ~ 0.15（连 4-gram 都难命中）</text>
+    <text x="510" y="268" fill="#718096">（同一个 k，收益的"天花板"由负载先定死）</text>
+  </g>
+
+  <!-- arrows loads -> experiments -->
+  <g stroke="#718096" stroke-width="1.5" fill="none">
+    <path d="M 255 278 L 180 336" marker-end="url(#arr)"/>
+    <path d="M 255 278 L 480 336" marker-end="url(#arr)"/>
+    <path d="M 255 278 L 780 336" marker-end="url(#arr)"/>
+    <path d="M 705 278 L 180 336" marker-end="url(#arr)"/>
+    <path d="M 705 278 L 480 336" marker-end="url(#arr)"/>
+    <path d="M 705 278 L 780 336" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- ======== experiment cards ======== -->
+  <rect x="40" y="340" width="280" height="212" rx="10" fill="#F0FFF4" stroke="#38A169" stroke-width="1.5"/>
+  <text x="60" y="364" font-size="13" font-weight="bold" fill="#276749">实验 1 · 负载对照（45 min）</text>
+  <g font-size="11" fill="#2D3748">
+    <text x="60" y="390">EAGLE k=3 × 负载 A vs 负载 B</text>
+    <text x="60" y="412">观测：TPOT / 输出吞吐 / acceptance</text>
+    <text x="60" y="434">预期：S ≈ 1.6~1.9× vs 1.2~1.4×</text>
+    <text x="60" y="456">TTFT 预期：持平或微增</text>
+    <text x="60" y="484" fill="#276749" font-weight="bold">回答的问题：</text>
+    <text x="60" y="504">投机收益是不是由负载（β）决定的？</text>
+    <text x="60" y="524">两条负载的最优配置要不要分开？</text>
+  </g>
+
+  <rect x="340" y="340" width="280" height="212" rx="10" fill="#EBF8FF" stroke="#2B6CB0" stroke-width="1.5"/>
+  <text x="360" y="364" font-size="13" font-weight="bold" fill="#2C5282">实验 2 · k 扫参（45 min）</text>
+  <g font-size="11" fill="#2D3748">
+    <text x="360" y="390">k ∈ {1,2,3,4,5} × 负载 A（每组重启）</text>
+    <text x="360" y="412">观测：S(k) 曲线 + 按深度接受率衰减</text>
+    <text x="360" y="434">预期：峰值 k* ≈ 3~4</text>
+    <text x="360" y="456">（理论 4~5，被开销左移）</text>
+    <text x="360" y="484" fill="#2C5282" font-weight="bold">回答的问题：</text>
+    <text x="360" y="504">num_speculative_tokens 该设几？</text>
+    <text x="360" y="524">实测为什么偏离公式预测？</text>
+  </g>
+
+  <rect x="640" y="340" width="280" height="212" rx="10" fill="#FFF5F5" stroke="#C53030" stroke-width="1.5"/>
+  <text x="660" y="364" font-size="13" font-weight="bold" fill="#C53030">实验 3 · 负收益复现（45 min）</text>
+  <g font-size="11" fill="#2D3748">
+    <text x="660" y="390">路径 a：ngram × 负载 B × k=5</text>
+    <text x="660" y="412">路径 b：EAGLE × 负载 A × 并发 64~128</text>
+    <text x="660" y="434">观测：吞吐反降 / γ 膨胀 / budget 挤压</text>
+    <text x="660" y="456">对照：speculative_disable_by_batch_size</text>
+    <text x="660" y="484" fill="#C53030" font-weight="bold">回答的问题：</text>
+    <text x="660" y="504">低接受率下吞吐为什么反而下降？</text>
+    <text x="660" y="524">什么时候必须熔断 / 关闭？</text>
+  </g>
+
+  <!-- ======== bottom note ======== -->
+  <rect x="40" y="576" width="880" height="44" rx="8" fill="#F7FAFC" stroke="#A0AEC0" stroke-width="1"/>
+  <text x="480" y="595" text-anchor="middle" font-size="11.5" fill="#2D3748">每组实验按四段式归档（Day 13 方法论）：<tspan font-weight="bold">现象 → 源码机制 → 指标表现 → 调参动作</tspan></text>
+  <text x="480" y="612" text-anchor="middle" font-size="11" fill="#718096">预测值来自 Day 25：E[τ]=(1-β^(k+1))/(1-β)，S=E[τ]/(γ+k·c)——今天的实验就是给这两个公式里的 β、γ 填上你的实测数</text>
+</svg>

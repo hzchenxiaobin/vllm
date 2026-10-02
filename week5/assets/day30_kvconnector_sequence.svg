@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="800" viewBox="0 0 980 800" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d3" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d3r" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#C0392B"/>
+    </marker>
+    <marker id="d3g" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#27AE60"/>
+    </marker>
+    <marker id="d3t" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#16A085"/>
+    </marker>
+    <marker id="d3o" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#E67E22"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="800" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 4｜一次 P→D 传输的调用时序：KVConnector 两侧钩子与调度器接缝（vLLM V1）</text>
+
+  <!-- lifeline headers -->
+  <rect x="30"  y="56" width="120" height="46" rx="6" fill="#F4ECF7" stroke="#8E44ED" stroke-width="1.5"/>
+  <text x="90"  y="76" font-size="12" font-weight="bold" fill="#6C3483" text-anchor="middle">Router</text>
+  <text x="90"  y="93" font-size="9" fill="#6C3483" text-anchor="middle">（示例/生产可换）</text>
+
+  <rect x="190" y="56" width="170" height="46" rx="6" fill="#FDEBD0" stroke="#E67E22" stroke-width="1.5"/>
+  <text x="275" y="76" font-size="12" font-weight="bold" fill="#B9770E" text-anchor="middle">Prefill 实例</text>
+  <text x="275" y="93" font-size="9" fill="#B9770E" text-anchor="middle">Scheduler + Worker</text>
+
+  <rect x="410" y="56" width="160" height="46" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1.5"/>
+  <text x="490" y="76" font-size="12" font-weight="bold" fill="#2C3E50" text-anchor="middle">网络平面</text>
+  <text x="490" y="93" font-size="9" fill="#7F8C8D" text-anchor="middle">数据网 / 元数据网</text>
+
+  <rect x="620" y="56" width="170" height="46" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5"/>
+  <text x="705" y="76" font-size="12" font-weight="bold" fill="#1A5276" text-anchor="middle">Decode 实例</text>
+  <text x="705" y="93" font-size="9" fill="#1A5276" text-anchor="middle">Scheduler + Worker</text>
+
+  <rect x="830" y="56" width="120" height="46" rx="6" fill="#F4F6F7" stroke="#7F8C8D"/>
+  <text x="890" y="76" font-size="12" font-weight="bold" fill="#2C3E50" text-anchor="middle">客户端</text>
+
+  <!-- lifelines -->
+  <line x1="90"  y1="102" x2="90"  y2="740" stroke="#8E44ED" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="275" y1="102" x2="275" y2="740" stroke="#E67E22" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="490" y1="102" x2="490" y2="740" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="705" y1="102" x2="705" y2="740" stroke="#2E86C1" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="890" y1="102" x2="890" y2="740" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- phase bands -->
+  <rect x="30" y="118" width="920" height="180" rx="6" fill="#FEF9F2" stroke="#E67E22" stroke-width="1" opacity="0.5"/>
+  <text x="42" y="136" font-size="11" font-weight="bold" fill="#B9770E">阶段一：prefill 侧（producer）</text>
+
+  <rect x="30" y="306" width="920" height="120" rx="6" fill="#FDEDEC" stroke="#C0392B" stroke-width="1" opacity="0.5"/>
+  <text x="42" y="324" font-size="11" font-weight="bold" fill="#C0392B">阶段二：KV 跨实例（数据网 + 元数据网）</text>
+
+  <rect x="30" y="432" width="920" height="240" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1" opacity="0.5"/>
+  <text x="42" y="450" font-size="11" font-weight="bold" fill="#1A5276">阶段三：decode 侧（consumer）</text>
+
+  <!-- ============ phase 1 messages ============ -->
+  <line x1="890" y1="160" x2="94" y2="160" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d3)"/>
+  <text x="480" y="154" font-size="10" fill="#2C3E50" text-anchor="middle">① 请求（HTTP/OpenAI API）</text>
+
+  <line x1="92" y1="196" x2="271" y2="196" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d3)"/>
+  <text x="182" y="190" font-size="10" fill="#2C3E50" text-anchor="middle">② 派发 prefill（选实例：cache-aware，Day 34）</text>
+
+  <rect x="212" y="216" width="126" height="56" rx="4" fill="#FDEBD0" stroke="#E67E22"/>
+  <text x="275" y="234" font-size="9" fill="#B9770E" text-anchor="middle">V1 正常路径：</text>
+  <text x="275" y="248" font-size="9" fill="#B9770E" text-anchor="middle">schedule() → execute_model()</text>
+  <text x="275" y="262" font-size="9" fill="#B9770E" text-anchor="middle">prefill chunk 前向，产出首 token</text>
+
+  <!-- per-layer save -->
+  <rect x="330" y="216" width="150" height="56" rx="4" fill="#FEF5E7" stroke="#E67E22" stroke-dasharray="4 3"/>
+  <text x="405" y="234" font-size="9" fill="#B9770E" text-anchor="middle">save_kv_layer(layer_name,…)</text>
+  <text x="405" y="248" font-size="9" fill="#B9770E" text-anchor="middle">Worker 逐层回调：</text>
+  <text x="405" y="262" font-size="9" fill="#B9770E" text-anchor="middle">记录该层 KV block（接口即证据）</text>
+  <line x1="338" y1="244" x2="328" y2="244" stroke="#E67E22" stroke-width="1.2" marker-end="url(#d3o)"/>
+
+  <line x1="279" y1="284" x2="884" y2="284" stroke="#27AE60" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#d3g)"/>
+  <text x="580" y="278" font-size="10" fill="#1E8449" text-anchor="middle">③ 首 token 回流（TTFT 在此定格，不经过 KV 传输）</text>
+
+  <!-- ============ phase 2 messages ============ -->
+  <rect x="180" y="336" width="190" height="60" rx="4" fill="#EAF7F0" stroke="#16A085"/>
+  <text x="275" y="354" font-size="9" fill="#0E6655" text-anchor="middle">request_finished(req, block_ids)</text>
+  <text x="275" y="368" font-size="9" fill="#0E6655" text-anchor="middle">Scheduler 侧钩子：整理 block 清单</text>
+  <text x="275" y="382" font-size="9" fill="#0E6655" text-anchor="middle">触发实际传输（connector 决定时机）</text>
+
+  <line x1="372" y1="360" x2="486" y2="360" stroke="#16A085" stroke-width="1.5" stroke-dasharray="2 3" marker-end="url(#d3t)"/>
+  <text x="429" y="352" font-size="9" fill="#0E6655" text-anchor="middle">传输计划</text>
+  <text x="429" y="376" font-size="8" fill="#0E6655" text-anchor="middle">（req_id + block 表）</text>
+
+  <line x1="494" y1="404" x2="697" y2="404" stroke="#C0392B" stroke-width="4" marker-end="url(#d3r)"/>
+  <text x="595" y="396" font-size="10" font-weight="bold" fill="#C0392B" text-anchor="middle">④ KV block 数据（NVLink / RDMA / 共享存储）</text>
+  <text x="595" y="420" font-size="8" fill="#C0392B" text-anchor="middle">NIXL 整体传输或逐层流水（版本相关，见 §5.3）</text>
+
+  <!-- ============ phase 3 messages ============ -->
+  <line x1="92" y1="470" x2="701" y2="470" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d3)"/>
+  <text x="396" y="464" font-size="10" fill="#2C3E50" text-anchor="middle">⑤ 派发 decode（携带 KV 位置元数据）</text>
+
+  <rect x="640" y="486" width="240" height="76" rx="4" fill="#D6EAF8" stroke="#2E86C1"/>
+  <text x="760" y="504" font-size="9" fill="#1A5276" text-anchor="middle">Scheduler.schedule() 的 WAITING 循环：</text>
+  <text x="760" y="518" font-size="9" fill="#1A5276" text-anchor="middle">get_num_new_matched_tokens(req, 0) → N</text>
+  <text x="760" y="532" font-size="9" fill="#1A5276" text-anchor="middle">→ 本地分配 N 个 KV block（Day 15 的接口复用）</text>
+  <text x="760" y="546" font-size="9" font-weight="bold" fill="#C0392B" text-anchor="middle">→ status = WAITING_FOR_REMOTE_KVS</text>
+
+  <line x1="705" y1="570" x2="705" y2="596" stroke="#2E86C1" stroke-width="1.5" marker-end="url(#d3)"/>
+  <text x="716" y="586" font-size="9" fill="#1A5276">⑥ start_load_kv()：异步启动接收</text>
+
+  <rect x="640" y="600" width="240" height="40" rx="4" fill="#EBF5FB" stroke="#2E86C1" stroke-dasharray="4 3"/>
+  <text x="760" y="616" font-size="9" fill="#1A5276" text-anchor="middle">wait_for_layer_load(layer)：按层 WaitFlag</text>
+  <text x="760" y="630" font-size="9" fill="#1A5276" text-anchor="middle">第 j 层 forward 只等第 j 层 KV（图 2 的集群版）</text>
+
+  <rect x="640" y="648" width="240" height="26" rx="4" fill="#EAF7F0" stroke="#16A085"/>
+  <text x="760" y="665" font-size="9" fill="#0E6655" text-anchor="middle">get_finished() 每步轮询 → 收齐 → 回 WAITING → 进 running</text>
+
+  <line x1="703" y1="690" x2="94" y2="690" stroke="#27AE60" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#d3g)"/>
+  <text x="400" y="684" font-size="10" fill="#1E8449" text-anchor="middle">⑦ decode token 流回流（TPOT 从此归 decode 池独立负责）</text>
+
+  <line x1="705" y1="718" x2="494" y2="718" stroke="#16A085" stroke-width="1.2" stroke-dasharray="2 3" marker-end="url(#d3t)"/>
+  <text x="600" y="712" font-size="9" fill="#0E6655" text-anchor="middle">⑧ 请求结束：双向清理（释放/保留 block，账本对账）</text>
+
+  <!-- footer -->
+  <rect x="30" y="744" width="920" height="40" rx="6" fill="#1e3a5f"/>
+  <text x="490" y="762" font-size="11" fill="#FFFFFF" text-anchor="middle">源码锚点：vllm/distributed/kv_transfer/kv_connector/v1/base.py（接口）· v1/core/scheduler.py（WAITING_FOR_REMOTE_KVS 接缝）· v1/worker/gpu_model_runner.py（层间钩子）</text>
+  <text x="490" y="778" font-size="10" fill="#AED6F1" text-anchor="middle">行号随版本演进——走读方法见 §6 Step 1 的 grep 清单，先锚函数名，再追调用者。</text>
+</svg>

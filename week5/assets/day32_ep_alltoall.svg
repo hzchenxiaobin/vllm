@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a3b" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="a3o" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#E67E22"/>
+    </marker>
+    <marker id="a3p" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#8E44ED"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="720" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 3｜MoE 的 EP：dispatch/combine all-to-all 与 DeepSeek 式混合并行</text>
+
+  <!-- ============ Panel A: EP all-to-all ============ -->
+  <rect x="20" y="52" width="540" height="390" rx="8" fill="#F8FAFC" stroke="#BDC3C7"/>
+  <text x="290" y="76" font-size="13" font-weight="bold" fill="#2C3E50" text-anchor="middle">A｜EP=4：整专家分布 + all-to-all（无归约，纯排列）</text>
+
+  <!-- token row -->
+  <g font-size="9.5">
+    <rect x="40"  y="92" width="52" height="24" rx="4" fill="#FEF9E7" stroke="#B7950B"/><text x="66"  y="108" text-anchor="middle" fill="#9A7D0A">t1→E2,E9</text>
+    <rect x="100" y="92" width="52" height="24" rx="4" fill="#FEF9E7" stroke="#B7950B"/><text x="126" y="108" text-anchor="middle" fill="#9A7D0A">t2→E5</text>
+    <rect x="160" y="92" width="52" height="24" rx="4" fill="#FEF9E7" stroke="#B7950B"/><text x="186" y="108" text-anchor="middle" fill="#9A7D0A">t3→E0,E14</text>
+    <rect x="220" y="92" width="52" height="24" rx="4" fill="#FEF9E7" stroke="#B7950B"/><text x="246" y="108" text-anchor="middle" fill="#9A7D0A">t4→E8,E11</text>
+    <rect x="280" y="92" width="52" height="24" rx="4" fill="#FEF9E7" stroke="#B7950B"/><text x="306" y="108" text-anchor="middle" fill="#9A7D0A">t5→E3</text>
+    <rect x="340" y="92" width="52" height="24" rx="4" fill="#FEF9E7" stroke="#B7950B"/><text x="366" y="108" text-anchor="middle" fill="#9A7D0A">t6→E6,E12</text>
+    <rect x="400" y="92" width="52" height="24" rx="4" fill="#FEF9E7" stroke="#B7950B"/><text x="426" y="108" text-anchor="middle" fill="#9A7D0A">t7→E1,E15</text>
+    <rect x="460" y="92" width="52" height="24" rx="4" fill="#FEF9E7" stroke="#B7950B"/><text x="486" y="108" text-anchor="middle" fill="#9A7D0A">t8→E4,E10</text>
+  </g>
+
+  <!-- dispatch band -->
+  <rect x="32" y="132" width="516" height="26" rx="13" fill="#FDEBD0" stroke="#E67E22" stroke-width="1.5"/>
+  <text x="290" y="150" font-size="11" font-weight="bold" fill="#B9770E" text-anchor="middle">dispatch：all-to-all ①（token 原样发往其专家所在卡）</text>
+  <line x1="66" y1="116" x2="66" y2="130" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="126" y1="116" x2="126" y2="130" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="186" y1="116" x2="186" y2="130" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="246" y1="116" x2="246" y2="130" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="306" y1="116" x2="306" y2="130" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="366" y1="116" x2="366" y2="130" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="426" y1="116" x2="426" y2="130" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="486" y1="116" x2="486" y2="130" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+
+  <!-- GPU boxes with experts -->
+  <g>
+    <rect x="40" y="176" width="115" height="150" rx="6" fill="#FEF9E7" stroke="#B7950B" stroke-width="1.5"/>
+    <text x="97" y="196" font-size="11" font-weight="bold" fill="#9A7D0A" text-anchor="middle">GPU 0</text>
+    <rect x="52" y="208" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="73" y="225" font-size="10" fill="#1E8449" text-anchor="middle">E0</text>
+    <rect x="102" y="208" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="123" y="225" font-size="10" fill="#1E8449" text-anchor="middle">E1</text>
+    <rect x="52" y="242" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="73" y="259" font-size="10" fill="#1E8449" text-anchor="middle">E2</text>
+    <rect x="102" y="242" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="123" y="259" font-size="10" fill="#1E8449" text-anchor="middle">E3</text>
+    <text x="97" y="292" font-size="9" fill="#9A7D0A" text-anchor="middle">整专家 GEMM</text>
+    <text x="97" y="306" font-size="9" fill="#9A7D0A" text-anchor="middle">（形状完整）</text>
+
+    <rect x="165" y="176" width="115" height="150" rx="6" fill="#FEF9E7" stroke="#B7950B" stroke-width="1.5"/>
+    <text x="222" y="196" font-size="11" font-weight="bold" fill="#9A7D0A" text-anchor="middle">GPU 1</text>
+    <rect x="177" y="208" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="198" y="225" font-size="10" fill="#1E8449" text-anchor="middle">E4</text>
+    <rect x="227" y="208" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="248" y="225" font-size="10" fill="#1E8449" text-anchor="middle">E5</text>
+    <rect x="177" y="242" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="198" y="259" font-size="10" fill="#1E8449" text-anchor="middle">E6</text>
+    <rect x="227" y="242" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="248" y="259" font-size="10" fill="#1E8449" text-anchor="middle">E7</text>
+    <text x="222" y="292" font-size="9" fill="#9A7D0A" text-anchor="middle">整专家 GEMM</text>
+    <text x="222" y="306" font-size="9" fill="#9A7D0A" text-anchor="middle">（形状完整）</text>
+
+    <rect x="290" y="176" width="115" height="150" rx="6" fill="#FEF9E7" stroke="#B7950B" stroke-width="1.5"/>
+    <text x="347" y="196" font-size="11" font-weight="bold" fill="#9A7D0A" text-anchor="middle">GPU 2</text>
+    <rect x="302" y="208" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="323" y="225" font-size="10" fill="#1E8449" text-anchor="middle">E8</text>
+    <rect x="352" y="208" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="373" y="225" font-size="10" fill="#1E8449" text-anchor="middle">E9</text>
+    <rect x="302" y="242" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="323" y="259" font-size="10" fill="#1E8449" text-anchor="middle">E10</text>
+    <rect x="352" y="242" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="373" y="259" font-size="10" fill="#1E8449" text-anchor="middle">E11</text>
+    <text x="347" y="292" font-size="9" fill="#9A7D0A" text-anchor="middle">整专家 GEMM</text>
+    <text x="347" y="306" font-size="9" fill="#9A7D0A" text-anchor="middle">（形状完整）</text>
+
+    <rect x="415" y="176" width="115" height="150" rx="6" fill="#FEF9E7" stroke="#B7950B" stroke-width="1.5"/>
+    <text x="472" y="196" font-size="11" font-weight="bold" fill="#9A7D0A" text-anchor="middle">GPU 3</text>
+    <rect x="427" y="208" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="448" y="225" font-size="10" fill="#1E8449" text-anchor="middle">E12</text>
+    <rect x="477" y="208" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="498" y="225" font-size="9.5" fill="#1E8449" text-anchor="middle">E13</text>
+    <rect x="427" y="242" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="448" y="259" font-size="9.5" fill="#1E8449" text-anchor="middle">E14</text>
+    <rect x="477" y="242" width="42" height="26" rx="4" fill="#EAF7F1" stroke="#27AE60"/><text x="498" y="259" font-size="9.5" fill="#1E8449" text-anchor="middle">E15</text>
+    <text x="472" y="292" font-size="9" fill="#9A7D0A" text-anchor="middle">整专家 GEMM</text>
+    <text x="472" y="306" font-size="9" fill="#9A7D0A" text-anchor="middle">（形状完整）</text>
+  </g>
+
+  <!-- combine band -->
+  <rect x="32" y="344" width="516" height="26" rx="13" fill="#FDEBD0" stroke="#E67E22" stroke-width="1.5"/>
+  <text x="290" y="362" font-size="11" font-weight="bold" fill="#B9770E" text-anchor="middle">combine：all-to-all ②（各专家输出加权收回，token 回原卡）</text>
+  <line x1="97" y1="326" x2="97" y2="342" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="222" y1="326" x2="222" y2="342" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="347" y1="326" x2="347" y2="342" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+  <line x1="472" y1="326" x2="472" y2="342" stroke="#E67E22" stroke-width="1.4" marker-end="url(#a3o)"/>
+
+  <text x="290" y="396" font-size="10" fill="#7F8C8D" text-anchor="middle">每 token 通信量 ≈ 2·E·H·b（E ≤ top-k 个不同目的卡）；DeepSeek-V3：256 专家选 8 + 1 共享，671B 总参 / 37B 激活</text>
+  <text x="290" y="414" font-size="10" fill="#B9770E" text-anchor="middle" font-weight="bold">对比 TP 切专家：GEMM 更碎 + 每层 2 次 all-reduce → EP 用 all-to-all 换完整 GEMM 形状</text>
+
+  <!-- ============ Panel B: DeepSeek hybrid ============ -->
+  <rect x="580" y="52" width="360" height="390" rx="8" fill="#F4ECF7" stroke="#8E44ED" stroke-width="1.5"/>
+  <text x="760" y="76" font-size="13" font-weight="bold" fill="#6C3483" text-anchor="middle">B｜DeepSeek 混合并行（DP attention + EP）</text>
+
+  <g>
+    <rect x="596" y="92" width="104" height="46" rx="5" fill="#EBF5FB" stroke="#2E86C1"/>
+    <text x="648" y="110" font-size="10" font-weight="bold" fill="#2E86C1" text-anchor="middle">rank0 · Attention</text>
+    <text x="648" y="126" font-size="8.5" fill="#2E86C1" text-anchor="middle">请求 A 组，KV 本地</text>
+    <rect x="708" y="92" width="104" height="46" rx="5" fill="#EBF5FB" stroke="#2E86C1"/>
+    <text x="760" y="110" font-size="10" font-weight="bold" fill="#2E86C1" text-anchor="middle">rank1 · Attention</text>
+    <text x="760" y="126" font-size="8.5" fill="#2E86C1" text-anchor="middle">请求 B 组，KV 本地</text>
+    <rect x="820" y="92" width="104" height="46" rx="5" fill="#EBF5FB" stroke="#2E86C1"/>
+    <text x="872" y="110" font-size="10" font-weight="bold" fill="#2E86C1" text-anchor="middle">rank2 · Attention</text>
+    <text x="872" y="126" font-size="8.5" fill="#2E86C1" text-anchor="middle">请求 C 组，KV 本地</text>
+  </g>
+
+  <line x1="648" y1="138" x2="648" y2="156" stroke="#8E44ED" stroke-width="1.4" marker-end="url(#a3p)"/>
+  <line x1="760" y1="138" x2="760" y2="156" stroke="#8E44ED" stroke-width="1.4" marker-end="url(#a3p)"/>
+  <line x1="872" y1="138" x2="872" y2="156" stroke="#8E44ED" stroke-width="1.4" marker-end="url(#a3p)"/>
+
+  <rect x="596" y="158" width="328" height="26" rx="13" fill="#E8DAEF" stroke="#8E44ED"/>
+  <text x="760" y="176" font-size="10.5" font-weight="bold" fill="#6C3483" text-anchor="middle">all-gather：拼全局 batch</text>
+
+  <rect x="596" y="196" width="328" height="26" rx="13" fill="#E8DAEF" stroke="#8E44ED"/>
+  <text x="760" y="214" font-size="10.5" font-weight="bold" fill="#6C3483" text-anchor="middle">路由 + dispatch（进入 EP）</text>
+
+  <g>
+    <rect x="596" y="236" width="104" height="64" rx="5" fill="#EAF7F1" stroke="#27AE60"/>
+    <text x="648" y="256" font-size="10" fill="#1E8449" text-anchor="middle" font-weight="bold">专家 E0-E85</text>
+    <text x="648" y="272" font-size="8.5" fill="#1E8449" text-anchor="middle">本 rank 拥有的</text>
+    <text x="648" y="286" font-size="8.5" fill="#1E8449" text-anchor="middle">专家算全局 token</text>
+    <rect x="708" y="236" width="104" height="64" rx="5" fill="#EAF7F1" stroke="#27AE60"/>
+    <text x="760" y="256" font-size="10" fill="#1E8449" text-anchor="middle" font-weight="bold">专家 E86-E170</text>
+    <text x="760" y="272" font-size="8.5" fill="#1E8449" text-anchor="middle">本 rank 拥有的</text>
+    <text x="760" y="286" font-size="8.5" fill="#1E8449" text-anchor="middle">专家算全局 token</text>
+    <rect x="820" y="236" width="104" height="64" rx="5" fill="#EAF7F1" stroke="#27AE60"/>
+    <text x="872" y="256" font-size="10" fill="#1E8449" text-anchor="middle" font-weight="bold">专家 E171-E255</text>
+    <text x="872" y="272" font-size="8.5" fill="#1E8449" text-anchor="middle">本 rank 拥有的</text>
+    <text x="872" y="286" font-size="8.5" fill="#1E8449" text-anchor="middle">专家算全局 token</text>
+  </g>
+
+  <rect x="596" y="312" width="328" height="26" rx="13" fill="#E8DAEF" stroke="#8E44ED"/>
+  <text x="760" y="330" font-size="10.5" font-weight="bold" fill="#6C3483" text-anchor="middle">combine + reduce-scatter：结果拆回各 rank</text>
+
+  <g>
+    <rect x="596" y="350" width="104" height="34" rx="5" fill="#EBF5FB" stroke="#2E86C1"/>
+    <text x="648" y="372" font-size="9" fill="#2E86C1" text-anchor="middle">rank0 拿回自己 token</text>
+    <rect x="708" y="350" width="104" height="34" rx="5" fill="#EBF5FB" stroke="#2E86C1"/>
+    <text x="760" y="372" font-size="9" fill="#2E86C1" text-anchor="middle">rank1 拿回自己 token</text>
+    <rect x="820" y="350" width="104" height="34" rx="5" fill="#EBF5FB" stroke="#2E86C1"/>
+    <text x="872" y="372" font-size="9" fill="#2E86C1" text-anchor="middle">rank2 拿回自己 token</text>
+  </g>
+
+  <text x="760" y="404" font-size="9.5" fill="#6C3483" text-anchor="middle">注意力 DP：KV cache / prefix caching 完全本地（Day 15-16）</text>
+  <text x="760" y="420" font-size="9.5" fill="#6C3483" text-anchor="middle">vLLM 对应 --enable-dp-attention 一类开关（版本敏感）</text>
+
+  <!-- ============ Panel C: dual-stream overlap ============ -->
+  <rect x="20" y="460" width="920" height="240" rx="8" fill="#FEF9F2" stroke="#E67E22" stroke-width="1.5"/>
+  <text x="480" y="484" font-size="13" font-weight="bold" fill="#B9770E" text-anchor="middle">C｜双流重叠（dual-batch overlap）：把 dispatch/combine 藏进另一条流的计算</text>
+
+  <!-- lane A -->
+  <text x="42" y="516" font-size="11" fill="#2C3E50" font-weight="bold">micro-batch A</text>
+  <g>
+    <rect x="140" y="500" width="88" height="26" fill="#EBF5FB" stroke="#2E86C1"/><text x="184" y="517" font-size="9.5" fill="#2E86C1" text-anchor="middle">attention</text>
+    <rect x="232" y="500" width="88" height="26" fill="#FDEBD0" stroke="#E67E22"/><text x="276" y="517" font-size="9.5" fill="#B9770E" text-anchor="middle">dispatch</text>
+    <rect x="324" y="500" width="88" height="26" fill="#EAF7F1" stroke="#27AE60"/><text x="368" y="517" font-size="9.5" fill="#1E8449" text-anchor="middle">专家计算</text>
+    <rect x="416" y="500" width="88" height="26" fill="#FDEBD0" stroke="#E67E22"/><text x="460" y="517" font-size="9.5" fill="#B9770E" text-anchor="middle">combine</text>
+    <rect x="508" y="500" width="88" height="26" fill="#EBF5FB" stroke="#2E86C1"/><text x="552" y="517" font-size="9.5" fill="#2E86C1" text-anchor="middle">attention</text>
+    <rect x="600" y="500" width="88" height="26" fill="#FDEBD0" stroke="#E67E22"/><text x="644" y="517" font-size="9.5" fill="#B9770E" text-anchor="middle">dispatch</text>
+    <rect x="692" y="500" width="88" height="26" fill="#EAF7F1" stroke="#27AE60"/><text x="736" y="517" font-size="9.5" fill="#1E8449" text-anchor="middle">专家计算</text>
+    <rect x="784" y="500" width="88" height="26" fill="#FDEBD0" stroke="#E67E22"/><text x="828" y="517" font-size="9.5" fill="#B9770E" text-anchor="middle">combine</text>
+  </g>
+
+  <!-- lane B (offset by one segment) -->
+  <text x="42" y="562" font-size="11" fill="#2C3E50" font-weight="bold">micro-batch B</text>
+  <g>
+    <rect x="232" y="546" width="88" height="26" fill="#EBF5FB" stroke="#2E86C1"/><text x="276" y="563" font-size="9.5" fill="#2E86C1" text-anchor="middle">attention</text>
+    <rect x="324" y="546" width="88" height="26" fill="#FDEBD0" stroke="#E67E22"/><text x="368" y="563" font-size="9.5" fill="#B9770E" text-anchor="middle">dispatch</text>
+    <rect x="416" y="546" width="88" height="26" fill="#EAF7F1" stroke="#27AE60"/><text x="460" y="563" font-size="9.5" fill="#1E8449" text-anchor="middle">专家计算</text>
+    <rect x="508" y="546" width="88" height="26" fill="#FDEBD0" stroke="#E67E22"/><text x="552" y="563" font-size="9.5" fill="#B9770E" text-anchor="middle">combine</text>
+    <rect x="600" y="546" width="88" height="26" fill="#EBF5FB" stroke="#2E86C1"/><text x="644" y="563" font-size="9.5" fill="#2E86C1" text-anchor="middle">attention</text>
+    <rect x="692" y="546" width="88" height="26" fill="#FDEBD0" stroke="#E67E22"/><text x="736" y="563" font-size="9.5" fill="#B9770E" text-anchor="middle">dispatch</text>
+    <rect x="784" y="546" width="88" height="26" fill="#EAF7F1" stroke="#27AE60"/><text x="828" y="563" font-size="9.5" fill="#1E8449" text-anchor="middle">专家计算</text>
+  </g>
+
+  <!-- overlap brackets -->
+  <path d="M 232 592 L 232 600 L 500 600 L 500 592" fill="none" stroke="#27AE60" stroke-width="1.5"/>
+  <text x="366" y="614" font-size="10" fill="#1E8449" text-anchor="middle">B 的计算 与 A 的通信 重叠</text>
+  <path d="M 416 630 L 416 638 L 684 638 L 684 630" fill="none" stroke="#E67E22" stroke-width="1.5"/>
+  <text x="550" y="652" font-size="10" fill="#B9770E" text-anchor="middle">A 的计算 与 B 的通信 重叠</text>
+
+  <text x="480" y="676" font-size="10.5" fill="#2C3E50" text-anchor="middle" font-weight="bold">层时延 ≈ max(计算, 通信) 而非两者之和——前提是两条流资源互不抢占（SM 与 NIC）</text>
+  <text x="480" y="694" font-size="10" fill="#7F8C8D" text-anchor="middle">这正是昇腾 SetFlag/WaitFlag 双缓冲流水掩藏 MTE 延迟的系统层放大版：通信从"等"变成"藏"</text>
+</svg>

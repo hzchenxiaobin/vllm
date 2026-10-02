@@ -1,0 +1,274 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 660" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d20e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="660" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">I4 场景全程：共享 → fork（COW）→ 原地写 → 逆序归还</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">池 8 块 · B=16 · A prefill 40 token —— 每格：A/B 块链（角标 = ref_cnt）· free 队列快照 · 对照 §2.5 五步推演表与 test_I4_cow_safety</text>
+
+  <!-- ============ stage 1 ============ -->
+  <rect x="40" y="64" width="228" height="330" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.4"/>
+  <circle cx="58" cy="84" r="10" fill="#2563eb"/><text x="58" y="88" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#fff">1</text>
+  <text x="74" y="88" font-size="9.6" font-weight="bold" fill="#0f172a">A prefill 40 token</text>
+
+  <text x="52" y="112" font-size="8.5" font-weight="bold" fill="#334155">A</text>
+  <rect x="64" y="100" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="89" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b0</text><text x="89" y="125" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满 16/16</text>
+  <circle cx="110" cy="102" r="8.5" fill="#7c3aed"/><text x="110" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">1</text>
+  <line x1="114" y1="116" x2="128" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="130" y="100" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="155" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b1</text><text x="155" y="125" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满 16/16</text>
+  <circle cx="176" cy="102" r="8.5" fill="#7c3aed"/><text x="176" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">1</text>
+  <line x1="180" y1="116" x2="194" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="196" y="100" width="50" height="32" rx="4" fill="#ffffff" stroke="#2563eb"/>
+  <rect x="198" y="116" width="46" height="14" fill="#bfdbfe"/>
+  <text x="221" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b2</text><text x="221" y="127" text-anchor="middle" font-size="7.5" fill="#1e3a8a">8/16</text>
+  <circle cx="242" cy="102" r="8.5" fill="#7c3aed"/><text x="242" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">1</text>
+
+  <rect x="64" y="146" width="182" height="24" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="4,3"/>
+  <text x="155" y="162" text-anchor="middle" font-size="8" fill="#94a3b8">B：尚未存在</text>
+
+  <text x="52" y="206" font-size="8" fill="#64748b">free 队列（队头→）</text>
+  <rect x="64" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="75" y="224" text-anchor="middle" font-size="7.5" fill="#475569">3</text>
+  <rect x="89" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="100" y="224" text-anchor="middle" font-size="7.5" fill="#475569">4</text>
+  <rect x="114" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="125" y="224" text-anchor="middle" font-size="7.5" fill="#475569">5</text>
+  <rect x="139" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="150" y="224" text-anchor="middle" font-size="7.5" fill="#475569">6</text>
+  <rect x="164" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="175" y="224" text-anchor="middle" font-size="7.5" fill="#475569">7</text>
+
+  <text x="52" y="256" font-size="7.8" fill="#475569">append_slots("A", 40)</text>
+  <text x="52" y="270" font-size="7.8" fill="#475569">→ 新块 [0,1,2]（P2 增量）</text>
+  <text x="52" y="284" font-size="7.8" fill="#475569">ref 全 1，池剩 5 块</text>
+  <text x="52" y="306" font-size="7.8" font-weight="bold" fill="#9a3412">2 块满 + 1 块半满（8 槽）</text>
+  <text x="52" y="320" font-size="7.8" fill="#64748b">would_allocate(A,40)=3</text>
+
+  <!-- ============ stage 2 ============ -->
+  <rect x="278" y="64" width="228" height="330" rx="8" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.4"/>
+  <circle cx="296" cy="84" r="10" fill="#7c3aed"/><text x="296" y="88" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#fff">2</text>
+  <text x="312" y="88" font-size="9.6" font-weight="bold" fill="#0f172a">share_prefix(A→B, 3)</text>
+
+  <text x="290" y="112" font-size="8.5" font-weight="bold" fill="#334155">A</text>
+  <rect x="302" y="100" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="327" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b0</text><text x="327" y="125" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="348" cy="102" r="8.5" fill="#7c3aed"/><text x="348" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="352" y1="116" x2="366" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="368" y="100" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="393" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b1</text><text x="393" y="125" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="414" cy="102" r="8.5" fill="#7c3aed"/><text x="414" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="418" y1="116" x2="432" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="434" y="100" width="50" height="32" rx="4" fill="#ffffff" stroke="#2563eb"/>
+  <rect x="436" y="116" width="46" height="14" fill="#bfdbfe"/>
+  <text x="459" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b2</text><text x="459" y="127" text-anchor="middle" font-size="7.5" fill="#1e3a8a">8/16</text>
+  <circle cx="480" cy="102" r="8.5" fill="#7c3aed"/><text x="480" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+
+  <text x="290" y="152" font-size="8.5" font-weight="bold" fill="#7c3aed">B</text>
+  <rect x="302" y="140" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#7c3aed" stroke-dasharray="4,2"/>
+  <text x="327" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#4c1d95">b0</text><text x="327" y="165" text-anchor="middle" font-size="7.5" fill="#4c1d95">满</text>
+  <circle cx="348" cy="142" r="8.5" fill="#7c3aed"/><text x="348" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="352" y1="156" x2="366" y2="156" stroke="#7c3aed" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="368" y="140" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#7c3aed" stroke-dasharray="4,2"/>
+  <text x="393" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#4c1d95">b1</text><text x="393" y="165" text-anchor="middle" font-size="7.5" fill="#4c1d95">满</text>
+  <circle cx="414" cy="142" r="8.5" fill="#7c3aed"/><text x="414" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="418" y1="156" x2="432" y2="156" stroke="#7c3aed" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="434" y="140" width="50" height="32" rx="4" fill="#ffffff" stroke="#7c3aed" stroke-dasharray="4,2"/>
+  <rect x="436" y="156" width="46" height="14" fill="#bfdbfe"/>
+  <text x="459" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#4c1d95">b2</text><text x="459" y="167" text-anchor="middle" font-size="7.5" fill="#4c1d95">8/16</text>
+  <circle cx="480" cy="142" r="8.5" fill="#7c3aed"/><text x="480" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+
+  <text x="290" y="206" font-size="8" fill="#64748b">free 队列（不变）</text>
+  <rect x="302" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="313" y="224" text-anchor="middle" font-size="7.5" fill="#475569">3</text>
+  <rect x="327" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="338" y="224" text-anchor="middle" font-size="7.5" fill="#475569">4</text>
+  <rect x="352" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="363" y="224" text-anchor="middle" font-size="7.5" fill="#475569">5</text>
+  <rect x="377" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="388" y="224" text-anchor="middle" font-size="7.5" fill="#475569">6</text>
+  <rect x="402" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="413" y="224" text-anchor="middle" font-size="7.5" fill="#475569">7</text>
+
+  <text x="290" y="256" font-size="7.8" fill="#475569">touch：三块 ref 1→2（零拷贝）</text>
+  <text x="290" y="270" font-size="7.8" fill="#475569">B 的 req_used = 16+16+8 = 40</text>
+  <text x="290" y="284" font-size="7.8" fill="#475569">不耗池（队列不变）</text>
+  <text x="290" y="306" font-size="7.8" font-weight="bold" fill="#9a3412">★ would_allocate(B,1) = 1</text>
+  <text x="290" y="320" font-size="7.8" fill="#92400e">COW 感知：尾块 8/16 共享 → +1</text>
+
+  <!-- ============ stage 3 ============ -->
+  <rect x="516" y="64" width="228" height="330" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.4"/>
+  <circle cx="534" cy="84" r="10" fill="#2563eb"/><text x="534" y="88" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#fff">3</text>
+  <text x="550" y="88" font-size="9.6" font-weight="bold" fill="#0f172a">B decode 1 token → fork</text>
+
+  <text x="528" y="112" font-size="8.5" font-weight="bold" fill="#334155">A</text>
+  <rect x="540" y="100" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="565" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b0</text><text x="565" y="125" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="586" cy="102" r="8.5" fill="#7c3aed"/><text x="586" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="590" y1="116" x2="604" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="606" y="100" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="631" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b1</text><text x="631" y="125" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="652" cy="102" r="8.5" fill="#7c3aed"/><text x="652" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="656" y1="116" x2="670" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="672" y="100" width="50" height="32" rx="4" fill="#ffffff" stroke="#94a3b8"/>
+  <rect x="674" y="116" width="46" height="14" fill="#e2e8f0"/>
+  <text x="697" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#64748b">b2</text><text x="697" y="127" text-anchor="middle" font-size="7.5" fill="#64748b">8/16</text>
+  <circle cx="718" cy="102" r="8.5" fill="#0891b2"/><text x="718" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">1</text>
+
+  <text x="528" y="152" font-size="8.5" font-weight="bold" fill="#7c3aed">B</text>
+  <rect x="540" y="140" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="565" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b0</text><text x="565" y="165" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="586" cy="142" r="8.5" fill="#7c3aed"/><text x="586" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="590" y1="156" x2="604" y2="156" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="606" y="140" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="631" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b1</text><text x="631" y="165" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="652" cy="142" r="8.5" fill="#7c3aed"/><text x="652" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="656" y1="156" x2="670" y2="156" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="672" y="140" width="50" height="32" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="1.6"/>
+  <rect x="674" y="130" width="46" height="28" fill="#fecaca"/>
+  <text x="697" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#991b1b">b3</text><text x="697" y="167" text-anchor="middle" font-size="7.5" fill="#991b1b">9/16</text>
+  <circle cx="718" cy="142" r="8.5" fill="#0891b2"/><text x="718" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">1</text>
+  <text x="697" y="182" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#b91c1c">fork：拷贝 8 + 写 1</text>
+
+  <text x="528" y="206" font-size="8" fill="#64748b">free 队列（b3 被拿走）</text>
+  <rect x="540" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="551" y="224" text-anchor="middle" font-size="7.5" fill="#475569">4</text>
+  <rect x="565" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="576" y="224" text-anchor="middle" font-size="7.5" fill="#475569">5</text>
+  <rect x="590" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="601" y="224" text-anchor="middle" font-size="7.5" fill="#475569">6</text>
+  <rect x="615" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="626" y="224" text-anchor="middle" font-size="7.5" fill="#475569">7</text>
+
+  <text x="528" y="256" font-size="7.8" fill="#475569">fork(b2)→b3：b2 ref 2→1</text>
+  <text x="528" y="270" font-size="7.8" fill="#475569">b3 从队头拿（池剩 4 块）</text>
+  <text x="528" y="284" font-size="7.8" fill="#475569">B 写 token 100 → b3 第 9 槽</text>
+  <text x="528" y="306" font-size="7.8" font-weight="bold" fill="#9a3412">new_ids = [3]</text>
+  <text x="528" y="320" font-size="7.8" fill="#92400e">P2 增量必须含 fork 块（§4.4-3）</text>
+
+  <!-- ============ stage 4 ============ -->
+  <rect x="754" y="64" width="228" height="330" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.4"/>
+  <circle cx="772" cy="84" r="10" fill="#2563eb"/><text x="772" y="88" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#fff">4</text>
+  <text x="788" y="88" font-size="9.6" font-weight="bold" fill="#0f172a">A decode 1 token → 原地写</text>
+
+  <text x="766" y="112" font-size="8.5" font-weight="bold" fill="#334155">A</text>
+  <rect x="778" y="100" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="803" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b0</text><text x="803" y="125" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="824" cy="102" r="8.5" fill="#7c3aed"/><text x="824" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="828" y1="116" x2="842" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="844" y="100" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="869" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b1</text><text x="869" y="125" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="890" cy="102" r="8.5" fill="#7c3aed"/><text x="890" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="894" y1="116" x2="908" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="910" y="100" width="50" height="32" rx="4" fill="#ffffff" stroke="#059669" stroke-width="1.6"/>
+  <rect x="912" y="115" width="46" height="15" fill="#a7f3d0"/>
+  <text x="935" y="113" text-anchor="middle" font-size="9" font-weight="bold" fill="#065f46">b2</text><text x="935" y="127" text-anchor="middle" font-size="7.5" fill="#065f46">9/16</text>
+  <circle cx="956" cy="102" r="8.5" fill="#0891b2"/><text x="956" y="105.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">1</text>
+  <text x="935" y="182" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#047857">原地写第 9 槽：token 200</text>
+
+  <text x="766" y="152" font-size="8.5" font-weight="bold" fill="#7c3aed">B</text>
+  <rect x="778" y="140" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="803" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b0</text><text x="803" y="165" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="824" cy="142" r="8.5" fill="#7c3aed"/><text x="824" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="828" y1="156" x2="842" y2="156" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="844" y="140" width="50" height="32" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+  <text x="869" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">b1</text><text x="869" y="165" text-anchor="middle" font-size="7.5" fill="#1e3a8a">满</text>
+  <circle cx="890" cy="142" r="8.5" fill="#7c3aed"/><text x="890" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">2</text>
+  <line x1="894" y1="156" x2="908" y2="156" stroke="#475569" stroke-width="1.2" marker-end="url(#d20e)"/>
+  <rect x="910" y="140" width="50" height="32" rx="4" fill="#ffffff" stroke="#94a3b8"/>
+  <rect x="912" y="155" width="46" height="15" fill="#fecaca"/>
+  <text x="935" y="153" text-anchor="middle" font-size="9" font-weight="bold" fill="#64748b">b3</text><text x="935" y="167" text-anchor="middle" font-size="7.5" fill="#64748b">9/16</text>
+  <circle cx="956" cy="142" r="8.5" fill="#0891b2"/><text x="956" y="145.5" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#fff">1</text>
+
+  <text x="766" y="206" font-size="8" fill="#64748b">free 队列（不变）</text>
+  <rect x="778" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="789" y="224" text-anchor="middle" font-size="7.5" fill="#475569">4</text>
+  <rect x="803" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="814" y="224" text-anchor="middle" font-size="7.5" fill="#475569">5</text>
+  <rect x="828" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="839" y="224" text-anchor="middle" font-size="7.5" fill="#475569">6</text>
+  <rect x="853" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="864" y="224" text-anchor="middle" font-size="7.5" fill="#475569">7</text>
+
+  <text x="766" y="256" font-size="7.8" fill="#475569">would_allocate(A,1) = 0</text>
+  <text x="766" y="270" font-size="7.8" fill="#475569">尾块 b2 已私有（ref=1）</text>
+  <text x="766" y="284" font-size="7.8" fill="#475569">零分配：写进第 9 槽</text>
+  <text x="766" y="306" font-size="7.8" font-weight="bold" fill="#9a3412">I4 达成：b2 与 b3 物理独立</text>
+  <text x="766" y="320" font-size="7.8" fill="#92400e">fork 一对共享者只付一次</text>
+
+  <!-- ============ stage 5 ============ -->
+  <rect x="992" y="64" width="228" height="330" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.4"/>
+  <circle cx="1010" cy="84" r="10" fill="#059669"/><text x="1010" y="88" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#fff">5</text>
+  <text x="1026" y="88" font-size="9.6" font-weight="bold" fill="#0f172a">free A → free B（逆序）</text>
+
+  <rect x="1004" y="100" width="204" height="24" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="4,3"/>
+  <text x="1106" y="116" text-anchor="middle" font-size="8" fill="#94a3b8">A 表已清空</text>
+  <rect x="1004" y="140" width="204" height="24" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-dasharray="4,3"/>
+  <text x="1106" y="156" text-anchor="middle" font-size="8" fill="#94a3b8">B 表已清空</text>
+  <text x="1106" y="182" text-anchor="middle" font-size="7.8" fill="#64748b">四块 ref 依次归零 → 回队尾</text>
+
+  <text x="1004" y="206" font-size="8" fill="#64748b">free 队列（绿色 = 新归还）</text>
+  <rect x="1004" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="1015" y="224" text-anchor="middle" font-size="7.5" fill="#475569">4</text>
+  <rect x="1029" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="1040" y="224" text-anchor="middle" font-size="7.5" fill="#475569">5</text>
+  <rect x="1054" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="1065" y="224" text-anchor="middle" font-size="7.5" fill="#475569">6</text>
+  <rect x="1079" y="212" width="22" height="17" rx="3" fill="#f1f5f9" stroke="#94a3b8"/><text x="1090" y="224" text-anchor="middle" font-size="7.5" fill="#475569">7</text>
+  <rect x="1104" y="212" width="22" height="17" rx="3" fill="#bbf7d0" stroke="#16a34a"/><text x="1115" y="224" text-anchor="middle" font-size="7.5" fill="#14532d">2</text>
+  <rect x="1129" y="212" width="22" height="17" rx="3" fill="#bbf7d0" stroke="#16a34a"/><text x="1140" y="224" text-anchor="middle" font-size="7.5" fill="#14532d">3</text>
+  <rect x="1154" y="212" width="22" height="17" rx="3" fill="#bbf7d0" stroke="#16a34a"/><text x="1165" y="224" text-anchor="middle" font-size="7.5" fill="#14532d">1</text>
+  <rect x="1179" y="212" width="22" height="17" rx="3" fill="#bbf7d0" stroke="#16a34a"/><text x="1190" y="224" text-anchor="middle" font-size="7.5" fill="#14532d">0</text>
+
+  <text x="1004" y="256" font-size="7.8" fill="#475569">free A（逆序）：b2 最先进队</text>
+  <text x="1004" y="270" font-size="7.8" fill="#475569">free B（逆序）：b3, b1, b0</text>
+  <text x="1004" y="284" font-size="7.8" fill="#475569">队尾序 = b2, b3, b1, b0</text>
+  <text x="1004" y="306" font-size="7.8" font-weight="bold" fill="#166534">驱逐序（若带 hash）：</text>
+  <text x="1004" y="320" font-size="7.8" fill="#166534">同链尾块先逐，前缀头保最久</text>
+
+  <!-- ============ ref ledger table ============ -->
+  <rect x="40" y="412" width="690" height="188" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.4"/>
+  <text x="56" y="434" font-size="11" font-weight="bold" fill="#0f172a">ref_cnt 账本（I4 场景全程 —— 白板推演就照这张表）</text>
+  <rect x="56" y="444" width="60" height="22" fill="#e2e8f0"/><text x="86" y="459" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#334155">步</text>
+  <rect x="116" y="444" width="50" height="22" fill="#e2e8f0"/><text x="141" y="459" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#334155">b0</text>
+  <rect x="166" y="444" width="50" height="22" fill="#e2e8f0"/><text x="191" y="459" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#334155">b1</text>
+  <rect x="216" y="444" width="50" height="22" fill="#e2e8f0"/><text x="241" y="459" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#334155">b2</text>
+  <rect x="266" y="444" width="50" height="22" fill="#e2e8f0"/><text x="291" y="459" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#334155">b3</text>
+  <rect x="316" y="444" width="150" height="22" fill="#e2e8f0"/><text x="391" y="459" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#334155">free 队尾变化</text>
+  <rect x="466" y="444" width="250" height="22" fill="#e2e8f0"/><text x="591" y="459" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#334155">事件</text>
+  <rect x="56" y="466" width="60" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="86" y="482" text-anchor="middle" font-size="8.5" fill="#334155">①</text>
+  <rect x="116" y="466" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="141" y="482" text-anchor="middle" font-size="8.5" fill="#334155">1</text>
+  <rect x="166" y="466" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="191" y="482" text-anchor="middle" font-size="8.5" fill="#334155">1</text>
+  <rect x="216" y="466" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="241" y="482" text-anchor="middle" font-size="8.5" fill="#334155">1</text>
+  <rect x="266" y="466" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="291" y="482" text-anchor="middle" font-size="8.5" fill="#94a3b8">—</text>
+  <rect x="316" y="466" width="150" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="391" y="482" text-anchor="middle" font-size="8" fill="#475569">[3,4,5,6,7]</text>
+  <rect x="466" y="466" width="250" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="591" y="482" text-anchor="middle" font-size="8" fill="#475569">A prefill 40（新块 [0,1,2]）</text>
+  <rect x="56" y="490" width="60" height="24" fill="#faf5ff" stroke="#e2e8f0"/><text x="86" y="506" text-anchor="middle" font-size="8.5" fill="#334155">②</text>
+  <rect x="116" y="490" width="50" height="24" fill="#faf5ff" stroke="#e2e8f0"/><text x="141" y="506" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#7c3aed">2</text>
+  <rect x="166" y="490" width="50" height="24" fill="#faf5ff" stroke="#e2e8f0"/><text x="191" y="506" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#7c3aed">2</text>
+  <rect x="216" y="490" width="50" height="24" fill="#faf5ff" stroke="#e2e8f0"/><text x="241" y="506" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#7c3aed">2</text>
+  <rect x="266" y="490" width="50" height="24" fill="#faf5ff" stroke="#e2e8f0"/><text x="291" y="506" text-anchor="middle" font-size="8.5" fill="#94a3b8">—</text>
+  <rect x="316" y="490" width="150" height="24" fill="#faf5ff" stroke="#e2e8f0"/><text x="391" y="506" text-anchor="middle" font-size="8" fill="#475569">不变（touch 不耗池）</text>
+  <rect x="466" y="490" width="250" height="24" fill="#faf5ff" stroke="#e2e8f0"/><text x="591" y="506" text-anchor="middle" font-size="8" fill="#475569">share_prefix：touch 三块</text>
+  <rect x="56" y="514" width="60" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="86" y="530" text-anchor="middle" font-size="8.5" fill="#334155">③</text>
+  <rect x="116" y="514" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="141" y="530" text-anchor="middle" font-size="8.5" fill="#334155">2</text>
+  <rect x="166" y="514" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="191" y="530" text-anchor="middle" font-size="8.5" fill="#334155">2</text>
+  <rect x="216" y="514" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="241" y="530" text-anchor="middle" font-size="8.5" fill="#0891b2">1</text>
+  <rect x="266" y="514" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="291" y="530" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#b91c1c">1</text>
+  <rect x="316" y="514" width="150" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="391" y="530" text-anchor="middle" font-size="8" fill="#475569">[4,5,6,7]（b3 从队头拿）</text>
+  <rect x="466" y="514" width="250" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="591" y="530" text-anchor="middle" font-size="8" fill="#475569">B fork b2→b3 并写（new_ids=[3]）</text>
+  <rect x="56" y="538" width="60" height="24" fill="#f0fdf4" stroke="#e2e8f0"/><text x="86" y="554" text-anchor="middle" font-size="8.5" fill="#334155">④</text>
+  <rect x="116" y="538" width="50" height="24" fill="#f0fdf4" stroke="#e2e8f0"/><text x="141" y="554" text-anchor="middle" font-size="8.5" fill="#334155">2</text>
+  <rect x="166" y="538" width="50" height="24" fill="#f0fdf4" stroke="#e2e8f0"/><text x="191" y="554" text-anchor="middle" font-size="8.5" fill="#334155">2</text>
+  <rect x="216" y="538" width="50" height="24" fill="#f0fdf4" stroke="#e2e8f0"/><text x="241" y="554" text-anchor="middle" font-size="8.5" fill="#0891b2">1</text>
+  <rect x="266" y="538" width="50" height="24" fill="#f0fdf4" stroke="#e2e8f0"/><text x="291" y="554" text-anchor="middle" font-size="8.5" fill="#334155">1</text>
+  <rect x="316" y="538" width="150" height="24" fill="#f0fdf4" stroke="#e2e8f0"/><text x="391" y="554" text-anchor="middle" font-size="8" fill="#475569">不变（零分配）</text>
+  <rect x="466" y="538" width="250" height="24" fill="#f0fdf4" stroke="#e2e8f0"/><text x="591" y="554" text-anchor="middle" font-size="8" fill="#475569">A 原地写 b2 第 9 槽</text>
+  <rect x="56" y="562" width="60" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="86" y="578" text-anchor="middle" font-size="8.5" fill="#334155">⑤</text>
+  <rect x="116" y="562" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="141" y="578" text-anchor="middle" font-size="8.5" fill="#334155">0</text>
+  <rect x="166" y="562" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="191" y="578" text-anchor="middle" font-size="8.5" fill="#334155">0</text>
+  <rect x="216" y="562" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="241" y="578" text-anchor="middle" font-size="8.5" fill="#334155">0</text>
+  <rect x="266" y="562" width="50" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="291" y="578" text-anchor="middle" font-size="8.5" fill="#334155">0</text>
+  <rect x="316" y="562" width="150" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="391" y="578" text-anchor="middle" font-size="8" fill="#475569">+ [2,3,1,0] 进队尾</text>
+  <rect x="466" y="562" width="250" height="24" fill="#ffffff" stroke="#e2e8f0"/><text x="591" y="578" text-anchor="middle" font-size="8" fill="#475569">free A → free B（逆序归还）</text>
+
+  <!-- ============ counter-example ============ -->
+  <rect x="750" y="412" width="450" height="188" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.4"/>
+  <text x="766" y="434" font-size="11" font-weight="bold" fill="#991b1b">反例：如果没有 COW —— I4 违反现场</text>
+  <rect x="766" y="446" width="70" height="44" rx="4" fill="#ffffff" stroke="#dc2626" stroke-width="1.6"/>
+  <rect x="768" y="468" width="66" height="20" fill="#fecaca"/>
+  <text x="801" y="462" text-anchor="middle" font-size="9" font-weight="bold" fill="#991b1b">b2 共享</text>
+  <text x="801" y="486" text-anchor="middle" font-size="7.5" fill="#991b1b">9/16</text>
+  <line x1="836" y1="460" x2="880" y2="452" stroke="#dc2626" stroke-width="1.3" marker-end="url(#d20e)"/>
+  <text x="886" y="450" font-size="7.8" fill="#b91c1c">B 写第 9 槽 → token 100</text>
+  <line x1="836" y1="476" x2="880" y2="484" stroke="#dc2626" stroke-width="1.3" marker-end="url(#d20e)"/>
+  <text x="886" y="488" font-size="7.8" fill="#b91c1c">A 也写第 9 槽 → 200 覆盖 100</text>
+  <text x="766" y="516" font-size="8.2" fill="#475569">→ 同一物理槽位被两个请求写入：KV 数据互相污染（「互不覆盖」被破坏）</text>
+  <text x="766" y="534" font-size="8.2" fill="#475569">→ mini 的运行时断言「槽位非空：写覆盖！」在此触发（append_slots 第 ③ 步）；</text>
+  <text x="766" y="550" font-size="8.2" fill="#475569">   若在两次写之间跑 checker，则 I3(b) 账目不平先炸（A 的账本在 B 写入那刻就漂了）</text>
+  <text x="766" y="574" font-size="8.2" font-weight="bold" fill="#991b1b">vLLM V1 的答案：只共享不可变满块 + 活动尾块私有 →「写共享块」从未被定义</text>
+  <text x="766" y="590" font-size="8.2" fill="#7c2d12">（Day 16 §2.6；mini 实现 V0 式真 COW 正是为了体会这条不变式的分量 —— §2.5 对照表）</text>
+
+  <text x="620" y="634" text-anchor="middle" font-size="9.5" fill="#64748b">图 2 · week3 README 指定用例「A、B 共享 3 块后各自 decode，检查各自最后块内容独立」的逐步可视化 —— 队列快照与 §2.3 逆序归还 / Day 15 两条排序规则逐条对应</text>
+</svg>

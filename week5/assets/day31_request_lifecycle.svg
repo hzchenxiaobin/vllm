@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="680" viewBox="0 0 980 680" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="d32" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+    <marker id="d32g" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#27AE60"/>
+    </marker>
+    <marker id="d32s" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#7F8C8D"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="680" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 2｜一条请求的生命周期：两跳转发、KV 单边读与 TTFT 三处时钟分解</text>
+
+  <!-- lifeline headers -->
+  <rect x="80"  y="56" width="140" height="46" rx="6" fill="#F8F9F9" stroke="#34495E" stroke-width="1.5"/>
+  <text x="150" y="76" font-size="12" font-weight="bold" fill="#2C3E50" text-anchor="middle">客户端</text>
+  <text x="150" y="93" font-size="9" fill="#566573" text-anchor="middle">curl / 探针 / bench</text>
+
+  <rect x="310" y="56" width="180" height="46" rx="6" fill="#F4ECF7" stroke="#8E44ED" stroke-width="1.5"/>
+  <text x="400" y="76" font-size="12" font-weight="bold" fill="#6C3483" text-anchor="middle">toy_proxy :8192</text>
+  <text x="400" y="93" font-size="9" fill="#6C3483" text-anchor="middle">复制请求·改 max_tokens=1</text>
+
+  <rect x="595" y="56" width="170" height="46" rx="6" fill="#FDEBD0" stroke="#E67E22" stroke-width="1.5"/>
+  <text x="680" y="76" font-size="12" font-weight="bold" fill="#B9770E" text-anchor="middle">Prefill 实例 :8100</text>
+  <text x="680" y="93" font-size="9" fill="#B9770E" text-anchor="middle">GPU 0 · kv_producer</text>
+
+  <rect x="815" y="56" width="150" height="46" rx="6" fill="#EBF5FB" stroke="#2E86C1" stroke-width="1.5"/>
+  <text x="890" y="76" font-size="12" font-weight="bold" fill="#1A5276" text-anchor="middle">Decode 实例 :8200</text>
+  <text x="890" y="93" font-size="9" fill="#1A5276" text-anchor="middle">GPU 1 · kv_consumer</text>
+
+  <!-- lifelines -->
+  <line x1="150" y1="102" x2="150" y2="545" stroke="#BDC3C7" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="400" y1="102" x2="400" y2="545" stroke="#BDC3C7" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="680" y1="102" x2="680" y2="545" stroke="#BDC3C7" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="890" y1="102" x2="890" y2="545" stroke="#BDC3C7" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- guide lines for TTFT decomposition -->
+  <line x1="44" y1="130" x2="890" y2="130" stroke="#E5E8E8" stroke-width="1" stroke-dasharray="3,4"/>
+  <line x1="44" y1="250" x2="680" y2="250" stroke="#E5E8E8" stroke-width="1" stroke-dasharray="3,4"/>
+  <line x1="44" y1="280" x2="890" y2="280" stroke="#E5E8E8" stroke-width="1" stroke-dasharray="3,4"/>
+  <line x1="44" y1="350" x2="890" y2="350" stroke="#E5E8E8" stroke-width="1" stroke-dasharray="3,4"/>
+  <line x1="44" y1="425" x2="150" y2="425" stroke="#E5E8E8" stroke-width="1" stroke-dasharray="3,4"/>
+
+  <!-- TTFT segments (left) -->
+  <rect x="38" y="130" width="10" height="120" fill="#E67E22" opacity="0.85"/>
+  <rect x="38" y="280" width="10" height="70"  fill="#2E86C1" opacity="0.85"/>
+  <rect x="38" y="350" width="10" height="75"  fill="#27AE60" opacity="0.85"/>
+  <text x="26" y="192" font-size="10" fill="#B9770E" text-anchor="middle" transform="rotate(-90 26 192)">T_prefill(P)</text>
+  <text x="26" y="317" font-size="10" fill="#1A5276" text-anchor="middle" transform="rotate(-90 26 317)">T_TTLFT(D)</text>
+  <text x="26" y="390" font-size="10" fill="#27AE60" text-anchor="middle" transform="rotate(-90 26 390)">T_first_decode</text>
+  <line x1="14" y1="130" x2="14" y2="425" stroke="#2C3E50" stroke-width="1.5"/>
+  <line x1="10" y1="130" x2="18" y2="130" stroke="#2C3E50" stroke-width="1.5"/>
+  <line x1="10" y1="425" x2="18" y2="425" stroke="#2C3E50" stroke-width="1.5"/>
+  <text x="14" y="440" font-size="10" font-weight="bold" fill="#2C3E50" text-anchor="middle" transform="rotate(-90 14 440)">TTFT_client</text>
+
+  <!-- messages -->
+  <line x1="150" y1="130" x2="396" y2="130" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d32)"/>
+  <text x="273" y="122" font-size="10" fill="#2C3E50" text-anchor="middle">POST /v1/completions（prompt + max_tokens=512）</text>
+
+  <line x1="400" y1="165" x2="676" y2="165" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d32)"/>
+  <text x="538" y="157" font-size="10" fill="#2C3E50" text-anchor="middle">① 预热请求（副本，max_tokens=1）</text>
+
+  <!-- P prefill activation -->
+  <rect x="674" y="172" width="12" height="66" fill="#F5B041" stroke="#E67E22" stroke-width="1"/>
+  <text x="697" y="196" font-size="9" fill="#B9770E">prefill 计算（8K prompt ≈ 0.3~0.8 s）</text>
+  <text x="697" y="210" font-size="9" fill="#B9770E">save_kv_layer → request_finished</text>
+  <text x="697" y="224" font-size="9" fill="#B9770E">（发布 KV：block 清单 + 地址）</text>
+
+  <line x1="680" y1="250" x2="404" y2="250" stroke="#2C3E50" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d32)"/>
+  <text x="542" y="242" font-size="10" fill="#2C3E50" text-anchor="middle">② 返回 1 个 token（客户端不需要，丢弃）</text>
+
+  <line x1="400" y1="280" x2="886" y2="280" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#d32)"/>
+  <text x="643" y="272" font-size="10" fill="#2C3E50" text-anchor="middle">③ 完整请求 + kv_transfer_params（block 清单 / engine id / 地址）</text>
+
+  <!-- D wait activation -->
+  <rect x="884" y="287" width="12" height="63" fill="#7FB3D5" stroke="#2E86C1" stroke-width="1"/>
+  <text x="874" y="308" font-size="9" fill="#1A5276" text-anchor="end">WAITING_FOR_REMOTE_KVS</text>
+  <text x="874" y="322" font-size="9" fill="#1A5276" text-anchor="end">start_load_kv → wait_for_layer_load</text>
+
+  <!-- KV transfer (D pulls from P) -->
+  <line x1="884" y1="340" x2="690" y2="340" stroke="#27AE60" stroke-width="4" marker-end="url(#d32g)"/>
+  <text x="787" y="332" font-size="10" font-weight="bold" fill="#27AE60" text-anchor="middle">④ KV blocks（UCX 单边读，D 发起拉取）</text>
+  <text x="787" y="356" font-size="8" fill="#27AE60" text-anchor="middle">同机 IPC/sm · 跨机 RDMA</text>
+
+  <!-- D decode activation -->
+  <rect x="884" y="350" width="12" height="175" fill="#5DADE2" stroke="#2E86C1" stroke-width="1"/>
+  <text x="874" y="380" font-size="9" fill="#1A5276" text-anchor="end">running：decode step × N</text>
+  <text x="874" y="394" font-size="9" fill="#1A5276" text-anchor="end">（batch 形态稳定，ITL 平稳）</text>
+
+  <line x1="890" y1="415" x2="404" y2="415" stroke="#27AE60" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d32g)"/>
+  <text x="647" y="407" font-size="10" fill="#27AE60" text-anchor="middle">⑤ 首 token（stream）</text>
+
+  <line x1="400" y1="425" x2="154" y2="425" stroke="#27AE60" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#d32g)"/>
+  <text x="277" y="417" font-size="10" fill="#27AE60" text-anchor="middle">透传首 token → 客户端 TTFT 结束</text>
+
+  <line x1="890" y1="470" x2="404" y2="470" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="4,4" marker-end="url(#d32s)"/>
+  <text x="647" y="462" font-size="9" fill="#7F8C8D" text-anchor="middle">后续 token（间隔 ≈ ITL / TPOT）</text>
+  <line x1="400" y1="480" x2="154" y2="480" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="4,4" marker-end="url(#d32s)"/>
+  <text x="760" y="497" font-size="12" fill="#7F8C8D" text-anchor="middle">⋯</text>
+  <line x1="890" y1="510" x2="404" y2="510" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="4,4" marker-end="url(#d32s)"/>
+  <line x1="400" y1="520" x2="154" y2="520" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="4,4" marker-end="url(#d32s)"/>
+
+  <!-- formula box -->
+  <rect x="60" y="560" width="900" height="100" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1"/>
+  <text x="80" y="584" font-size="12" font-weight="bold" fill="#2C3E50">TTFT_client ≈ T_proxy（转发开销） + T_prefill(P) + T_TTLFT(D) + T_first_decode(D)</text>
+  <text x="80" y="606" font-size="10" fill="#2C3E50">T_prefill → P:8100/metrics 的 vllm:time_to_first_token　｜　T_TTLFT ≈ KV Transfer metrics 的 P90 xfer time + D 侧排队（WAITING_FOR_REMOTE_KVS 驻留）</text>
+  <text x="80" y="624" font-size="10" fill="#2C3E50">T_first_decode ≈ 单 step TPOT　｜　T_proxy：demo router 的 HTTP 转发（毫秒级，生产 router 应压缩到最低）</text>
+  <text x="80" y="644" font-size="10" fill="#7F8C8D">实验方法：三段分别读出加和，与客户端实测 TTFT 对账——对得上 = 你真的理解了这条链路（Day 30 图 4 的运行时版本）。</text>
+</svg>

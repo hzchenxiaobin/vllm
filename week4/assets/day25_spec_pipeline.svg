@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4A5568"/>
+    </marker>
+  </defs>
+  <rect width="960" height="640" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">投机解码一个轮次：draft → verify → accept（k = 3）</text>
+
+  <!-- ================= upper: pipeline ================= -->
+  <!-- real token -->
+  <rect x="40" y="70" width="70" height="34" rx="6" fill="#1A365D"/>
+  <text x="75" y="92" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">真实 token</text>
+
+  <!-- draft stage -->
+  <rect x="150" y="56" width="200" height="62" rx="10" fill="#FEEBC8" stroke="#DD6B20"/>
+  <text x="250" y="80" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#9C4221">① draft：草稿器猜 k 个</text>
+  <text x="250" y="98" text-anchor="middle" font-size="10" fill="#2D3748">EAGLE/MTP：1 层草稿头 × k 次</text>
+  <text x="250" y="112" text-anchor="middle" font-size="10" fill="#2D3748">ngram：CPU 查表（GPU 零成本）</text>
+  <line x1="110" y1="87" x2="145" y2="87" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- draft tokens -->
+  <g font-size="11">
+    <rect x="390" y="70" width="34" height="34" rx="5" fill="#FEEBC8" stroke="#DD6B20" stroke-dasharray="4 2"/>
+    <text x="407" y="91" text-anchor="middle" fill="#9C4221">d₁</text>
+    <rect x="428" y="70" width="34" height="34" rx="5" fill="#FEEBC8" stroke="#DD6B20" stroke-dasharray="4 2"/>
+    <text x="445" y="91" text-anchor="middle" fill="#9C4221">d₂</text>
+    <rect x="466" y="70" width="34" height="34" rx="5" fill="#FEEBC8" stroke="#DD6B20" stroke-dasharray="4 2"/>
+    <text x="483" y="91" text-anchor="middle" fill="#9C4221">d₃</text>
+  </g>
+  <line x1="350" y1="87" x2="385" y2="87" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- verify stage -->
+  <rect x="530" y="50" width="220" height="74" rx="10" fill="#EBF8FF" stroke="#2B6CB0"/>
+  <text x="640" y="74" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#2B6CB0">② verify：target 一次 forward</text>
+  <text x="640" y="92" text-anchor="middle" font-size="10" fill="#2D3748">吃进 1 + k = 4 个 token（micro-prefill）</text>
+  <text x="640" y="108" text-anchor="middle" font-size="10" fill="#2D3748">权重只读一遍 · FLOPs ×4（屋顶线上免费）</text>
+  <line x1="500" y1="87" x2="525" y2="87" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- accept stage -->
+  <rect x="790" y="56" width="140" height="62" rx="10" fill="#C6F6D5" stroke="#276749"/>
+  <text x="860" y="80" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#276749">③ accept：收最长前缀</text>
+  <text x="860" y="98" text-anchor="middle" font-size="10" fill="#2D3748">greedy：argmax 逐位比对</text>
+  <text x="860" y="112" text-anchor="middle" font-size="10" fill="#2D3748">采样：rejection sampling</text>
+  <line x1="750" y1="87" x2="785" y2="87" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- emitted row -->
+  <text x="75" y="165" font-size="11" fill="#4A5568">每轮发射：</text>
+  <g font-size="11">
+    <rect x="150" y="148" width="34" height="26" rx="5" fill="#C6F6D5" stroke="#276749"/>
+    <text x="167" y="165" text-anchor="middle" fill="#276749">t₁</text>
+    <rect x="188" y="148" width="34" height="26" rx="5" fill="#C6F6D5" stroke="#276749"/>
+    <text x="205" y="165" text-anchor="middle" fill="#276749">t₂</text>
+    <rect x="226" y="148" width="34" height="26" rx="5" fill="#C6F6D5" stroke="#276749"/>
+    <text x="243" y="165" text-anchor="middle" fill="#276749">t₃</text>
+    <rect x="264" y="148" width="34" height="26" rx="5" fill="#9AE6B4" stroke="#276749"/>
+    <text x="281" y="165" text-anchor="middle" fill="#22543D">bonus</text>
+  </g>
+  <text x="315" y="165" font-size="10.5" fill="#4A5568">全对时 τ = k+1 = 4（bonus 白拿，verify 已算出下一位置分布）</text>
+  <text x="315" y="182" font-size="10.5" fill="#C53030">第一个就错时 τ = 1（bonus 兜底，最差不亏一步）</text>
+
+  <!-- ================= lower: timeline comparison ================= -->
+  <text x="40" y="230" font-size="14" font-weight="bold" fill="#1A365D">时间轴对比：为什么"多算"是免费的</text>
+
+  <!-- baseline timeline -->
+  <text x="40" y="262" font-size="11.5" font-weight="bold" fill="#2D3748">baseline decode</text>
+  <g font-size="9.5" fill="#2D3748">
+    <rect x="160" y="250" width="130" height="24" fill="#E2E8F0" stroke="#4A5568"/>
+    <text x="225" y="266" text-anchor="middle">读 140GB 权重 → 1 tok</text>
+    <rect x="294" y="250" width="130" height="24" fill="#E2E8F0" stroke="#4A5568"/>
+    <text x="359" y="266" text-anchor="middle">读 140GB 权重 → 1 tok</text>
+    <rect x="428" y="250" width="130" height="24" fill="#E2E8F0" stroke="#4A5568"/>
+    <text x="493" y="266" text-anchor="middle">读 140GB 权重 → 1 tok</text>
+    <rect x="562" y="250" width="130" height="24" fill="#E2E8F0" stroke="#4A5568"/>
+    <text x="627" y="266" text-anchor="middle">读 140GB 权重 → 1 tok</text>
+  </g>
+  <text x="710" y="266" font-size="10.5" fill="#4A5568">4 步 → 4 token</text>
+
+  <!-- speculative timeline -->
+  <text x="40" y="322" font-size="11.5" font-weight="bold" fill="#2D3748">speculative（k=3, β=0.8, E[τ]=2.95）</text>
+  <g font-size="9.5">
+    <rect x="160" y="306" width="44" height="28" fill="#FEEBC8" stroke="#DD6B20"/>
+    <text x="182" y="318" text-anchor="middle" fill="#9C4221">draft</text>
+    <text x="182" y="330" text-anchor="middle" font-size="8.5" fill="#9C4221">c·T</text>
+    <rect x="208" y="306" width="44" height="28" fill="#FEEBC8" stroke="#DD6B20"/>
+    <text x="230" y="318" text-anchor="middle" fill="#9C4221">draft</text>
+    <text x="230" y="330" text-anchor="middle" font-size="8.5" fill="#9C4221">c·T</text>
+    <rect x="256" y="306" width="44" height="28" fill="#FEEBC8" stroke="#DD6B20"/>
+    <text x="278" y="318" text-anchor="middle" fill="#9C4221">draft</text>
+    <text x="278" y="330" text-anchor="middle" font-size="8.5" fill="#9C4221">c·T</text>
+    <rect x="304" y="306" width="150" height="28" fill="#EBF8FF" stroke="#2B6CB0" stroke-width="2"/>
+    <text x="379" y="318" text-anchor="middle" fill="#2B6CB0">verify：读 140GB 权重</text>
+    <text x="379" y="330" text-anchor="middle" font-size="8.5" fill="#2B6CB0">4 个 query 并行 · γ·T</text>
+  </g>
+  <text x="465" y="316" font-size="10.5" fill="#276749">≈2.95 token</text>
+  <text x="465" y="331" font-size="9.5" fill="#4A5568">T_round = (γ + 3c)·T ≈ 1.45·T</text>
+
+  <!-- annotation arrows -->
+  <path d="M 379 300 L 379 288" stroke="#C53030" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
+  <text x="640" y="300" font-size="10.5" fill="#C53030">verify 与普通 decode 时间几乎相同（同读一遍权重），</text>
+  <text x="640" y="314" font-size="10.5" fill="#C53030">但一次产出 E[τ] ≈ 3 个 token —— "用计算换访存"</text>
+
+  <!-- roofline mini -->
+  <text x="40" y="380" font-size="13" font-weight="bold" fill="#1A365D">屋顶线视角（H100：ridge ≈ 295 FLOP/byte）</text>
+  <line x1="60" y1="560" x2="60" y2="420" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="52" y="410" font-size="10" fill="#4A5568">FLOP/s</text>
+  <line x1="60" y1="560" x2="900" y2="560" stroke="#4A5568" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="890" y="578" font-size="10" fill="#4A5568">AI (FLOP/byte)</text>
+
+  <!-- roof (log-ish, drawn linear for illustration) -->
+  <line x1="60" y1="560" x2="380" y2="435" stroke="#2B6CB0" stroke-width="2.5"/>
+  <line x1="380" y1="435" x2="900" y2="435" stroke="#2B6CB0" stroke-width="2.5"/>
+  <text x="640" y="425" font-size="10.5" fill="#2B6CB0">算力上限 989 TFLOP/s</text>
+  <line x1="380" y1="560" x2="380" y2="435" stroke="#4A5568" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="380" y="578" font-size="10" fill="#4A5568" text-anchor="middle">ridge ≈ 295</text>
+
+  <!-- operating points -->
+  <g font-size="10">
+    <circle cx="78" cy="518" r="6" fill="#E53E3E"/>
+    <text x="90" y="515" fill="#C53030" font-weight="bold">decode B=1：AI≈1</text>
+    <text x="90" y="529" fill="#C53030">利用率 ~0.3%，算力大量闲置</text>
+
+    <circle cx="160" cy="486" r="6" fill="#DD6B20"/>
+    <text x="172" y="483" fill="#9C4221" font-weight="bold">verify k=3：AI≈4</text>
+    <text x="172" y="497" fill="#9C4221">仍在带宽侧 → 时间不变</text>
+
+    <circle cx="290" cy="452" r="6" fill="#38A169"/>
+    <text x="250" y="440" fill="#276749" font-weight="bold">decode B=64：AI≈64</text>
+    <text x="250" y="530" fill="#276749" font-size="9.5">大 batch 时点右移，</text>
+    <text x="250" y="543" fill="#276749" font-size="9.5">verify 可能越过 ridge → 失效模式</text>
+  </g>
+
+  <!-- spare compute region -->
+  <rect x="60" y="435" width="320" height="125" fill="#FED7D7" opacity="0.35"/>
+  <text x="220" y="596" font-size="10.5" fill="#C53030" text-anchor="middle">"免费计算"区：FLOPs ×(k+1) 仍不增加 step 时间（带宽瓶颈未变）</text>
+</svg>

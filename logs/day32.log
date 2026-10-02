@@ -1,0 +1,491 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week5/ 2>/dev/null && ls /mnt/workspace/aiinfra/vllm/week5/assets/ 2>/dev/null
+total 176
+drwxr-xr-x  3 root root  4096 Oct  2 13:47 .
+drwxr-xr-x 18 root root  4096 Oct  2 12:40 ..
+drwxr-xr-x  2 root root  4096 Oct  2 13:55 assets
+-rw-r--r--  1 root root 36986 Oct  2 13:21 day29_pd_disaggregation_why.md
+-rw-r--r--  1 root root 45556 Oct  2 13:38 day30_pd_disaggregation_how.md
+-rw-r--r--  1 root root 41541 Oct  2 13:56 day31_pd_disaggregation_lab.md
+-rw-r--r--  1 root root 32733 Oct  1 23:17 README.md
+day29_chunk_window.svg
+day29_colocated_interference.svg
+day29_colocated_vs_disaggregated.svg
+day30_kvconnector_sequence.svg
+day30_layerwise_pipelining.svg
+day30_pd_architecture_overview.svg
+day30_three_systems.svg
+day31_itl_comparison.svg
+day31_pd_lab_topology.svg
+day31_request_lifecycle.svg
+[0m
+[0m→ [0mRead week5/day29_pd_disaggregation_why.md[90m [limit=60][0m
+[0m→ [0mRead week5/day31_pd_disaggregation_lab.md[90m [limit=60][0m
+[0m→ [0mRead week5/day30_pd_disaggregation_how.md[90m [limit=45][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/vllm/distributed/ 2>/dev/null | head -30; ls /mnt/workspace/aiinfra/vllm/vllm/ 2>/dev/null | head -40
+(no output)
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+[0m
+[0m→ [0mRead week5/day29_pd_disaggregation_why.md[90m [limit=102, offset=450][0m
+我先查看一个现有的 SVG，以确保样式保持一致，然后再开始编写。
+[0m→ [0mRead week5/assets/day29_colocated_vs_disaggregated.svg[90m [limit=80][0m
+[0m✱ [0mGrep "assets/day29"[90m in week5/day29_pd_disaggregation_why.md · 3 matches[0m
+现在我正在撰写第 1 部分（第 0-3 节，TP 核心理论）。
+[0m
+[0m← [0mWrite week5/day32_distributed_parallelism.md
+Wrote file successfully.
+[0m
+第一部分已写入。现在追加第二部分（PP、MoE EP、vLLM 源码分析）。
+[0m$ [0mcat >> /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md <<'PART2EOF'
+
+---
+
+## 4. 原理深入（二）：PP——用 bubble 换显存容量
+
+### 4.1 推理为什么要 PP：通信最便宜，代价是吞吐分母
+
+PP 把模型的 L 层切成 p 段（stage），第 i 段住第 i 张卡，前后向只在 **stage 边界**点对点传 activation：
+
+$$
+\text{边界通信量} = B \cdot S \cdot H \cdot b \quad (\text{每个 step，每对相邻卡，仅 } 1 \text{ 次})
+$$
+
+对比 TP 的"每层 2 次 all-reduce"，PP 的通信量小一到两个数量级，而且 p2p send/recv 不需要全体同步——**PCIe 甚至普通以太网都够用**。所以 PP 的天然生态位是：**模型大到 TP=8 单机都放不下（405B、DeepSeek-671B），必须跨机扩展**——TP 跨机是灾难（§3.4），PP 跨机几乎免费。此外 PP 每 stage 显存 = 权重/p + 本 stage activation，与 TP 一样解决显存墙，但不要求 `num_heads % p == 0`。
+
+### 4.2 bubble 的算术：`(p-1)/(m+p-1)`
+
+流水线的代价是**填充与排空**。把一个 batch 切成 m 个 micro-batch 依次灌入 p 段流水线（GPipe 式调度）：
+
+- **填充期**：前 p-1 个时间片，后面的 stage 在等输入 → 空转；
+- **稳态**：所有 stage 满载；
+- **排空期**：最后 p-1 个时间片，前面的 stage 没活干。
+
+$$
+\text{bubble 占比} = \frac{p-1}{m+p-1}
+$$
+
+代入数字（p=4）：
+
+| m（micro-batch 数） | bubble 占比 |
+|---|---|
+| 4 | 3/7 = **43%** |
+| 16 | 3/19 = 16% |
+| 64 | 3/67 = 4.5% |
+
+![图2：PP 的 bubble——GPipe 填充/排空、1F1B 与 interleaved 调度对比](assets/day32_pp_bubble.svg)
+
+三种调度的演进（都在压 bubble 或压显存）：
+
+1. **GPipe**：先全部 forward 再全部 backward（训练语境）。推理没有 backward，但填充/排空的几何完全一样。问题：m 个 micro-batch 的 activation 要同时驻留 → 显存 O(m)。
+2. **1F1B**（PipeDream-Flush）：一个 micro-batch 的 backward 一结束就立刻喂下一个 forward——**bubble 不变（仍是 `(p-1)/(m+p-1)`）**，但驻留 activation 从 O(m) 降到 O(p)。推理借鉴的是它的"流水线不囤货"思想。
+3. **interleaved 1F1B**（Megatron）：每张卡上的 1/p 段再切成 **v 个虚拟段**（virtual stage），micro-batch 在更细的虚拟段间穿插——bubble 近似变为：
+
+$$
+\text{bubble} \approx \frac{p-1}{v \cdot m + p - 1} \quad (\text{v=2, m=16, p=4：16\% → 8.7\%})
+$$
+
+代价是通信次数 ×v（每次传的更小）和调度的实现复杂度。
+
+**推理里的 micro-batch 是什么**：对 prefill，micro-batch 就是 chunked prefill 的 chunk（Day 11）；对 decode，是把整个 batch 的 step 切成若干 micro-batch 分时灌入流水线。vLLM 的 PP 实现里每个 rank 有自己的 Scheduler 与 virtual engine，靠引擎间的消息传递推进（§6.3）。
+
+### 4.3 PP 对推理指标的影响
+
+| 指标 | 影响 | 机制 |
+|---|---|---|
+| TTFT | 劣化 `≈ (p-1)·t_micro` | 流水线填充：第一个 micro-batch 要走完全部 p 段才出第一个 token |
+| TPOT | 劣化 `bubble 占比 × t_step`（batch 小时） | decode batch 小 → m 小 → bubble 大；batch 大（m 大）时趋近稳态 |
+| 吞吐 | batch 大时可接受 | m → ∞ 时 bubble → 0，通信又便宜 |
+| 显存 | ✅ 权重 /p | 与 TP 同等解显存墙 |
+| 跨机扩展 | ✅ p2p 走普通网络 | PP 的核心卖点 |
+
+一句话：**PP 是"吞吐换显存"**——它把代价放在吞吐的分母（bubble），而 TP 把代价放在每 step 的关键路径（all-reduce）。两则组合（TP×PP，如 405B 常见 TP=8×PP=... 跨机）时，先用 TP 填满单机 NVSwitch 域，再用 PP 跨机。
+
+### 4.4 vLLM V1 对 PP 的支持状态（诚实标注）
+
+V1 重构初期**不支持** PP（`pipeline_parallel_size` 曾长期要求回落 V0 / 直接报错），此后按场景逐步补齐（先离线 `LLM` 类、再部分 serving 路径），截至撰写时仍属**实验性/部分支持**，且与 chunked prefill、speculative decoding 等特性的组合矩阵在快速变化。**动手前必查**：`vllm serve --help | grep pipeline` 与官方文档的 V1 feature 矩阵。本文 PP 部分按"原理 + 训练侧成熟实践"讲，实验设计放在 TP 上（Day 33）。
+
+---
+
+## 5. 原理深入（三）：MoE 的 EP 与 all-to-all
+
+### 5.1 MoE 三十秒入门（本系列首次）
+
+前 31 天用的都是 dense 模型（每 token 激活全部参数）。MoE 把部分 FFN 层换成**稀疏专家层**：
+
+- **路由器（router）**：一个小的线性层 + softmax，为每个 token 选出 top-k 个专家（DeepSeek-V3：每 MoE 层 256 个路由专家选 8 个 + 1 个共享专家人人有份）；
+- **激活参数**：DeepSeek-V3 总参数 671B，每 token 激活约 37B——**显存要按 671B 装，算力按 37B 花**，这直接改变了 Day 2 的显存/时延公式（装得下 671B 的显存成本，换来 decode 只读 37B 权重的时延收益）。
+
+### 5.2 为什么 MoE 不用 TP 切专家，而用 EP
+
+用 TP 切 MoE 层是灾难性的组合：TP 会把**每个专家**的矩阵都切成 p 份——256 个专家本来的 GEMM 就小（每专家只分到少量 token），再切 8 份后每卡的 GEMM 小到无法打满，且每层照旧付 2 次 all-reduce 的通信税。
+
+**EP（expert parallelism）换一个切法：以整个专家为单位分布**——256 个专家散到 p 张卡（每卡 256/p 个），专家矩阵保持完整：
+
+- 路由器把 token 直接发给专家所在的卡 → 各卡对"自己专家"的 token 做完整 GEMM（M 维度 = 该专家收到的 token 数，够大）；
+- expert GEMM 形状完整、无 all-reduce（MoE 层内）；
+- 代价：token 要**跨卡旅行**——dispatch + combine 两次 all-to-all。
+
+### 5.3 all-to-all dispatch / combine 的通信量
+
+每个 token 要去 top-k 个专家所在的地方（不同专家可能在不同卡上），算完加权回来：
+
+$$
+\text{每 token 通信量} \approx 2 \cdot E \cdot H \cdot b, \qquad E = \min(k,\ \text{平均不同目的卡数}) \le k
+$$
+
+量级对拍（DeepSeek-V3，`H=7168`，BF16，worst case E=8）：`2·8·7168·2 ≈ 224 KB/token/层`——比 dense TP 的极限 `4Hb ≈ 57KB` 大约 4 倍，但只发生在 58 个 MoE 层、且**没有归约**（all-to-all 是纯排列：token 原样发走、原样回来），对网络更友好，且可与计算重叠（§5.4）。
+
+**vLLM 的两条实现路径**（源码层，版本敏感）：
+
+1. **gather/scatter 模拟 EP**：all-gather 全体 token → 本卡只算"自己专家命中"的 token → reduce-scatter 把部分和加回。通信量回到 `2(p-1)/p·V`（与 all-reduce 同阶），胜在实现简单、走标准集合通信；
+2. **真 all-to-all**：接入 DeepEP 等专用低时延 all-to-all kernel（`--moe-a2a-backend` 一类的 flag），dispatch/combine 各一次，时延更低、更易与计算重叠。
+
+### 5.4 DeepSeek 式混合并行：DP attention + EP + 双流重叠
+
+DeepSeek-V2/V3 的推理并行是"**注意力数据并行、专家专家并行**"的混合体（vLLM 中对应 `--enable-dp-attention` 一类开关，常与 `dp_size`/EP 组合，版本敏感）：
+
+- **Attention 部分（DP）**：每张卡跑**不同的请求**（不是同一请求的不同 head！）。MLA 的 KV cache 是 per-token 的（Day 36 候选专题），DP 放置让 **KV cache 完全本地化**——不切分、不通信、prefix caching（Day 16）也各自独立；
+- **MoE 部分（EP）**：全体卡组成一个大 EP 组。进入 MoE 前把各卡 token **all-gather** 拼成全局 batch，路由计算后各卡算自己的专家，出来再 **reduce-scatter** 拆回各卡；
+- **双流重叠（dual-batch overlap）**：把 batch 拆成两个 micro-batch，两条流水线交错——A 的 attention 计算与 B 的 dispatch/combine 通信重叠，反之亦然。**这就是你昇腾 SetFlag/WaitFlag 双缓冲流水在系统层的放大版**：通信不再是"等"，而是"藏"。
+
+![图3：MoE 的 EP——dispatch/combine all-to-all 与 DeepSeek 式 DP attention + 双流重叠](assets/day32_ep_alltoall.svg)
+
+### 5.5 三种通信模式总对比（本日收束）
+
+| 维度 | TP：all-reduce | PP：p2p send/recv | EP：all-to-all |
+|---|---|---|---|
+| 发生频率 | 每层 2 次（decode step 160 次） | 每 step 每边界 1 次 | 每 MoE 层 2 次 |
+| 每次消息大小 | `B·S·H·b`（小） | `B·S·H·b`（小） | `E·B·H·b`（中） |
+| 同步语义 | 全体卡同步（最重） | 相邻两卡（最轻） | 全体但 p2p 化（中） |
+| 时延敏感度 | 极高（在关键路径） | 低（可流水） | 中（可重叠） |
+| 网络要求 | NVSwitch 域内 | PCIe/以太网即可 | 尽量高带宽（IB/RoCE/NVLink） |
+| 换来什么 | 算力 ÷p、显存 ÷p | 显存 ÷p、跨机扩展 | 稀疏激活 + 完整 GEMM 形状 |
+| 付出什么 | 每 step 关键路径 +2L·t_ar | 吞吐 bubble `(p-1)/(m+p-1)` | MoE 层通信 ~`2E·H·b`/token |
+| 典型组合 | 机内（≤8 卡） | 跨机大模型 | DeepSeek：DP-attn + EP |
+
+---
+
+## 6. vLLM V1 源码走读：并行的接缝在哪里
+
+### 6.1 配置与进程拓扑
+
+启动参数 → `ParallelConfig`（新版在 `vllm/config/parallel.py`，旧版 `vllm/config.py`，版本敏感）：
+
+```
+--tensor-parallel-size N      # TP 度（机内）
+--pipeline-parallel-size N    # PP 度（实验性，§4.4）
+--data-parallel-size N        # V1 的 DP：N 个副本（外部/内置 LB）
+--enable-expert-parallel      # EP
+--enable-dp-attention         # DeepSeek 式 DP attention（版本敏感）
+```
+
+进程链路（衔接 Day 8 的 V1 总览）：
+
+```
+vllm serve --tp 2
+  └─ AsyncLLM (API 进程)
+       └─ EngineCore 进程
+            └─ Executor（vllm/executor/：Uniproc / Multiproc / Ray 按 tp·pp 选择）
+                 ├─ Worker rank0 (vllm/v1/worker/gpu_worker.py)
+                 └─ Worker rank1
+                      ├─ init_distributed_environment()   # torch.distributed + NCCL
+                      ├─ initialize_model_parallel(tp, pp) # 划分 TP/PP 子组
+                      └─ load_model()                      # 按 rank 切权重
+```
+
+关键模块：
+
+- **`vllm/distributed/parallel_state.py`**：`init_distributed_environment()`（进程组与后端初始化）、`initialize_model_parallel()`（把 world 切成 TP group / PP group，提供 `get_tensor_model_parallel_group()` 等查询）。所有"我在哪个组、组里有谁"的全局状态都在这里；
+- **`vllm/v1/worker/gpu_worker.py`**：每个 rank 一个 `Worker`，各自建 `ModelRunner`、KV cache（每卡一片，Day 15）。
+
+### 6.2 all-reduce 的调用点与小消息优化
+
+**切分的落点**（`vllm/model_executor/layers/linear.py`）：
+
+```
+QKVParallelLinear / MergedColumnParallelLinear   # column-parallel：按 head/中间维切
+        ↓ forward
+RowParallelLinear(reduce_results=True)           # row-parallel
+        ↓
+tensor_model_parallel_all_reduce(input_)          # vllm/distributed/communication_op.py
+```
+
+`QKVParallelLinear` 同时处理 §3.1 的 GQA 坑位：`TP > kv_heads` 时按 `max(1, ceil(kv/tp))` 复制 kv head。
+
+**小消息三级火箭**（`tensor_model_parallel_all_reduce` 的分派逻辑，按消息大小与条件选择）：
+
+1. **`CustomAllreduce`**（`vllm/distributed/device_communicators/custom_all_reduce.py`）：单机、world ≤ 8、消息小于若干 MB 时启用——CUDA IPC 建立注册缓冲区，one-shot（极小消息直接每卡广播自己的分块）或 two-shot 算法，**专为 CUDA Graph 兼容设计**（缓冲区注册进 graph 池，Day 18 的约束）。这就是 §3.3 里 `t_ar ≈ 10μs` 量级的来源；环境变量 `VLLM_DISABLE_CUSTOM_ALL_REDUCE=1` 可关闭对照；
+2. **`PyNcclCommunicator`**（`.../pynccl.py`）：stream-ordered 的 NCCL 封装，处理更大消息与非 graph 路径；
+3. **torch.distributed 原生 NCCL**：兜底。
+
+> 实验预告（Day 33）：nsys 里 NCCL/kernel 名（`ncclDevKernel_*` 或 custom all-reduce 的 kernel）占用的时间，就是 §3.3 公式里的通信项——明天直接对拍。
+
+### 6.3 PP 的源码形态（简）
+
+V1 的 PP 为每个 rank 维护独立的 `Scheduler` + virtual engine（`vllm/v1/` 下按 rank 组织），stage 间用 p2p 消息传递 activation 与调度信息，micro-batch 推进逻辑对应 §4.2 的流水线几何。因支持状态演进快（§4.4），此处不展开逐行走读——**面试讲清 §4.2 的 bubble 几何 + "PP 通信便宜所以跨机用 PP"比背源码细节更重要**。
+
+### 6.4 昇腾经验迁移：HCCL ↔ NCCL 对照表
+
+| GPU 侧 | 昇腾侧 | 说明 |
+|---|---|---|
+| NCCL all-reduce | HCCL all-reduce（融合算子） | 融合多个小 all-reduce 是两侧共同的优化方向 |
+| vLLM custom all-reduce（IPC + 注册缓冲） | vllm-ascend 侧对应的高阶 API / 融合实现 | Day 17 讲过的"接口即架构决策"：`vllm/distributed/device_communicators/` 的平台抽象让 HCCL 插进同一套 `tensor_model_parallel_all_reduce` 接缝 |
+| NVLink/NVSwitch | HCCS 机内域 | "TP 住域内"通则（§3.4） |
+| IB/RoCE 跨机 | 200G RoCE 跨机 | "跨域换 PP/EP"通则 |
+| Megatron TP 切分 | 同一套切分数学 | column/row 配对与通信量公式平台无关 |
+
+这张表是 Day 36 起 vllm-ascend 项目选型的直接输入：**通信子系统的 profiling 与优化（融合、流水、拓扑感知）是跨平台最可迁移的技能**。
+PART2EOF
+echo "part2 appended, total lines:"; wc -l /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md
+part2 appended, total lines:
+412 /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md
+[0m
+现在正在追加第三部分（实验、面试问答、总结、测验、产出）。
+[0m$ [0mcat >> /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md <<'PART3EOF'
+
+---
+
+## 7. 动手实验（今天 50 min：微基准 + 观察为主，大实验留给 Day 33）
+
+### Lab A｜all-reduce 微基准：把 `t_ar` 和 `BW_link` 测出来（25 min）
+
+§3.3 的公式里有两个待定常数：一次小消息 all-reduce 的时延 `t_ar`、链路有效带宽 `BW_link`。今天用 20 行 PyTorch 把它们测出来（单机多卡即可，没有多卡就跳过、记 spec 值）：
+
+```python
+# bench_allreduce.py — 启动: torchrun --nproc_per_node=2 bench_allreduce.py
+import os, time, torch, torch.distributed as dist
+
+dist.init_process_group("nccl")
+r, w = dist.get_rank(), dist.get_world_size()
+torch.cuda.set_device(r)
+x = torch.empty(1, device="cuda")
+
+for msg_bytes, n in [(16 * 1024, 2000), (8 * 1024 * 1024, 200)]:  # 16KB 与 8MB
+    numel, bpe = msg_bytes // 2, 2
+    t = torch.ones(numel, dtype=torch.bfloat16, device="cuda")
+    for _ in range(50):
+        dist.all_reduce(t)                    # warmup + 时钟稳定
+    torch.cuda.synchronize(); dist.barrier()
+    torch.cuda.synchronize(); t0 = time.perf_counter()
+    for _ in range(n):
+        dist.all_reduce(t)
+    torch.cuda.synchronize(); dt = (time.perf_counter() - t0) / n
+    if r == 0:
+        lat_us = dt * 1e6
+        # 总线带宽口径: 每 GPU 每 all_reduce 搬 2(p-1)/p * msg_bytes
+        busbw = (2 * (w - 1) / w) * msg_bytes / dt / 1e9
+        print(f"msg={msg_bytes/1024:.0f}KB  t_ar={lat_us:.1f}us  busbw={busbw:.0f}GB/s")
+```
+
+**预期结果**（NVLink 双卡，量级参考，以实测为准）：
+
+| 消息 | t_ar | busbw | 对应公式里的 |
+|---|---|---|---|
+| 16KB（decode 典型：B·H·b，B=1 的 70B） | ~10~30μs | —（时延主导） | 时延项 `t_ar` |
+| 8MB（大 batch decode 的 V） | —（带宽主导） | 数百 GB/s | 带宽项 `BW_link` |
+
+把实测值代回 §3.3 的 `T_step(p)` 公式重算一遍——**公式的两个常数从 spec 变成了你自己的测量值**。
+
+### Lab B｜观察 vLLM TP=2 的启动日志与切分（15 min）
+
+```bash
+# 单卡基线（如果之前 Day 6 没存，现在补）
+vllm serve Qwen/Qwen3-8B --max-model-len 16384 2>&1 | tee /tmp/tp1.log
+# 双卡 TP=2
+vllm serve Qwen/Qwen3-8B --max-model-len 16384 -tp 2 2>&1 | tee /tmp/tp2.log
+```
+
+在日志里找四样东西并填表（Day 33 的预测表）：
+
+| 观察项 | tp1 | tp2 | 对应原理 |
+|---|---|---|---|
+| `Initializing a V1 engine` 附近的 world size / TP | 1 | 2 | §6.1 |
+| custom all-reduce 是否启用（搜 `custom allreduce`/`CustomAllreduce`） | — | ✅/❌ | §6.2 的启用条件 |
+| 每 GPU 权重显存（`model weights take` 日志） | ~16GB | ~8GB | §3.1 权重 ÷p |
+| KV cache blocks 数（`# CPU blocks`/`GPU KV cache size`） | X | ≈2X 每卡 | §3.1 KV ÷p + 空间变大 |
+
+### Lab C｜为 Day 33 准备（10 min）
+
+把 Day 6 的压测脚本参数化（`--tensor-parallel-size` 与并发扫描两个旋钮），确认 nsys 可用：
+
+```bash
+nsys profile -o /tmp/tp2_trace --trace=cuda,nvtx \
+  vllm bench serve --model Qwen/Qwen3-8B ... --tp 2   # 具体参数明天给全
+```
+
+明天要验证的三件事，今天先写好预测（**预测 → 实测 → 对拍**才是实验的完整形态）：
+
+1. TP=2 的 TPOT 在低并发改善 <2×（时延项 `2L·t_ar`，§3.3）；
+2. TP=2 在高并发吞吐 <2× 单卡（ρ 增长，§3.3 表）；
+3. nsys 里 NCCL/custom-all-reduce kernel 时间占比 ≈ ρ 的预测值。
+
+> **⚠️ 坑位**：① 双卡若非 NVLink 互联（如 PCIe 上的 4090），ρ 会比 §3.3 表差一个量级——这本身就是 §3.4 的活体实验，记录下来；② 关掉 prefix caching 干扰时延测量（Day 29 同款注意事项）；③ `torchrun` 的 `--nproc_per_node` 与 vLLM `-tp` 不要混用（vLLM 自己 spawn worker）。
+
+---
+
+## 8. 面试高频问题
+
+**Q1：为什么"能单卡放下就别上 TP"？**
+> 要点：三条论证——① all-reduce 在每层关键路径：低并发 TPOT 改善次线性（时延项 2L·t_ar）且 p99 受同步抖动影响；② 聚合吞吐：只要通信非零，`1×TPp` 的总吞吐 < `p×TP1` 独立实例，且多实例可独立扩缩容、故障域小、能做 cache-aware routing；③ 资源效率：p 卡绑定成"一张大卡"，低负载一起闲。例外清单：显存墙（主因）、prefill 算力不够 TTFT SLO（prefill 通信占比 <1%，TP 近线性）。
+
+**Q2：TP 的 all-reduce 发生在哪、每次多大、为什么躲不开？**
+> 要点：位置在 row-parallel 的 `o_proj`/`down_proj` 之后（Megatron col+row 配对使每层恰好 2 次，中间无需 all-gather）；大小 `V = B·S·H·b`，ring all-reduce 每 GPU 搬 `2(p-1)/p·V`；躲不开因为部分和必须加全才能进下一层（除非 sequence parallel 把 AR 拆成 RS+AG，通信量不变但可重叠——训练侧技术）。
+
+**Q3：为什么 prefill 的 TP 近线性、decode 不是？**
+> 要点：bound 决定口径。prefill compute-bound：每 token 每 GPU 通信 ~57KB vs 计算 17 GFLOPs，ρ ≈ 0.3~0.7%；decode memory-bound：通信字节与权重字节同量级（`4(p-1)B/(cH)` ≈ 7% @p=8,B=256）且通信跑在比 HBM 慢 3.7× 的 NVLink 上 → ρ_time ≈ 25%。引申：这是 P/D 分离后"prefill 池高 TP、decode 池低 TP"的依据（Day 29 配比自由度）。
+
+**Q4：TP 为什么不能跨机？TP 度的上限是什么？**
+> 要点：TP 通信每层 2 次、全体同步、时延敏感——需要 NVSwitch 级带宽（900GB/s）；跨机 IB 400G 只有 50GB/s，ρ 再乘 18 倍，decode 被通信淹没。上限 = 单 NVSwitch 域（典型 8 卡）；再要大 → PP/EP + 多实例。
+
+**Q5：PP 的 bubble 怎么推导？怎么减小？推理和训练用 PP 有什么不同？**
+> 要点：`(p-1)/(m+p-1)`（填充+排空 / 总时间片）；减小靠 m↑（吞吐换气泡）和 interleaved v↑（bubble÷v，代价通信次数×v）；1F1B 不减 bubble 但把 activation 显存 O(m)→O(p)。推理差异：无 backward，micro-batch=chunked prefill 的 chunk / decode batch 切片；代价主要在 TTFT（+(p-1)·t_micro 填充）与小 batch TPOT；收益是跨机扩展几乎免费（边界通信 B·S·H·b 走 PCIe 都行）。
+
+**Q6：EP 的 all-to-all 与 TP 的 all-reduce 有什么区别？DeepSeek 为什么要 DP attention + EP？**
+> 要点：all-to-all 是纯排列（token 发走-收回，无归约），量 `2E·H·b`/token（E≤top-k），只发生在 MoE 层、可重叠；all-reduce 是全体同步归约、每层 2 次、在关键路径。DP attention 让 KV cache 本地化（MLA per-token KV、prefix caching 独立、attention 权重复制的代价可接受），MoE 用 EP 吃完整 GEMM 形状；中间 all-gather/reduce-scatter 拼全局 batch；双流重叠把 dispatch/combine 藏进另一条的 attention——通信从"等"变"藏"。
+
+**Q7（场景题）：405B 模型、8×H100 节点若干，怎么选并行？**
+> 要点：405B BF16 ≈ 810GB 权重 → 单节点 8 卡（640GB）放不下 → 量化到 FP8（405GB，仍紧）或跨节点；跨机不用 TP（Q4）→ 单节点内 TP=8（机内 NVSwitch）+ 节点间 PP=2（或 FP8 + KV 量化后单节点 TP=8 + 多实例）。给出决策顺序：先量化压显存 → 机内 TP → 跨机 PP → 实在不行 EP（MoE 模型才适用）→ 最后多实例 + 路由提 goodput。
+
+**Q8（经验迁移题）：昇腾的通信经验怎么映射到 GPU？**
+> 要点：HCCL↔NCCL、HCCS 机内域↔NVSwitch 域（"TP 住域内"通则）、200G RoCE↔IB（"跨域换 PP/EP"）、HCCL 融合算子↔vLLM custom all-reduce（小消息低时延 + graph 兼容）；vllm-ascend 通过 `device_communicators` 平台抽象插进同一接缝——通信子系统的 profiling/优化是跨平台最可迁移技能（Day 36 项目 A 选型输入）。
+
+---
+
+## 9. 今日总结
+
+| # | 要点 | 一句话 |
+|---|---|---|
+| 1 | 三种并行 = 三种通信合同 | TP：all-reduce 进每层关键路径；PP：bubble 进吞吐分母；EP：all-to-all 进 MoE 层 |
+| 2 | TP 切分 | col+row 配对（QKV/gate-up + o/down），每层恰好 2 次 all-reduce，共 2L 次/step |
+| 3 | 通信量算术 | ring all-reduce 每 GPU `2(p-1)/p·V`；每层每 GPU `4(p-1)/p·B·S·H·b` |
+| 4 | 通信占比 | decode：`ρ = 4(p-1)B/(cH)·BW_hbm/BW_link`（p=8,B=256 → 25%）；prefill：<1% |
+| 5 | 拓扑铁律 | TP 住单 NVSwitch 域（≤8 卡）；跨机用 PP/EP；跨机 TP 通信 ×18 |
+| 6 | 单卡放得下别上 TP | 时延次线性 + 聚合吞吐 < 多实例 + 无法独立扩缩/路由；例外：显存墙、prefill 算力 |
+| 7 | PP | bubble `(p-1)/(m+p-1)`；1F1B 显存 O(p)；interleaved bubble÷v；跨机便宜 |
+| 8 | EP | 整专家分布、all-toall `2E·H·b`/token；DeepSeek：DP attention（KV 本地）+ EP + 双流重叠 |
+| 9 | V1 落点 | `ParallelConfig` → `Executor/Worker` → `parallel_state` 分组 → `RowParallelLinear` → custom all-reduce/PyNccl |
+
+**带走的三张图**：图 1（TP 切分与 all-reduce——面试第一白板图）、图 2（PP bubble 几何）、图 3（EP all-to-all 与 DeepSeek 混合并行）。
+
+---
+
+## 10. 今日自测题（不看笔记作答）
+
+1. 默写 TP 下一个 transformer 层的切分与通信：哪两个矩阵是 column-parallel？all-reduce 出现在哪两个位置之后？为什么中间不需要 all-gather？
+2. 手算：Llama-3-70B BF16，TP=4，decode batch=512，H100——通信占比 ρ 是多少？（先算字节比再乘带宽比）
+3. 为什么同一个 TP=8，prefill 近线性而 decode 通信占比 25%？用"bound 决定通信/计算的口径"30 秒说清。
+4. PP：p=4、m=8 的 bubble 占比是多少？interleaved v=2 之后呢？1F1B 相比 GPipe 改善了什么、没改善什么？
+5. 场景：Qwen3-8B，两张 NVLink 互联的卡——你会部署 `1×TP2` 还是 `2×TP1+router`？列出三条理由和一个例外情况。
+
+（答案都在 §3-§5；答不上来的小节今晚重读。）
+
+---
+
+## 11. 今日产出物
+
+- [ ] **TPOT 通信占比手算表**：p×B 表（§3.3）+ 自己硬件的 `t_ar`/`BW_link` 实测值（Lab A）——夹进 A4《分布式推理》（Day 33 交，四份 A4 的最后一份）
+- [ ] **all-reduce 微基准数据**：Lab A 的 16KB/8MB 两行结果 + 与 spec 的效率对比
+- [ ] **TP 启动观察表**：Lab B 的四行对照（world size / custom AR / 权重显存 / KV blocks）
+- [ ] **并行决策卡片**：§3.5 例外清单 + §5.5 三模式对比表合并成一页（面试前抽背）
+- [ ] **Day 33 预测表**：三件事的预测值写下来（TPOT 改善幅度 / 吞吐 <2× / NCCL 占比），明天实测对拍
+- [ ] 打卡一句话：今天最大的收获 / 最大的疑问（明早带着疑问进实验）
+
+> **明日预告（Day 33：分布式并行（二）——实验）**：双卡 TP=2 vs 单卡 TP=1 完整对比——吞吐曲线、TPOT、TTFT 三组指标；nsys 抓 NCCL/custom all-reduce 时间占比，与今天 §3.3 的预测表对拍；PCIe vs NVLink 互联的天然对照组；最后产出本周第 4 份 A4 专题总结《分布式推理》。今天的公式全部变成明天的数据。
+PART3EOF
+echo "done, total lines:"; wc -l /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md
+done, total lines:
+561 /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md
+[0m
+修正一个拼写错误，然后创建 SVG 1（TP all-reduce + NVLink 拓扑）。
+[0m← [0mEdit week5/day32_distributed_parallelism.md
+Index: /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md
++++ /mnt/workspace/aiinfra/vllm/week5/day32_distributed_parallelism.md
+@@ -529,9 +529,9 @@
+ | 4 | 通信占比 | decode：`ρ = 4(p-1)B/(cH)·BW_hbm/BW_link`（p=8,B=256 → 25%）；prefill：<1% |
+ | 5 | 拓扑铁律 | TP 住单 NVSwitch 域（≤8 卡）；跨机用 PP/EP；跨机 TP 通信 ×18 |
+ | 6 | 单卡放得下别上 TP | 时延次线性 + 聚合吞吐 < 多实例 + 无法独立扩缩/路由；例外：显存墙、prefill 算力 |
+ | 7 | PP | bubble `(p-1)/(m+p-1)`；1F1B 显存 O(p)；interleaved bubble÷v；跨机便宜 |
+-| 8 | EP | 整专家分布、all-toall `2E·H·b`/token；DeepSeek：DP attention（KV 本地）+ EP + 双流重叠 |
++| 8 | EP | 整专家分布、all-to-all `2E·H·b`/token；DeepSeek：DP attention（KV 本地）+ EP + 双流重叠 |
+ | 9 | V1 落点 | `ParallelConfig` → `Executor/Worker` → `parallel_state` 分组 → `RowParallelLinear` → custom all-reduce/PyNccl |
+ 
+ **带走的三张图**：图 1（TP 切分与 all-reduce——面试第一白板图）、图 2（PP bubble 几何）、图 3（EP all-to-all 与 DeepSeek 混合并行）。
+ 
+
+[0m
+[0m← [0mWrite week5/assets/day32_tp_allreduce.svg
+Wrote file successfully.
+[0m
+现在创建 SVG 2（PP 气泡：GPipe 填充/排空、1F1B、气泡图）。
+[0m← [0mWrite week5/assets/day32_pp_bubble.svg
+Wrote file successfully.
+[0m
+正在创建 SVG 3 (EP all-to-all + DeepSeek hybrid parallelism + dual-stream overlap)。
+[0m← [0mWrite week5/assets/day32_ep_alltoall.svg
+Wrote file successfully.
+[0m
+所有文件已写入。正在验证 SVG 有效性、Markdown 结构和引用的完整性。
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week5 && for f in assets/day32_*.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('$f OK')"; done && grep -n "assets/day32" day32_distributed_parallelism.md && grep -n "^## " day32_distributed_parallelism.md && wc -l day32_distributed_parallelism.md
+assets/day32_ep_alltoall.svg OK
+assets/day32_pp_bubble.svg OK
+assets/day32_tp_allreduce.svg OK
+88:![图1：TP 的切分方式、每层 2 次 all-reduce 与 NVLink 拓扑约束](assets/day32_tp_allreduce.svg)
+250:![图2：PP 的 bubble——GPipe 填充/排空、1F1B 与 interleaved 调度对比](assets/day32_pp_bubble.svg)
+326:![图3：MoE 的 EP——dispatch/combine all-to-all 与 DeepSeek 式 DP attention + 双流重叠](assets/day32_ep_alltoall.svg)
+13:## 0. 前情回顾与本日位置
+31:## 1. 今日学习目标
+44:## 2. 核心概念速查
+64:## 3. 原理深入（一）：TP——把权重切开，把 all-reduce 加进每层关键路径
+218:## 4. 原理深入（二）：PP——用 bubble 换显存容量
+284:## 5. 原理深入（三）：MoE 的 EP 与 all-to-all
+343:## 6. vLLM V1 源码走读：并行的接缝在哪里
+416:## 7. 动手实验（今天 50 min：微基准 + 观察为主，大实验留给 Day 33）
+494:## 8. 面试高频问题
+522:## 9. 今日总结
+540:## 10. 今日自测题（不看笔记作答）
+552:## 11. 今日产出物
+561 day32_distributed_parallelism.md
+[0m
+Day 32 教程已完成并验证通过。
+
+**文件路径与内容**：
+
+| 文件 | 说明 |
+|---|---|
+| `week5/day32_distributed_parallelism.md`（561 行） | 教程正文，结构与其他天一致（§0 前情回顾 → §11 产出物 + 明日预告） |
+| `week5/assets/day32_tp_allreduce.svg` | 图 1：Megatron 式 TP 切分、每层 2 次 all-reduce 数据流 + NVLink/NVSwitch 拓扑与带宽阶梯 |
+| `week5/assets/day32_pp_bubble.svg` | 图 2：GPipe 填充/排空几何、1F1B 完整调度时序、bubble 占比条形图 |
+| `week5/assets/day32_ep_alltoall.svg` | 图 3：EP dispatch/combine all-to-all、DeepSeek DP attention + EP 混合并行、双流重叠 |
+
+**主要内容**（严格对应 README Day 32）：
+- **TP**：col/row parallel 配对推导、ring all-reduce 通信量 `2(p-1)/p·V`、核心手算公式 `ρ = 4(p-1)·B/(c·H) × BW_hbm/BW_link` 及 70B@H100 的 p×B 表、跨机 TP ×18 的拓扑算术、“能单卡放下就别上 TP” 三条论证 + 例外清单
+- **PP**：bubble 公式 `(p-1)/(m+p-1)`、1F1B/interleaved 对比、推理 vs 训练用法差异（V1 支持状态已诚实标注为实验性）
+- **EP**：MoE 基础、all-to-all 通信量 `2E·H·b`、DeepSeek 混合并行与昇腾 SetFlag/WaitFlag 经验迁移
+- **源码走读**：`ParallelConfig` → `Executor/Worker` → `parallel_state` → `RowParallelLinear` → custom all-reduce/PyNccl 调用链
+- **衔接本周**：开头回顾 Day 29-31（P/D 分离池的并行度自由度）、关联 Day 34 路由与 Day 36 vllm-ascend 选型；实验部分为 Day 33（TP=2 vs 单卡）准备预测表，产出物指向 A4《分布式推理》

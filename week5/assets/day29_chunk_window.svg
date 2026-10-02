@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="660" viewBox="0 0 960 660" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="axA" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2C3E50"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="660" fill="#FFFFFF"/>
+  <text x="30" y="32" font-size="18" font-weight="bold" fill="#1e3a5f">图 2｜chunk 大小的可行窗口：下界来自 prefill 效率，上界来自 TPOT SLO</text>
+  <text x="30" y="52" font-size="12" fill="#7F8C8D">设定：Llama-3-70B FP8 @ H100（FP8 dense 1979 TFLOPS，HBM 3.35TB/s），TPOT SLO = 80ms，MFU 按 40%</text>
+
+  <!-- ================= Panel A ================= -->
+  <text x="30" y="78" font-size="14" font-weight="bold" fill="#2C3E50">A. 单 step GEMM 时间 vs chunk 大小（峰值算力口径）</text>
+
+  <!-- gridlines -->
+  <g stroke="#E5E8EC" stroke-width="1">
+    <line x1="80" y1="280" x2="890" y2="280"/>
+    <line x1="80" y1="220" x2="890" y2="220"/>
+    <line x1="80" y1="160" x2="890" y2="160"/>
+    <line x1="80" y1="100" x2="890" y2="100"/>
+    <line x1="280" y1="80" x2="280" y2="340"/>
+    <line x1="479" y1="80" x2="479" y2="340"/>
+    <line x1="678" y1="80" x2="678" y2="340"/>
+    <line x1="879" y1="80" x2="879" y2="340"/>
+  </g>
+
+  <!-- axes -->
+  <line x1="80" y1="340" x2="895" y2="340" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#axA)"/>
+  <line x1="80" y1="340" x2="80" y2="75" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#axA)"/>
+  <text x="908" y="344" font-size="11" fill="#2C3E50">M</text>
+  <text x="40" y="70" font-size="11" fill="#2C3E50">ms</text>
+
+  <!-- y tick labels -->
+  <g font-size="10" fill="#7F8C8D" text-anchor="end">
+    <text x="74" y="344">0</text>
+    <text x="74" y="284">20</text>
+    <text x="74" y="224">40</text>
+    <text x="74" y="164">60</text>
+    <text x="74" y="104">80</text>
+  </g>
+  <!-- x tick labels -->
+  <g font-size="10" fill="#7F8C8D" text-anchor="middle">
+    <text x="80" y="356">0</text>
+    <text x="280" y="356">512</text>
+    <text x="479" y="356">1024</text>
+    <text x="678" y="356">1536</text>
+    <text x="879" y="356">2048</text>
+  </g>
+  <text x="480" y="374" font-size="11" fill="#7F8C8D" text-anchor="middle">chunk 大小 M（tokens / step）</text>
+
+  <!-- memory lower bound line: 20.9ms -> y=277.3 -->
+  <line x1="80" y1="277" x2="890" y2="277" stroke="#7F8C8D" stroke-width="1.8" stroke-dasharray="7 5"/>
+  <text x="886" y="270" font-size="11" fill="#7F8C8D" text-anchor="end">访存下界：W/BW = 70GB / 3.35TB/s ≈ 20.9ms（每 step 权重至少读一遍）</text>
+
+  <!-- compute time line: (0,0)->(1131,80ms) => (80,340)->(521,100) -->
+  <line x1="80" y1="340" x2="521" y2="100" stroke="#2E86C1" stroke-width="2.5"/>
+  <text x="530" y="112" font-size="11" fill="#2E86C1">计算时间：2PM / peak（M=2048 时 145ms，超出图范围）</text>
+
+  <!-- intersection -->
+  <circle cx="195" cy="277" r="6" fill="#C0392B"/>
+  <line x1="195" y1="277" x2="195" y2="342" stroke="#C0392B" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="205" y="262" font-size="12" font-weight="bold" fill="#C0392B">M* ≈ 295（计算时间 = 访存下界）</text>
+
+  <!-- region annotations -->
+  <text x="120" y="315" font-size="11" fill="#7F8C8D">M &lt; M*：访存 bound</text>
+  <text x="120" y="330" font-size="11" fill="#7F8C8D">算力闲置，MFU 低</text>
+  <text x="560" y="230" font-size="11" fill="#2E86C1">M &gt; M*：compute bound</text>
+  <text x="560" y="245" font-size="11" fill="#2E86C1">MFU 上升，但 step 时间线性涨（ITL 尖刺↑）</text>
+
+  <!-- ================= Panel B ================= -->
+  <text x="30" y="412" font-size="14" font-weight="bold" fill="#2C3E50">B. chunk 可行窗口（TPOT SLO = 80ms，R_p = 5654 tok/s @ 40% MFU）</text>
+
+  <!-- axis -->
+  <line x1="80" y1="540" x2="895" y2="540" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#axA)"/>
+  <g font-size="10" fill="#7F8C8D" text-anchor="middle">
+    <text x="80" y="556">0</text>
+    <text x="280" y="556">512</text>
+    <text x="479" y="556">1024</text>
+    <text x="678" y="556">1536</text>
+    <text x="879" y="556">2048</text>
+  </g>
+
+  <!-- window [295,452] -> [195,256] -->
+  <rect x="195" y="510" width="61" height="30" fill="#E9F7EF" stroke="#27AE60" stroke-width="2"/>
+  <line x1="195" y1="470" x2="195" y2="540" stroke="#27AE60" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="256" y1="470" x2="256" y2="540" stroke="#27AE60" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="230" y="494" font-size="11" font-weight="bold" fill="#27AE60" text-anchor="middle">窗口</text>
+  <text x="300" y="480" font-size="12" font-weight="bold" fill="#27AE60">唯一可行窗口 [295, 452]（宽度仅 ~35%，无余量）</text>
+  <text x="300" y="496" font-size="11" fill="#27AE60">左界 = M*（prefill 效率）｜右界 = R_p × 80ms（TPOT SLO）</text>
+
+  <!-- upper bound erosion arrows -->
+  <line x1="256" y1="466" x2="228" y2="466" stroke="#C0392B" stroke-width="2"/>
+  <path d="M228,466 L236,462 L236,470 Z" fill="#C0392B"/>
+  <text x="265" y="470" font-size="11" fill="#C0392B">扣 decode step（~10ms）后右界左移至 ≈396</text>
+
+  <!-- default 2048 marker -->
+  <line x1="879" y1="440" x2="879" y2="540" stroke="#E67E22" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="879" y="434" font-size="11" font-weight="bold" fill="#E67E22" text-anchor="middle">V1 默认 max_num_batched_tokens = 2048</text>
+  <text x="879" y="448" font-size="10" fill="#E67E22" text-anchor="middle">（在窗口右界 4.5× 之外 → ITL 尖刺 ~360ms）</text>
+
+  <!-- BF16 empty window annotation -->
+  <text x="520" y="530" font-size="11" font-weight="bold" fill="#C0392B">BF16：R_p 减半 → 右界 226 &lt; 左界 295，窗口为空（无解）</text>
+
+  <!-- legend -->
+  <rect x="30" y="580" width="900" height="66" rx="6" fill="#F4F6F7" stroke="#BDC3C7"/>
+  <rect x="44" y="594" width="12" height="12" fill="#E9F7EF" stroke="#27AE60"/>
+  <text x="64" y="604" font-size="11" fill="#2C3E50">窗口的存在性由硬件比值 peak/BW 决定（M* 与模型大小、TP 度无关）——这就是"结构性矛盾"：调参改变不了窗口，只能换自由度。</text>
+  <rect x="44" y="618" width="12" height="12" fill="#FDEBD0" stroke="#E67E22"/>
+  <text x="64" y="628" font-size="11" fill="#2C3E50">负载波动（更长 prompt / 更严 SLO / 更低 MFU / 更大 decode batch）随时穿窗；A100→H100 该比值翻倍，Blackwell FP4 再翻倍 → 矛盾代代加剧。</text>
+</svg>

@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#45556b"/>
+    </marker>
+    <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/>
+    </marker>
+  </defs>
+
+  <text x="480" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#1e3a5f">激活 outlier 与三大 PTQ 算法</text>
+
+  <!-- ======== 左：outlier 现象 ======== -->
+  <rect x="25" y="48" width="380" height="290" rx="8" fill="#f4f7fb" stroke="#c8d4e0"/>
+  <text x="215" y="72" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e3a5f">现象：系统性离群通道</text>
+
+  <!-- bar chart of activation magnitudes per channel -->
+  <line x1="60" y1="260" x2="380" y2="260" stroke="#45556b" stroke-width="1.2"/>
+  <line x1="60" y1="100" x2="60" y2="260" stroke="#45556b" stroke-width="1.2"/>
+  <!-- normal channel bars -->
+  <g fill="#7fb3d5">
+    <rect x="72" y="238" width="9" height="22"/><rect x="84" y="232" width="9" height="28"/><rect x="96" y="242" width="9" height="18"/><rect x="108" y="228" width="9" height="32"/>
+    <rect x="120" y="236" width="9" height="24"/><rect x="132" y="230" width="9" height="30"/><rect x="144" y="240" width="9" height="20"/><rect x="156" y="234" width="9" height="26"/>
+    <rect x="168" y="238" width="9" height="22"/><rect x="180" y="226" width="9" height="34"/><rect x="192" y="240" width="9" height="20"/><rect x="204" y="232" width="9" height="28"/>
+    <rect x="228" y="234" width="9" height="26"/><rect x="240" y="238" width="9" height="22"/><rect x="252" y="228" width="9" height="32"/><rect x="264" y="236" width="9" height="24"/>
+    <rect x="276" y="232" width="9" height="28"/><rect x="288" y="240" width="9" height="20"/><rect x="300" y="226" width="9" height="34"/><rect x="312" y="238" width="9" height="22"/>
+    <rect x="324" y="230" width="9" height="30"/><rect x="336" y="236" width="9" height="24"/><rect x="348" y="240" width="9" height="20"/><rect x="360" y="232" width="9" height="28"/>
+  </g>
+  <!-- outlier channel bars -->
+  <g fill="#c0392b">
+    <rect x="216" y="118" width="9" height="142"/>
+    <rect x="336" y="126" width="9" height="134"/>
+    <rect x="360" y="122" width="9" height="138"/>
+  </g>
+  <text x="220" y="110" text-anchor="middle" font-size="10" fill="#c0392b">~100×</text>
+  <text x="336" y="118" text-anchor="middle" font-size="10" fill="#c0392b">固定通道</text>
+
+  <text x="215" y="282" text-anchor="middle" font-size="11" fill="#5a6b7d">channel 索引 →</text>
+  <text x="52" y="185" font-size="11" fill="#5a6b7d" transform="rotate(-90 52 185)">激活幅度</text>
+
+  <text x="215" y="306" text-anchor="middle" font-size="11.5" fill="#a33232">位置固定（跨 token/layer 稳定）· 幅度 ~100×</text>
+  <text x="215" y="324" text-anchor="middle" font-size="11.5" fill="#a33232">per-tensor scale 被顶大 100 倍 → 正常值精度崩塌</text>
+
+  <!-- ======== 右上：SmoothQuant ======== -->
+  <rect x="430" y="48" width="505" height="170" rx="8" fill="#ffffff" stroke="#2a9d8f" stroke-width="1.4"/>
+  <text x="682" y="72" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d5c56">SmoothQuant（W8A8）—— 搬家</text>
+
+  <rect x="460" y="88" width="80" height="52" rx="5" fill="#e8f4f2" stroke="#2a9d8f"/>
+  <text x="500" y="110" text-anchor="middle" font-size="12" fill="#1d5c56">X（尖刺）</text>
+  <text x="500" y="126" text-anchor="middle" font-size="10" fill="#c0392b">激活难量化</text>
+
+  <line x1="545" y1="114" x2="600" y2="114" stroke="#45556b" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <text x="572" y="105" text-anchor="middle" font-size="10" fill="#5a6b7d">÷ s</text>
+
+  <rect x="603" y="88" width="80" height="52" rx="5" fill="#e8f4f2" stroke="#2a9d8f"/>
+  <text x="643" y="110" text-anchor="middle" font-size="12" fill="#1d5c56">X / s（压平）</text>
+  <text x="643" y="126" text-anchor="middle" font-size="10" fill="#2a9d8f">outlier 被缩掉</text>
+
+  <rect x="460" y="152" width="80" height="52" rx="5" fill="#fdf6ec" stroke="#e0a458"/>
+  <text x="500" y="174" text-anchor="middle" font-size="12" fill="#8a4a1c">W（平坦）</text>
+  <text x="500" y="190" text-anchor="middle" font-size="10" fill="#2a9d8f">权重好量化</text>
+
+  <line x1="545" y1="178" x2="600" y2="178" stroke="#45556b" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <text x="572" y="169" text-anchor="middle" font-size="10" fill="#5a6b7d">× s</text>
+
+  <rect x="603" y="152" width="80" height="52" rx="5" fill="#fdf6ec" stroke="#e0a458"/>
+  <text x="643" y="174" text-anchor="middle" font-size="12" fill="#8a4a1c">W · s（略尖）</text>
+  <text x="643" y="190" text-anchor="middle" font-size="10" fill="#8a4a1c">仍可量</text>
+
+  <text x="755" y="105" text-anchor="middle" font-size="12" fill="#1e3a5f" font-weight="bold">Y = (X·s⁻¹)(s·W)ᵀ</text>
+  <text x="755" y="125" text-anchor="middle" font-size="11" fill="#5a6b7d">数学严格等价</text>
+  <text x="755" y="145" text-anchor="middle" font-size="11" fill="#5a6b7d">sⱼ = max|Xⱼ|^α / max|Wⱼ|^(1−α)</text>
+  <text x="755" y="165" text-anchor="middle" font-size="11" fill="#5a6b7d">α ≈ 0.5：迁移一半难度</text>
+  <text x="755" y="185" text-anchor="middle" font-size="11" fill="#5a6b7d">INT8 per-channel × per-token</text>
+  <text x="755" y="205" text-anchor="middle" font-size="10.5" fill="#8a94a3">需校准数据统计通道幅度</text>
+
+  <!-- ======== 右中：AWQ ======== -->
+  <rect x="430" y="236" width="505" height="102" rx="8" fill="#ffffff" stroke="#8e6bbf" stroke-width="1.4"/>
+  <text x="682" y="260" text-anchor="middle" font-size="14" font-weight="bold" fill="#5b3d8c">AWQ（W4A16）—— 保重点</text>
+
+  <!-- weight matrix with 1% salient channels highlighted -->
+  <g>
+    <rect x="460" y="274" width="18" height="14" fill="#c9a0dc"/><rect x="478" y="274" width="18" height="14" fill="#d9d9d9"/><rect x="496" y="274" width="18" height="14" fill="#d9d9d9"/><rect x="514" y="274" width="18" height="14" fill="#c9a0dc"/>
+    <rect x="460" y="288" width="18" height="14" fill="#c9a0dc"/><rect x="478" y="288" width="18" height="14" fill="#d9d9d9"/><rect x="496" y="288" width="18" height="14" fill="#d9d9d9"/><rect x="514" y="288" width="18" height="14" fill="#c9a0dc"/>
+    <rect x="460" y="302" width="18" height="14" fill="#c9a0dc"/><rect x="478" y="302" width="18" height="14" fill="#d9d9d9"/><rect x="496" y="302" width="18" height="14" fill="#d9d9d9"/><rect x="514" y="302" width="18" height="14" fill="#c9a0dc"/>
+  </g>
+  <text x="496" y="332" text-anchor="middle" font-size="10" fill="#5b3d8c">■ ~1% 重要通道（激活幅度大）</text>
+
+  <text x="600" y="285" font-size="11.5" fill="#1e3a5f">W·s 放大重要通道 → 占更多格点</text>
+  <text x="600" y="303" font-size="11.5" fill="#1e3a5f">等效缩放：XWᵀ = (X·s⁻¹)(W·s)ᵀ</text>
+  <text x="600" y="321" font-size="11.5" fill="#5a6b7d">s 由网格搜索决定（无反传）· 激活保持 BF16</text>
+
+  <!-- ======== 右下：GPTQ ======== -->
+  <rect x="430" y="354" width="505" height="120" rx="8" fill="#ffffff" stroke="#d64545" stroke-width="1.4"/>
+  <text x="682" y="378" text-anchor="middle" font-size="14" font-weight="bold" fill="#a33232">GPTQ（W2~W8）—— 边量边修</text>
+
+  <!-- column-wise quantization with error feedback -->
+  <g>
+    <rect x="460" y="392" width="16" height="60" fill="#f2b8b5" stroke="#d64545"/>
+    <rect x="476" y="392" width="16" height="60" fill="#f2b8b5" stroke="#d64545"/>
+    <rect x="492" y="392" width="16" height="60" fill="#f2b8b5" stroke="#d64545"/>
+    <rect x="508" y="392" width="16" height="60" fill="#ffffff" stroke="#c8d4e0"/>
+    <rect x="524" y="392" width="16" height="60" fill="#ffffff" stroke="#c8d4e0"/>
+    <rect x="540" y="392" width="16" height="60" fill="#ffffff" stroke="#c8d4e0"/>
+  </g>
+  <text x="500" y="386" text-anchor="middle" font-size="9.5" fill="#a33232">已量化列</text>
+  <text x="532" y="386" text-anchor="middle" font-size="9.5" fill="#5a6b7d">待量化列</text>
+
+  <path d="M 508 422 Q 528 408 548 418" fill="none" stroke="#c0392b" stroke-width="1.6" marker-end="url(#arrR)"/>
+  <text x="528" y="408" text-anchor="middle" font-size="9.5" fill="#c0392b">误差补偿</text>
+  <text x="496" y="466" text-anchor="middle" font-size="10" fill="#5a6b7d">H = 2XXᵀ 指导补偿方向</text>
+
+  <text x="600" y="400" font-size="11.5" fill="#1e3a5f">min ‖XWᵀ − XŴᵀ‖²：逐列贪心</text>
+  <text x="600" y="418" font-size="11.5" fill="#1e3a5f">量化列 j 的误差 δⱼ，由 H⁻¹ 分摊给</text>
+  <text x="600" y="436" font-size="11.5" fill="#1e3a5f">剩余列修正；act-order 先量重要列</text>
+  <text x="600" y="458" font-size="10.5" fill="#8a94a3">校准集敏感 · 速度慢于 AWQ · 精度略优</text>
+
+  <!-- ======== 底部对比条 ======== -->
+  <rect x="25" y="500" width="910" height="118" rx="8" fill="#f4f7fb" stroke="#c8d4e0"/>
+  <text x="480" y="524" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a5f">三者共同的舞台：处理"激活难 / 权重易"的不对称性</text>
+  <line x1="480" y1="536" x2="480" y2="566" stroke="#c8d4e0"/>
+  <text x="180" y="556" text-anchor="middle" font-size="12" fill="#1d5c56">SmoothQuant：激活难 → 搬去权重</text>
+  <text x="180" y="578" text-anchor="middle" font-size="11" fill="#5a6b7d">服务于 W8A8（激活也要量化）</text>
+  <text x="480" y="556" text-anchor="middle" font-size="12" fill="#5b3d8c">AWQ：重要通道 → 放大保护</text>
+  <text x="480" y="578" text-anchor="middle" font-size="11" fill="#5a6b7d">服务于 W4A16（激活不量化）</text>
+  <text x="780" y="556" text-anchor="middle" font-size="12" fill="#a33232">GPTQ：量化误差 → 后列补偿</text>
+  <text x="780" y="578" text-anchor="middle" font-size="11" fill="#5a6b7d">W2~W8 通用，Hessian 驱动</text>
+  <text x="480" y="602" text-anchor="middle" font-size="10.5" fill="#8a94a3">均为 PTQ · 只动 Linear 层 · lm_head / norm / embedding 不量化</text>
+</svg>

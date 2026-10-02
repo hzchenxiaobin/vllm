@@ -1,0 +1,68 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la week4/ 2>/dev/null && ls week4/assets/ 2>/dev/null
+total 256
+drwxr-xr-x  3 root root  4096 Oct  2 12:34 .
+drwxr-xr-x 18 root root  4096 Oct  2 12:40 ..
+drwxr-xr-x  2 root root  4096 Oct  2 12:36 assets
+-rw-r--r--  1 root root 45727 Oct  2 11:30 day22_quantization_basics.md
+-rw-r--r--  1 root root 35742 Oct  2 11:51 day23_kv_cache_quantization.md
+-rw-r--r--  1 root root 41930 Oct  2 12:05 day24_quantization_hands_on.md
+-rw-r--r--  1 root root 43410 Oct  2 12:24 day25_speculative_decoding.md
+-rw-r--r--  1 root root 37059 Oct  2 12:40 day26_speculative_decoding_experiments.md
+-rw-r--r--  1 root root 29921 Oct  1 23:14 README.md
+day22_outlier_algorithms.svg
+day22_quant_framework.svg
+day22_roofline_quant.svg
+day23_capacity_ladder.svg
+day23_k_vs_v_error.svg
+day23_vllm_kv_fp8_chain.svg
+day24_a4_quant_map.svg
+day24_quant_toolchain.svg
+day24_verify_gates.svg
+day25_spec_pipeline.svg
+day25_speedup_curves.svg
+day25_three_routes.svg
+day26_experiment_matrix.svg
+day26_k_sweep.svg
+day26_negative_gain_anatomy.svg
+[0m
+[0m→ [0mRead week4/day26_speculative_decoding_experiments.md[90m [limit=60][0m
+[0m→ [0mRead week4/day25_speculative_decoding.md[90m [limit=60][0m
+[0m→ [0mRead week4/day26_speculative_decoding_experiments.md[90m [offset=400][0m
+[0m→ [0mRead week4/day24_quantization_hands_on.md[90m [limit=50][0m
+[0m
+[0m$ [0mls vllm/v1/core/ vllm/v1/engine/ 2>/dev/null
+(no output)
+[0m
+我现在检查一下实际的 vLLM V1 源码，以确保准确的调用链，并查看 week4 README 以获取上下文。
+[0m→ [0mRead week4/README.md[90m [limit=40][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/ && git -C /mnt/workspace/aiinfra/vllm log --oneline -3 2>/dev/null
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+9b87999 Add Day 10-21 tutorial notes (weeks 2-3) with assets and logs; update generator and progress
+9f00707 Add Day 03-19 tutorial notes (weeks 1-3) with logs; improve generator (cooldown, no-retry, low thinking variant)
+6684e08 Switch Pages to VitePress-style build system (weeks/day pages + Actions deploy)
+[0m
+这个代码库中没有 vLLM 的源码（这是一个教程仓库），因此我会根据 V1 架构来编写源码引用，并标注出版本敏感的细节。让我检查一下现有的 SVG 样式以确保一致性。
+[0m→ [0mRead week4/assets/day25_three_routes.svg[90m [limit=50][0m

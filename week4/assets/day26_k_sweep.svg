@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Helvetica, Arial, sans-serif">
+  <rect width="960" height="560" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A365D">k 扫参（num_speculative_tokens）：理论预测 vs 实测形态，以及负收益的两条下坡路</text>
+
+  <!-- ============ left panel: Load A, EAGLE-3 ============ -->
+  <text x="265" y="62" text-anchor="middle" font-size="13" font-weight="bold" fill="#2D3748">左：负载 A（代码补全）· EAGLE-3 · B=8 · greedy</text>
+  <line x1="70" y1="460" x2="460" y2="460" stroke="#4A5568" stroke-width="1.5"/>
+  <line x1="70" y1="460" x2="70" y2="80" stroke="#4A5568" stroke-width="1.5"/>
+  <!-- gridlines S = 0.8/1.2/1.6/2.0/2.4 -->
+  <g stroke="#CBD5E0" stroke-width="1" stroke-dasharray="3 3">
+    <line x1="70" y1="365" x2="450" y2="365"/>
+    <line x1="70" y1="270" x2="450" y2="270"/>
+    <line x1="70" y1="175" x2="450" y2="175"/>
+    <line x1="70" y1="80"  x2="450" y2="80"/>
+  </g>
+  <line x1="70" y1="412" x2="450" y2="412" stroke="#C53030" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <g font-size="10" fill="#4A5568">
+    <text x="62" y="464" text-anchor="end">0.8</text>
+    <text x="62" y="369" text-anchor="end">1.2</text>
+    <text x="62" y="274" text-anchor="end">1.6</text>
+    <text x="62" y="179" text-anchor="end">2.0</text>
+    <text x="62" y="84"  text-anchor="end">2.4</text>
+    <text x="30" y="270" transform="rotate(-90 30 270)" text-anchor="middle">加速比 S</text>
+  </g>
+  <g font-size="10" fill="#4A5568">
+    <text x="90"  y="476" text-anchor="middle">1</text>
+    <text x="162" y="476" text-anchor="middle">2</text>
+    <text x="234" y="476" text-anchor="middle">3</text>
+    <text x="306" y="476" text-anchor="middle">4</text>
+    <text x="378" y="476" text-anchor="middle">5</text>
+    <text x="450" y="476" text-anchor="middle">6</text>
+    <text x="265" y="494" text-anchor="middle">草稿长度 k</text>
+  </g>
+
+  <!-- S_pred dashed: 1.54 1.83 1.99 2.05 2.07 2.02 -->
+  <polyline points="90,284 162,215 234,177 306,163 378,158 450,170" fill="none" stroke="#805AD5" stroke-width="2.5" stroke-dasharray="7 4"/>
+  <!-- S_meas solid: 1.45 1.68 1.78 1.76 1.70 1.62 -->
+  <polyline points="90,306 162,251 234,227 306,232 378,246 450,265" fill="none" stroke="#2B6CB0" stroke-width="2.5"/>
+  <g fill="#2B6CB0">
+    <circle cx="90" cy="306" r="4"/><circle cx="162" cy="251" r="4"/><circle cx="234" cy="227" r="5"/>
+    <circle cx="306" cy="232" r="4"/><circle cx="378" cy="246" r="4"/><circle cx="450" cy="265" r="4"/>
+  </g>
+  <!-- peak annotation -->
+  <line x1="234" y1="227" x2="234" y2="150" stroke="#2B6CB0" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="238" y="142" font-size="10.5" fill="#2B6CB0" font-weight="bold">实测峰值 k* ≈ 3</text>
+  <text x="238" y="156" font-size="10" fill="#4A5568">位置衰减 + step 开销把峰</text>
+  <text x="238" y="169" font-size="10" fill="#4A5568">从理论 k≈5 拉回左边</text>
+
+  <g font-size="10.5">
+    <line x1="95" y1="95" x2="120" y2="95" stroke="#805AD5" stroke-width="2.5" stroke-dasharray="7 4"/><text x="126" y="99" fill="#553C9A">S_pred：β=0.85, c=0.16, γ(k) 按实测档代入</text>
+    <line x1="95" y1="113" x2="120" y2="113" stroke="#2B6CB0" stroke-width="2.5"/><text x="126" y="117" fill="#2B6CB0">S_measured（示意）：恒低于理论，k&gt;4 后回落</text>
+  </g>
+
+  <!-- ============ right panel: negative territory ============ -->
+  <text x="715" y="62" text-anchor="middle" font-size="13" font-weight="bold" fill="#2D3748">右：负收益边界（S&lt;1 的两种抵达方式）</text>
+  <line x1="520" y1="460" x2="910" y2="460" stroke="#4A5568" stroke-width="1.5"/>
+  <line x1="520" y1="460" x2="520" y2="80" stroke="#4A5568" stroke-width="1.5"/>
+  <g stroke="#CBD5E0" stroke-width="1" stroke-dasharray="3 3">
+    <line x1="520" y1="384" x2="900" y2="384"/>
+    <line x1="520" y1="232" x2="900" y2="232"/>
+    <line x1="520" y1="156" x2="900" y2="156"/>
+    <line x1="520" y1="80"  x2="900" y2="80"/>
+  </g>
+  <line x1="520" y1="308" x2="900" y2="308" stroke="#C53030" stroke-width="1.8" stroke-dasharray="6 3"/>
+  <g font-size="10" fill="#4A5568">
+    <text x="512" y="464" text-anchor="end">0.6</text>
+    <text x="512" y="388" text-anchor="end">0.8</text>
+    <text x="512" y="312" text-anchor="end">1.0</text>
+    <text x="512" y="236" text-anchor="end">1.2</text>
+    <text x="512" y="160" text-anchor="end">1.4</text>
+    <text x="512" y="84"  text-anchor="end">1.6</text>
+    <text x="486" y="270" transform="rotate(-90 486 270)" text-anchor="middle">加速比 S</text>
+  </g>
+  <g font-size="10" fill="#4A5568">
+    <text x="540" y="476" text-anchor="middle">1</text>
+    <text x="614" y="476" text-anchor="middle">2</text>
+    <text x="688" y="476" text-anchor="middle">3</text>
+    <text x="762" y="476" text-anchor="middle">4</text>
+    <text x="836" y="476" text-anchor="middle">5</text>
+    <text x="910" y="476" text-anchor="middle">6</text>
+    <text x="715" y="494" text-anchor="middle">草稿长度 k</text>
+  </g>
+  <text x="905" y="303" font-size="10" fill="#C53030" text-anchor="end" font-weight="bold">S = 1（盈亏线）</text>
+
+  <!-- EAGLE x Load B: 1.25 1.42 1.50 1.48 1.42 1.35 -->
+  <polyline points="540,213 614,148 688,118 762,126 836,148 910,175" fill="none" stroke="#2B6CB0" stroke-width="2.5"/>
+  <!-- ngram x Load B: 1.05 1.00 0.96 0.92 0.88 0.85 -->
+  <polyline points="540,289 614,308 688,323 762,338 836,354 910,365" fill="none" stroke="#DD6B20" stroke-width="2.5"/>
+  <!-- EAGLE x Load A high concurrency: 0.95 0.88 0.80 0.74 0.70 0.67 -->
+  <polyline points="540,327 614,354 688,384 762,407 836,422 910,433" fill="none" stroke="#C53030" stroke-width="2.5"/>
+  <circle cx="688" cy="323" r="4.5" fill="#DD6B20"/>
+
+  <g font-size="10.5">
+    <line x1="545" y1="95" x2="570" y2="95" stroke="#2B6CB0" stroke-width="2.5"/><text x="576" y="99" fill="#2B6CB0">EAGLE × 负载 B：收益缩水，但低并发下未转负</text>
+    <line x1="545" y1="113" x2="570" y2="113" stroke="#DD6B20" stroke-width="2.5"/><text x="576" y="117" fill="#9C4221">ngram × 负载 B：k≥3 跌破 1——c=0 也逃不过 γ 与固定开销</text>
+    <line x1="545" y1="131" x2="570" y2="131" stroke="#C53030" stroke-width="2.5"/><text x="576" y="135" fill="#C53030">EAGLE × 负载 A @ 并发 128：γ→k+1 + budget 挤压，明显负收益</text>
+  </g>
+
+  <!-- bottom note -->
+  <text x="480" y="522" text-anchor="middle" font-size="11" fill="#4A5568">左图：β=0.85 时理论峰在 k≈5，但按深度衰减（β₁&gt;β₂&gt;…）与每 step 固定开销把实测峰拉回 k*≈3；右图：抵达 S&lt;1 有两条独立的路——分子塌掉（低 β）或分母涨掉（γ 膨胀）</text>
+  <text x="480" y="540" text-anchor="middle" font-size="11" fill="#718096">（曲线为按 Day 25 公式 + 典型开销量级计算的示意，形态与量级参考；以你的实测数据为准覆盖本图）</text>
+</svg>
