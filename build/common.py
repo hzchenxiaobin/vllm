@@ -22,6 +22,85 @@ WEEK_TITLE_PATTERN = re.compile(r"^#\s*(第\s*\d+\s*周|Week\s*\d+)[：:]\s*(.+)
 DAY_FILE_PATTERN = re.compile(r"^day(\d+)([a-z]?)(?:[_.-]|$)")
 DAY_TITLE_PATTERN = re.compile(r"^#\s*Day\s*(\d+)([a-z]?)\s*[·：:]\s*(.+)$")
 
+KIMI_CHAT_MODEL = "kimi-k3"
+
+KIMI_CHAT_WIDGET_HTML = """<div class="kc-root" id="kc-root">
+    <button class="kc-launch" id="kc-launch" type="button" aria-label="打开 AI 咨询窗口" title="AI 咨询窗口">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </button>
+    <section class="kc-panel" id="kc-panel" role="dialog" aria-label="AI 咨询窗口" aria-hidden="true">
+        <header class="kc-header">
+            <div class="kc-header-info">
+                <span class="kc-header-title">🤖 咨询本篇内容</span>
+                <span class="kc-header-sub"><span class="kc-model-badge" id="kc-model-badge">kimi-k3</span>由 Kimi 大模型驱动</span>
+            </div>
+            <div class="kc-header-actions">
+                <button class="kc-icon-btn" id="kc-settings-btn" type="button" aria-label="设置" title="设置">⚙️</button>
+                <button class="kc-icon-btn" id="kc-close-btn" type="button" aria-label="关闭" title="关闭">✕</button>
+            </div>
+        </header>
+        <div class="kc-page-info" id="kc-page-info"></div>
+        <div class="kc-body" id="kc-body">
+            <div class="kc-welcome">
+                <div class="kc-welcome-title">👋 我是本页学习助教</div>
+                <p>已加载本页全文，可以直接问我这篇教程的任何问题。</p>
+                <div class="kc-chips" id="kc-chips"></div>
+            </div>
+        </div>
+        <div class="kc-error" id="kc-error" role="alert" hidden></div>
+        <div class="kc-status" id="kc-status" hidden>正在思考</div>
+        <footer class="kc-footer">
+            <textarea class="kc-input" id="kc-input" rows="1" placeholder="询问本篇内容…（Enter 发送 / Shift+Enter 换行）"></textarea>
+            <div class="kc-input-btns">
+                <button class="kc-btn kc-stop-btn" id="kc-stop-btn" type="button" hidden>■ 停止</button>
+                <button class="kc-btn kc-send-btn" id="kc-send-btn" type="button" aria-label="发送">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </footer>
+        <div class="kc-settings" id="kc-settings" hidden>
+            <div class="kc-settings-head">
+                <span>⚙️ 助教设置</span>
+                <button class="kc-icon-btn" id="kc-settings-close" type="button" aria-label="关闭设置">✕</button>
+            </div>
+            <div class="kc-settings-body">
+                <label class="kc-field">
+                    <span class="kc-field-label">Moonshot API Key</span>
+                    <input class="kc-input-text" id="kc-set-key" type="password" placeholder="sk-…（仅保存在本浏览器）" autocomplete="off" spellcheck="false">
+                    <span class="kc-field-hint">在 <a href="https://platform.moonshot.cn/console/api-keys" target="_blank" rel="noopener noreferrer">Moonshot 开放平台</a> 获取；密钥只保存在你浏览器的 localStorage，不会上传到本站服务器。</span>
+                </label>
+                <label class="kc-field">
+                    <span class="kc-field-label">模型</span>
+                    <input class="kc-input-text" id="kc-set-model" type="text" placeholder="kimi-k3" spellcheck="false">
+                    <span class="kc-field-hint">默认 kimi-k3，可改为开放平台支持的其他模型（如 kimi-k2-turbo-preview 等）。</span>
+                </label>
+                <label class="kc-field">
+                    <span class="kc-field-label">API 地址（OpenAI 兼容）</span>
+                    <input class="kc-input-text" id="kc-set-base" type="text" placeholder="https://api.moonshot.ai/v1" spellcheck="false">
+                    <span class="kc-field-hint">默认 https://api.moonshot.ai/v1；中国大陆也可改为 https://api.moonshot.cn/v1</span>
+                </label>
+                <label class="kc-field">
+                    <span class="kc-field-label">携带正文上限（字符）</span>
+                    <input class="kc-input-text" id="kc-set-maxctx" type="number" min="2000" step="1000">
+                    <span class="kc-field-hint">每次提问携带的页面正文字符数上限，超出部分会被截断。</span>
+                </label>
+                <div class="kc-settings-actions">
+                    <button class="kc-btn kc-primary-btn" id="kc-save-btn" type="button">保存</button>
+                    <button class="kc-btn kc-ghost-btn" id="kc-clear-btn" type="button">清空对话</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>"""
+
+
+def kimi_chat_assets(root_prefix: str = "") -> str:
+    """Widget markup + script tag for the per-page Kimi chat window."""
+    return (
+        KIMI_CHAT_WIDGET_HTML
+        + f'\n<script src="{root_prefix}js/kimi-chat.js?v=1"></script>'
+    )
+
 
 def escape_for_template_string(text: str) -> str:
     """Escape a markdown string for embedding in a JS template string."""
@@ -33,10 +112,19 @@ def escape_for_template_string(text: str) -> str:
 
 
 def discover_week_dirs() -> list:
-    """Return sorted [Path] of weekN/ directories in the repo root."""
+    """Return sorted [Path] of weekN/ directories in the repo root.
+
+    A weekN/ dir is valid only if it contains a README.md or at least one
+    day*.md file; stray weekN/ dirs without tutorial content are skipped.
+    """
     weeks = []
     for path in REPO_ROOT.iterdir():
         if path.is_dir() and WEEK_DIR_PATTERN.match(path.name):
+            has_readme = (path / "README.md").exists()
+            has_days = any(path.glob("day*.md"))
+            if not has_readme and not has_days:
+                print(f"Skipping {path.name}/ (no README.md or day*.md found)")
+                continue
             weeks.append(path)
     return sorted(weeks, key=lambda p: int(WEEK_DIR_PATTERN.match(p.name).group(1)))
 
@@ -143,6 +231,7 @@ def solution_page_template(
     escaped_title = html.escape(title, quote=True)
     if page_title is None:
         page_title = title
+    kimi_widget = kimi_chat_assets(root_prefix)
 
     back_nav_html = ""
     if back_link:
@@ -204,6 +293,7 @@ def solution_page_template(
     }})();
     </script>
     <link rel="stylesheet" href="{root_prefix}css/vp-solution.css?v=4">
+    <link rel="stylesheet" href="{root_prefix}css/kimi-chat.css?v=1">
     <!-- Marked.js for Markdown rendering -->
     <script src="{root_prefix}js/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -280,13 +370,13 @@ def solution_page_template(
 
     <script src="{root_prefix}js/vp-solution.js?v=3"></script>
     <script>
-        const pageMarkdown = `{escaped_markdown}`;
+        window.pageMarkdown = `{escaped_markdown}`;
 
         try {{
             if (typeof marked === 'undefined' || !window.VPPage) {{
                 throw new Error('页面脚本加载失败，请检查 js/marked.min.js 与 js/vp-solution.js 是否存在。');
             }}
-            VPPage.render(pageMarkdown);
+            VPPage.render(window.pageMarkdown);
         }} catch (err) {{
             document.getElementById('doc-content').innerHTML = '<div style="padding: 20px; color: #b8272c; background: rgba(184,39,44,.08); border: 1px solid rgba(184,39,44,.3); border-radius: 8px;">' +
                 '<h2>⚠️ 页面渲染失败</h2>' +
@@ -297,6 +387,7 @@ def solution_page_template(
         }}
     </script>
     {extra_scripts}
+    {kimi_widget}
 </body>
 </html>
 """

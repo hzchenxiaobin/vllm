@@ -3,10 +3,27 @@
 import html
 from pathlib import Path
 
-from .common import GITHUB_REPO_URL
+from .common import (
+    GITHUB_REPO_URL,
+    escape_for_template_string,
+    kimi_chat_assets,
+)
 from .weeks import WEEK_GOALS
 
+KIMI_HOME_CONTEXT = """本站是《vLLM 推理系统优化 · 八周学习计划》的教程笔记网站（vLLM Notes），
+面向具备算子优化 / 高并发分布式基础、目标 LLM 推理系统优化岗位的工程师。
+
+学习路线（8 周，每天 2~4 小时）：
+- 第 0 周 · 面试冲刺（7 天速通）：距面试仅一周时的应急路线，重产出轻深挖。
+- 阶段一 · 地基与源码（Week 1-3）：推理基础与性能建模（第一性原理、Roofline、PagedAttention 论文、服务指标）、vLLM V1 源码精读（调度链路、KV 管理与执行）。
+- 阶段二 · 进阶专题（Week 4-5）：量化（W8A8 / AWQ / KV Cache 量化）与投机解码、P/D 分离架构与 TP/PP/EP 分布式推理。
+- 阶段三 · 项目与冲刺（Week 6-8）：vLLM-Ascend / 源码贡献项目、消融实验报告、八大专题面试冲刺。
+
+用户当前在站点首页。首页提供学习路线导航与资源入口；具体每日教程在 week0 ~ week8 各周页面。
+你可以解答学习路线、推理系统概念，以及如何使用本站的问题。"""
+
 PHASES = [
+    ("第 0 周", "面试冲刺 · 7 天速通", "距面试仅一周时的应急冲刺路线", range(0, 1)),
     ("阶段一", "地基与源码", "第一性原理 → vLLM V1 全链路源码精读", range(1, 4)),
     ("阶段二", "进阶专题", "量化 / 投机解码 / P·D 分离 / 分布式", range(4, 6)),
     ("阶段三", "项目与冲刺", "开源贡献 + 消融实验 + 面试冲刺", range(6, 9)),
@@ -81,6 +98,8 @@ def build_home(public_dir: Path, weeks: list) -> None:
     <title>vLLM 推理系统优化 · 八周学习计划</title>
     <meta name="description" content="LLM 推理系统优化（vLLM V1 方向）八周按天学习计划与教程笔记：第一性原理、V1 源码精读、量化与投机解码、P/D 分离、分布式推理与面试冲刺。">
     <link rel="stylesheet" href="css/style.css?v=8">
+    <link rel="stylesheet" href="css/kimi-chat.css?v=1">
+    <script src="js/marked.min.js"></script>
 </head>
 <body class="landing">
     <header class="landing-nav">
@@ -129,6 +148,11 @@ def build_home(public_dir: Path, weeks: list) -> None:
     <footer class="landing-footer">
         <span>vLLM Notes · 由 <a href="{GITHUB_REPO_URL}">GitHub</a> 驱动 · Deployed on GitHub Pages</span>
     </footer>
+
+    <script>
+        window.pageMarkdown = `{escape_for_template_string(KIMI_HOME_CONTEXT)}`;
+    </script>
+    {kimi_chat_assets()}
 </body>
 </html>
 '''
