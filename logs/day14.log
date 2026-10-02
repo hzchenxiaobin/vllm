@@ -1,0 +1,1138 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "**/*.md"[90m 22 matches[0m
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week2/ 2>/dev/null; ls -la /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  6704 Oct  2 02:43 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 00:52 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  2 05:46 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     3 Oct  2 05:14 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 03:09 week1
+drwxr-xr-x  3 root root  4096 Oct  2 04:57 week2
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+total 288
+drwxr-xr-x  3 root root  4096 Oct  2 04:57 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+drwxr-xr-x  2 root root  4096 Oct  2 04:53 assets
+-rw-r--r--  1 root root 53073 Oct  2 02:40 day08_v1_architecture_overview.md
+-rw-r--r--  1 root root 61350 Oct  2 03:01 day09_request_entry_pipeline.md
+-rw-r--r--  1 root root 61124 Oct  2 04:08 day11_chunked_prefill.md
+-rw-r--r--  1 root root 69085 Oct  2 05:14 day12_preemption.md
+-rw-r--r--  1 root root 34602 Oct  1 23:18 README.md
+total 384
+drwxr-xr-x  3 root root  4096 Oct  2 03:09 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+drwxr-xr-x  2 root root  4096 Oct  2 03:06 assets
+-rw-r--r--  1 root root 39365 Oct  1 23:43 day01_transformer_inference.md
+-rw-r--r--  1 root root 38026 Oct  2 00:09 day02_memory_latency_hand_calc.md
+-rw-r--r--  1 root root 50999 Oct  2 00:52 day03_roofline_model.md
+-rw-r--r--  1 root root 52409 Oct  2 01:18 day04_paged_attention_paper.md
+-rw-r--r--  1 root root 57410 Oct  2 01:57 day05_serving_metrics.md
+-rw-r--r--  1 root root 48535 Oct  2 01:41 day06_env_setup_first_bench.md
+-rw-r--r--  1 root root 42068 Oct  2 03:09 day07_first_principles_review.md
+-rw-r--r--  1 root root 33208 Oct  1 23:13 README.md
+[0m
+[0m→ [0mRead week2/day12_preemption.md[90m [limit=150][0m
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week2/assets/ && ls /mnt/workspace/aiinfra/vllm/week1/assets/
+total 180
+drwxr-xr-x 2 root root  4096 Oct  2 04:53 .
+drwxr-xr-x 3 root root  4096 Oct  2 04:57 ..
+-rw-r--r-- 1 root root 12514 Oct  2 02:35 day08_startup_sequence.svg
+-rw-r--r-- 1 root root 11790 Oct  2 02:36 day08_step_ipc_timeline.svg
+-rw-r--r-- 1 root root 17742 Oct  2 02:35 day08_v1_process_architecture.svg
+-rw-r--r-- 1 root root 15064 Oct  2 02:57 day09_request_entry_pipeline.svg
+-rw-r--r-- 1 root root 14015 Oct  2 02:57 day09_request_object_anatomy.svg
+-rw-r--r-- 1 root root 11653 Oct  2 02:58 day09_ttft_decomposition.svg
+-rw-r--r-- 1 root root  8256 Oct  2 04:01 day11_budget_tradeoff.svg
+-rw-r--r-- 1 root root 10721 Oct  2 04:00 day11_chunked_prefill_timeline.svg
+-rw-r--r-- 1 root root 11493 Oct  2 04:00 day11_unified_scheduling_ledger.svg
+-rw-r--r-- 1 root root 12432 Oct  2 05:12 day12_preemption_flow.svg
+-rw-r--r-- 1 root root 12641 Oct  2 04:52 day12_preemption_state_machine.svg
+-rw-r--r-- 1 root root 11254 Oct  2 05:12 day12_recompute_vs_swap.svg
+day01_decode_iteration_tensor_flow.svg
+day01_kv_cache_lifecycle.svg
+day01_prefill_vs_decode.svg
+day02_decode_latency_lb.svg
+day02_kv_formula_anatomy.svg
+day02_memory_budget.svg
+day03_ascend_gpu_mapping.svg
+day03_ncu_decision_tree.svg
+day03_roofline_chart.svg
+day04_kv_waste_taxonomy.svg
+day04_paged_layout.svg
+day04_v1_kv_callchain.svg
+day05_capacity_ladder.svg
+day05_goodput_knee.svg
+day05_request_timeline_metrics.svg
+day06_bench_architecture.svg
+day06_concurrency_curves.svg
+day06_request_timeline.svg
+day07_70b_whiteboard.svg
+day07_week1_knowledge_map.svg
+[0m
+[0m✱ [0mGrep "Day 14"[90m in week2/README.md · 10 matches[0m
+[0m→ [0mRead week2/README.md[90m [limit=120][0m
+[0m→ [0mRead week2/README.md[90m [limit=141, offset=480][0m
+[0m
+[0m$ [0mgrep -n "^## \|^### \|^---$" /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md | head -80; echo "=====DAY11====="; grep -n "^## " /mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md; echo "=====DAY07====="; grep -n "^## " /mnt/workspace/aiinfra/vllm/week1/day07_first_principles_review.md; echo "=====DAY09====="; grep -n "^## " /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md
+12:---
+14:## 0. 今日学习目标
+27:---
+29:## 1. 核心概念速览
+52:---
+54:## 2. 原理深入讲解
+56:### 2.1 回顾与今日地图
+72:### 2.2 触发条件：`allocate_slots` 什么时候返回 None（图 1 顶部）
+94:### 2.3 处理流程：六步复位与 victim 选择（图 1 中部）
+132:### 2.4 恢复路径：从队首复活到 block table 整表替换（图 1 底部、图 2）
+159:### 2.5 recompute vs swap：V1 为什么砍掉 swap（图 3 左/中）
+182:### 2.6 thrashing：被祭者的两种走向，什么时候反复抢占（图 3 右下）
+196:### 2.7 观测：抢占如何流到指标（图 3 右上）
+216:### 2.8 调参：旋钮表与根因框架
+231:---
+233:## 3. 性能模型：今日的数学
+235:### 3.1 抢占的代价公式
+245:### 3.2 容量-并发上限手算（判断"会不会抢占"的第一步）
+266:### 3.3 recompute vs swap 定量对比（图 3 左）
+278:### 3.4 练手对账题（答案见 §8）
+284:---
+286:## 4. 关键代码走读（v0.11.0 逐行核对版）
+290:### 4.1 running 循环的抢占分支（scheduler.py:254-300）
+333:### 4.2 waiting 循环的恢复分支（scheduler.py:335, 380-384, 420-437, 471-526）
+367:### 4.3 SchedulerOutput 与 P2 侧（output.py + gpu_model_runner.py）
+400:### 4.4 终判与指标（scheduler.py + stats.py + loggers.py）
+434:### 4.5 调用链速查表（今日总账）
+455:---
+457:## 5. 动手实验（约 60~90 分钟）
+461:### 实验 0（必做，10 min）：容量手算对账
+475:### 实验 1（必做，30 min；无 GPU 可做）：preemption 仿真器——"10 个请求、KV 只够 7 个"
+611:### 实验 2（GPU，20 min）：挤爆 KV——看指标四件套（Day 13 实验 13.2 的缩小版）
+629:### 实验 3（GPU，20 min）：调参对照——把 admission 收到容量以内
+641:### 实验 4（可选，15 min）：给抢占分支加探针
+653:### 实验 5（产出，15 min）：写 preemption 诊断-调参卡（§9 模板）
+655:### 常见坑（方法论清单）
+668:---
+670:## 6. 面试高频问题（含答题骨架）
+700:---
+702:## 7. 今日总结
+713:---
+715:## 8. 今日自测题（先自己做，再展开答案）
+759:---
+761:## 9. 今日产出物：preemption 诊断-调参卡
+766:## 触发判定（一行）
+770:## 处理六步（scheduler.py:271-281）
+774:## 观测四件套
+778:## 调参（按手算并发上限 = KV tokens ÷ 平均上下文）
+784:## 手算台账（我的机器）
+789:## 实测（实验 2/3 数据）
+795:## 一句话
+806:---
+808:## 10. 明日预告（Day 13 · 动手验证调度行为）
+=====DAY11=====
+14:## 0. 今日学习目标
+28:## 1. 核心概念速览
+51:## 2. 原理深入讲解
+249:## 3. 性能模型：今日的数学
+298:## 4. 关键代码走读（v0.11.0 逐行核对版）
+442:## 5. 动手实验（约 60~90 分钟）
+626:## 6. 面试高频问题（含答题骨架）
+658:## 7. 今日总结
+671:## 8. 今日自测题（先自己做，再展开答案）
+717:## 9. 今日产出物：一页总结《chunked prefill 的收益与代价》
+724:## 一句话
+728:## 收益（带证据）
+734:## 代价（带证据）
+741:## 调参
+744:## 失效模式
+757:## 10. 明日预告（Day 12 · Scheduler（三）：preemption）
+=====DAY07=====
+12:## 0. 今日学习目标
+25:## 1. 核心概念速览（本周概念的最终收拢表）
+46:## 2. 原理深入讲解：把六天拼成一张图
+149:## 3. 数学推导：70B 白板闭卷推演（今日核心自测）
+227:## 4. 与 vLLM V1 的实际联系：第一性原理在代码树里的落点（总表）
+246:## 5. 动手实验（复盘日的实验 = 输出）
+380:## 6. 面试高频问题（复盘综合级）
+408:## 7. 今日总结（第 1 周总结）
+419:## 8. 今日自测题（十道周复盘题，先做再展开）
+495:## 9. 今日产出物
+510:## 0. 一句话总纲 + 六层知识地图（手绘版，对照 SVG1 校漏）
+511:## 1. 公理：自回归数据依赖 → 两阶段
+512:## 2. 账单：prefill FLOPs / decode bytes + KV/token 与 TPOT 下界公式
+513:## 3. 判定：Roofline、ridge、AI 三口径、decode 翻不上屋顶（2N/(ctx·KV_tok)）
+514:## 4. 推论①容量：η 与三重上限（44→182、C* = min(...)、无解判据）
+515:## 5. 推论②摊销：B*、剪刀差、SLO 是更硬的天花板
+516:## 6. 推论③量化：同时打两个字节项（−0.6 GB → 103 路的例子）
+517:## 7. 推论④prefill：TTFT ≈ 2Ns/(MFU·F)——P/D 分离的种子
+518:## 8. 指标与实测：两恒等式、goodput 膝点、效率系数 1.5×
+519:## 9. 闭卷自测记录（70B 六步 + 得分 + 错题）
+520:## 10. 锚点数字总表（§3.3 抄一遍——面试前最后看这页）
+525:## 10. 明日预告（Day 8 · 第 2 周开篇：V1 架构总览）
+=====DAY09=====
+14:## 0. 今日学习目标
+28:## 1. 核心概念速览
+52:## 2. 原理深入讲解
+240:## 3. 性能模型：入口链路的成本账（今日的数学）
+285:## 4. 关键代码走读（v0.11.0 逐行核对版）
+463:## 5. 动手实验（约 60~90 分钟）——"日志跟踪一个请求"基建日
+577:## 6. 面试高频问题（含答题骨架）
+609:## 7. 今日总结
+621:## 8. 今日自测题（先自己做，再展开答案）
+667:## 9. 今日产出物
+680:## 10. 明日预告（Day 10 · Scheduler（一）：队列与 budget）
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/vllm 2>/dev/null; pip show vllm 2>/dev/null | head -5; ls /mnt/workspace/aiinfra/vllm/.opencode 2>/dev/null; cat /mnt/workspace/aiinfra/vllm/.tutorial_progress 2>/dev/null
+agents
+commands
+node_modules
+opencode.json
+package.json
+package-lock.json
+plugins
+skills
+12
+[0m
+[0m→ [0mRead week2/day12_preemption.md[90m [limit=310, offset=150][0m
+[0m
+[0m$ [0mgrep -n "RequestStatus\|FINISHED_\|WAITING\|RUNNING\|PREEMPTED" /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md | head -50
+21:- [ ] 画出 **`RequestStatus` 状态机**：WAITING → RUNNING → 终态区，含 `WAITING_FOR_FSM`、`PREEMPTED` 两个旁路；解释 `is_finished = status > PREEMPTED` 这个 IntEnum 技巧
+44:| **`RequestStatus`** | 请求状态机（IntEnum）：WAITING/RUNNING/PREEMPTED/终态×4 | 能画图 2 右侧；理解 `status > PREEMPTED` |
+46:| **`EngineCoreEventType`** | QUEUED / SCHEDULED / PREEMPTED 三种带单调时间戳的事件 | 知道它如何换算成 queue time（图 3） |
+183:2. 结构化输出请求：`structured_output_manager.grammar_init(req)`——**异步编译** FSM，期间请求状态是 `WAITING_FOR_FSM`，编译完才可被调度（这就是状态机里那个旁路的来历）。
+218:**状态组**：`status`（构造即 `WAITING`；结构化输出则 `WAITING_FOR_FSM`）与 `events`（QUEUED 已在包里）。右侧状态机的两个技巧：① `RequestStatus` 是 `IntEnum`，终态全部排在 `PREEMPTED` 之后，于是 `is_finished(status) = status > RequestStatus.PREEMPTED` 一行搞定（新增终态零改动）；② `FINISHED_IGNORED`（prompt 超长被忽略）映射的 finish reason 是 **"length"**——对齐 OpenAI 口径（源码注释明说）。
+416:    self.structured_output_manager.grammar_init(req)  # FSM 异步编译（WAITING_FOR_FSM）
+426:        self.status = RequestStatus.WAITING            # 构造即 WAITING
+428:            self.status = RequestStatus.WAITING_FOR_FSM  # 结构化输出旁路
+556:**B. 降级（纯源码）**：走读 `vllm/v1/core/sched/request_queue.py`（FCFS 与 priority 两个实现，注意 `prepend_request` 为何存在——Day 12 preemption 的伏笔），并在图 1 上用第三种颜色补画 abort 的反向路径（`AsyncLLM.abort` → `ABORT` 帧 → `finish_requests(FINISHED_ABORTED)`）。
+605:> 骨架：① 两道防线：正常路径在 P0 的 `Processor._validate_model_input`（prompt_len > max_model_len 抛 ValueError → HTTP 400，带多模态专门提示）；② 若走到引擎（如直接构造请求），调度器把它标记 `FINISHED_IGNORED`、不分配 KV 直接完成，finish reason 映射为 "length" 对齐 OpenAI 口径；③ 与 `truncate_prompt_tokens` 的区别：后者主动左截断保最近的对话。**收尾**：这题考"错误路径你也读过"——生产上 400 的响应时间与排队无关（在入口就失败了）。
+615:5. **状态机**：WAITING →（FSM/远端 KV 旁路）→ RUNNING ⇄ PREEMPTED → 终态区；`is_finished = status > PREEMPTED` 用 IntEnum 排序一行实现。
+644:**Q4**：`RequestStatus` 的 `is_finished` 是怎么实现的？为什么这样设计比维护一个 `is_finished` 布尔字段好？
+648:`is_finished(status) = status > RequestStatus.PREEMPTED`——`RequestStatus` 是 IntEnum，约定所有终态（FINISHED_STOPPED/LENGTH_CAPPED/ABORTED/IGNORED）的数值排在 PREEMPTED 之后。好处：新增终态（历史上加过 IGNORED）不需要改任何判断逻辑，只需排在后面；一次整数比较也快于额外字段的一致性维护（布尔字段要和状态更新同步，容易漏）。
+[0m
+[0m→ [0mRead generate_tutorials.sh
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/logs/ && tail -20 /mnt/workspace/aiinfra/vllm/logs/run.log 2>/dev/null
+day01.log
+day02.log
+day03.log
+day04.log
+day05.log
+day06.log
+day07.log
+day08.log
+day09.log
+day10.log
+day11.log
+day12.log
+day13.log
+day14.log
+nohup.out
+run.log
+[2026-10-02 03:02:00] Day 5: 已存在产出文件，跳过。
+[2026-10-02 03:02:00] Day 6: 已存在产出文件，跳过。
+[2026-10-02 03:02:00] Day 7: 发送给 cannbot ...
+[2026-10-02 03:02:02] Day 8: 已存在产出文件，跳过。
+[2026-10-02 03:02:02] Day 9: 已存在产出文件，跳过。
+[2026-10-02 03:09:57] Day 7: 完成，产出文件已确认。
+[2026-10-02 03:09:57] 冷却 600s 后生成 Day 10 ...
+[2026-10-02 03:19:57] Day 10: 发送给 cannbot ...
+[2026-10-02 03:28:56] Day 10: cannbot 正常退出但未找到 day 产出文件，视为失败（详见 logs/day10.log）。
+[2026-10-02 03:28:56] 冷却 600s 后生成 Day 11 ...
+[2026-10-02 03:38:56] Day 11: 发送给 cannbot ...
+[2026-10-02 04:09:08] Day 11: 完成，产出文件已确认。
+[2026-10-02 04:09:08] 冷却 600s 后生成 Day 12 ...
+[2026-10-02 04:19:09] Day 12: 发送给 cannbot ...
+[2026-10-02 05:14:35] Day 12: 完成，产出文件已确认。
+[2026-10-02 05:14:35] 冷却 600s 后生成 Day 13 ...
+[2026-10-02 05:24:35] Day 13: 发送给 cannbot ...
+[2026-10-02 05:36:20] Day 13: cannbot 正常退出但未找到 day 产出文件，视为失败（详见 logs/day13.log）。
+[2026-10-02 05:36:20] 冷却 600s 后生成 Day 14 ...
+[2026-10-02 05:46:20] Day 14: 发送给 cannbot ...
+[0m
+[0m→ [0mRead week2/day12_preemption.md[90m [limit=351, offset=460][0m
+[0m→ [0mRead week1/day07_first_principles_review.md[90m [limit=120][0m
+[0m→ [0mRead week2/day08_v1_architecture_overview.md[90m [limit=110][0m
+[0m
+[0m$ [0msed -n '55,120p' /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md; echo "=========="; sed -n '285,340p' /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md
+Day 8 立了三层进程地图，并给本周排了分工。今天起逐格开盒：
+
+| Day | 放大哪一块 | 状态 |
+|---|---|---|
+| Day 8 | 整张地图（进程/通道/DTO） | ✅ 已完成 |
+| **Day 9（今天）** | **P0 入口六站 + 跨进程一次 + P1 入队三站** | ▶ |
+| Day 10-12 | P1 的 `Scheduler.schedule()`（队列/budget、chunked prefill、preemption） | 待 |
+| Day 13 | 用压测验证调度行为（复用今天的日志基建） | 待 |
+| Day 14（复盘） | 请求在 scheduler 中的状态机（今天图 2 的右侧会长大） | 待 |
+
+一个提前的提醒：今天的链路**全在 CPU 上**、每个请求只走一遍，所以它不出现在 TPOT 里（decode 的每步成本里没有 tokenize），只出现在 **TTFT 的固定成分**里。读的时候心里带着两个问题：① 这一站做的事，放 P0 还是 P1，为什么？② 这一站的成本是 prompt 长度的什么函数？
+
+### 2.2 全链路总览（今日主图）
+
+![请求入口链路](assets/day09_request_entry_pipeline.svg)
+
+对照上图，把九站串成一句话版（**先能指图讲 60 秒，再进细节**）：
+
+> 客户端 POST 进来（⓪），serving 层校验并预处理（①：chat template 渲染 + tokenize + 默认参数兜底），`AsyncLLM.add_request` 创建该请求的输出队列（②），`Processor.process_inputs` 做最终校验、构造 `EngineCoreRequest`（③），**先**在 `OutputProcessor` 注册输出路由（④），**再**通过 ZMQ 把 DTO 发给 EngineCore（⑤⑥）。P1 的 IO 线程解码并构造 `Request` 对象（⑦，顺手预计算 block hash），busy loop 分发到 `EngineCore.add_request`（⑧），最终 `Scheduler.add_request` 把它放进 waiting 队列并打下 QUEUED 时间戳（⑨）——请求从此进入调度系统的管辖。
+
+两个贯穿今天的问题，先给答案、后给论据：
+
+1. **tokenize 在哪发生？** 分三种情况，但**都在 P0**（§2.3）。
+2. **为什么"先注册、后发送"？** 输出的到达可能快于 `add_request_async` 的返回（send 是异步的、引擎 step 可能立刻带回首 token）；先注册才能保证输出有家可归（§2.4）。
+
+### 2.3 第 ① 站：HTTP 与 serving 层——tokenize 其实发生在这里
+
+**路由与协议适配**。`POST /v1/chat/completions` 由 FastAPI 路由（`entrypoints/openai/api_server.py`）转给 `OpenAIServingChat.create_chat_completion`（`serving_chat.py:163`）。这一层做四件事：
+
+1. `_check_model` / 工具参数校验等协议级检查；
+2. **`_preprocess_chat`（`serving_engine.py:736`）**：用 Jinja chat template 把 `messages` 渲染成一条文本 prompt（`apply_hf_chat_template`，来自 `chat_utils.py`），然后**立刻 tokenize**（`_tokenize_prompt_input_async` → `_normalize_prompt_text_to_input`，内部经 `encode_async` 把 `tokenizer.encode` 丢进线程池，避免阻塞事件循环）；
+3. 构造 `SamplingParams`：`request.to_sampling_params`，其中 `max_tokens` 未指定时由 `get_max_tokens` 按上下文长度兜底；
+4. 生成 `request_id = "chatcmpl-" + <随机串>`（`serving_chat.py:266`；completions 路径是 `"cmpl-"` 前缀，`serving_completion.py:120`）——**这个 id 是之后一切路由的 key**。
+
+**关键分叉（面试易错点）**：tokenize 的确切位置取决于入口形态：
+
+| 入口 | tokenize 位置 | 原因 |
+|---|---|---|
+| `/v1/chat/completions` | **serving 层**（`_preprocess_chat`） | chat template 渲染本来就要 tokenizer；渲染完顺手切了，产出 `TextTokensPrompt(prompt, prompt_token_ids)` |
+| `/v1/completions`（文本 prompt） | **Processor**（`InputPreprocessor._tokenize_prompt`，`preprocess.py:184`） | 协议层没有渲染步骤，文本原样传给引擎门面 |
+| `/v1/completions`（`prompt_token_ids`）/ 离线 `TokensPrompt` | **不 tokenize** | 用户自带 token ids，`_process_tokens` 只做截断 |
+| 多模态 | merged preprocessor（`mm_processor.apply`） | 图片/音频先过编码器预处理，再展开成 placeholder token |
+
+**但大结论不变**：无论哪条路，tokenize 都发生在 **P0 前端进程**、发生在进 EngineCore 之前——Day 8 §2.4"跨进程传 token ids 不传文本"的前提，正是在这一站成立的。另外一个工程细节：`AsyncLLM.generate` 会把 `truncate_prompt_tokens` 翻译成 `tokenization_kwargs = {"truncation": True, "max_length": ...}` 传下去，截断方向由 `tokenizer.truncation_side` 决定（chat 模型多为 left——保住最近的对话）。
+
+### 2.4 第 ②~④ 站：`AsyncLLM.add_request` 三步曲与"双注册"
+
+`AsyncLLM.generate`（`async_llm.py:323`）是 serving 层拿到的生成器入口，它自己只做三件小事：首次调用时启动常驻 `output_handler` 协程（Day 8 §4.1）、处理 truncate 参数、然后调 `add_request` 并把队列里的 `RequestOutput` 逐个 yield 出去（SSE 的数据源）。真正的人口是 `add_request`（`async_llm.py:261`）：
+
+```text
+add_request(request_id, prompt, params, ...)
+  ├─ errored 检查（引擎已死则 EngineDeadError——Day 8 崩溃隔离的前半句）
+  ├─ ① queue = RequestOutputCollector(output_kind)     # 本请求专属输出队列
+  ├─ ② prompt_str, req = processor.process_inputs(...)  # 校验 + tokenize + 构造 DTO
+  ├─ ③ n == 1 → _add_request(req, prompt_str, None, 0, queue)
+  │        n > 1 → ParentRequest 扇出 n 个子请求        # parallel_sampling.py
+  │                 （child id = "i_父id"，共享 token ids，只 clone params/seed）
+  └─ return queue                                        # generate() 从这里拉输出
+```
+
+`_add_request`（`async_llm.py:303`）只有两行核心，但**顺序是考点**：
+
+```python
+self.output_processor.add_request(request, prompt_str, ...)  # ① 先注册输出路由
+await self.engine_core.add_request_async(request)            # ② 再发给引擎
+==========
+## 4. 关键代码走读（v0.11.0 逐行核对版）
+
+> **阅读方法**：拿图 1 从上往下走。以下均为**节选**（主干保真、删减分支），行号以 v0.11.0 为准；版本不同以你本地 `site-packages/vllm/` 为准。
+
+### 4.1 serving 层入口（`vllm/entrypoints/openai/serving_chat.py`）
+
+```python
+async def create_chat_completion(self, request, raw_request=None):
+    error_check_ret = await self._check_model(request)          # 协议级校验
+    if error_check_ret is not None: return error_check_ret
+    if self.engine_client.errored:                              # 引擎已死提前失败
+        raise self.engine_client.dead_error
+    ...
+    # 常见路径：渲染 + tokenize 都在这里完成
+    (conversation, request_prompts, engine_prompts) = await self._preprocess_chat(
+        request, tokenizer, messages, request.chat_template, ...)   # ← ①
+    request_id = "chatcmpl-" + f"{self._base_request_id(raw_request, request.request_id)}"
+
+    for i, engine_prompt in enumerate(engine_prompts):         # n>1 时有多个
+        max_tokens = get_max_tokens(max_model_len=self.max_model_len,
+                                    request=request, input_length=len(engine_prompt["prompt_token_ids"]), ...)
+        sampling_params = request.to_sampling_params(...)      # 默认值兜底
+        generator = self.engine_client.generate(               # ← ② AsyncLLM.generate
+            engine_prompt, sampling_params, request_id=request_id, ...)
+    # 流式：把 generator 交给 SSE；非流式：聚合后一次性返回
+```
+
+**读这段要抓的三件事**：① `engine_prompt` 是 `{"prompt": ..., "prompt_token_ids": [...]}`——**到达 `generate` 时已经切好 token**；② `request_id` 在这一层生成并贯穿全程；③ `create_error_response` 是所有校验失败的统一出口（HTTP 400）。
+
+### 4.2 前端门面（`vllm/v1/engine/async_llm.py`）
+
+```python
+async def add_request(self, request_id, prompt, params, ...) -> RequestOutputCollector:
+    if self.errored: raise EngineDeadError()
+    queue = RequestOutputCollector(output_kind=params.output_kind)      # 输出队列
+    prompt_str, request = self.processor.process_inputs(                # ③ 校验+tokenize+DTO
+        request_id, prompt, params, arrival_time, lora_request, ...)
+    if is_pooling or params.n == 1:
+        await self._add_request(request, prompt_str, None, 0, queue)
+        return queue
+    parent_request = ParentRequest(request_id, params)                  # n>1 扇出
+    for idx in range(params.n):
+        request_id, params = parent_request.get_child_info(idx)         # child id = "i_父id"
+        child_request = request if idx == params.n - 1 else copy(request)
+        await self._add_request(child_request, prompt_str, parent_request, idx, queue)
+    return queue
+
+async def _add_request(self, request, prompt, parent_req, index, queue):
+    self.output_processor.add_request(request, prompt, parent_req, index, queue)  # ④ 先注册
+    await self.engine_core.add_request_async(request)                             # ⑤ 后发送
+    if self.log_requests:
+        logger.info("Added request %s.", request.request_id)                      # 实验观测点
+```
+
+### 4.3 Processor（`vllm/v1/engine/processor.py`，主干节选）
+[0m
+[0m$ [0msed -n '340,463p' /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md
+```python
+def process_inputs(self, request_id, prompt, params, arrival_time=None, ...) \
+        -> tuple[Optional[str], EngineCoreRequest]:
+    self._validate_lora(lora_request)                 # 校验段开始
+    self._validate_params(params)                     #   grammar/logprobs/logit_bias/allowed_ids/best_of
+    if arrival_time is None: arrival_time = time.time()
+    processed_inputs = self.input_preprocessor.preprocess(   # tokenize（或 tokens 直通）
+        prompt, tokenization_kwargs=tokenization_kwargs, mm_uuids=mm_uuids)
+    current_platform.validate_request(...)            # 硬件插件的否决权（昇腾等）
+    eos_token_id = self.input_preprocessor.get_eos_token_id()
+    encoder_inputs, decoder_inputs = split_enc_dec_inputs(processed_inputs)
+    self._validate_model_inputs(encoder_inputs, decoder_inputs)   # OOV / 超长 / 空 prompt
+    ...
+    sampling_params = params.clone()                  # 兜底段开始
+    if sampling_params.max_tokens is None:
+        seq_len = length_from_prompt_token_ids_or_embeds(...)
+        sampling_params.max_tokens = self.model_config.max_model_len - seq_len
+    sampling_params.update_from_generation_config(self.generation_config_fields, eos_token_id)
+    sampling_params.update_from_tokenizer(self.tokenizer)
+    ...
+    return prompt_str, EngineCoreRequest(             # 组装 DTO
+        request_id=request_id, prompt_token_ids=prompt_token_ids,
+        mm_features=mm_features, sampling_params=sampling_params,
+        eos_token_id=eos_token_id, arrival_time=arrival_time,
+        lora_request=lora_request, cache_salt=..., priority=priority, ...)
+```
+
+### 4.4 跨进程 DTO（`vllm/v1/engine/__init__.py`）
+
+```python
+class EngineCoreRequest(msgspec.Struct, array_like=True, omit_defaults=True, gc=False):
+    request_id: str
+    prompt_token_ids: Optional[list[int]]    # 跨进程的"正文"：token ids，不是文本
+    mm_features: Optional[list[MultiModalFeatureSpec]]
+    sampling_params: Optional[SamplingParams]
+    pooling_params: Optional[PoolingParams]
+    eos_token_id: Optional[int]
+    arrival_time: float                      # P0 打的，queue 指标用它对表
+    lora_request / cache_salt / data_parallel_rank
+    prompt_embeds: Optional[torch.Tensor] = None
+    client_index: int = 0                    # 输出回送到哪个前端
+    current_wave: int = 0                    # DP 代际标记
+    priority: int = 0
+    trace_headers: Optional[Mapping[str, str]] = None
+
+class EngineCoreRequestType(enum.Enum):     # 单字节类型标签，免编码直传
+    ADD = b'\x00'; ABORT = b'\x01'
+    START_DP_WAVE = b'\x02'; UTILITY = b'\x03'
+```
+
+### 4.5 P1 侧接收链（`vllm/v1/engine/core.py`）
+
+```python
+# IO 线程（EngineCoreProc.process_input_sockets，:817）
+add_request_decoder = MsgpackDecoder(EngineCoreRequest)
+while True:
+    for input_socket, _ in poller.poll():
+        type_frame, *data_frames = input_socket.recv_multipart(copy=False)
+        request_type = EngineCoreRequestType(bytes(type_frame.buffer))
+        if request_type == EngineCoreRequestType.ADD:
+            request = add_request_decoder.decode(data_frames)      # bytes → DTO
+            request = self.preprocess_add_request(request)         # DTO → Request（+hash 预计算）
+        self.input_queue.put_nowait((request_type, request))       # 交给 busy loop
+
+# busy loop 分发（:739 / :763）
+req = self.input_queue.get()                 # 空闲时阻塞（"waiting for work."）
+self._handle_client_request(*req)
+    if request_type == ADD:
+        req, request_wave = request
+        self.add_request(req, request_wave)  # :217 → 校验 id 类型/pooling/kv_transfer
+        ... → self.scheduler.add_request(request)                  # :243 直通
+
+# preprocess_add_request（:426）——在 IO 线程并行做
+req = Request.from_engine_core_request(request, self.request_block_hasher)
+if req.use_structured_output:
+    self.structured_output_manager.grammar_init(req)  # FSM 异步编译（WAITING_FOR_FSM）
+return req, request.current_wave
+```
+
+### 4.6 `Request` 构造（`vllm/v1/request.py`，字段注释版）
+
+```python
+class Request:
+    def __init__(self, request_id, prompt_token_ids, sampling_params, pooling_params,
+                 eos_token_id, client_index=0, arrival_time=None, ..., block_hasher=None):
+        self.status = RequestStatus.WAITING            # 构造即 WAITING
+        if sampling_params.structured_outputs is not None:
+            self.status = RequestStatus.WAITING_FOR_FSM  # 结构化输出旁路
+        self.max_tokens = sampling_params.max_tokens   # Processor 已兜底，此处断言非空
+        self._output_token_ids: list[int] = []         # 账本们
+        self._all_token_ids = self.prompt_token_ids.copy()   # = prompt（拷贝！）
+        self.num_computed_tokens = 0                   # ← 本周主角
+        self.num_cached_tokens = -1                    # prefix 命中数，Day 16 回填
+        self.output_token_ids = ConstantList(self._output_token_ids)   # 只读视图
+        self.all_token_ids = ConstantList(self._all_token_ids)
+        if block_hasher is not None:
+            self.get_hash_new_full_blocks = partial(block_hasher, self)
+            self.block_hashes = self.get_hash_new_full_blocks()  # prompt 满块哈希：现在就算
+
+    def append_output_token_ids(self, token_ids):      # 每生成一个 token 调一次
+        self._output_token_ids.append(...)             # ① 输出列表
+        self._all_token_ids.append(...)                # ② 全量列表
+        self.block_hashes.extend(self.get_hash_new_full_blocks())  # ③ 新满块哈希
+```
+
+### 4.7 调用链速查表（今日总账）
+
+| # | 站点 | 函数 | 文件 | 进程 |
+|---|---|---|---|---|
+| ⓪ | HTTP | FastAPI 路由 → `create_chat_completion` | `entrypoints/openai/api_server.py` → `serving_chat.py:163` | P0 |
+| ① | 预处理 | `_preprocess_chat` → `apply_hf_chat_template` + `encode_async` | `serving_engine.py:736` / `chat_utils.py` | P0 |
+| ② | 门面 | `AsyncLLM.generate` / `add_request` | `v1/engine/async_llm.py:323/:261` | P0 |
+| ③ | 规整 | `Processor.process_inputs` → `InputPreprocessor.preprocess` | `v1/engine/processor.py:326` / `inputs/preprocess.py` | P0 |
+| ④ | 注册 | `OutputProcessor.add_request` → `RequestState` | `v1/engine/output_processor.py:356` | P0 |
+| ⑤ | 发送 | `AsyncMPClient.add_request_async` → `_send_input` | `v1/engine/core_client.py:903/:849` | P0 |
+| ⑥ | **边界** | ZMQ `send_multipart`（msgpack） | `core_client.py:859` | P0→P1 |
+| ⑦ | 接收 | `process_input_sockets` → `preprocess_add_request` → `Request.from_engine_core_request` | `v1/engine/core.py:817/:426`、`v1/request.py:125` | P1（IO 线程） |
+| ⑧ | 分发 | `run_busy_loop` → `_handle_client_request` → `EngineCore.add_request` | `v1/engine/core.py:739/:763/:217` | P1 |
+| ⑨ | 入队 | `Scheduler.add_request`（waiting + requests + QUEUED） | `v1/core/sched/scheduler.py:1097` | P1 |
+
+---
+
+## 5. 动手实验（约 60~90 分钟）——"日志跟踪一个请求"基建日
+[0m
+[0m$ [0msed -n '29,55p' /mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md; echo "====== §4 code ======"; sed -n '298,442p' /mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md
+| 概念 | 一句话定义 | 今日要达到的深度 |
+|---|---|---|
+| **chunked prefill** | 把长 prompt 的 prefill 按 token 预算切成多个 chunk，跨多个 step 完成 | 能背出"V1 默认开启"的出处（`arg_utils.py:1544-1548`"V1 always uses chunked prefills"） |
+| **统一调度模型** | 调度器无 prefill/decode 阶段之分，只有一个追赶目标 | 背下 schedule() 顶部注释（:180-189），能解释为什么这个抽象同时覆盖 prefix caching / spec decode |
+| **`num_computed_tokens`** | 已完成 forward 的 token 数（Day 9 的账本） | 能手推它在一个 6000-token prompt 生命周期里的完整取值序列（图 2 右表） |
+| **`num_tokens_with_spec`** | prompt + 已生成 + 草稿 token 总数（request.py:172-174） | 知道 running 循环的 need 就是"它减去 computed" |
+| **token budget** | `max_num_batched_tokens`：单步 forward 的总 token 上限 | 知道它先被 running 消耗、再给 waiting；默认值分硬件（H100 serve 8192 / A100 2048） |
+| **chunk 大小** | `min(need, threshold?, 剩余 budget, max_model_len−1−computed)` | 能在给定负载下手算每步的批组成（实验 1） |
+| **`_update_after_schedule`** | 调度后立即把 `num_computed_tokens += num_scheduled_tokens`（:645） | 理解"为什么不等 forward 返回"——下一步就能续算 |
+| **混排（mixed batch）** | 同一 forward 里 prefill chunk 行 + decode 行拼成一个变长批 | 能描述 ModelRunner 怎么按 `num_scheduled_tokens` 切行、算 positions（:946-985） |
+| **`discard_requests_mask`** | 中间 chunk（`seq_lens < num_tokens`）的采样结果被丢弃（:1076） | 知道这是"为简单起见"的取舍（:1099 注释原文） |
+| **piggybacking / 搭车** | decode token 附在 prefill chunk 的 GEMM 里，边际计算 ≈ 0 | 能与昇腾的"搬运与计算重叠"类比；知道出处是 Sarathi-Serve（OSDI 2024） |
+| **ρ（每 token 计算时间）** | prefill 段 ≈ 2·P / (η·R_peak)，compute-bound 的斜率 | 会代入 Day 1/2 公式算 H100/A100 的量级并用于 ITL 上界 |
+| **FLOPs 守恒** | 切块不增加计算量：query-key 对总数 ≈ L²/2 两种方式相同 | 能现场推导（§3.2），这是面试高频误区 |
+| **`long_prefill_token_threshold`** | 单个请求单步 prefill 的钳位（config/scheduler.py:59） | 知道默认 0（不钳）、与 `max_num_partial_prefills` 配套的"短请求插队"动机 |
+| **`max_num_batched_tokens ≥ max_num_seqs`** | config 强制校验（:245-249） | 理解它是"每个 running 每步至少 1 token"的制度保证——ITL 平滑的底线 |
+
+> **一句话本质**：chunked prefill = **把 budget 从"准入单位"变成"切片刀"**。Day 10 里 budget 决定"这一步一共算多少 token"；今天看到它顺带决定了"单个请求这一步最多算多少 token"——于是单步时间有了上界，decode 的 ITL 有了上界；代价是 prefill 被拉长成 k 步、多付 (k−1) 次每步固定开销，且计算总量不变（FLOPs 守恒）。
+
+---
+
+## 2. 原理深入讲解
+
+### 2.1 回顾与今日地图
+
+Day 10 立了 schedule() 的骨架，本周剩余日程：
+====== §4 code ======
+## 4. 关键代码走读（v0.11.0 逐行核对版）
+
+> **阅读方法**：先看图 2 左列从上往下走。以下为**节选**（主干保真、删减分支），行号以 v0.11.0 为准。
+
+### 4.1 step 入口与 budget 初始化（`vllm/v1/engine/core.py` + scheduler.py）
+
+```python
+# core.py:283-287 —— 每 step 的三段式（Day 8 图 3 的落地）
+scheduler_output = self.scheduler.schedule()                # ① 调度
+model_output = self.execute_model_with_error_logging(       # ② 执行
+    self.model_executor.execute_model, scheduler_output, ...)
+engine_core_outputs = self.scheduler.update_from_output(    # ③ 回填
+    scheduler_output, model_output)
+# 注：async scheduling（Day 19）把 ① 和 ② 重叠，链路见 core.py:325-349
+
+# scheduler.py:197-198 —— budget 就是一个局部变量
+token_budget = self.max_num_scheduled_tokens    # = max_num_batched_tokens（:74-75）
+```
+
+### 4.2 running 循环：切块主战场（scheduler.py:209-320）
+
+```python
+req_index = 0
+while req_index < len(self.running) and token_budget > 0:   # :210 先到先得
+    request = self.running[req_index]
+    num_new_tokens = (request.num_tokens_with_spec +        # :213 欠账
+                      request.num_output_placeholders -
+                      request.num_computed_tokens)
+    if (0 < self.scheduler_config.long_prefill_token_threshold
+            < num_new_tokens):                              # :216 钳位①
+        num_new_tokens = self.scheduler_config.long_prefill_token_threshold
+    num_new_tokens = min(num_new_tokens, token_budget)      # :220 钳位②★切块
+    num_new_tokens = min(num_new_tokens,
+                         self.max_model_len - 1 -
+                         request.num_computed_tokens)        # :224 钳位③
+    ...
+    while True:                                             # :254 KV 分配
+        new_blocks = self.kv_cache_manager.allocate_slots(
+            request, num_new_tokens, ...)
+        if new_blocks is None:
+            # KV 不足 → 抢占 victim（FCFS: running.pop() 最新者，:271）
+            # → free、num_computed_tokens=0、塞回 waiting 队首（:281）
+            ...                                             # Day 12 的全部内容
+        else:
+            break
+    scheduled_running_reqs.append(request)                  # :296
+    num_scheduled_tokens[request.request_id] = num_new_tokens
+    token_budget -= num_new_tokens                          # :299 记账
+    req_index += 1
+```
+
+注意循环条件 `token_budget > 0`：budget 归零即停——**排在前面的（老）请求永远先拿到 token**，这就是 §2.4 不变量的运行时形态。
+
+### 4.3 waiting 循环：chunked 分支与入队（scheduler.py:335-537）
+
+```python
+if not preempted_reqs:                                      # :335 抢占时不收新
+    while self.waiting and token_budget > 0:
+        if len(self.running) == self.max_num_running_reqs:  # :337 max_num_seqs 闸
+            break
+        request = self.waiting.peek_request()               # :340 只看队首（Day 10）
+        ...  # FSM / 远端 KV / LoRA 超限 → 跳过塞回（:340-374）
+        if request.num_computed_tokens == 0:                # :380 prefix cache
+            new_computed_blocks, num_new_local_computed_tokens = \
+                self.kv_cache_manager.get_computed_blocks(request)   # Day 16
+            ...
+        num_new_tokens = request.num_tokens - num_computed_tokens    # :423
+        if (0 < long_prefill_token_threshold < num_new_tokens):     # :424 钳位①
+            num_new_tokens = long_prefill_token_threshold
+        if not self.scheduler_config.chunked_prefill_enabled and \
+                num_new_tokens > token_budget:              # :431 关闭时的整请求跳过
+            self.waiting.pop_request()
+            skipped_waiting_requests.prepend_request(request)
+            continue
+        num_new_tokens = min(num_new_tokens, token_budget)  # :437 切到剩余预算
+        new_blocks = self.kv_cache_manager.allocate_slots(  # :471 chunk 粒度
+            request, num_new_tokens + num_external_computed_tokens, ...)
+        if new_blocks is None:
+            break                                            # :481 KV 闸
+        request = self.waiting.pop_request()
+        self.running.append(request)                         # :507 入 running 尾部
+        if self.log_stats:
+            request.record_event(EngineCoreEventType.SCHEDULED,
+                                 scheduled_timestamp)        # :509 queue time 终点
+        num_scheduled_tokens[request.request_id] = num_new_tokens
+        token_budget -= num_new_tokens
+        request.status = RequestStatus.RUNNING
+        request.num_computed_tokens = num_computed_tokens    # :526 起点回填（缓存命中值）
+```
+
+### 4.4 账本推进与输出（scheduler.py:582-645）
+
+```python
+scheduler_output = SchedulerOutput(                         # :582-599
+    scheduled_new_reqs=new_reqs_data,                       # 新请求全量数据（P2 缓存）
+    scheduled_cached_reqs=cached_reqs_data,                 # 老请求只发增量
+    num_scheduled_tokens=num_scheduled_tokens,              # ★ 今日主角
+    total_num_scheduled_tokens=total_num_scheduled_tokens,  # = Σ，即 M 维
+    ...)
+
+def _update_after_schedule(self, scheduler_output):         # :629
+    # 调度后立即推进（不等 forward 完成）：
+    # 1) 当前步输出仍含原始 scheduled 数，供 ModelRunner 确定输入
+    # 2) 提前推进 → 下一个调度 step 立刻能续算同一请求的下一块
+    for req_id, num_scheduled_token in \
+            scheduler_output.num_scheduled_tokens.items():
+        self.requests[req_id].num_computed_tokens += num_scheduled_token  # :645
+```
+
+### 4.5 ModelRunner：变长批构建与采样丢弃（gpu_model_runner.py）
+
+```python
+total = scheduler_output.total_num_scheduled_tokens         # :935 批的 M 维
+tokens = [scheduler_output.num_scheduled_tokens[i] for i in req_ids]
+num_scheduled_tokens = np.array(tokens)                     # :946 如 [2045,1,1,1]
+# positions：批内第 j 行 = 其请求的 num_computed_tokens + 段内偏移（:958-961）
+# 输入行：token_ids_cpu[req 槽位][position] 逐行 gather（:985）
+# attention 的 seq_lens = computed + scheduled（:1060）→ chunk 的 Q 看到全部已有 KV
+seq_lens = num_computed_tokens_cpu + num_scheduled_tokens
+discard_requests_mask = seq_lens < num_tokens_np            # :1076 中间 chunk → 丢弃采样
+if not use_spec_decode:
+    # :1099 "…partial requests, we do so for simplicity…"
+    logits_indices = query_start_loc[1:] - 1                # :1104 每请求取批内末行
+```
+
+### 4.6 调用链速查表（今日总账）
+
+| # | 站点 | 函数 | 文件:行 |
+|---|---|---|---|
+| ⓪ | step 三段式 | `EngineCore.engine_step` | `v1/engine/core.py:283-287` |
+| ① | budget 初始化 | `schedule()`（`token_budget = max_num_batched_tokens`） | `v1/core/sched/scheduler.py:198` |
+| ② | 欠账计算 | running 循环 `num_new_tokens = need` | `:213-215` |
+| ③ | **切块** | `min(need, threshold)` → `min(·, token_budget)` → `min(·, max_model_len−1)` | `:216/:220/:224` |
+| ④ | KV 分配（chunk 粒度） | `allocate_slots`（失败→抢占，Day 12） | `:255/:271` |
+| ⑤ | waiting 的 chunked 分支 | `min(need, 剩余预算)`；关闭时整请求跳过 | `:431-437` |
+| ⑥ | 入 running + SCHEDULED | `running.append` + `record_event` | `:507-510` |
+| ⑦ | 账本推进 | `_update_after_schedule`（computed += scheduled） | `:629-645` |
+| ⑧ | 输出 DTO | `SchedulerOutput.num_scheduled_tokens` | `:582-599` |
+| ⑨ | 变长批构建 | positions / gather / seq_lens | `v1/worker/gpu_model_runner.py:946-985, :1060` |
+| ⑩ | 采样丢弃 | `discard_requests_mask` / `logits_indices` | `:1076/:1104` |
+| ⑪ | 回填与不变量 | `update_from_output`（"no partial prefill outputs"） | `scheduler.py:861, :978` |
+
+---
+
+## 5. 动手实验（约 60~90 分钟）
+[0m
+[0m$ [0mgrep -n "FINISHED_STOPPED\|FINISHED_LENGTH\|FINISHED_ABORTED\|FINISHED_IGNORED\|update_from_output\|stop_reason\|finish_reason" /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md | head -40; echo ====; grep -n "queue_time\|QUEUED\|SCHEDULED" /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md | head -20
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md:200:- ③ QUEUED 事件用 `time.monotonic()` 打点（P1 单调钟），**随该请求最后一条 `EngineCoreOutput` 回传 P0**（`update_from_output` 里 `take_events()`，`scheduler.py:972`），P0 的 `RequestStats` 用它算 queue time（§2.9）。注意 `log_stats=False` 时事件不记录——省开销与可观测性的开关。
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md:212:- `num_computed_tokens`：已完成 forward 的 prompt token 数。构造时 0；`update_from_output` 每个 step 推进；被抢占（recompute 模式）时**清零**（Day 12）。`schedule()` 用它判断 prefill 是否完成、chunk 推进到哪。**面试一句话：vLLM 怎么知道一个请求 prefill 到哪了？就这一个字段。**
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md:218:**状态组**：`status`（构造即 `WAITING`；结构化输出则 `WAITING_FOR_FSM`）与 `events`（QUEUED 已在包里）。右侧状态机的两个技巧：① `RequestStatus` 是 `IntEnum`，终态全部排在 `PREEMPTED` 之后，于是 `is_finished(status) = status > RequestStatus.PREEMPTED` 一行搞定（新增终态零改动）；② `FINISHED_IGNORED`（prompt 超长被忽略）映射的 finish reason 是 **"length"**——对齐 OpenAI 口径（源码注释明说）。
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md:556:**B. 降级（纯源码）**：走读 `vllm/v1/core/sched/request_queue.py`（FCFS 与 priority 两个实现，注意 `prepend_request` 为何存在——Day 12 preemption 的伏笔），并在图 1 上用第三种颜色补画 abort 的反向路径（`AsyncLLM.abort` → `ABORT` 帧 → `finish_requests(FINISHED_ABORTED)`）。
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md:589:> 骨架：① 已完成 forward 的 prompt token 数，构造时 0；② `update_from_output` 每步推进（prefill 完成时 = prompt 长度，之后 decode 阶段每步 +1），recompute 型抢占时**清零**（Day 12）；③ `schedule()` 消费它判断该请求本步还要算多少 token（chunked prefill 的推进游标，Day 11）。**收尾**：它是调度器最重要的账本——"vLLM 怎么知道 prefill 到哪了"的答案就这一个字段，没有别的机制。
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md:605:> 骨架：① 两道防线：正常路径在 P0 的 `Processor._validate_model_input`（prompt_len > max_model_len 抛 ValueError → HTTP 400，带多模态专门提示）；② 若走到引擎（如直接构造请求），调度器把它标记 `FINISHED_IGNORED`、不分配 KV 直接完成，finish reason 映射为 "length" 对齐 OpenAI 口径；③ 与 `truncate_prompt_tokens` 的区别：后者主动左截断保最近的对话。**收尾**：这题考"错误路径你也读过"——生产上 400 的响应时间与排队无关（在入口就失败了）。
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md:641:`block_hashes` = prompt 中所有**满块**的链式哈希（`get_request_block_hasher` 在 `from_engine_core_request` 时预计算；不满的尾块不算，等生成 token 补满后再算）；`num_computed_tokens = 0`。它第一次非零发生在请求被 `schedule()` 选进 running 并完成第一次 forward 之后——`update_from_output` 把本步算过的 token 数记进账本（Day 10 读源码验证；若命中 prefix cache，首次分配时可能直接跳到命中长度——Day 16）。
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md:648:`is_finished(status) = status > RequestStatus.PREEMPTED`——`RequestStatus` 是 IntEnum，约定所有终态（FINISHED_STOPPED/LENGTH_CAPPED/ABORTED/IGNORED）的数值排在 PREEMPTED 之后。好处：新增终态（历史上加过 IGNORED）不需要改任何判断逻辑，只需排在后面；一次整数比较也快于额外字段的一致性维护（布尔字段要和状态更新同步，容易漏）。
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md:37:| **P1 / `EngineCore` 进程** | 调度心脏（`v1/engine/core.py`）：busy loop + `step()` 三段 | 背下 `schedule → execute_model → update_from_output` |
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md:104:调度心脏，一个 busy loop 跑到底（`run_busy_loop`：收输入 → `step()` → 发输出）。`step()` 三段——`scheduler.schedule()` 组本步的批 → `executor.execute_model()` 交给执行层 → `scheduler.update_from_output()` 记账与 finish 判定——**这三段就是本周 Day 9~13 的目录**。Scheduler 内部持有 Day 4 见过的 `KVCacheManager` + BlockPool。右侧的 `Executor` 决定执行拓扑（§2.5）。崩溃隔离是额外收益：引擎炸了只死 P1，P0 还能活着给用户报错（前端会收到 `EngineDeadError`）。
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md:129:| P1 → P0 | `EngineCoreOutputs` | 每请求 `new_token_ids`、finish_reason/stop_reason + **一份 `scheduler_stats`**（/metrics 的数据源） | **每 step 1 条** |
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md:134:2. **stop string 为什么在 P0 判？** `stop_token_ids`/EOS/max_tokens 只看 token id——P1 在 `update_from_output` 里判，**判得最早、省算最多**；stop string 要看 detokenize 后的**文本**，而 detokenize 在 P0 → 只能由 `OutputProcessor` 判，命中后再通过下行通道发 `ABORT` 回 P1。代价是一个隐蔽行为：stop string 命中时 P1 可能已经多算了几步（多生成的 token 被丢弃）。这是"数据放哪、判定就在哪"的直接推论，面试聊数据流设计时是好细节。
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md:221:| `update_from_output()` | $O(\text{本步 finish/新增})$ | 增量记账 |
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md:290:    outputs: list[EngineCoreOutput]        # 每请求：new_token_ids + finish/stop_reason
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md:320:        engine_core_outputs = self.scheduler.update_from_output(
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md:521:> 骨架：① tokenize 在前端（`Processor.process_inputs`）→ 跨进程传 token ids 而非文本：定长小整数 + 增量传输，序列化开销小且引擎不需要文本；② detokenize/OutputProcessor 在前端 → 重 CPU 的输出处理与引擎循环隔离，且能直接对接流式 SSE；③ stop 判定的分裂是数据位置的推论：EOS/stop_token_ids/max_tokens 只看 token id → P1 的 `update_from_output` 判（最早、省算）；stop string 要看文本 → 只能 P0 的 `OutputProcessor` 判，命中后回发 `ABORT`，引擎可能多算几步（token 被丢弃）。**收尾**："数据在哪、判定就在哪"是分布式系统的一般设计原则。
+====
+7:> **背景衔接**：你在昇腾上写过 Host 侧任务下发——`aclmdlExecute` 之前要把输入 tensor 准备好、校验 shape、再进任务队列等 stream 调度。vLLM 的入口链路是同一命题的软件版：**serving 层 = 协议适配**（把 OpenAI JSON 变成模型能吃的 token ids），**Processor = 入参规整与兜底**（校验 + 默认值，相当于驱动层的参数合法性检查），**Scheduler.add_request = 入队即记账**（QUEUED 事件就是队列系统的时间戳起点）。区别在于：这套逻辑全部运行在用户态 Python 里、每个请求都要走一遍，所以它的成本模型（§3）值得手算
+22:- [ ] 讲清**注册与发送的顺序**（先 `OutputProcessor.add_request` 再跨进程发送）以及 **QUEUED/SCHEDULED 事件**如何支撑 queue time 的测量（TTFT 分解的落地）
+43:| **`Scheduler.add_request`** | 请求正式进队：`waiting` + `requests` 字典 + QUEUED 事件（`v1/core/sched/scheduler.py`） | 背下三行动作；区分 FCFS/priority 两种队列实现 |
+46:| **`EngineCoreEventType`** | QUEUED / SCHEDULED / PREEMPTED 三种带单调时间戳的事件 | 知道它如何换算成 queue time（图 3） |
+74:> 客户端 POST 进来（⓪），serving 层校验并预处理（①：chat template 渲染 + tokenize + 默认参数兜底），`AsyncLLM.add_request` 创建该请求的输出队列（②），`Processor.process_inputs` 做最终校验、构造 `EngineCoreRequest`（③），**先**在 `OutputProcessor` 注册输出路由（④），**再**通过 ZMQ 把 DTO 发给 EngineCore（⑤⑥）。P1 的 IO 线程解码并构造 `Request` 对象（⑦，顺手预计算 block hash），busy loop 分发到 `EngineCore.add_request`（⑧），最终 `Scheduler.add_request` 把它放进 waiting 队列并打下 QUEUED 时间戳（⑨）——请求从此进入调度系统的管辖。
+195:        request.record_event(EngineCoreEventType.QUEUED) # ③ 打时间戳
+200:- ③ QUEUED 事件用 `time.monotonic()` 打点（P1 单调钟），**随该请求最后一条 `EngineCoreOutput` 回传 P0**（`update_from_output` 里 `take_events()`，`scheduler.py:972`），P0 的 `RequestStats` 用它算 queue time（§2.9）。注意 `log_stats=False` 时事件不记录——省开销与可观测性的开关。
+218:**状态组**：`status`（构造即 `WAITING`；结构化输出则 `WAITING_FOR_FSM`）与 `events`（QUEUED 已在包里）。右侧状态机的两个技巧：① `RequestStatus` 是 `IntEnum`，终态全部排在 `PREEMPTED` 之后，于是 `is_finished(status) = status > RequestStatus.PREEMPTED` 一行搞定（新增终态零改动）；② `FINISHED_IGNORED`（prompt 超长被忽略）映射的 finish reason 是 **"length"**——对齐 OpenAI 口径（源码注释明说）。
+236:3. **事件时间戳是测量的基础设施**：`RequestStats`（`v1/metrics/stats.py:67-69`）的 `queued_ts / scheduled_ts / first_token_ts` 全部来自 `EngineCoreEvent`（QUEUED/SCHEDULED）与输出时间戳；OTel tracing 的 `queue_time / prefill_time` span 属性（`output_processor.py::do_tracing`）就是它们的差值。**今天在 ⑨ 打下的那个 QUEUED 时间戳，是整个排队可观测性的起点。**
+267:| ⑨ | 队列插入 + 字典插入 + QUEUED 事件 | O(1) / O(log n) | µs 级 |
+459:| ⑨ | 入队 | `Scheduler.add_request`（waiting + requests + QUEUED） | `v1/core/sched/scheduler.py:1097` | P1 |
+561:2. **在 Day 8 自己画的架构图上**用红笔描出今天的九站路径，标注两个新学到的细节（先注册后发送、QUEUED 时间戳）；
+581:> 骨架（九站，报五站以上即达标）：serving 层 `create_chat_completion` 做 chat template 渲染 + tokenize（chat 路径在 `_preprocess_chat` 就切好 token）→ `AsyncLLM.add_request` 创建输出队列 → `Processor.process_inputs` 做最终校验（OOV/超长/参数合法性）与兜底（max_tokens、eos 合并）构造 `EngineCoreRequest` → **先** `OutputProcessor.add_request` 注册输出路由、**再** `AsyncMPClient.add_request_async` 经 ZMQ/msgpack 发送 → P1 的 `process_input_sockets` IO 线程解码并构造 `Request`（预计算 block hash）→ busy loop → `EngineCore.add_request` → `Scheduler.add_request` 进 waiting、记 QUEUED 时间戳。**收尾**：全程 P0/P1 各一个请求对象（RequestState/Request），跨进程只传 token ids；此后第一个 GPU 接触要等 `schedule()`（Day 10）。
+593:> 骨架：① `Scheduler.add_request` 打 QUEUED 事件（`time.monotonic()`），首次进 running 打 SCHEDULED，事件随最后一条 `EngineCoreOutput` 回 P0；② P0 的 `RequestStats` 换算 `queue_time = scheduled_ts − queued_ts`、`prefill_time = first_token_ts − scheduled_ts`（OTel tracing 的 span 属性同源）；③ 聚合面：`/metrics` 的 TTFT 直方图 + `--log-stats` 的 Running/Waiting 行看拥塞。**收尾**：注意事件时间戳是 P1 单调钟，只做差值不做跨进程对表；抢占时只记首次 SCHEDULED。
+611:1. **九站链路**：serving 层（模板渲染 + tokenize）→ `AsyncLLM.add_request`（collector）→ `Processor.process_inputs`（校验+兜底+DTO）→ 先注册 `OutputProcessor` 再 ZMQ 发送 → P1 IO 线程解码构造 `Request`（预计算 block hash）→ busy loop → `Scheduler.add_request`（waiting + requests 字典 + QUEUED 事件）。
+617:7. **可观测性起点**：QUEUED 时间戳（⑨ 站）+ SCHEDULED（Day 10）+ first_token 支撑 queue/prefill 分解——今天的日志基建（`--enable-log-requests`、debug 翻转、py-spy、token 对账）本周每天复用。
+671:- [ ] **走读笔记一页**（实验 5）：§4.7 速查表为底，每站补一句数据形态变化；标注两个顺序细节（先注册后发送、QUEUED 时间戳）
+682:请求已经躺在 waiting 队列里，明天让引擎"动起来"：`Scheduler.schedule()`（`scheduler.py:179`）每步怎么从 waiting/running 两边凑批——`max_num_batched_tokens` 的 token budget 怎么数（running 优先扣、waiting 只看队首）、`max_num_seqs` 与 KV 余量两道闸、以及 `SchedulerOutput` 里那几个数组的含义（`num_scheduled_tokens` 正是消费 `num_computed_tokens` 账本的第一现场）。今天在 ⑨ 站打下的 QUEUED 时间戳，明天会配上 SCHEDULED——queue time 从此可测。
+[0m
+[0m→ [0mRead week2/README.md[90m [limit=190, offset=120][0m
+[0m→ [0mRead week2/README.md[90m [limit=170, offset=310][0m
+现在我来查看一个现有的 SVG，以匹配其视觉风格：
+[0m→ [0mRead week2/assets/day12_preemption_state_machine.svg
+[0m
+[0m# [0mTodos
+[•] 用 Day 12 仿真器验证 Day 14 自测题（10 请求 / KV 够 6）的推演数字
+[ ] 创建 week2/assets/day14_request_state_machine.svg（主产出：请求状态机）
+[ ] 创建 week2/assets/day14_week2_one_graph_flow.svg（本周一图流）
+[ ] 创建 week2/assets/day14_ten_requests_six_kv_timeline.svg（自测推演时间线）
+[ ] 撰写 week2/day14_request_state_machine_review.md
+[ ] 校验文件完整性（引用路径、结构、与前几天衔接）
+[0m
+我现在已经掌握了完整上下文。让我先制定任务计划，并在撰写教程前使用 Day 12 模拟器验证自测场景：
+[0m← [0mWrite /tmp/opencode/day14_sim.py
+Wrote file successfully.
+[0m
+[0m$ [0mcd /tmp/opencode && python3 day14_sim.py --steps 6 && echo "===== FP8 修复（池 ×2）=====" && python3 day14_sim.py --blocks 6528 | tail -11 && echo "===== 抢占变体（output 600）=====" && python3 day14_sim.py --out 600 | tail -13
+step   1 | free=2240 cached=   0 running=2 waiting=8 pre=0 | R1:8192 R2:8192
+step   2 | free=1214 cached=   0 running=4 waiting=6 pre=0 | R1:1 R2:1 R3:8192 R4:8190
+step   3 | free= 189 cached=   0 running=6 waiting=4 pre=0 | R1:1 R2:1 R3:1 R4:2 R5:8192 R6:8187
+step   4 | free= 187 cached=   0 running=6 waiting=4 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:5
+step   5 | free= 186 cached=   0 running=6 waiting=4 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:1
+step   6 | free= 186 cached=   0 running=6 waiting=4 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:1
+
+总步数=1026  总抢占=0  cache=on  R7首次入队失败@step 4  首次抢占=None
+R1: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 512
+R2: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 512
+R3: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 513
+R4: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 514
+R5: 入场 step 3 | 抢占 0 次 | 重算 0 token | 完成于 step 514
+R6: 入场 step 3 | 抢占 0 次 | 重算 0 token | 完成于 step 515
+R7: 入场 step 513 | 抢占 0 次 | 重算 0 token | 完成于 step 1024
+R8: 入场 step 513 | 抢占 0 次 | 重算 0 token | 完成于 step 1025
+R9: 入场 step 514 | 抢占 0 次 | 重算 0 token | 完成于 step 1025
+R10: 入场 step 515 | 抢占 0 次 | 重算 0 token | 完成于 step 1026
+===== FP8 修复（池 ×2）=====
+总步数=517  总抢占=0  cache=on  R7首次入队失败@step None  首次抢占=None
+R1: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 512
+R2: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 512
+R3: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 513
+R4: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 514
+R5: 入场 step 3 | 抢占 0 次 | 重算 0 token | 完成于 step 514
+R6: 入场 step 3 | 抢占 0 次 | 重算 0 token | 完成于 step 515
+R7: 入场 step 4 | 抢占 0 次 | 重算 0 token | 完成于 step 515
+R8: 入场 step 4 | 抢占 0 次 | 重算 0 token | 完成于 step 516
+R9: 入场 step 5 | 抢占 0 次 | 重算 0 token | 完成于 step 516
+R10: 入场 step 5 | 抢占 0 次 | 重算 0 token | 完成于 step 517
+===== 抢占变体（output 600）=====
+
+总步数=1202  总抢占=1  cache=on  R7首次入队失败@step 4  首次抢占=(514, 'R6', 8702)
+R1: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 600
+R2: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 600
+R3: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 601
+R4: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 602
+R5: 入场 step 3 | 抢占 0 次 | 重算 0 token | 完成于 step 602
+R6: 入场 step 3 | 抢占 1 次 | 重算 478 token | 完成于 step 690
+R7: 入场 step 601 | 抢占 0 次 | 重算 0 token | 完成于 step 1200
+R8: 入场 step 601 | 抢占 0 次 | 重算 0 token | 完成于 step 1201
+R9: 入场 step 602 | 抢占 0 次 | 重算 0 token | 完成于 step 1201
+R10: 入场 step 603 | 抢占 0 次 | 重算 0 token | 完成于 step 1202
+[0m
+仿真已确认我的手动推导。让我从 Day 6 中获取测量到的 TPOT 基准数据，用于墙上时间估算：
+[0m$ [0mgrep -n "TPOT\|ITL" /mnt/workspace/aiinfra/vllm/week1/day06_env_setup_first_bench.md | grep -E "ms|p50|p99" | head -12
+4:> **今日位置**：Day 1~4 攒了一堆"应该"——AI = 2M/P、KV 144 KiB/token、44 路并发、η > 96%、×4 吞吐；Day 5 给了"怎么量化"——TTFT/TPOT/ITL/E2E/throughput/goodput 的指标卡与两个恒等式。今天把两者全部落地：把 vLLM（最新版）真正跑起来，用 ShareGPT 负载做**第一次系统级压测**，扫出**属于你自己的第一张性能曲线**（并发 vs TTFT p99 / TPOT p99）。之后 50 天的所有源码阅读与优化实验，都以今天这张图和这份环境台账为基线
+23:- [ ] 交付：**第一张性能曲线**（并发 vs TTFT p99 / TPOT p99，外加吞吐子图）+ 环境台账 + 预测-实测对照表
+56:| Day 2 | KV/token = 144 KiB；并发上限 ≈ KV 池 ÷ (E[L]·KV_tok)；TPOT 下界 4.9 ms@C=1 | 启动日志与 C=1 实测的**对账锚点** |
+139:权重项 $W$ = 16.4 GB **不随 C 变**——batch 越大，每个 token 分摊的权重读越薄（Day 1"并发几乎免费"）；增长只来自 $C\cdot\bar{s}$ 的 KV 读。$\bar{s}$（平均上下文）几百 token 时，C 从 1 加到 64，分子才从 16.5 GB 涨到 22 GB → TPOT 从 ~5 ms 涨到 ~6.6 ms（理论）。Roofline 语言：**工作点沿斜坡右移，还没到屋顶**（Day 3）。
+147:> **预测**（§3 会给数字）：TPOT p99 在 C ≤ 32 基本平坦（≤ 2× 单请求值）；TTFT p99 从 C ≈ 16~32 就开始超线性。两条曲线的**分离点**就是"混跑与排队开始主导"的信号。
+186:> **对账锚点 ①**：C=1 的实测 TPOT ÷ 4.93 ms = 你这台机器的 **BW_eff 折扣系数**（Day 2 说过实测通常是下界的 1.2~2 倍）。这个系数今天测出来，之后所有手算都能带上它——这就是"基线"的真正含义。
+199:\text{TTFT}_{p99}(C) \approx \underbrace{t_{\text{tok}}}_{\text{毫秒级}} + \underbrace{k(C)\cdot \text{TPOT}(C)}_{\text{混跑/排队步数} \times \text{步长}} + \underbrace{\frac{2 N P_{p99} + P_{p99}^2 \cdot \text{attn}}{\text{MFU} \cdot F_{\text{peak}}}}_{\text{prefill 计算}} + \underbrace{t_{\text{out}}}_{\text{首 token 输出路径}}
+210:C=64 数值例：TPOT ≈ 9 ms → E2E ≈ TTFT(0.2 s) + 199×9 ms ≈ 2.0 s → req/s ≈ 32、output tok/s ≈ 64/0.009 ≈ **7.1K**（与 §3.2 的 7.9~13.2 ms 预测自洽）。
+216:KV 池 54.1 GB 能装 $\approx 54.1\text{GB} / (\bar{L} \times 144\text{KiB})$ 路。默认负载（$\bar{L} \approx 700$）下 ≈ **524 路** → 今天扫到 256 都不会撞墙。但把输出拉长（实验 4b：`--sharegpt-output-len 1024` → $\bar{L} \approx 1524$）后容量降到 ≈ **241 路 < 256** → KV 超配 → 调度器**抢占**（逐出请求、释放块、回 waiting 重算，Day 12）→ TTFT/TPOT p99 出现尖刺。这是**有意设计的越界实验**：用今天的工具亲手触发一次 Day 4 §2.5 讲的机制。
+270:### 4.2 `calculate_metrics`：p99 / TPOT / goodput 的计算源码
+438:Mean TPOT (ms):                          9.21
+439:Median TPOT (ms):                        8.84
+[0m
+All numbers verified. Now creating the three SVGs:
+[0m← [0mWrite week2/assets/day14_request_state_machine.svg
+Wrote file successfully.
+[0m
+[0m← [0mWrite week2/assets/day14_week2_one_graph_flow.svg
+Wrote file successfully.
+[0m
+[0m← [0mWrite week2/assets/day14_ten_requests_six_kv_timeline.svg
+Wrote file successfully.
+[0m
+Now let me fix the wall-clock numbers in SVG 3 (I need to count all 6 admission steps):
+[0m← [0mEdit week2/assets/day14_ten_requests_six_kv_timeline.svg
+Index: /mnt/workspace/aiinfra/vllm/week2/assets/day14_ten_requests_six_kv_timeline.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/assets/day14_ten_requests_six_kv_timeline.svg
++++ /mnt/workspace/aiinfra/vllm/week2/assets/day14_ten_requests_six_kv_timeline.svg
+@@ -143,11 +143,11 @@
+ 
+ <rect x="640" y="670" width="544" height="124" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+ <text x="912" y="690" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">修复推演：KV FP8（池 ×2 = 6528 块 ≥ 10 × 544）</text>
+ <text x="654" y="708" font-size="8.6" fill="#047857">① R7/R8 @step 4、R9/R10 @step 5 全部入场 → 全程 10 路 decode → makespan 517 步（约 2×）</text>
+-<text x="654" y="722" font-size="8.6" fill="#047857">② 墙钟口径（Day 6 台账 TPOT ≈ 9ms、prefill ρ ≈ 32µs/tok）：主场景 ≈ 3×0.52s + 1020×9ms ≈ 10.8s</text>
+-<text x="654" y="736" font-size="8.6" fill="#047857">　 修复后 ≈ 5×0.52s + 511×9ms ≈ 7.2s（1.5×——prefill 重步占比变了，步数 2× 不等于墙钟 2×）</text>
+-<text x="654" y="750" font-size="8.6" fill="#047857">③ 收益集中在尾部：R7 的 TTFT 6.4s → 1.9s（3.4×）——goodput 视角（Day 5）的典型形态</text>
++<text x="654" y="722" font-size="8.6" fill="#047857">② 墙钟口径（Day 6 台账 TPOT ≈ 9ms、prefill ρ ≈ 32µs/tok）：主场景 ≈ 6 个满预算步 ×0.52s + 1020 个 decode 步 ×9ms ≈ 12.3s</text>
++<text x="654" y="736" font-size="8.6" fill="#047857">　 修复后 ≈ 5×0.52s + 512×9ms ≈ 7.2s（1.7×——步数 2× 但 prefill 重步占比变了，墙钟改善打折）</text>
++<text x="654" y="750" font-size="8.6" fill="#047857">③ 收益集中在尾部：R7 的 TTFT 6.7s → 2.1s（3.2×）——goodput 视角（Day 5）的典型形态</text>
+ <text x="654" y="764" font-size="8.6" fill="#047857">④ 诊断链：ITL 平滑 + num_preemptions=0 + usage≈1.0 + TTFT 尾部爆炸 → KV 容量问题</text>
+ <text x="654" y="782" font-size="8.6" font-weight="bold" fill="#065f46">　→ 旋钮在 KV 侧（FP8 / util↑ / 加卡），budget 与 max_num_seqs 都不是这题的旋钮</text>
+ 
+ <text x="620" y="838" text-anchor="middle" font-size="9.5" fill="#64748b">一句话：这道题的全部戏剧性来自「池恰好 = 6 × 满上下文」——预算充沛（0.04% 利用率）与 KV 饥饿（usage 1.0）同屏出现；换个池大小，故事就换成抢占或排队</text>
+
+[0m
+[0m# [0mTodos
+[✓] 用 Day 12 仿真器验证 Day 14 自测题（10 请求 / KV 够 6）的推演数字
+[✓] 创建 week2/assets/day14_request_state_machine.svg（主产出：请求状态机）
+[✓] 创建 week2/assets/day14_week2_one_graph_flow.svg（本周一图流）
+[✓] 创建 week2/assets/day14_ten_requests_six_kv_timeline.svg（自测推演时间线）
+[•] 撰写 week2/day14_request_state_machine_review.md
+[ ] 校验文件完整性（引用路径、结构、与前几天衔接）
+[0m
+[0m← [0mWrite week2/day14_request_state_machine_review.md
+Wrote file successfully.
+[0m
+Now let me verify everything — file existence, SVG validity, and internal consistency:
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week2/day14* /mnt/workspace/aiinfra/vllm/week2/assets/day14* && python3 -c "
+import xml.etree.ElementTree as ET
+for f in ['day14_request_state_machine.svg','day14_week2_one_graph_flow.svg','day14_ten_requests_six_kv_timeline.svg']:
+    ET.parse('/mnt/workspace/aiinfra/vllm/week2/assets/'+f)
+    print(f, 'XML OK')
+" && grep -c "^## " /mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md && grep -n "assets/day14" /mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md
+-rw-r--r-- 1 root root 17996 Oct  2 05:54 /mnt/workspace/aiinfra/vllm/week2/assets/day14_request_state_machine.svg
+-rw-r--r-- 1 root root 15858 Oct  2 05:57 /mnt/workspace/aiinfra/vllm/week2/assets/day14_ten_requests_six_kv_timeline.svg
+-rw-r--r-- 1 root root 15254 Oct  2 05:55 /mnt/workspace/aiinfra/vllm/week2/assets/day14_week2_one_graph_flow.svg
+-rw-r--r-- 1 root root 54116 Oct  2 06:00 /mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md
+day14_request_state_machine.svg XML OK
+day14_week2_one_graph_flow.svg XML OK
+day14_ten_requests_six_kv_timeline.svg XML OK
+19
+9:> **配套材料**：`week2/README.md` Day 14 节（初稿版状态机与推演表）；三张 SVG：`assets/day14_request_state_machine.svg`（今日主产出：状态机全图 + 三视角对齐表）、`assets/day14_week2_one_graph_flow.svg`（本周一图流：三进程数据流 + 失败分支）、`assets/day14_ten_requests_six_kv_timeline.svg`（自测推演时间线 + 指标联动 + 变体与修复）；验证脚本 `day14_sim.py`（§5 实验 2，Day 12 仿真器换参版）
+70:![一个请求在 Scheduler 中的状态机](assets/day14_request_state_machine.svg)
+113:![第 2 周一图流](assets/day14_week2_one_graph_flow.svg)
+135:![自测推演时间线](assets/day14_ten_requests_six_kv_timeline.svg)
+[0m
+所有文件均有效。有一个改进建议 —— 该系列中其他的日期内容都包含完整的可运行脚本（Day 12 嵌入了完整的模拟器），所以让我将完整验证后的 `day14_sim.py` 嵌入到实验 2 中，以保持一致性：
+[0m← [0mEdit week2/day14_request_state_machine_review.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md
++++ /mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md
+@@ -351,16 +351,139 @@
+ 卡壳的检查点回跳对应 Day 重修（10-12）。录音留档——Day 54 模拟面试的素材。
+ 
+ ### 实验 2（必做，20 min；无 GPU 可做）：仿真器对账
+ 
+-把 Day 12 的仿真器换到本题参数（关键改动三处：`Req(f"R{i}", 8192, 512)`、`--blocks 3264`、`budget=16384`）：
++把 Day 12 实验 1 的仿真器（`day12_sim.py`）换到本题参数——改动集中在 `__main__`（请求参数、块数、budget），调度逻辑一行不动（本身这就是一次复习：对照 Day 12 §5 逐行确认你还能讲出每段对应 scheduler.py 的哪一段）。完整脚本（已实测，输出见 §3.6 右列）：
+ 
+ ```python
+-# day14_sim.py —— 在 day12_sim.py 基础上改：
+-#   ① reqs = [Req(f"R{i}", 8192, 512) for i in range(1, 11)]   # 10 个请求
+-#   ② ap.add_argument("--blocks", type=int, default=3264)      # = 6 × 544
+-#   ③ simulate(reqs, args.blocks, budget=16384, ...)            # README 14.2 的 budget
+-#（完整脚本可直接向我要，或对照 day12_sim.py 手改——手改本身就是复习）
++#!/usr/bin/env python3
++"""day14_sim.py —— README 14.2 场景：10 × (prompt 8192, output 512)，budget 16384，
++KV 池 3264 块（= 6 × 544 满上下文）。调度逻辑与 day12_sim.py 完全一致。
++用法: python day14_sim.py [--steps 6] [--blocks 3264] [--out 512] [--no-cache]
++"""
++import argparse
++from collections import deque
++
++class Req:
++    def __init__(self, rid, prompt, max_tokens):
++        self.rid, self.prompt, self.max_tokens = rid, prompt, max_tokens
++        self.output, self.computed, self.blocks = 0, 0, 0
++        self.recomputed, self.preemptions, self.done_step = 0, 0, None
++        self.admit_step = None
++
++    @property
++    def ctx(self):                       # num_tokens = prompt + output（request.py:169）
++        return self.prompt + self.output
++
++def bfor(n, bs):                         # ceil(n / bs) 个 block
++    return (n + bs - 1) // bs
++
++def simulate(reqs, num_blocks, bs=16, budget=16384, cache=True, max_steps=4000, trace=0):
++    waiting, running = list(reqs), []
++    free, cached, lru = num_blocks, {}, deque()  # free=真空闲+可驱逐（BlockPool 口径）
++    total_pre, log, first_fail, first_pre = 0, [], None, None
++
++    def try_alloc(r, rows, hit=0):       # allocate_slots（kv_cache_manager.py:260-273）
++        nonlocal free
++        need = bfor(rows, bs) - r.blocks - hit
++        if need + hit > free:
++            return False
++        if hit:                          # 认领命中块：ref_cnt 0→1
++            free -= hit
++            cached.pop(r.rid, None)
++            if r.rid in lru: lru.remove(r.rid)
++            r.blocks += hit
++        if need > 0:                     # 按 LRU 先驱逐最老缓存
++            remaining = need
++            while remaining > 0 and lru:
++                rid0 = lru[0]
++                take = min(cached[rid0], remaining)
++                cached[rid0] -= take
++                remaining -= take
++                if cached[rid0] == 0:
++                    lru.popleft()
++            free -= need
++            r.blocks += need
++        return True
++
++    for step in range(1, max_steps + 1):
++        budget_left, preempted, sched = budget, False, {}
++        i = 0
++        while i < len(running) and budget_left > 0:          # RUNNING 循环 :210
++            r = running[i]
++            n = min(r.ctx - r.computed, budget_left)         # 欠账（复活请求含重算）
++            target, ok = r.computed + n, True
++            if not try_alloc(r, target):                     # :254-258 失败 → 抢占
++                while True:                                  # :254-290
++                    v = running.pop()                        # :271 FCFS 弹最新
++                    free += v.blocks                         # 块进 free 队列
++                    if cache:                                # hash 保留 → 缓存候选
++                        cached[v.rid] = v.blocks; lru.append(v.rid)
++                    v.blocks, v.computed = 0, 0              # :276 账本清零
++                    v.preemptions += 1
++                    waiting.insert(0, v)                     # :281 队首！
++                    total_pre, preempted = total_pre + 1, True
++                    if first_pre is None:
++                        first_pre = (step, v.rid, v.ctx)
++                    if v is r:                               # :283 抢到自己 → 止
++                        ok = False; break
++                    if try_alloc(r, target):
++                        break
++            if not ok:
++                break                                        # :291-292 本步 running 终止
++            budget_left -= n; r.computed += n; sched[r.rid] = n
++            i += 1
++        if not preempted:                                    # :335 本步无抢占才收新
++            while waiting and budget_left > 0:               # WAITING 循环 :336
++                r = waiting[0]
++                hit = 0
++                if r.computed == 0 and cache:                # :380 get_computed_blocks
++                    hit = min(cached.get(r.rid, 0), (r.ctx - 1) // bs)
++                n = min(r.ctx - hit * bs, budget_left)       # :423/:437（残段在这里出现）
++                if not try_alloc(r, hit * bs + n, hit):      # :471
++                    if first_fail is None:
++                        first_fail = (step, r.rid, free)     # ★ R7 首次入队失败
++                    break                                    # :483 HOL
++                if r.admit_step is None:
++                    r.admit_step = step
++                waiting.pop(0); running.append(r)            # :507 又回队尾
++                if r.preemptions:                            # 只有复活才记重算账
++                    r.recomputed += r.ctx - hit * bs         # 重算 = ctx − 命中
++                r.computed = hit * bs                        # :526 回填命中值
++                budget_left -= n; r.computed += n; sched[r.rid] = n
++        for r in reqs:                                       # 采样推进（Day 11 同款）
++            if r.rid in sched and r.computed == r.ctx:
++                r.output += 1
++                if r.output >= r.max_tokens and r.done_step is None:
++                    r.done_step = step
++                    if r in running: running.remove(r)
++                    free += r.blocks                         # 完成也走 cached 语义
++                    if cache: cached[r.rid] = r.blocks; lru.append(r.rid)
++                    r.blocks = 0
++        if step <= trace:
++            log.append(f"step {step:3d} | free={free:4d} cached={sum(cached.values()):4d} "
++                       f"running={len(running)} waiting={len(waiting)} pre={total_pre} | "
++                       + " ".join(f"{r.rid}:{sched.get(r.rid,0)}" for r in running))
++        if all(r.done_step for r in reqs):
++            break
++    return total_pre, step, log, first_fail, first_pre
++
++if __name__ == "__main__":
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--blocks", type=int, default=3264)   # = 6 × 544（满上下文）
++    ap.add_argument("--out", type=int, default=512)       # 600 = 抢占变体
++    ap.add_argument("--no-cache", action="store_true")
++    ap.add_argument("--steps", type=int, default=0)
++    args = ap.parse_args()
++    reqs = [Req(f"R{i}", 8192, args.out) for i in range(1, 11)]  # 10 个请求
++    total_pre, fin, log, ff, fp = simulate(reqs, args.blocks,
++                                           cache=not args.no_cache, trace=args.steps)
++    for line in log: print(line)
++    print(f"\n总步数={fin}  总抢占={total_pre}  cache={'on' if not args.no_cache else 'off'}"
++          f"  首次入队失败={ff}  首次抢占={fp}")
++    for r in reqs:
++        print(f"{r.rid}: 入场 step {r.admit_step} | 抢占 {r.preemptions} 次 | "
++              f"重算 {r.recomputed} token | 完成于 step {r.done_step}")
+ ```
+ 
+ ```bash
+ python day14_sim.py --steps 6      # 看入场期的残段（R4:8190、R6:8187）
+
+[0m
+现在让我验证教程中嵌入的脚本是否正常运行（读者会直接复制粘贴它）：
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+md = open('/mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md').read()
+blocks = re.findall(r'```python\n(.*?)```', md, re.S)
+script = [b for b in blocks if 'day14_sim.py' in b][0]
+open('day14_embedded.py','w').write(script)
+print(f"extracted {len(script)} chars, {script.count(chr(10))} lines")
+EOF
+python3 day14_embedded.py --steps 4 && python3 day14_embedded.py --out 600 | tail -12
+extracted 6405 chars, 128 lines
+step   1 | free=2240 cached=   0 running=2 waiting=8 pre=0 | R1:8192 R2:8192
+step   2 | free=1214 cached=   0 running=4 waiting=6 pre=0 | R1:1 R2:1 R3:8192 R4:8190
+step   3 | free= 189 cached=   0 running=6 waiting=4 pre=0 | R1:1 R2:1 R3:1 R4:2 R5:8192 R6:8187
+step   4 | free= 187 cached=   0 running=6 waiting=4 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:5
+
+总步数=1026  总抢占=0  cache=on  首次入队失败=(4, 'R7', 187)  首次抢占=None
+R1: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 512
+R2: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 512
+R3: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 513
+R4: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 514
+R5: 入场 step 3 | 抢占 0 次 | 重算 0 token | 完成于 step 514
+R6: 入场 step 3 | 抢占 0 次 | 重算 0 token | 完成于 step 515
+R7: 入场 step 513 | 抢占 0 次 | 重算 0 token | 完成于 step 1024
+R8: 入场 step 513 | 抢占 0 次 | 重算 0 token | 完成于 step 1025
+R9: 入场 step 514 | 抢占 0 次 | 重算 0 token | 完成于 step 1025
+R10: 入场 step 515 | 抢占 0 次 | 重算 0 token | 完成于 step 1026
+
+总步数=1202  总抢占=1  cache=on  首次入队失败=(4, 'R7', 187)  首次抢占=(514, 'R6', 8702)
+R1: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 600
+R2: 入场 step 1 | 抢占 0 次 | 重算 0 token | 完成于 step 600
+R3: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 601
+R4: 入场 step 2 | 抢占 0 次 | 重算 0 token | 完成于 step 602
+R5: 入场 step 3 | 抢占 0 次 | 重算 0 token | 完成于 step 602
+R6: 入场 step 3 | 抢占 1 次 | 重算 478 token | 完成于 step 690
+R7: 入场 step 601 | 抢占 0 次 | 重算 0 token | 完成于 step 1200
+R8: 入场 step 601 | 抢占 0 次 | 重算 0 token | 完成于 step 1201
+R9: 入场 step 602 | 抢占 0 次 | 重算 0 token | 完成于 step 1201
+R10: 入场 step 603 | 抢占 0 次 | 重算 0 token | 完成于 step 1202
+[0m
+The embedded script reproduces every number cited in the tutorial. Final check — structure and git status to confirm no existing files were touched:
+[0m$ [0mgit status --short && grep -n "^## " week2/day14_request_state_machine_review.md | grep -v "^[0-9]*:## " | head -3; grep -c "<details>" week2/day14_request_state_machine_review.md; grep -c "</details>" week2/day14_request_state_machine_review.md; wc -l week2/day14_request_state_machine_review.md
+M .tutorial_progress
+ M generate_tutorials.sh
+ M logs/day03.log
+ M logs/nohup.out
+ M logs/run.log
+?? logs/day04.log
+?? logs/day05.log
+?? logs/day06.log
+?? logs/day07.log
+?? logs/day08.log
+?? logs/day09.log
+?? logs/day10.log
+?? logs/day11.log
+?? logs/day12.log
+?? logs/day13.log
+?? logs/day14.log
+?? week1/assets/day03_ascend_gpu_mapping.svg
+?? week1/assets/day03_ncu_decision_tree.svg
+?? week1/assets/day03_roofline_chart.svg
+?? week1/assets/day04_kv_waste_taxonomy.svg
+?? week1/assets/day04_paged_layout.svg
+?? week1/assets/day04_v1_kv_callchain.svg
+?? week1/assets/day05_capacity_ladder.svg
+?? week1/assets/day05_goodput_knee.svg
+?? week1/assets/day05_request_timeline_metrics.svg
+?? week1/assets/day06_bench_architecture.svg
+?? week1/assets/day06_concurrency_curves.svg
+?? week1/assets/day06_request_timeline.svg
+?? week1/assets/day07_70b_whiteboard.svg
+?? week1/assets/day07_week1_knowledge_map.svg
+?? week1/day03_roofline_model.md
+?? week1/day04_paged_attention_paper.md
+?? week1/day05_serving_metrics.md
+?? week1/day06_env_setup_first_bench.md
+?? week1/day07_first_principles_review.md
+?? week2/assets/
+?? week2/day08_v1_architecture_overview.md
+?? week2/day09_request_entry_pipeline.md
+?? week2/day11_chunked_prefill.md
+?? week2/day12_preemption.md
+?? week2/day14_request_state_machine_review.md
+10
+10
+712 week2/day14_request_state_machine_review.md
+[0m
+[0m→ [0mRead week2/day14_request_state_machine_review.md[90m [limit=14][0m
+[0m
+[0m# [0mTodos
+[✓] 用 Day 12 仿真器验证 Day 14 自测题（10 请求 / KV 够 6）的推演数字
+[✓] 创建 week2/assets/day14_request_state_machine.svg（主产出：请求状态机）
+[✓] 创建 week2/assets/day14_week2_one_graph_flow.svg（本周一图流）
+[✓] 创建 week2/assets/day14_ten_requests_six_kv_timeline.svg（自测推演时间线）
+[✓] 撰写 week2/day14_request_state_machine_review.md
+[✓] 校验文件完整性（引用路径、结构、与前几天衔接）
+[0m
+Day 14 教程已完成并确认写入。
+
+**文件路径**：
+- `week2/day14_request_state_machine_review.md`（712 行，复盘日主文）
+- `week2/assets/day14_request_state_machine.svg` — 主产出：请求状态机全图（WAITING → RUNNING ⇄ PREEMPTED → 终态四态 + FSM 旁路 + 三视角对齐表）
+- `week2/assets/day14_week2_one_graph_flow.svg` — 本周一图流（P0/P1/P2 三进程数据流 + 三个失败分支）
+- `week2/assets/day14_ten_requests_six_kv_timeline.svg` — 自测推演时间线（10 请求 Gantt + 指标联动 + 抢占变体与 FP8 修复）
+
+**主要内容**：严格对应 README Day 14 的两项任务——① 请求在 scheduler 中的状态机（逐态精讲 + 每条边的触发条件与 v0.11.0 行号 + 身份/时钟/资源三视角对齐表）；② 「10 个请求、KV 只够 6 个」闭卷推演（三行手算 → 干净/精确两种口径 → 抢占变体 → 指标联动 → FP8 修复）。所有推演数字均用 Day 12 仿真器换参复跑验证过（入场残段 8190/8187、R7@step4 首次失败、主线 0 抢占 makespan 1026、变体 victim=R6@514 重算 478、FP8 修复 517 步），完整可运行的 `day14_sim.py` 已内嵌在实验 2。内容主动衔接 Day 8/9/11/12（及 week2/README §10/§13），未修改任何已有文件。

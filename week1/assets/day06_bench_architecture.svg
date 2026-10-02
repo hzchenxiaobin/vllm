@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 800" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="800" fill="#ffffff"/>
+  <text x="620" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">第一次压测的全景：谁在计时、谁在被测（vLLM V1）</text>
+  <text x="620" y="50" text-anchor="middle" font-size="12" fill="#64748b">左：压测客户端进程（vllm bench serve）· 右：vllm serve 的进程栈（API Server 与 EngineCore 分离）· 底：/metrics 服务端口径 · 源码坐标以 v0.10~v0.11 主线为准</text>
+
+  <!-- ================= 左：客户端 ================= -->
+  <rect x="40" y="76" width="380" height="112" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="56" y="98" font-size="12" font-weight="bold" fill="#1e3a8a">① 构造负载</text>
+  <text x="56" y="118" font-size="10" fill="#475569">CLI：vllm bench serve（vllm/entrypoints/cli/benchmark/）</text>
+  <text x="56" y="134" font-size="10" fill="#475569">ShareGPTDataset（vllm/benchmarks/datasets/datasets.py）</text>
+  <text x="56" y="150" font-size="10" fill="#475569">　对话第 1 轮 → prompt 文本（tokenize 计长度）</text>
+  <text x="56" y="166" font-size="10" fill="#475569">　对话第 2 轮 → 该请求的 max_tokens</text>
+
+  <line x1="230" y1="188" x2="230" y2="208" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="40" y="210" width="380" height="118" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="56" y="232" font-size="12" font-weight="bold" fill="#1e3a8a">② 发送与计时</text>
+  <text x="180" y="232" font-size="9.5" fill="#475569">vllm/benchmarks/lib/endpoint_request_func.py</text>
+  <text x="56" y="252" font-size="10" fill="#475569">aiohttp 异步任务 × --num-prompts（单进程客户端）</text>
+  <text x="56" y="268" font-size="10" fill="#475569">--max-concurrency C：闭环（客户端信号量限并发）</text>
+  <text x="56" y="284" font-size="10" fill="#475569">--request-rate λ：开环泊松到达（默认 inf = 一次全发）</text>
+  <text x="56" y="300" font-size="10" fill="#475569">stream=true：每收到一个 chunk 打一个时间戳</text>
+  <text x="56" y="316" font-size="10" fill="#475569">　→ RequestFuncOutput{ttft, itl[], latency}</text>
+
+  <line x1="230" y1="328" x2="230" y2="348" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="40" y="350" width="380" height="118" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="56" y="372" font-size="12" font-weight="bold" fill="#14532d">③ 统计与落盘</text>
+  <text x="150" y="372" font-size="9.5" fill="#475569">vllm/benchmarks/serve.py</text>
+  <text x="56" y="392" font-size="10" fill="#475569">calculate_metrics()：mean / median / p99（np.percentile）</text>
+  <text x="56" y="408" font-size="10" fill="#475569">TPOT = (latency − ttft)/(n−1)；goodput = 全 SLO 同时满足</text>
+  <text x="56" y="424" font-size="10" fill="#475569">--save-result --save-detailed → 结果 JSON</text>
+  <text x="56" y="440" font-size="10" fill="#475569">--metadata concurrency=C 写进结果（画图脚本直接读）</text>
+  <text x="56" y="456" font-size="10" fill="#047857">§5 实验 2 的产物：c{1,2,4,…,256}.json 九个文件</text>
+
+  <!-- ================= 中间：HTTP 箭头 ================= -->
+  <line x1="428" y1="160" x2="528" y2="160" stroke="#2563eb" stroke-width="2.2" marker-end="url(#arB)"/>
+  <text x="478" y="148" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">POST /v1/completions</text>
+  <text x="478" y="176" text-anchor="middle" font-size="9" fill="#475569">{stream:true,</text>
+  <text x="478" y="188" text-anchor="middle" font-size="9" fill="#475569">max_tokens, temperature}</text>
+
+  <line x1="528" y1="238" x2="428" y2="238" stroke="#16a34a" stroke-width="2.2" marker-end="url(#arG)"/>
+  <text x="478" y="228" text-anchor="middle" font-size="10" font-weight="bold" fill="#14532d">SSE data: chunk…</text>
+  <text x="478" y="254" text-anchor="middle" font-size="9" fill="#475569">首 chunk → TTFT</text>
+  <text x="478" y="266" text-anchor="middle" font-size="9" fill="#475569">末 chunk → E2E</text>
+
+  <!-- ================= 右：服务端 ================= -->
+  <rect x="540" y="76" width="660" height="90" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="556" y="98" font-size="12" font-weight="bold" fill="#1e3a8a">API Server（FastAPI · uvicorn）</text>
+  <text x="770" y="98" font-size="9.5" fill="#475569">vllm/entrypoints/openai/api_server.py</text>
+  <text x="556" y="118" font-size="10" fill="#475569">HTTP/JSON 解析 → tokenize → 构造请求 → 交给 AsyncLLM；</text>
+  <text x="556" y="134" font-size="10" fill="#475569">同时暴露 /metrics（Prometheus 文本格式）与 /v1/models 等端点；</text>
+  <text x="556" y="150" font-size="10" fill="#475569">--api-key 可加鉴权（本机实验省略）</text>
+
+  <line x1="870" y1="166" x2="870" y2="186" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="540" y="188" width="660" height="100" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="556" y="210" font-size="12" font-weight="bold" fill="#1e3a8a">AsyncLLM（前端进程内）</text>
+  <text x="760" y="210" font-size="9.5" fill="#475569">vllm/v1/engine/async_llm.py</text>
+  <text x="556" y="230" font-size="10" fill="#475569">请求写入 input_queue，经 ZMQ 发往 EngineCore 进程；</text>
+  <text x="556" y="246" font-size="10" fill="#475569">返回方向：output_processor + detokenizer 把 token 流还原成文本，</text>
+  <text x="556" y="262" font-size="10" fill="#475569">逐 chunk 推给客户端 —— 首 token 走完这条路，TTFT 才停止计时</text>
+  <text x="556" y="278" font-size="10" fill="#047857">（tokenize/输出处理都在前端进程：客户端 TTFT 与服务端引擎耗时的差就在这）</text>
+
+  <!-- ZMQ 连接 -->
+  <line x1="870" y1="288" x2="870" y2="326" stroke="#475569" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ar3)"/>
+  <line x1="884" y1="326" x2="884" y2="288" stroke="#475569" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ar3)"/>
+  <text x="1040" y="302" font-size="10" font-weight="bold" fill="#475569">ZMQ IPC</text>
+  <text x="1040" y="316" font-size="9.5" fill="#64748b">EngineCore 独立进程：崩溃隔离、</text>
+  <text x="1040" y="328" font-size="9.5" fill="#64748b">引擎不被前端 GIL 拖慢（Day 8 精读）</text>
+
+  <rect x="540" y="330" width="660" height="150" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="556" y="352" font-size="12" font-weight="bold" fill="#14532d">EngineCore 进程</text>
+  <text x="700" y="352" font-size="9.5" fill="#475569">vllm/v1/engine/core.py（调度心脏，Day 9~13 逐行精读）</text>
+
+  <rect x="556" y="366" width="200" height="100" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="656" y="390" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#14532d">Processor</text>
+  <text x="656" y="408" text-anchor="middle" font-size="9.5" fill="#047857">输入规整 / 进程分离后</text>
+  <text x="656" y="422" text-anchor="middle" font-size="9.5" fill="#047857">的请求处理</text>
+  <text x="656" y="440" text-anchor="middle" font-size="9.5" fill="#047857">（vllm/v1/engine/processor.py</text>
+  <text x="656" y="454" text-anchor="middle" font-size="9.5" fill="#047857">→ 新版 input_processor.py）</text>
+
+  <line x1="756" y1="416" x2="776" y2="416" stroke="#16a34a" stroke-width="1.6" marker-end="url(#arG)"/>
+
+  <rect x="778" y="366" width="200" height="100" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="878" y="390" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#14532d">Scheduler</text>
+  <text x="878" y="408" text-anchor="middle" font-size="9.5" fill="#047857">waiting / running 队列</text>
+  <text x="878" y="422" text-anchor="middle" font-size="9.5" fill="#047857">token budget（chunked prefill）</text>
+  <text x="878" y="440" text-anchor="middle" font-size="9.5" fill="#047857">Day 10/11；preemption</text>
+  <text x="878" y="454" text-anchor="middle" font-size="9.5" fill="#047857">Day 12</text>
+
+  <line x1="978" y1="416" x2="998" y2="416" stroke="#16a34a" stroke-width="1.6" marker-end="url(#arG)"/>
+
+  <rect x="1000" y="366" width="186" height="100" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="1093" y="390" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#14532d">KVCacheManager</text>
+  <text x="1093" y="408" text-anchor="middle" font-size="9.5" fill="#047857">BlockPool / 块表 / APC</text>
+  <text x="1093" y="422" text-anchor="middle" font-size="9.5" fill="#047857">Day 4 的三层结构落地</text>
+  <text x="1093" y="440" text-anchor="middle" font-size="9.5" fill="#047857">（Day 15/16 精读；</text>
+  <text x="1093" y="454" text-anchor="middle" font-size="9.5" fill="#047857">C=256 越界时在这排队）</text>
+
+  <line x1="870" y1="480" x2="870" y2="502" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="540" y="504" width="660" height="112" rx="8" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+  <text x="556" y="526" font-size="12" font-weight="bold" fill="#0f172a">GPU Worker：ModelRunner</text>
+  <text x="770" y="526" font-size="9.5" fill="#64748b">vllm/v1/worker/gpu_model_runner.py</text>
+  <text x="556" y="546" font-size="10" fill="#475569">权重 16.4 GB（Qwen3-8B BF16）+ KV 池 ≈54 GB（16-token 块，Day 2/4 手账）</text>
+  <text x="556" y="562" font-size="10" fill="#475569">prefill：compute-bound 的大 GEMM；decode：访存-bound、batch 摊销权重读（Day 1）</text>
+  <text x="556" y="578" font-size="10" fill="#475569">CUDA Graph（Day 18）+ paged attention 后端（Day 17，启动日志会打印选了哪个）</text>
+  <text x="556" y="594" font-size="10" fill="#047857">今天只当黑盒测它 —— 但启动日志的 KV 池 / 最大并发两行要能对上 Day 2 的手算</text>
+
+  <!-- ================= 底部：metrics ================= -->
+  <rect x="40" y="636" width="760" height="140" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="56" y="660" font-size="12" font-weight="bold" fill="#9a3412">服务端口径：GET /metrics（Prometheus 文本格式）</text>
+  <text x="360" y="660" font-size="9.5" fill="#9a3412">vllm/v1/engine/metrics.py :: PrometheusStatLogger</text>
+  <text x="56" y="682" font-size="10" fill="#9a3412">Gauge：vllm:num_requests_running / num_requests_waiting · vllm:gpu_cache_usage</text>
+  <text x="56" y="698" font-size="10" fill="#9a3412">Histogram：vllm:time_to_first_token_seconds · time_per_output_token_seconds · e2e_request_latency_seconds</text>
+  <text x="56" y="714" font-size="10" fill="#9a3412">Counter：vllm:prompt_tokens_total · generation_tokens_total · preemption_total（Day 12 的预警信号）</text>
+  <text x="56" y="730" font-size="10" fill="#9a3412">运行中随时：curl -s localhost:8000/metrics | grep vllm　（指标名随版本微调，以此枚举为准）</text>
+  <text x="56" y="746" font-size="10" fill="#9a3412">p99 需在 Prometheus 侧算：histogram_quantile(0.99, rate(..._bucket[1m]))—— Day 13 接 Grafana</text>
+  <text x="56" y="764" font-size="10" fill="#047857">压测时盯 Running / Waiting / GPU KV cache usage 三行日志（--disable-log-stats 未关时周期打印）</text>
+
+  <rect x="816" y="636" width="384" height="140" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="832" y="660" font-size="12" font-weight="bold" fill="#991b1b">面试考点：两个口径</text>
+  <text x="832" y="682" font-size="10" fill="#991b1b">客户端 TTFT ≠ 服务端 TTFT：差 tokenize、</text>
+  <text x="832" y="698" font-size="10" fill="#991b1b">排队、网络往返、SSE 打包与 detokenize；</text>
+  <text x="832" y="714" font-size="10" fill="#991b1b">SLO 面向用户 → 以客户端/边缘测量为准；</text>
+  <text x="832" y="730" font-size="10" fill="#991b1b">服务端指标用于归因（差值大 → 先查输出</text>
+  <text x="832" y="746" font-size="10" fill="#991b1b">处理与前端进程，再查引擎本身）——</text>
+  <text x="832" y="762" font-size="10" fill="#991b1b">「你测的是哪一端？」是高频追问</text>
+</svg>

@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 880" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar37a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar37b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"/></marker>
+    <marker id="ar37c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+    <marker id="ar37d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="880" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">paged gather 剖析：非连续 block 怎么读（triton_decode_attention.py，v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左上：查表二步走的地址翻译 · 左下：kernel 内层循环 + online softmax · 右上：访存账 · 右下：block_size 与连续段</text>
+
+  <!-- ================= Left top: block table -> pool ================= -->
+  <text x="60" y="78" font-size="13.5" font-weight="bold" fill="#0f172a">查表二步走：逻辑位置 → 物理 slot（与 Day 15 写侧公式互为镜像）</text>
+  <rect x="40" y="90" width="600" height="300" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.2"/>
+
+  <!-- block table row -->
+  <text x="60" y="112" font-size="10" font-weight="bold" fill="#4c1d95">block_table[req]（int32，一行 = 一个请求，B=16）</text>
+  <rect x="60" y="120" width="66" height="30" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="93" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#4c1d95">7</text>
+  <rect x="126" y="120" width="66" height="30" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="159" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#4c1d95">12</text>
+  <rect x="192" y="120" width="66" height="30" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="225" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#4c1d95">3</text>
+  <rect x="258" y="120" width="66" height="30" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="291" y="139" text-anchor="middle" font-size="12" font-weight="bold" fill="#4c1d95">9</text>
+  <rect x="324" y="120" width="66" height="30" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="357" y="139" text-anchor="middle" font-size="10" fill="#94a3b8">…</text>
+  <text x="420" y="133" font-size="8.6" fill="#64748b">逻辑 token 0-15 → 块 7</text>
+  <text x="420" y="145" font-size="8.6" fill="#64748b">16-31 → 块 12 · 32-47 → 块 3 …</text>
+
+  <!-- logical sequence -->
+  <text x="60" y="176" font-size="10" font-weight="bold" fill="#334155">逻辑序列（kernel 视角，BLOCK_N=64 一次处理 64 个 KV token）</text>
+  <g font-size="8.6" fill="#334155">
+    <rect x="60" y="184" width="180" height="24" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="150" y="200" text-anchor="middle">块7: token 0..15</text>
+    <rect x="244" y="184" width="180" height="24" rx="4" fill="#fef3c7" stroke="#d97706"/><text x="334" y="200" text-anchor="middle">块12: token 16..31</text>
+    <rect x="428" y="184" width="180" height="24" rx="4" fill="#dcfce7" stroke="#16a34a"/><text x="518" y="200" text-anchor="middle">块3: token 32..47</text>
+  </g>
+  <text x="60" y="228" font-size="9" fill="#64748b">① kv_page_number = load(block_table[req] + offs_n // PAGE_SIZE)（:114-119）—— 每 16 个 token 换一次页号</text>
+  <text x="60" y="242" font-size="9" fill="#64748b">② kv_loc = kv_page_number × PAGE_SIZE + offs_n % PAGE_SIZE（:120）—— 合成物理 slot</text>
+
+  <!-- physical pool -->
+  <text x="60" y="270" font-size="10" font-weight="bold" fill="#7f1d1d">物理 KV 池（[num_blocks, B, H_kv, d]，块在显存里不连续）</text>
+  <g>
+    <rect x="60" y="280" width="90" height="26" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="105" y="297" text-anchor="middle" font-size="9" fill="#94a3b8">块 5（别人）</text>
+    <rect x="152" y="280" width="90" height="26" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/><text x="197" y="297" text-anchor="middle" font-size="9" font-weight="bold" fill="#14532d">块 3 ★</text>
+    <rect x="244" y="280" width="90" height="26" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="289" y="297" text-anchor="middle" font-size="9" fill="#94a3b8">块 8（free）</text>
+    <rect x="336" y="280" width="90" height="26" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.6"/><text x="381" y="297" text-anchor="middle" font-size="9" font-weight="bold" fill="#78350f">块 12 ★</text>
+    <rect x="428" y="280" width="90" height="26" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="473" y="297" text-anchor="middle" font-size="9" fill="#94a3b8">块 1（别人）</text>
+    <rect x="520" y="280" width="90" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/><text x="565" y="297" text-anchor="middle" font-size="9" font-weight="bold" fill="#4c1d95">块 7 ★</text>
+  </g>
+  <text x="60" y="326" font-size="9" fill="#7c2d12">gather = 按 kv_loc 间接 load：块间跳跃（地址不连续）、块内 4 KiB 连续（B·d·dtype = 16×128×2B，NHD 布局 per-head 256B 连续）</text>
+  <text x="60" y="341" font-size="9" fill="#7c2d12">GPU coalescing / NPU DMA burst 面对同一道题：把「随机块」变成「块内长 burst」——Day 15 §3.3 的 4KiB 甜点在 kernel 层兑现</text>
+
+  <rect x="60" y="352" width="560" height="28" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="340" y="370" text-anchor="middle" font-size="9.5" fill="#065f46">K/V 永不搬移：间接寻址（每次访存多一次查表）换「分页零碎片」（Day 4 的 60-80% 浪费归零）</text>
+
+  <!-- ================= Left bottom: kernel loop ================= -->
+  <text x="60" y="418" font-size="13.5" font-weight="bold" fill="#0f172a">kernel 内层循环（:57-168，flash-decoding：grid = (batch, head, NUM_KV_SPLITS)）</text>
+  <rect x="40" y="430" width="600" height="270" rx="8" fill="#0f172a"/>
+  <g font-family="Consolas, 'Courier New', monospace" font-size="9.3">
+    <text x="56" y="452" fill="#94a3b8"># 每 program 处理一个 (请求, q_head, KV 分段)；GQA：q_head // kv_group_num → kv_head</text>
+    <text x="56" y="470" fill="#7dd3fc">for</text><text x="180" y="470" fill="#e2e8f0" text-anchor="end" font-size="9.3">start_n</text>
+    <text x="56" y="486" fill="#e2e8f0" font-size="9.3">  offs_n = start_n + arange(BLOCK_N)                     # 64 个 KV token</text>
+    <text x="56" y="502" fill="#fbbf24" font-size="9.3">  kv_page_number = load(Req_to_tokens + b + offs_n//PAGE) # ① 查表（mask 越界）</text>
+    <text x="56" y="518" fill="#fbbf24" font-size="9.3">  kv_loc = kv_page_number * PAGE_SIZE + offs_n % PAGE     # ② 合成物理 slot</text>
+    <text x="56" y="534" fill="#e2e8f0" font-size="9.3">  k = load(K_Buffer + kv_loc*s_bs + kv_head*s_h + offs_d) # ③ 间接寻址 gather</text>
+    <text x="56" y="550" fill="#e2e8f0" font-size="9.3">  qk = sum(q * k, axis=1) * sm_scale                     #   GQA 广播：1 q_head vs 64 kv</text>
+    <text x="56" y="566" fill="#a5b4fc" font-size="9.3">  n_e_max = max(rowmax(qk), e_max)                        # online softmax：滚动缩放</text>
+    <text x="56" y="582" fill="#a5b4fc" font-size="9.3">  re_scale = exp(e_max - n_e_max);  p = exp(qk - n_e_max) #   不物化 [seq] 大小的 logits</text>
+    <text x="56" y="598" fill="#a5b4fc" font-size="9.3">  acc = acc * re_scale + sum(p[:,None] * v, 0)            #   输出累积（寄存器）</text>
+    <text x="56" y="614" fill="#a5b4fc" font-size="9.3">  e_sum = e_sum * re_scale + sum(p, 0)</text>
+    <text x="56" y="636" fill="#94a3b8"># ④ 段结束：写 (acc/e_sum, e_max+log(e_sum)) 到中间 buffer，stage2 kernel 按 LSE 合并各 split</text>
+    <text x="56" y="652" fill="#94a3b8">#    FA3 的 AOT scheduler_metadata 是同一件事的 Hopper 原生版（CG 下 max_num_splits 封顶，:262-269）</text>
+    <text x="56" y="674" fill="#6ee7b7" font-size="9.3">四件套：查表二步走 · 块内 4KiB 连续 · online softmax · KV split —— decode 访存密集（Day 1）的代码形态</text>
+  </g>
+
+  <!-- ================= Right top: memory account ================= -->
+  <text x="676" y="78" font-size="13.5" font-weight="bold" fill="#0f172a">访存账：Day 2 的下界公式落到 kernel 层（Qwen3-8B, BF16, B=16）</text>
+  <rect x="660" y="90" width="540" height="300" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.2"/>
+
+  <text x="676" y="114" font-size="10" font-weight="bold" fill="#9a3412">每 step 每 layer 必读（decode）</text>
+  <rect x="676" y="122" width="508" height="70" rx="6" fill="#ffffff" stroke="#fdba74"/>
+  <text x="686" y="140" font-size="9.6" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">KV gather = L · 2 · Σseq_len · H_kv · d · dtype  ★别漏乘层数 L</text>
+  <text x="686" y="156" font-size="9.2" fill="#9a3412">batch=16, seq=8K：每层 537 MB → ×36 层 ≈ 19.3 GB（= Σseq × 144 KiB，Day 15 口径）</text>
+  <text x="686" y="172" font-size="9.2" fill="#9a3412">只算 KV 项时延下界 = 19.3 GB ÷ 3.35 TB/s ≈ 5.8 ms/step（T1 手算路径）</text>
+
+  <rect x="676" y="200" width="508" height="76" rx="6" fill="#ffffff" stroke="#fdba74"/>
+  <text x="686" y="218" font-size="9.6" font-weight="bold" fill="#9a3412">KV 占比随 batch×seq 线性翻转（关键直觉）</text>
+  <text x="686" y="234" font-size="9.2" fill="#334155">单请求 seq=4K：KV ≈ 0.59 GB vs 权重 16.4 GB → ~3%（Day 2 下界公式这时成立）</text>
+  <text x="686" y="250" font-size="9.2" fill="#334155">batch=32/seq=4K：KV ≈ 19.3 GB → ~54%（与权重同量级，过了临界点）</text>
+  <text x="686" y="266" font-size="8.8" fill="#9a3412">⇒ 「attention 是小头」只在 batch 小时成立；占比 = 144 KiB×Σseq ÷ 16.4 GB，报出翻转曲线才是数字敏感度</text>
+
+  <rect x="676" y="284" width="508" height="94" rx="6" fill="#ffffff" stroke="#fdba74"/>
+  <text x="686" y="302" font-size="9.6" font-weight="bold" fill="#9a3412">实际带宽怎么测（实验 3，Day 3 工具回炉）</text>
+  <text x="686" y="318" font-size="9.2" fill="#334155">nsys 找 kernel 名 → ncu --set roofline -k regex:flash 采样一次</text>
+  <text x="686" y="334" font-size="9.2" fill="#334155">dram__bytes_read ÷ Duration vs HBM 峰值（H100 3.35 / A100 2.0 TB/s）</text>
+  <text x="686" y="350" font-size="9.2" fill="#334155">预期：decode attention kernel 呈现 Memory busy ≫ SM busy（roofline 左侧）</text>
+  <text x="686" y="366" font-size="8.8" fill="#9a3412">注意：间接寻址的有效带宽低于顺序读（L2/TLB miss、burst 断裂）——4KiB 连续段就是为此</text>
+
+  <!-- ================= Right bottom: block size table ================= -->
+  <text x="676" y="418" font-size="13.5" font-weight="bold" fill="#0f172a">block_size 的 gather 视角（三重身份之三）与 cascade 收益</text>
+  <rect x="660" y="430" width="540" height="270" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.2"/>
+
+  <rect x="676" y="444" width="508" height="104" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="686" y="462" font-size="9.6" font-weight="bold" fill="#065f46">NHD 布局下单次连续段 = B · d · dtype（d=128, BF16）</text>
+  <g font-size="9">
+    <text x="700" y="480" fill="#334155">B=8</text><text x="780" y="480" fill="#334155">2 KiB</text><text x="860" y="480" fill="#334155">512 块（4K ctx）</text><text x="1010" y="480" fill="#334155">碎片 4 tok/req · hash 细</text>
+    <text x="700" y="498" fill="#065f46" font-weight="bold">B=16（默认）</text><text x="780" y="498" fill="#065f46" font-weight="bold">4 KiB ★甜点</text><text x="860" y="498" fill="#065f46" font-weight="bold">256 块</text><text x="1010" y="498" fill="#065f46" font-weight="bold">碎片 8 · hash 中</text>
+    <text x="700" y="516" fill="#334155">B=32</text><text x="780" y="516" fill="#334155">8 KiB</text><text x="860" y="516" fill="#334155">128 块</text><text x="1010" y="516" fill="#334155">碎片 16 · hash 粗</text>
+  </g>
+  <line x1="686" y1="470" x2="1184" y2="470" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="686" y="536" font-size="8.8" fill="#047857">后端/平台可改写：MLA 强制 64/128（cuda.py:139-175）—— 换后端 = 换 block_size = 换四方折中的交点</text>
+
+  <rect x="676" y="556" width="508" height="78" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="686" y="574" font-size="9.6" font-weight="bold" fill="#065f46">cascade 收益模型（§3.2）</text>
+  <text x="686" y="590" font-size="9.2" fill="#334155" font-family="Consolas, 'Courier New', monospace">普通 N×(L+S) → cascade L + N×S；L=4K, S=50, N=32 → 读取降到 4.3%</text>
+  <text x="686" y="606" font-size="9.2" fill="#334155">公共前缀判定：ref_cnt == num_running（Day 15/16 引用计数 → 今天执行层）</text>
+  <text x="686" y="622" font-size="8.8" fill="#047857">prefix caching 变现 TTFT（省计算）、cascade 变现 TPOT（省带宽）—— 同一批共享块的两个渠道</text>
+
+  <rect x="676" y="642" width="508" height="44" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="930" y="660" text-anchor="middle" font-size="9.4" font-weight="bold" fill="#065f46">新硬件的对应决策（W6 面试迁移点）</text>
+  <text x="930" y="676" text-anchor="middle" font-size="8.8" fill="#047857">查 NPU 的 DMA burst 上限与 L2 line：2KiB 已饱和 → B=8 白赚命中率；需 8KiB 才饱和 → B=32 的碎片是必要代价</text>
+
+  <!-- footer -->
+  <rect x="40" y="724" width="1160" height="40" rx="6" fill="#faf5ff" stroke="#c4b5fd"/>
+  <text x="620" y="740" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#4c1d95">一句话总结：gather kernel = 「查表二步走 × 每 tile」+「块内 4KiB 连续 × 每次 load」+「online softmax × 滚动」+「KV split × 并行」</text>
+  <text x="620" y="756" text-anchor="middle" font-size="9.2" fill="#5b21b6">分页解决外部碎片（Day 4），间接寻址是它的执行代价；连续段大小由 block_size 决定，而 block_size 由后端决定 —— 这就是 AttentionBackend.get_kv_cache_shape 的全部物理意义</text>
+</svg>

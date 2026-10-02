@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="720" fill="#ffffff"/>
+  <text x="620" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">从昇腾 bound 建模到 GPU Roofline：同一第一性原理，两套参数表</text>
+  <text x="620" y="50" text-anchor="middle" font-size="12" fill="#64748b">左：达芬奇 AI Core（WeightQuantBatchMatmulV2 的主战场）· 右：NVIDIA SM（A100/H100）· 中间：逐层对应（离算力越近，容量越小、带宽越高）</text>
+
+  <!-- 列头 -->
+  <rect x="40" y="66" width="460" height="28" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="270" y="85" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a8a">昇腾 · 达芬奇 AI Core</text>
+  <rect x="740" y="66" width="460" height="28" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="970" y="85" text-anchor="middle" font-size="13" font-weight="bold" fill="#9a3412">NVIDIA · SM（A100 / H100）</text>
+
+  <!-- 行 1：片外存储 -->
+  <rect x="40" y="104" width="460" height="56" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="270" y="127" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">HBM / DDR（数据源头，带宽 BW）</text>
+  <text x="270" y="146" text-anchor="middle" font-size="10.5" fill="#64748b">容量最大、离算力最远——一切优化的敌人是它</text>
+  <line x1="505" y1="132" x2="735" y2="132" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4" marker-start="url(#arG)" marker-end="url(#arG)"/>
+  <rect x="740" y="104" width="460" height="56" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="970" y="127" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">HBM（A100 2.04 / H100 3.35 TB/s）</text>
+  <text x="970" y="146" text-anchor="middle" font-size="10.5" fill="#64748b">Roofline 斜坡的斜率 = BW（唯一分母）</text>
+
+  <!-- 行 2：共享缓存 -->
+  <rect x="40" y="170" width="460" height="56" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="270" y="193" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">L2（多 AI Core 共享）</text>
+  <text x="270" y="212" text-anchor="middle" font-size="10.5" fill="#64748b">ASW 蛇形滑窗（4 行窗口 S 形扫描）抢命中</text>
+  <line x1="505" y1="198" x2="735" y2="198" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4" marker-start="url(#arG)" marker-end="url(#arG)"/>
+  <rect x="740" y="170" width="460" height="56" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="970" y="193" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">L2：40~50 MB（全 SM 共享）</text>
+  <text x="970" y="212" text-anchor="middle" font-size="10.5" fill="#64748b">tile 排布 swizzle / persistent kernel 抢命中</text>
+
+  <!-- 行 3：私有缓冲（最大差异） -->
+  <rect x="40" y="236" width="460" height="72" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5"/>
+  <text x="270" y="259" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">L1 Buffer（MB 级 / AI Core）</text>
+  <text x="270" y="278" text-anchor="middle" font-size="10.5" fill="#1e40af">★ A / 权重全载驻留（AL1/BL1 Full Load 模板）</text>
+  <text x="270" y="296" text-anchor="middle" font-size="10.5" fill="#1e40af">Nd2Nz 一次搬入，重复搬运 O(n·A) → O(A)</text>
+  <line x1="505" y1="272" x2="735" y2="272" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="6 4" marker-start="url(#arG)" marker-end="url(#arG)"/>
+  <text x="620" y="262" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626">★ 最大平台差异</text>
+  <text x="620" y="290" text-anchor="middle" font-size="10" fill="#dc2626">容量差约 4~5×，</text>
+  <text x="620" y="304" font-size="10" fill="#dc2626">用法完全不同</text>
+  <rect x="740" y="236" width="460" height="72" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2.5"/>
+  <text x="970" y="259" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">SMEM / L1：~228 KB / SM</text>
+  <text x="970" y="278" text-anchor="middle" font-size="10.5" fill="#7c2d12">★ 无法驻留大权重（15~70 GB ≫ 片上）</text>
+  <text x="970" y="296" text-anchor="middle" font-size="10.5" fill="#7c2d12">→ 替代路线：batch 摊销 + 量化 + kernel 融合</text>
+
+  <!-- 行 4：寄存器级 / 搬运引擎 -->
+  <rect x="40" y="318" width="460" height="72" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="270" y="340" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">L0A / L0B → Cube → L0C；UB → Vector</text>
+  <text x="270" y="358" text-anchor="middle" font-size="10.5" fill="#64748b">MTE2（外→L1）· MTE1（L1→L0）· MTE3（UB→外）</text>
+  <text x="270" y="376" text-anchor="middle" font-size="10.5" fill="#64748b">无 Queue 手工流水：SetFlag/WaitFlag 管乒乓</text>
+  <line x1="505" y1="354" x2="735" y2="354" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4" marker-start="url(#arG)" marker-end="url(#arG)"/>
+  <rect x="740" y="318" width="460" height="72" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="970" y="340" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">Register → Tensor Core（MMA）；CUDA Core</text>
+  <text x="970" y="358" text-anchor="middle" font-size="10.5" fill="#64748b">cp.async / TMA（Hopper+）：L2→SMEM 异步搬运</text>
+  <text x="970" y="376" text-anchor="middle" font-size="10.5" fill="#64748b">多 stage 软件流水（= 昇腾的手工乒乓流水）</text>
+
+  <!-- 行 5：计算单元 -->
+  <rect x="40" y="400" width="460" height="56" rx="8" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="270" y="423" text-anchor="middle" font-size="12" font-weight="bold" fill="#065f46">Cube（每拍 16×16×16 MAC）+ Vector + Scalar</text>
+  <text x="270" y="442" text-anchor="middle" font-size="10.5" fill="#047857">Vector/Scalar 指令配比调优（MIX 并行）</text>
+  <line x1="505" y1="428" x2="735" y2="428" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4" marker-start="url(#arG)" marker-end="url(#arG)"/>
+  <rect x="740" y="400" width="460" height="56" rx="8" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="970" y="423" text-anchor="middle" font-size="12" font-weight="bold" fill="#065f46">Tensor Core（HMMA / BF16-FP8 MMA）+ CUDA Core</text>
+  <text x="970" y="442" text-anchor="middle" font-size="10.5" fill="#047857">warp 调度器；FLOPs 记账以 Tensor Core 峰值为屋顶</text>
+
+  <!-- 底部 1：bound 判定对照 -->
+  <rect x="40" y="472" width="1160" height="86" rx="10" fill="#fefdf4" stroke="#65a30d" stroke-width="2"/>
+  <text x="620" y="496" text-anchor="middle" font-size="13" font-weight="bold" fill="#3f6212">bound 判定：同一第一性原理（今天的主产出）</text>
+  <rect x="60" y="508" width="500" height="40" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="310" y="524" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1e3a8a">昇腾：CalRebalanceBlock</text>
+  <text x="310" y="540" text-anchor="middle" font-size="10" fill="#1e40af">L2/HBM 带宽 vs Cube 算力的分界模型 + balanceRate ≥ 0.9 剪枝，搜 baseM/baseN</text>
+  <rect x="680" y="508" width="500" height="40" rx="6" fill="#fff7ed" stroke="#ea580c"/>
+  <text x="930" y="524" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#9a3412">GPU：Roofline 模型</text>
+  <text x="930" y="540" text-anchor="middle" font-size="10" fill="#7c2d12">AI vs ridge = F_peak / BW；tile / warp / MMA 形状搜索把 kernel 推向线上方</text>
+  <text x="620" y="552" text-anchor="middle" font-size="11" font-weight="bold" fill="#3f6212">性能 = min( 峰值算力 , AI × 带宽 )——公式不同，方法论同源</text>
+
+  <!-- 底部 2：叙事主线 -->
+  <rect x="40" y="568" width="1160" height="76" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="620" y="590" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5b21b6">面试叙事（跨平台方法论主线）</text>
+  <text x="620" y="610" text-anchor="middle" font-size="11" fill="#6d28d9">「我在昇腾做的是：用 L2/HBM 带宽与 Cube 算力的比值划 bound 线，用 tiling 搜优把 kernel 推到线上方；</text>
+  <text x="620" y="628" text-anchor="middle" font-size="11" fill="#6d28d9">搬到 GPU 就是 Roofline + tile 调优。区别在昇腾 L1 大可做权重驻留，GPU SMEM 小只能 batch 摊销 + 量化 + 融合——这决定了两边算子形态的不同。」</text>
+
+  <!-- 底部 3：工具映射 -->
+  <rect x="40" y="652" width="1160" height="52" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="620" y="672" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">工具与利用率指标映射</text>
+  <text x="620" y="692" text-anchor="middle" font-size="10.5" fill="#475569">msprof（Cube 利用率 / aicore cycles / 带宽利用率） ↔ ncu（sm__throughput、dram__throughput、tensor pipe）+ nsys（CPU/GPU 时间线）——今天就全部上手一遍</text>
+</svg>

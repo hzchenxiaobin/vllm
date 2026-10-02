@@ -7,13 +7,22 @@
 #   - 默认单线程：前一天生成完成（产出 dayNN_*.md）后才发送下一天；
 #     需要加速时可用 JOBS=2 等开启并发；
 #   - 支持断点续跑：已生成的 Day 自动跳过；
-#   - 失败自动重试，多次失败后停止派发新任务并保留现场。
+#   - 不重试：某天失败则记录并继续生成下一天，失败的 Day 在结束时汇总，
+#     重新运行本脚本即可补跑；
+#   - 每天之间冷却 COOLDOWN 秒（默认 600，即 10 分钟）：缓解网关限流；
+#   - 模型思考强度 CANNBOT_VARIANT（默认 low）：GLM-5.3 默认思考过长，
+#     复盘类任务会烧 3 万+ reasoning token 撞输出上限（finish=length）导致
+#     空退，low 可避免该失败模式；
+#   - 末尾自动补跑：第一轮结束后，对缺失的 Day 最多再补跑 MAX_PASSES-1 轮
+#     （默认共 3 轮），轮间同样冷却。
 #
 # 用法：
 #   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
 #   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
-#   MAX_RETRIES=5 ./generate_tutorials.sh
 #   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
+#   COOLDOWN=600 ./generate_tutorials.sh    # 自定义冷却秒数（默认 600，即 10 分钟）
+#   CANNBOT_VARIANT=medium ./generate_tutorials.sh   # 调整思考强度（默认 low）
+#   MAX_PASSES=5 ./generate_tutorials.sh    # 最多补跑轮数（默认 3）
 #
 set -u
 
@@ -22,8 +31,9 @@ cd "$WORKDIR"
 
 START_DAY="${START_DAY:-1}"
 END_DAY="${END_DAY:-56}"
-MAX_RETRIES="${MAX_RETRIES:-3}"
 JOBS="${JOBS:-1}"
+COOLDOWN="${COOLDOWN:-600}"
+MAX_PASSES="${MAX_PASSES:-3}"
 LOG_DIR="$WORKDIR/logs"
 PROGRESS_FILE="$WORKDIR/.tutorial_progress"
 mkdir -p "$LOG_DIR"
@@ -31,10 +41,11 @@ mkdir -p "$LOG_DIR"
 # cannbot 需要自动写入文件，必须跳过权限确认才能无人值守运行
 # 默认模型：cannbot/glm-5.3（可用 `cannbot models` 查看全部，用 CANNBOT_MODEL 覆盖）
 CANNBOT_MODEL="${CANNBOT_MODEL:-cannbot/glm-5.3}"
-CANNBOT_OPTS=(--dir "$WORKDIR" --dangerously-skip-permissions -m "$CANNBOT_MODEL")
+CANNBOT_VARIANT="${CANNBOT_VARIANT:-low}"
+CANNBOT_OPTS=(--dir "$WORKDIR" --dangerously-skip-permissions -m "$CANNBOT_MODEL" --variant "$CANNBOT_VARIANT")
 
 log() {
-  echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/run.log"
+  echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/run.log" >&2
 }
 
 # 判断某一天是否已有产出文件（day01_*.md / day1_*.md 等，任意子目录）
@@ -81,38 +92,32 @@ README.md 中是 Day 1 ~ Day 56 的学习计划，prompt.md 中是教程的格�
 EOF
 }
 
+# 生成某一天的教程：只尝试一次，失败返回 1（由调用方决定是否继续）
 run_day() {
   local day="$1"
-  local attempt=1
   local prompt
   prompt="$(build_prompt "$day")"
 
-  while (( attempt <= MAX_RETRIES )); do
-    log "Day ${day}: 第 ${attempt}/${MAX_RETRIES} 次尝试，发送给 cannbot ..."
-    if cannbot run "${CANNBOT_OPTS[@]}" \
-        --title "vLLM 教程 Day ${day}" \
-        "$prompt" > "$LOG_DIR/day$(printf '%02d' "$day").log" 2>&1; then
-      if day_done "$day"; then
-        log "Day ${day}: 完成，产出文件已确认。"
-        echo "$day" > "$PROGRESS_FILE"
-        return 0
-      fi
-      log "Day ${day}: cannbot 正常退出但未找到 day 产出文件，视为失败。"
-    else
-      log "Day ${day}: cannbot 退出码非零（详见 logs/day$(printf '%02d' "$day").log）。"
+  log "Day ${day}: 发送给 cannbot ..."
+  if cannbot run "${CANNBOT_OPTS[@]}" \
+      --title "vLLM 教程 Day ${day}" \
+      "$prompt" > "$LOG_DIR/day$(printf '%02d' "$day").log" 2>&1; then
+    if day_done "$day"; then
+      log "Day ${day}: 完成，产出文件已确认。"
+      echo "$day" > "$PROGRESS_FILE"
+      return 0
     fi
-    attempt=$(( attempt + 1 ))
-    sleep 5
-  done
-
-  log "Day ${day}: 重试 ${MAX_RETRIES} 次仍失败，停止。修复后可重新运行本脚本续跑。"
+    log "Day ${day}: cannbot 正常退出但未找到 day 产出文件，视为失败（详见 logs/day$(printf '%02d' "$day").log）。"
+  else
+    log "Day ${day}: cannbot 退出码非零（详见 logs/day$(printf '%02d' "$day").log）。"
+  fi
   return 1
 }
 
-main() {
-  log "===== 教程生成开始：Day ${START_DAY} ~ Day ${END_DAY}（并发数 ${JOBS}）====="
+# 单轮扫描：对范围内所有缺失的 Day 各生成一次，返回缺失列表（echo，逗号分隔）
+run_pass() {
   local day
-  local failed=0
+  local launched=0
   for (( day = START_DAY; day <= END_DAY; day++ )); do
     if day_done "$day"; then
       log "Day ${day}: 已存在产出文件，跳过。"
@@ -120,24 +125,48 @@ main() {
     fi
     # 并发控制：运行中的任务达到 JOBS 上限时，等待任意一个结束
     while (( $(jobs -rp | wc -l) >= JOBS )); do
-      wait -n || failed=1
+      wait -n
     done
-    if (( failed )); then
-      log "检测到失败任务，停止派发新 Day（已在运行的会跑完）。"
-      break
+    # 冷却：仅在本轮已经跑过任务后生效，避免紧跟大生成触发网关限流
+    if (( launched )) && (( COOLDOWN > 0 )); then
+      log "冷却 ${COOLDOWN}s 后生成 Day ${day} ..."
+      sleep "$COOLDOWN"
     fi
+    # 失败不中断：run_day 返回非零也继续派发下一天
     run_day "$day" &
+    launched=1
     sleep 2  # 错峰启动，避免两个 cannbot 同时请求
   done
-  # 等所有在跑的任务结束
-  while (( $(jobs -rp | wc -l) > 0 )); do
-    wait -n || failed=1
+  wait
+
+  # 汇总本轮结束后仍缺失的 Day
+  local missing=()
+  for (( day = START_DAY; day <= END_DAY; day++ )); do
+    day_done "$day" || missing+=("$day")
   done
-  if (( failed )); then
-    log "===== 存在失败的 Day，请查看 logs/ 后重跑本脚本续跑 ====="
-    exit 1
-  fi
-  log "===== 全部完成：Day ${START_DAY} ~ Day ${END_DAY} ====="
+  echo "${missing[*]}"
+}
+
+main() {
+  log "===== 教程生成开始：Day ${START_DAY} ~ Day ${END_DAY}（并发 ${JOBS}，冷却 ${COOLDOWN}s，variant ${CANNBOT_VARIANT}，最多 ${MAX_PASSES} 轮）====="
+  local pass=1
+  local missing=""
+  while (( pass <= MAX_PASSES )); do
+    log "----- 第 ${pass}/${MAX_PASSES} 轮 -----"
+    missing="$(run_pass)"
+    if [[ -z "$missing" ]]; then
+      log "===== 全部完成：Day ${START_DAY} ~ Day ${END_DAY} ====="
+      return 0
+    fi
+    log "第 ${pass} 轮结束，以下 Day 未产出：${missing}"
+    pass=$(( pass + 1 ))
+    if (( pass <= MAX_PASSES )) && (( COOLDOWN > 0 )); then
+      log "冷却 ${COOLDOWN}s 后开始补跑轮 ..."
+      sleep "$COOLDOWN"
+    fi
+  done
+  log "===== ${MAX_PASSES} 轮后仍缺失：${missing}（重跑本脚本可继续补）====="
+  return 1
 }
 
 main "$@"

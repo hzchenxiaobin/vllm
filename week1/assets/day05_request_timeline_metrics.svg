@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 660" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+    <pattern id="hatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#e2e8f0"/><line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="2.5"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="660" fill="#ffffff"/>
+  <text x="620" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">单请求时间线：六个指标的全部定义（客户端口径）</text>
+  <text x="620" y="52" text-anchor="middle" font-size="12.5" fill="#64748b">示意 n=8 个输出 token · TTFT / ITL / TPOT / E2E 定义在同一条线上 · 吞吐与 goodput 定义在多条线上（见下两图）</text>
+
+  <!-- ===== 括号线：E2E / TTFT / TPOT ===== -->
+  <line x1="80" y1="108" x2="1160" y2="108" stroke="#475569" stroke-width="2"/>
+  <line x1="80" y1="100" x2="80" y2="116" stroke="#475569" stroke-width="2"/>
+  <line x1="1160" y1="100" x2="1160" y2="116" stroke="#475569" stroke-width="2"/>
+  <text x="620" y="98" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">E2E ＝ 请求发出 → 最后一个 token（端到端时延）</text>
+
+  <line x1="80" y1="148" x2="450" y2="148" stroke="#ea580c" stroke-width="2.5"/>
+  <line x1="80" y1="140" x2="80" y2="156" stroke="#ea580c" stroke-width="2.5"/>
+  <line x1="450" y1="140" x2="450" y2="156" stroke="#ea580c" stroke-width="2.5"/>
+  <text x="265" y="138" text-anchor="middle" font-size="13" font-weight="bold" fill="#9a3412">TTFT ＝ 排队 ＋ tokenize ＋ prefill ＋ 首 token 输出路径</text>
+
+  <line x1="450" y1="188" x2="1160" y2="188" stroke="#2563eb" stroke-width="2.5"/>
+  <line x1="450" y1="180" x2="450" y2="196" stroke="#2563eb" stroke-width="2.5"/>
+  <line x1="1160" y1="180" x2="1160" y2="196" stroke="#2563eb" stroke-width="2.5"/>
+  <text x="805" y="178" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a8a">TPOT ＝ (E2E − TTFT) ÷ (n−1)　—— 排除首 token 的每 token 平均</text>
+
+  <!-- ===== 时间轴与各段 ===== -->
+  <line x1="80" y1="255" x2="1185" y2="255" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="1210" y="260" font-size="11" fill="#64748b">t</text>
+
+  <rect x="80"  y="237" width="70"  height="36" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="150" y="237" width="115" height="36" fill="url(#hatch)" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="265" y="237" width="185" height="36" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+  <rect x="450" y="237" width="95"  height="36" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="545" y="237" width="90"  height="36" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="635" y="237" width="90"  height="36" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="725" y="237" width="225" height="36" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <rect x="950" y="237" width="80"  height="36" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="1030" y="237" width="85" height="36" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="1115" y="237" width="45" height="36" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+
+  <text x="115" y="295" text-anchor="middle" font-size="10.5" fill="#64748b">网络+tokenize</text>
+  <text x="207" y="295" text-anchor="middle" font-size="10.5" fill="#475569">排队（waiting 队列）</text>
+  <text x="357" y="295" text-anchor="middle" font-size="10.5" fill="#9a3412">prefill（compute bound）</text>
+  <text x="805" y="295" text-anchor="middle" font-size="10.5" fill="#1e3a8a">decode：每步一个 token（memory bound）</text>
+
+  <text x="207" y="340" text-anchor="middle" font-size="10.5" fill="#64748b">由队列深度决定（调度器）</text>
+  <text x="357" y="340" text-anchor="middle" font-size="10.5" fill="#64748b">由算力决定（Day 1）</text>
+  <text x="805" y="340" text-anchor="middle" font-size="10.5" fill="#64748b">由带宽 × batch 拥挤度决定（Day 1/2）</text>
+
+  <!-- token 到达点 -->
+  <circle cx="450"  cy="255" r="5" fill="#ea580c"/>
+  <circle cx="545"  cy="255" r="4" fill="#1e40af"/>
+  <circle cx="635"  cy="255" r="4" fill="#1e40af"/>
+  <circle cx="725"  cy="255" r="4" fill="#1e40af"/>
+  <circle cx="950"  cy="255" r="4" fill="#b91c1c"/>
+  <circle cx="1030" cy="255" r="4" fill="#1e40af"/>
+  <circle cx="1115" cy="255" r="4" fill="#1e40af"/>
+  <circle cx="1160" cy="255" r="4" fill="#1e40af"/>
+  <text x="450"  y="225" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#9a3412">token #1</text>
+  <text x="1160" y="225" text-anchor="end" font-size="10.5" fill="#1e3a8a">token #n</text>
+  <text x="80" y="225" font-size="10.5" fill="#334155">t = 0</text>
+
+  <!-- ITL 括号与尖刺标注 -->
+  <line x1="450" y1="318" x2="725" y2="318" stroke="#7c3aed" stroke-width="2"/>
+  <line x1="450" y1="310" x2="450" y2="326" stroke="#7c3aed" stroke-width="2"/>
+  <line x1="725" y1="310" x2="725" y2="326" stroke="#7c3aed" stroke-width="2"/>
+  <text x="587" y="336" text-anchor="middle" font-size="11" font-weight="bold" fill="#6d28d9">ITL_i ＝ 相邻 token 间隔（逐个、看得到抖动）</text>
+  <text x="837" y="336" text-anchor="middle" font-size="10.5" fill="#b91c1c">ITL 尖刺：chunked prefill 混排 / 抢占重算（Day 11/12）</text>
+
+  <!-- ===== 底部三个盒子 ===== -->
+  <rect x="40" y="368" width="372" height="262" rx="10" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="226" y="396" text-anchor="middle" font-size="13" font-weight="bold" fill="#065f46">恒等式① E2E = TTFT + (n−1)·TPOT</text>
+  <text x="228" y="416" text-anchor="middle" font-size="11" fill="#047857">—— 分解归因的第一刀</text>
+  <text x="58" y="444" font-size="11.5" fill="#047857">E2E 超标 → 拆两项，看谁在涨：</text>
+  <text x="58" y="468" font-size="11.5" fill="#047857">· TTFT ↑：排队 / prefill 拥塞（算力侧）</text>
+  <text x="58" y="492" font-size="11.5" fill="#047857">· TPOT ↑：batch 过大 / KV 读饱和 /</text>
+  <text x="70" y="510" font-size="11.5" fill="#047857">TP 通信（带宽侧）→ 诊断速查表</text>
+  <text x="58" y="540" font-size="11.5" fill="#334155">分位数版本（面试加分）：</text>
+  <text x="58" y="562" font-size="11.5" fill="#334155">p99(E2E) ≤ p99(TTFT) + (n−1)·p99(TPOT)</text>
+  <text x="58" y="584" font-size="11" fill="#64748b">（和的分位数 ≤ 分位数的和——只能高估）</text>
+  <text x="58" y="612" font-size="10.5" fill="#64748b">TPOT 是均值、ITL 是分布：TPOT 稳但 ITL 有尖刺</text>
+  <text x="58" y="628" font-size="10.5" fill="#64748b">时，均值口径看不见尖刺 → 报告要带 ITL p99</text>
+
+  <rect x="434" y="368" width="372" height="262" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="620" y="396" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e3a8a">恒等式② Little's Law —— 容量的桥梁</text>
+  <text x="620" y="416" text-anchor="middle" font-size="11" fill="#1d4ed8">L = λ · W（你在线上系统里早就用过）</text>
+  <text x="452" y="444" font-size="11.5" fill="#1e3a8a">推理版：在途并发 C = λ_req × E2E</text>
+  <text x="452" y="468" font-size="11.5" fill="#1e3a8a">token 版：λ_tok = C ÷ TPOT</text>
+  <text x="452" y="492" font-size="11.5" fill="#1e3a8a">→ 闭环压测的两个对账锚点（Day 6）</text>
+  <text x="452" y="522" font-size="11.5" fill="#334155">容量规划四步：</text>
+  <text x="452" y="544" font-size="11.5" fill="#334155">① 单副本 goodput（knee 处）λ*</text>
+  <text x="452" y="566" font-size="11.5" fill="#334155">② 峰值 QPS ÷ λ* = 副本数</text>
+  <text x="452" y="588" font-size="11.5" fill="#334155">③ ×1.3~1.5 冗余（故障/长尾）</text>
+  <text x="452" y="610" font-size="11.5" fill="#334155">④ 回验：L = λ·W 的在途数</text>
+  <text x="452" y="628" font-size="10.5" fill="#64748b">今天实验 Part C 用模拟自证 L̄ = λ·E2E ✓</text>
+
+  <rect x="828" y="368" width="372" height="262" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="1014" y="396" text-anchor="middle" font-size="13" font-weight="bold" fill="#9a3412">口径：秒表按在哪一端（Day 6 实测）</text>
+  <text x="1014" y="416" text-anchor="middle" font-size="11" fill="#c2410c">同一个指标，两个测量点，两个用途</text>
+  <text x="846" y="444" font-size="11.5" fill="#9a3412">客户端口径（vllm bench serve）：</text>
+  <text x="846" y="466" font-size="11.5" fill="#334155">请求发出 → chunk 到达，含 tokenize、</text>
+  <text x="846" y="488" font-size="11.5" fill="#334155">网络、SSE 打包 → 用户体感 → 定 SLO</text>
+  <text x="846" y="518" font-size="11.5" fill="#9a3412">服务端口径（/metrics 直方图）：</text>
+  <text x="846" y="540" font-size="11.5" fill="#334155">引擎内部打点（vllm/v1/engine/metrics.py）</text>
+  <text x="846" y="562" font-size="11.5" fill="#334155">→ 不含前端/网络 → 用于归因</text>
+  <text x="846" y="592" font-size="11.5" fill="#334155">两者差值大 → 先查前端输出路径，</text>
+  <text x="846" y="614" font-size="11.5" fill="#334155">不是引擎（Day 6 §2.4 / Q5 展开此题）</text>
+</svg>

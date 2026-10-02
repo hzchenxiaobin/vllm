@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 790" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="790" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">Request 对象解剖与状态机（vllm/v1/request.py · v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：一个 Request 刚在 P1 被构造完那一刻的字段快照（⑦→⑨ 之间）· 右：RequestStatus 状态机（本周剩余天数的地图）</text>
+
+  <!-- ============ 左侧：Request 身份证 ============ -->
+  <rect x="40" y="64" width="640" height="640" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="60" y="90" font-size="12.5" font-weight="bold" fill="#0f172a">Request（P1 进程内对象，由 from_engine_core_request 构造）</text>
+
+  <!-- 身份组 -->
+  <rect x="58" y="104" width="604" height="64" rx="5" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="70" y="122" font-size="9.5" font-weight="bold" fill="#1e3a8a">身份组</text>
+  <text x="70" y="138" font-size="8.8" fill="#475569">request_id: str（"chatcmpl-…"，serving 层生成）· client_index: int（多前端时输出回哪个 P0）</text>
+  <text x="70" y="152" font-size="8.8" fill="#475569">priority: int（默认 0，priority 策略下决定插队） · arrival_time: float（P0 打的时间戳，queue 指标分母）</text>
+
+  <!-- 输入组 -->
+  <rect x="58" y="176" width="604" height="64" rx="5" fill="#f0fdf4" stroke="#86efac"/>
+  <text x="70" y="194" font-size="9.5" font-weight="bold" fill="#166534">输入组（只读视图 ConstantList，防外部误 append）</text>
+  <text x="70" y="210" font-size="8.8" fill="#475569">prompt_token_ids: list[int] · prompt_embeds · mm_features（多模态，含位置/哈希）· eos_token_id（LoRA 可换 eos）</text>
+  <text x="70" y="224" font-size="8.8" fill="#475569">lora_request · cache_salt（多租户前缀隔离，Day 34）· trace_headers（OTel 透传）</text>
+
+  <!-- 参数组 -->
+  <rect x="58" y="248" width="604" height="64" rx="5" fill="#fdf4ff" stroke="#e9d5ff"/>
+  <text x="70" y="266" font-size="9.5" font-weight="bold" fill="#86198f">参数组（Processor 已做过兜底与校验）</text>
+  <text x="70" y="282" font-size="8.8" fill="#475569">sampling_params（max_tokens 已兜底：None → max_model_len − prompt_len；eos/stop ids 已从 generation config 合并）</text>
+  <text x="70" y="296" font-size="8.8" fill="#475569">structured_output_request（开启则初始状态 = WAITING_FOR_FSM）· kv_transfer_params（P/D 分离时传给 connector）</text>
+
+  <!-- 账本组（高亮） -->
+  <rect x="58" y="320" width="604" height="128" rx="5" fill="#fef2f2" stroke="#dc2626" stroke-width="1.6"/>
+  <text x="70" y="338" font-size="9.5" font-weight="bold" fill="#991b1b">账本组（调度器最重要的字段全在这里）</text>
+  <text x="70" y="355" font-size="9.2" font-weight="bold" fill="#dc2626">num_computed_tokens = 0　←—— 本周主角：已完成 forward 的 prompt token 数</text>
+  <text x="90" y="369" font-size="8.6" fill="#475569">prefill 是否做完、chunk 推进到哪、抢占后清零重算（recompute），全看它（Day 10-12 逐日展开）</text>
+  <text x="70" y="386" font-size="8.8" fill="#475569">num_cached_tokens = −1　（prefix cache 命中数，首次分配 KV 时回填，Day 16）</text>
+  <text x="70" y="401" font-size="8.8" fill="#475569">_output_token_ids = []　→ 生成 token 增量追加（append_output_token_ids 同步维护两个列表）</text>
+  <text x="70" y="416" font-size="8.8" fill="#475569">_all_token_ids = prompt_token_ids.copy()　→ num_tokens = len(_all)，KV/hash 都以它为准</text>
+  <text x="70" y="431" font-size="8.8" fill="#475569">block_hashes = [prompt 全部满块的链式哈希]　←—— 构造时就预计算好（kv_cache_utils.get_request_block_hasher）</text>
+  <text x="70" y="446" font-size="8.8" fill="#475569">spec_token_ids = []　（投机解码草稿，Day 25 后登场）· num_nans_in_logits（输出损坏检测）</text>
+
+  <!-- 状态组 -->
+  <rect x="58" y="456" width="604" height="72" rx="5" fill="#fffbeb" stroke="#fde68a"/>
+  <text x="70" y="474" font-size="9.5" font-weight="bold" fill="#92400e">状态组</text>
+  <text x="70" y="490" font-size="8.8" fill="#475569">status = RequestStatus.WAITING　（构造即 WAITING；structured output 则 WAITING_FOR_FSM）</text>
+  <text x="70" y="505" font-size="8.8" fill="#475569">events = [EngineCoreEvent(QUEUED, time.monotonic())]　（Scheduler.add_request 里打的，随最终输出回 P0）</text>
+  <text x="70" y="520" font-size="8.8" fill="#475569">stop_reason = None　（token 级 stop 在 P1 判，string 级在 P0 判——Day 8 §2.4）</text>
+
+  <!-- 联动说明 -->
+  <rect x="58" y="536" width="604" height="80" rx="5" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="70" y="554" font-size="9.5" font-weight="bold" fill="#0f172a">append_output_token_ids 的三联动（每生成一个 token，P1 调一次）</text>
+  <text x="70" y="570" font-size="8.8" fill="#475569">① _output_token_ids.append(tid)　② _all_token_ids.append(tid)　（两个只读视图同步变化）</text>
+  <text x="70" y="585" font-size="8.8" fill="#475569">③ 若新 token 使某个 block 变"满"：block_hashes.extend(该块链式哈希) —— 为 Day 16 的 prefix 复用持续铺路</text>
+  <text x="70" y="600" font-size="8.6" fill="#64748b">属性：num_tokens / num_output_tokens / is_finished() / get_finished_reason() —— 调度器与输出侧只经属性访问</text>
+
+  <text x="60" y="636" font-size="9.2" fill="#475569" font-weight="bold">读法提示：</text>
+  <text x="60" y="652" font-size="9" fill="#475569">拿到任何一个字段都要能回答三件事——谁写它、何时写、谁消费。例：num_computed_tokens 由 update_from_output / preemption 写，schedule() 读。</text>
+  <text x="60" y="668" font-size="9" fill="#475569">面试被问"vLLM 怎么知道一个请求 prefill 到哪了"，答案就是这一个字段，不是什么额外机制。</text>
+  <text x="60" y="686" font-size="8.8" fill="#64748b">注：字段名为 v0.11.0 实际名称；main 分支持续演进（prompt_embeds / mm_features 等为较新拆分），以你的 tag 为准。</text>
+
+  <!-- ============ 右侧：状态机 ============ -->
+  <rect x="700" y="64" width="500" height="640" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="720" y="90" font-size="12.5" font-weight="bold" fill="#0f172a">RequestStatus 状态机（request.py:205）</text>
+
+  <!-- 构造 -->
+  <rect x="720" y="108" width="130" height="30" rx="15" fill="#e2e8f0"/>
+  <text x="785" y="127" text-anchor="middle" font-size="9.5" fill="#0f172a">⑦ 构造（P1）</text>
+  <line x1="850" y1="123" x2="892" y2="123" stroke="#475569" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+  <!-- WAITING -->
+  <rect x="894" y="104" width="130" height="38" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="959" y="121" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1e3a8a">WAITING</text>
+  <text x="959" y="134" text-anchor="middle" font-size="8" fill="#475569">waiting 队列 · QUEUED 事件</text>
+
+  <!-- WAITING_FOR_FSM -->
+  <rect x="720" y="160" width="180" height="38" rx="6" fill="#f3e8ff" stroke="#a855f7"/>
+  <text x="810" y="177" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#6b21a8">WAITING_FOR_FSM</text>
+  <text x="810" y="190" text-anchor="middle" font-size="8" fill="#475569">结构化输出：grammar 异步编译中</text>
+  <line x1="905" y1="142" x2="880" y2="160" stroke="#7c3aed" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ar3)"/>
+
+  <!-- WAITING_FOR_REMOTE_KVS -->
+  <rect x="920" y="160" width="180" height="38" rx="6" fill="#ffedd5" stroke="#ea580c"/>
+  <text x="1010" y="177" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#9a3412">WAITING_FOR_REMOTE_KVS</text>
+  <text x="1010" y="190" text-anchor="middle" font-size="8" fill="#475569">P/D 分离：等远端 KV 到位（W5）</text>
+  <line x1="995" y1="142" x2="1005" y2="160" stroke="#ea580c" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ar3)"/>
+
+  <!-- RUNNING -->
+  <rect x="894" y="230" width="130" height="38" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="959" y="247" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#14532d">RUNNING</text>
+  <text x="959" y="260" text-anchor="middle" font-size="8" fill="#475569">running 列表 · SCHEDULED 事件</text>
+  <line x1="959" y1="142" x2="959" y2="228" stroke="#16a34a" stroke-width="1.6" marker-end="url(#ar3)"/>
+  <text x="1040" y="185" font-size="8.2" fill="#15803d">schedule() 选中</text>
+  <text x="1040" y="196" font-size="8.2" fill="#15803d">（Day 10）</text>
+
+  <!-- PREEMPTED -->
+  <rect x="720" y="230" width="130" height="38" rx="6" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="785" y="247" text-anchor="middle" font-size="10" font-weight="bold" fill="#991b1b">PREEMPTED</text>
+  <text x="785" y="260" text-anchor="middle" font-size="8" fill="#475569">KV 不足被挤（Day 12）</text>
+  <line x1="892" y1="244" x2="852" y2="246" stroke="#dc2626" stroke-width="1.4" marker-end="url(#arR)"/>
+  <line x1="800" y1="268" x2="880" y2="276" stroke="#16a34a" stroke-width="1.4" marker-end="url(#ar3)" stroke-dasharray="4 2"/>
+  <text x="800" y="292" font-size="8.2" fill="#15803d">recompute 重回 waiting（V1 仅此一种）</text>
+
+  <!-- FINISHED 区 -->
+  <rect x="720" y="330" width="440" height="150" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-dasharray="5 3"/>
+  <text x="730" y="350" font-size="9.5" font-weight="bold" fill="#0f172a">终态区（IntEnum 数值都 > PREEMPTED → is_finished 就是 status > PREEMPTED）</text>
+  <rect x="736" y="362" width="196" height="46" rx="5" fill="#fee2e2" stroke="#ef4444"/>
+  <text x="834" y="379" text-anchor="middle" font-size="9.3" font-weight="bold" fill="#991b1b">FINISHED_STOPPED</text>
+  <text x="834" y="393" text-anchor="middle" font-size="8" fill="#475569">EOS / stop token → "stop"</text>
+  <rect x="948" y="362" width="196" height="46" rx="5" fill="#fef9c3" stroke="#eab308"/>
+  <text x="1046" y="379" text-anchor="middle" font-size="9.3" font-weight="bold" fill="#854d0e">FINISHED_LENGTH_CAPPED</text>
+  <text x="1046" y="393" text-anchor="middle" font-size="8" fill="#475569">max_tokens 用尽 → "length"</text>
+  <rect x="736" y="420" width="196" height="46" rx="5" fill="#e2e8f0" stroke="#94a3b8"/>
+  <text x="834" y="437" text-anchor="middle" font-size="9.3" font-weight="bold" fill="#334155">FINISHED_ABORTED</text>
+  <text x="834" y="451" text-anchor="middle" font-size="8" fill="#475569">客户端断开 / stop string → "abort"</text>
+  <rect x="948" y="420" width="196" height="46" rx="5" fill="#e0e7ff" stroke="#818cf8"/>
+  <text x="1046" y="437" text-anchor="middle" font-size="9.3" font-weight="bold" fill="#3730a3">FINISHED_IGNORED</text>
+  <text x="1046" y="451" text-anchor="middle" font-size="8" fill="#475569">prompt 超 max_model_len → "length"</text>
+  <line x1="959" y1="268" x2="959" y2="326" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+  <text x="968" y="300" font-size="8.2" fill="#475569">update_from_output 判定</text>
+  <text x="968" y="311" font-size="8.2" fill="#475569">（Day 10 §4 详读）</text>
+
+  <!-- 底部：关键说明卡 -->
+  <rect x="720" y="500" width="460" height="184" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="732" y="520" font-size="10" font-weight="bold" fill="#0f172a">三个必背细节</text>
+  <text x="732" y="540" font-size="8.8" fill="#475569">① is_finished 用 IntEnum 数值比较实现（status > PREEMPTED）——</text>
+  <text x="732" y="553" font-size="8.8" fill="#475569">　新增终态不用改判断逻辑，只需排在 PREEMPTED 之后</text>
+  <text x="732" y="572" font-size="8.8" fill="#475569">② FINISHED_IGNORED 的 finish reason 映射成 "length"（OpenAI 口径）；</text>
+  <text x="732" y="585" font-size="8.8" fill="#475569">　超长 prompt 有两道拦截：serving/Processor 直接 400（你 curl 能看到的），</text>
+  <text x="732" y="598" font-size="8.8" fill="#475569">　以及调度器兜底的 IGNORED（不占 KV，直接标记完成）</text>
+  <text x="732" y="617" font-size="8.8" fill="#475569">③ events 的时间戳是 time.monotonic()（P1 内单调钟）——</text>
+  <text x="732" y="630" font-size="8.8" fill="#475569">　只用于 P1 内部事件的差值（queued→scheduled），不能跨进程对表</text>
+  <text x="732" y="649" font-size="8.8" fill="#475569">　QUEUED/SCHEDULED/PREEMPTED 三种事件随最后一条 EngineCoreOutput</text>
+  <text x="732" y="662" font-size="8.8" fill="#475569">　回传 P0，由 RequestStats 换算 queue time / prefill time（图 3 用到）</text>
+
+  <rect x="40" y="722" width="1160" height="46" rx="6" fill="#fefce8" stroke="#eab308"/>
+  <text x="620" y="740" text-anchor="middle" font-size="10" font-weight="bold" fill="#854d0e">一句话结论：Request 是调度器的"唯一货币"——身份/输入/参数在构造时定型，账本（num_computed_tokens、block_hashes）在生命周期内被持续更新，状态机刻画它穿过队列系统的完整轨迹</text>
+  <text x="620" y="757" text-anchor="middle" font-size="9" fill="#a16207">Day 10 起，所有调度逻辑都可以读作"对 Request 账本与状态的读写"——先记住这句话，再读 scheduler.py 会顺很多</text>
+</svg>

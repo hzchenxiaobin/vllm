@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 680" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+    <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="680" fill="#ffffff"/>
+  <text x="620" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">单请求时间线：TTFT / ITL / TPOT / E2E 到底量的是什么（客户端视角）</text>
+  <text x="620" y="52" text-anchor="middle" font-size="12" fill="#64748b">时间戳由 vllm bench serve 的 aiohttp 流式请求打下（vllm/benchmarks/lib/endpoint_request_func.py）· 统计公式在 vllm/benchmarks/serve.py::calculate_metrics</text>
+
+  <!-- 客户端带 -->
+  <rect x="40" y="72" width="1160" height="54" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="620" y="94" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">压测客户端：每个异步任务持有一只秒表</text>
+  <text x="620" y="112" text-anchor="middle" font-size="10.5" fill="#475569">t₀ = 请求实际发出（计时开始）· 之后每收到一个 SSE chunk 记录一个到达时间戳 · 全部写进 RequestFuncOutput</text>
+
+  <!-- 时间轴 -->
+  <line x1="80" y1="200" x2="1180" y2="200" stroke="#475569" stroke-width="2" marker-end="url(#ar3)"/>
+  <text x="1178" y="188" text-anchor="end" font-size="11" fill="#64748b">时间 →</text>
+
+  <!-- 事件刻度 -->
+  <line x1="120" y1="186" x2="120" y2="214" stroke="#2563eb" stroke-width="2.5"/>
+  <circle cx="120" cy="200" r="5" fill="#2563eb"/>
+  <text x="120" y="172" text-anchor="middle" font-size="11" font-weight="bold" fill="#2563eb">t₀ 发出请求</text>
+
+  <line x1="470" y1="186" x2="470" y2="214" stroke="#ea580c" stroke-width="2.5"/>
+  <circle cx="470" cy="200" r="5" fill="#ea580c"/>
+  <text x="470" y="172" text-anchor="middle" font-size="11" font-weight="bold" fill="#ea580c">t₁ 首 chunk 到达</text>
+
+  <line x1="600" y1="190" x2="600" y2="210" stroke="#16a34a" stroke-width="2"/>
+  <text x="600" y="230" text-anchor="middle" font-size="9.5" fill="#047857">chunk #2</text>
+  <line x1="730" y1="190" x2="730" y2="210" stroke="#16a34a" stroke-width="2"/>
+  <text x="730" y="230" text-anchor="middle" font-size="9.5" fill="#047857">chunk #3</text>
+  <text x="860" y="230" text-anchor="middle" font-size="9.5" fill="#64748b">…… 每 chunk 一个时间戳</text>
+
+  <line x1="1090" y1="186" x2="1090" y2="214" stroke="#2563eb" stroke-width="2.5"/>
+  <circle cx="1090" cy="200" r="5" fill="#2563eb"/>
+  <text x="1090" y="172" text-anchor="middle" font-size="11" font-weight="bold" fill="#2563eb">tₙ 最后 chunk（EOS）</text>
+
+  <!-- TTFT 括线（轴上方） -->
+  <path d="M 120 156 L 120 148 L 470 148 L 470 156" fill="none" stroke="#ea580c" stroke-width="2"/>
+  <text x="295" y="142" text-anchor="middle" font-size="12" font-weight="bold" fill="#ea580c">TTFT = t₁ − t₀</text>
+
+  <!-- ITL 括线（轴下方第一层） -->
+  <path d="M 470 244 L 470 252 L 600 252 L 600 244" fill="none" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="535" y="266" text-anchor="middle" font-size="10" font-weight="bold" fill="#047857">ITL₁</text>
+  <path d="M 600 244 L 600 252 L 730 252 L 730 244" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="4 3"/>
+  <text x="665" y="266" text-anchor="middle" font-size="10" fill="#047857">ITL₂ …</text>
+
+  <!-- TPOT 括线（轴下方第二层） -->
+  <path d="M 470 284 L 470 292 L 1090 292 L 1090 284" fill="none" stroke="#dc2626" stroke-width="2"/>
+  <text x="780" y="308" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">TPOT = (E2E − TTFT) ÷ (n−1)　—— 排除首 token 的「每 token 平均」</text>
+
+  <!-- E2E 括线（轴下方第三层） -->
+  <path d="M 120 330 L 120 338 L 1090 338 L 1090 330" fill="none" stroke="#2563eb" stroke-width="2"/>
+  <text x="605" y="356" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">E2E = tₙ − t₀ = TTFT + Σ ITL ≈ TTFT + (n−1)·TPOT（Day 5 恒等式）</text>
+
+  <!-- 服务端带 -->
+  <rect x="40" y="378" width="1160" height="186" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="60" y="400" font-size="12" font-weight="bold" fill="#14532d">服务端（vllm serve · V1）在每段时间里做的事</text>
+
+  <!-- [t0,t1] 阶段：三小框 -->
+  <rect x="120" y="412" width="112" height="66" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="176" y="434" text-anchor="middle" font-size="10" font-weight="bold" fill="#14532d">HTTP + tokenize</text>
+  <text x="176" y="450" text-anchor="middle" font-size="9" fill="#047857">API Server 进程</text>
+  <text x="176" y="464" text-anchor="middle" font-size="9" fill="#047857">（vllm/entrypoints/openai）</text>
+
+  <rect x="242" y="412" width="112" height="66" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="298" y="434" text-anchor="middle" font-size="10" font-weight="bold" fill="#14532d">调度排队</text>
+  <text x="298" y="450" text-anchor="middle" font-size="9" fill="#047857">waiting → running</text>
+  <text x="298" y="464" text-anchor="middle" font-size="9" fill="#047857">（Scheduler，Day 10）</text>
+
+  <rect x="364" y="412" width="106" height="66" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="417" y="434" text-anchor="middle" font-size="10" font-weight="bold" fill="#14532d">prefill 计算</text>
+  <text x="417" y="450" text-anchor="middle" font-size="9" fill="#047857">可被切块混跑</text>
+  <text x="417" y="464" text-anchor="middle" font-size="9" fill="#047857">（Day 11）</text>
+
+  <!-- [t1,tn] 阶段：两小框 -->
+  <rect x="486" y="412" width="290" height="66" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="631" y="434" text-anchor="middle" font-size="10" font-weight="bold" fill="#14532d">decode step × n（TPOT 的本体）</text>
+  <text x="631" y="450" text-anchor="middle" font-size="9" fill="#047857">每步产 1 token：读权重 + 全部 KV（Day 1 张量流）</text>
+  <text x="631" y="464" text-anchor="middle" font-size="9" fill="#047857">batch 越大，权重读被摊得越薄（Day 2）</text>
+
+  <rect x="786" y="412" width="304" height="66" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="938" y="434" text-anchor="middle" font-size="10" font-weight="bold" fill="#14532d">输出处理 + SSE 打包下发</text>
+  <text x="938" y="450" text-anchor="middle" font-size="9" fill="#047857">AsyncLLM：output_processor + detokenizer</text>
+  <text x="938" y="464" text-anchor="middle" font-size="9" fill="#047857">（vllm/v1/engine/，Day 8/9）</text>
+
+  <text x="60" y="508" font-size="10" fill="#64748b">注：--max-concurrency 打满时，多余请求在客户端排队等待发送 —— 不计入 TTFT（计时从实际发出开始）；</text>
+  <text x="60" y="524" font-size="10" fill="#64748b">　　新版本将其单列为 client_queue_time / e2el_including_client_queue 指标，开环（--request-rate 泊松）压测时必须一并报告。</text>
+
+  <!-- 底部公式四联框 -->
+  <rect x="40" y="576" width="284" height="86" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="56" y="598" font-size="11" font-weight="bold" fill="#9a3412">TTFT 的成分</text>
+  <text x="56" y="616" font-size="9.5" fill="#9a3412">排队 + tokenize + prefill + 首 token</text>
+  <text x="56" y="630" font-size="9.5" fill="#9a3412">输出路径；对长尾 prompt 极敏感</text>
+  <text x="56" y="644" font-size="9.5" fill="#9a3412">（p99 主要由长 prompt 贡献）</text>
+
+  <rect x="336" y="576" width="284" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="352" y="598" font-size="11" font-weight="bold" fill="#14532d">ITL_i = t(i+1) − t(i)</text>
+  <text x="352" y="616" font-size="9.5" fill="#047857">相邻 chunk 到达间隔，含网络与打包抖动；</text>
+  <text x="352" y="630" font-size="9.5" fill="#047857">多个 token 捆进一个 chunk 时 ITL 变粗、</text>
+  <text x="352" y="644" font-size="9.5" fill="#047857">个数变少 —— ITL ≠ TPOT 的场景</text>
+
+  <rect x="632" y="576" width="284" height="86" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="648" y="598" font-size="11" font-weight="bold" fill="#991b1b">TPOT = (E2E−TTFT)/(n−1)</text>
+  <text x="648" y="616" font-size="9.5" fill="#991b1b">serve.py 原式：tpot = (latency − ttft)</text>
+  <text x="648" y="630" font-size="9.5" fill="#991b1b">/ (output_len − 1)；output_len ≤ 1</text>
+  <text x="648" y="644" font-size="9.5" fill="#991b1b">记 0（goodput 计算用）</text>
+
+  <rect x="928" y="576" width="272" height="86" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="944" y="598" font-size="11" font-weight="bold" fill="#1e3a8a">E2E = TTFT + (n−1)·TPOT</text>
+  <text x="944" y="616" font-size="9.5" fill="#1e3a8a">Day 5 恒等式 + Little's Law：</text>
+  <text x="944" y="630" font-size="9.5" fill="#1e3a8a">C = λ·E2E —— §3 预测、§5 对账</text>
+  <text x="944" y="644" font-size="9.5" fill="#1e3a8a">全靠这两条串起来</text>
+</svg>

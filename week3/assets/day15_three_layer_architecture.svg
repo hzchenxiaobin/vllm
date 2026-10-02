@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 830" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar15a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar15b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"/></marker>
+    <marker id="ar15c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="830" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">KV Cache 管理的三层架构：从 OS 分页到 vLLM V1 的四个类（v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">P1 调度进程内的纯 Python 元数据层（左） · OS 虚拟内存对照（右上） · P2 执行进程内的 block table 与物理张量（右下）</text>
+
+  <!-- ================= Left: layer stack ================= -->
+  <!-- Scheduler -->
+  <rect x="40" y="66" width="580" height="64" rx="8" fill="#eef2ff" stroke="#818cf8" stroke-width="1.4"/>
+  <text x="60" y="90" font-size="13.5" font-weight="bold" fill="#1e1b4b">Scheduler（P1）</text>
+  <text x="60" y="108" font-size="9.5" fill="#312e81">sched/scheduler.py :255 running 循环 allocate_slots · :383 get_computed_blocks · :471 waiting 循环</text>
+  <text x="60" y="121" font-size="9.5" fill="#312e81">:273 free（抢占） · :1163 _free_blocks（终态）——Day 12 六步复位的第②步落在这里</text>
+
+  <line x1="330" y1="130" x2="330" y2="148" stroke="#475569" stroke-width="1.6" marker-end="url(#ar15a)"/>
+  <text x="342" y="144" font-size="9" fill="#64748b">语义接口：allocate_slots / free / get_computed_blocks / usage</text>
+
+  <!-- KVCacheManager -->
+  <rect x="40" y="150" width="580" height="60" rx="8" fill="#f0fdf4" stroke="#34d399" stroke-width="1.4"/>
+  <text x="60" y="172" font-size="13.5" font-weight="bold" fill="#064e3b">KVCacheManager（门面层）</text>
+  <text x="60" y="190" font-size="9.5" fill="#065f46">kv_cache_manager.py:85 —— 对 Scheduler 只暴露语义接口，隐藏内部结构；持有 block_size、</text>
+  <text x="60" y="203" font-size="9.5" fill="#065f46">prefix_cache_stats；allocate_slots 主干 :193-304（判定 :271-273 = Day 12 的抢占触发行）</text>
+
+  <line x1="330" y1="210" x2="330" y2="228" stroke="#475569" stroke-width="1.6" marker-end="url(#ar15a)"/>
+  <text x="342" y="224" font-size="9" fill="#64748b">按 KV cache group 广播</text>
+
+  <!-- Coordinator -->
+  <rect x="40" y="230" width="580" height="92" rx="8" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.4"/>
+  <text x="60" y="252" font-size="13.5" font-weight="bold" fill="#78350f">KVCacheCoordinator（协调层，工厂三选一 :417-440）</text>
+  <text x="60" y="270" font-size="9.5" fill="#92400e">KVCacheCoordinatorNoPrefixCache —— prefix caching 关闭：find_longest_cache_hit 恒空</text>
+  <text x="60" y="285" font-size="9.5" fill="#92400e">UnitaryKVCacheCoordinator —— 单一注意力类型（Qwen3/Llama 等绝大多数模型）：1 个 group</text>
+  <text x="60" y="300" font-size="9.5" fill="#92400e">HybridKVCacheCoordinator —— 混合模型（full + sliding window，如 Gemma-3）：full 命中内嵌套找 other</text>
+  <text x="60" y="315" font-size="9" fill="#b45309">负责：把「一个请求」的需求翻译成「每个 group 各自的 block table 操作」并求和（:47-76）</text>
+
+  <line x1="330" y1="322" x2="330" y2="340" stroke="#475569" stroke-width="1.6" marker-end="url(#ar15a)"/>
+  <text x="342" y="336" font-size="9" fill="#64748b">每组一个 manager，共享同一个 BlockPool</text>
+
+  <!-- SingleType managers -->
+  <rect x="40" y="342" width="280" height="118" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="56" y="364" font-size="12.5" font-weight="bold" fill="#0f172a">SingleTypeKVCacheManager ×G</text>
+  <text x="56" y="381" font-size="9" fill="#334155">single_type_kv_cache_manager.py:17</text>
+  <text x="56" y="397" font-size="9.5" fill="#334155">req_to_blocks: {req_id → [KVCacheBlock]}</text>
+  <text x="56" y="412" font-size="9.5" fill="#334155">  ★ P1 侧 block table（对象版）</text>
+  <text x="56" y="427" font-size="9.5" fill="#334155">num_cached_block: {req_id → int}</text>
+  <text x="56" y="442" font-size="9.5" fill="#334155">子类：Full / SlidingWindow / ChunkedLocal /</text>
+  <text x="56" y="455" font-size="9.5" fill="#334155">Mamba / CrossAttention（spec_manager_map:657）</text>
+
+  <rect x="340" y="342" width="280" height="118" rx="8" fill="#fef2f2" stroke="#f87171" stroke-width="1.4"/>
+  <text x="356" y="364" font-size="12.5" font-weight="bold" fill="#7f1d1d">BlockPool（全局物理层）</text>
+  <text x="356" y="381" font-size="9" fill="#7c2d12">block_pool.py:118 —— 全池唯一，被所有 group 共享</text>
+  <text x="356" y="397" font-size="9.5" fill="#7f1d1d">blocks: list[KVCacheBlock]（block_id = 下标）</text>
+  <text x="356" y="412" font-size="9.5" fill="#7f1d1d">free_block_queue: FreeKVCacheBlockQueue ★</text>
+  <text x="356" y="427" font-size="9.5" fill="#7f1d1d">cached_block_hash_to_block（Day 16 主角）</text>
+  <text x="356" y="442" font-size="9.5" fill="#7f1d1d">null_block（:157-158，block_id=0 占位，永不缓存）</text>
+  <text x="356" y="455" font-size="9" fill="#b91c1c">get_new_blocks :257 / free_blocks :338 / touch :322</text>
+
+  <line x1="320" y1="401" x2="340" y2="401" stroke="#475569" stroke-width="1.6" marker-end="url(#ar15a)"/>
+  <text x="298" y="394" font-size="8.5" fill="#64748b">取/还</text>
+
+  <!-- invariant box -->
+  <rect x="40" y="472" width="580" height="66" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="330" y="493" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#065f46">两条池不变式（今天必须背下）</text>
+  <text x="330" y="510" text-anchor="middle" font-size="9.5" fill="#065f46">① 队列不变式：在 free_block_queue 里 ⇔ ref_cnt == 0（分配即出队+1，free 减到 0 才回队；touch 摘队 +1）</text>
+  <text x="330" y="526" text-anchor="middle" font-size="9.5" fill="#065f46">② hash 生命周期：free 不清 hash（缓存候选）；reset_hash 只发生在被分配路径驱逐时（_maybe_evict :286）</text>
+
+  <!-- capacity formula -->
+  <rect x="40" y="550" width="580" height="56" rx="6" fill="#f0f9ff" stroke="#7dd3fc"/>
+  <text x="330" y="571" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#0c4a6e">num_blocks = floor( available_kv_memory ÷ page_size ÷ num_layers )（kv_cache_utils.py:824）</text>
+  <text x="330" y="588" text-anchor="middle" font-size="9" fill="#0c4a6e">available 来自启动 profile run（gpu_worker.py:221-302） · page_size = 2·block_size·kv_heads·head_dim·dtype（每层每块字节）</text>
+
+  <!-- bottom note: version discipline -->
+  <rect x="40" y="618" width="580" height="54" rx="6" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="330" y="638" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#9a3412">版本纪律（README 与老博客的类名对不上时，以你 checkout 的 tag 为准）</text>
+  <text x="330" y="654" text-anchor="middle" font-size="9" fill="#9a3412">v0.11.0 新增 Coordinator 层；README 里的 FreeBlockQueue 实为 FreeKVCacheBlockQueue；req_to_blocks 已下沉到 SingleType 层</text>
+
+  <!-- ================= Right top: OS analogy table ================= -->
+  <text x="660" y="82" font-size="13.5" font-weight="bold" fill="#0f172a">OS 虚拟内存对照表（面试可直接背）</text>
+  <rect x="650" y="92" width="550" height="196" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <line x1="650" y1="120" x2="1200" y2="120" stroke="#cbd5e1" stroke-width="1"/>
+  <line x1="930" y1="92" x2="930" y2="288" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="665" y="110" font-size="10" font-weight="bold" fill="#334155">OS 虚拟内存</text>
+  <text x="945" y="110" font-size="10" font-weight="bold" fill="#334155">vLLM V1</text>
+  <text x="665" y="136" font-size="9.3" fill="#334155">物理页帧</text><text x="945" y="136" font-size="9.3" fill="#0f172a">KVCacheBlock（block_id 唯一，固定 block_size token）</text>
+  <text x="665" y="156" font-size="9.3" fill="#334155">页表（虚→实映射）</text><text x="945" y="156" font-size="9.3" fill="#0f172a">block table：req_to_blocks（P1）/ BlockTable tensor（P2）</text>
+  <text x="665" y="176" font-size="9.3" fill="#334155">空闲页链表</text><text x="945" y="176" font-size="9.3" fill="#0f172a">FreeKVCacheBlockQueue（双向链表，兼驱逐优先级队列）</text>
+  <text x="665" y="196" font-size="9.3" fill="#334155">页帧分配器</text><text x="945" y="196" font-size="9.3" fill="#0f172a">BlockPool.get_new_blocks（popleft_n + ref_cnt+=1）</text>
+  <text x="665" y="216" font-size="9.3" fill="#334155">缺页 / 换出</text><text x="945" y="216" font-size="9.3" fill="#0f172a">allocate_slots→None 触发 preemption（Day 12）；分配即驱逐</text>
+  <text x="665" y="236" font-size="9.3" fill="#334155">页共享 + COW</text><text x="945" y="236" font-size="9.3" fill="#0f172a">prefix 命中共享块：ref_cnt 计数（Day 16 细讲 COW/fork）</text>
+  <text x="665" y="256" font-size="9.3" fill="#334155">多级页表</text><text x="945" y="256" font-size="9.3" fill="#0f172a">Coordinator：按注意力类型分组，每组一张表（Hybrid 模型）</text>
+  <text x="665" y="276" font-size="9.3" fill="#334155">TLB</text><text x="945" y="276" font-size="9.3" fill="#0f172a">cached_block_hash_to_block：hash 直查块（Day 16）</text>
+
+  <!-- ================= Right bottom: P2 side ================= -->
+  <text x="660" y="316" font-size="13.5" font-weight="bold" fill="#0f172a">P2 执行侧：block table 的第二副本与物理内存</text>
+  <rect x="650" y="326" width="550" height="300" rx="8" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.2"/>
+
+  <!-- flow: SchedulerOutput -->
+  <rect x="668" y="344" width="240" height="60" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="788" y="364" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">SchedulerOutput（经 ZMQ 跨进程）</text>
+  <text x="788" y="380" text-anchor="middle" font-size="8.6" fill="#5b21b6">req_to_new_blocks → block_ids 增量</text>
+  <text x="788" y="394" text-anchor="middle" font-size="8.6" fill="#5b21b6">新请求传全量建表 / 老请求只传新增（output.py:102）</text>
+
+  <line x1="908" y1="374" x2="936" y2="374" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#ar15b)"/>
+
+  <rect x="938" y="344" width="246" height="60" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="1061" y="364" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">GPUModelRunner._update_from_scheduler</text>
+  <text x="1061" y="380" text-anchor="middle" font-size="8.6" fill="#5b21b6">gpu_model_runner.py:639-650：append 或整表替换</text>
+  <text x="1061" y="394" text-anchor="middle" font-size="8.6" fill="#5b21b6">（resumed_from_preemption → 替换，Day 12 见过）</text>
+
+  <line x1="1061" y1="404" x2="1061" y2="424" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#ar15b)"/>
+
+  <rect x="668" y="426" width="516" height="64" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="926" y="446" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">InputBatch.block_table（MultiGroupBlockTable，block_table.py:145）</text>
+  <text x="926" y="462" text-anchor="middle" font-size="8.6" fill="#5b21b6">int32 持久 buffer [max_num_reqs, max_blocks_per_req] · add_row(:61) / append_row(:49) / move_row / swap_row</text>
+  <text x="926" y="477" text-anchor="middle" font-size="8.6" fill="#5b21b6">compute_slot_mapping(:76)：slot = block_table[row, pos÷block_size] × block_size + pos mod block_size</text>
+
+  <line x1="926" y1="490" x2="926" y2="510" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#ar15b)"/>
+
+  <rect x="668" y="512" width="250" height="64" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="793" y="532" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">AttentionMetadataBuilder</text>
+  <text x="793" y="548" text-anchor="middle" font-size="8.6" fill="#5b21b6">blk_table_tensor + slot_mapping</text>
+  <text x="793" y="562" text-anchor="middle" font-size="8.6" fill="#5b21b6">→ gather kernel 按表读非连续块（Day 17）</text>
+
+  <rect x="934" y="512" width="250" height="64" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="1059" y="532" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">物理 KV 张量（每层一份）</text>
+  <text x="1059" y="548" text-anchor="middle" font-size="8.6" fill="#5b21b6">torch.zeros(bytes, int8) → view(dtype).view(shape)</text>
+  <text x="1059" y="562" text-anchor="middle" font-size="8.6" fill="#5b21b6">[num_blocks, block_size, kv_heads, head_dim]（:3758/:3797）</text>
+
+  <line x1="918" y1="544" x2="934" y2="544" stroke="#7c3aed" stroke-width="1.4" marker-end="url(#ar15b)"/>
+
+  <!-- P1 -> P2 bridge arrow -->
+  <path d="M 620 250 C 648 250, 648 374, 668 374" fill="none" stroke="#059669" stroke-width="1.8" stroke-dasharray="6 3" marker-end="url(#ar15c)"/>
+  <text x="630" y="300" font-size="9" fill="#047857" transform="rotate(90 630 300)">block_ids 增量流（每 step）</text>
+
+  <!-- footer summary -->
+  <rect x="650" y="640" width="550" height="32" rx="6" fill="#f0fdf4" stroke="#34d399"/>
+  <text x="925" y="660" text-anchor="middle" font-size="9.5" fill="#065f46">一个块的三张身份证：block_id（物理下标） · block_hash（缓存键，Day 16） · ref_cnt（共享计数）</text>
+</svg>

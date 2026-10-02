@@ -1,0 +1,1284 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "**/*.md"[90m 17 matches[0m
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week2/ 2>/dev/null; ls -la /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  5596 Oct  2 01:37 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 00:52 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  2 02:24 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     2 Oct  2 01:58 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 01:56 week1
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week2
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+total 44
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+-rw-r--r--  1 root root 34602 Oct  1 23:18 README.md
+total 340
+drwxr-xr-x  3 root root  4096 Oct  2 01:56 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+drwxr-xr-x  2 root root  4096 Oct  2 01:51 assets
+-rw-r--r--  1 root root 39365 Oct  1 23:43 day01_transformer_inference.md
+-rw-r--r--  1 root root 38026 Oct  2 00:09 day02_memory_latency_hand_calc.md
+-rw-r--r--  1 root root 50999 Oct  2 00:52 day03_roofline_model.md
+-rw-r--r--  1 root root 52409 Oct  2 01:18 day04_paged_attention_paper.md
+-rw-r--r--  1 root root 57410 Oct  2 01:57 day05_serving_metrics.md
+-rw-r--r--  1 root root 48535 Oct  2 01:41 day06_env_setup_first_bench.md
+-rw-r--r--  1 root root 33208 Oct  1 23:13 README.md
+[0m
+[0m→ [0mRead week1/day06_env_setup_first_bench.md[90m [limit=120][0m
+[0m→ [0mRead week2/README.md[90m [limit=80][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/vllm 2>/dev/null || echo "NO vllm source dir"; ls /mnt/workspace/aiinfra/vllm/public 2>/dev/null; cat /mnt/workspace/aiinfra/vllm/.tutorial_progress 2>/dev/null
+NO vllm source dir
+css
+index.html
+js
+plan.html
+prompt.html
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+5
+[0m
+[0m→ [0mRead week2/README.md[90m [limit=200, offset=81][0m
+[0m→ [0mRead week1/day06_env_setup_first_bench.md[90m [limit=140, offset=520][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/week1/assets/ && head -30 /mnt/workspace/aiinfra/vllm/week1/assets/day06_bench_architecture.svg
+day01_decode_iteration_tensor_flow.svg
+day01_kv_cache_lifecycle.svg
+day01_prefill_vs_decode.svg
+day02_decode_latency_lb.svg
+day02_kv_formula_anatomy.svg
+day02_memory_budget.svg
+day03_ascend_gpu_mapping.svg
+day03_ncu_decision_tree.svg
+day03_roofline_chart.svg
+day04_kv_waste_taxonomy.svg
+day04_paged_layout.svg
+day04_v1_kv_callchain.svg
+day05_capacity_ladder.svg
+day05_goodput_knee.svg
+day05_request_timeline_metrics.svg
+day06_bench_architecture.svg
+day06_concurrency_curves.svg
+day06_request_timeline.svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 800" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="800" fill="#ffffff"/>
+  <text x="620" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">第一次压测的全景：谁在计时、谁在被测（vLLM V1）</text>
+  <text x="620" y="50" text-anchor="middle" font-size="12" fill="#64748b">左：压测客户端进程（vllm bench serve）· 右：vllm serve 的进程栈（API Server 与 EngineCore 分离）· 底：/metrics 服务端口径 · 源码坐标以 v0.10~v0.11 主线为准</text>
+
+  <!-- ================= 左：客户端 ================= -->
+  <rect x="40" y="76" width="380" height="112" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="56" y="98" font-size="12" font-weight="bold" fill="#1e3a8a">① 构造负载</text>
+  <text x="56" y="118" font-size="10" fill="#475569">CLI：vllm bench serve（vllm/entrypoints/cli/benchmark/）</text>
+  <text x="56" y="134" font-size="10" fill="#475569">ShareGPTDataset（vllm/benchmarks/datasets/datasets.py）</text>
+  <text x="56" y="150" font-size="10" fill="#475569">　对话第 1 轮 → prompt 文本（tokenize 计长度）</text>
+  <text x="56" y="166" font-size="10" fill="#475569">　对话第 2 轮 → 该请求的 max_tokens</text>
+
+  <line x1="230" y1="188" x2="230" y2="208" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="40" y="210" width="380" height="118" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="56" y="232" font-size="12" font-weight="bold" fill="#1e3a8a">② 发送与计时</text>
+  <text x="180" y="232" font-size="9.5" fill="#475569">vllm/benchmarks/lib/endpoint_request_func.py</text>
+  <text x="56" y="252" font-size="10" fill="#475569">aiohttp 异步任务 × --num-prompts（单进程客户端）</text>
+  <text x="56" y="268" font-size="10" fill="#475569">--max-concurrency C：闭环（客户端信号量限并发）</text>
+  <text x="56" y="284" font-size="10" fill="#475569">--request-rate λ：开环泊松到达（默认 inf = 一次全发）</text>
+  <text x="56" y="300" font-size="10" fill="#475569">stream=true：每收到一个 chunk 打一个时间戳</text>
+  <text x="56" y="316" font-size="10" fill="#475569">　→ RequestFuncOutput{ttft, itl[], latency}</text>
+[0m
+[0m$ [0mgrep -n "max-model-len\|max_model_len\|KV cache is allocated\|Maximum concurrency\|GPU KV cache\|EngineCore_0" /mnt/workspace/aiinfra/vllm/week1/day06_env_setup_first_bench.md | head -40
+19:- [ ] 用**启动日志对账 Day 2 的手算**：`GPU KV cache size` ≈ 36.6 万 token、`Maximum concurrency` ≈ 44×——理论、源码、日志三边一致才算环境可信
+294:| `GPU KV cache size: 366,xxx tokens` | 54.1 GB ÷ 144 KiB ≈ 36.6 万 | 检查 `--gpu-memory-utilization`、权重 dtype、其他显存占用（Day 2 §2.3 的四件套） |
+295:| `Maximum concurrency for 8,192 tokens per sequence: 44.x` | 36.6 万 ÷ 8192 ≈ 44.8 | 同上；注意这是**满长口径**，真实负载平均 2000 token 时实际可容纳 ~182 路（Day 4 §3.2） |
+298:运行期间（默认 log stats 开启，`--disable-log-stats` 可关）：周期打印 `Running: x reqs, Waiting: y reqs, GPU KV cache usage: z%` 一类的引擎统计行——**压测时盯着这三项**，它们就是曲线背后引擎视角的解释（实验 4 的 KV 越界就靠它发现）。
+340:> **降级方案（24 GB 消费卡）**：Qwen3-8B BF16 塞不下健康余量——换官方 `Qwen/Qwen3-8B-FP8`（权重 ≈ 8.6 GB，KV 池能到 ~10 GB）或 `Qwen/Qwen3-4B`，并加 `--max-model-len 4096`。注意 FP8 权重会把 §3 的账本分母砍半（16.4→8.6 GB），预测表要相应重算——**账本跟着部署走，这正是练习**。
+348:  --max-model-len 8192 \
+354:参数解释（台账里各写一句"为什么"）：`--max-model-len 8192` 对齐 Day 2 题 3 的手算口径；`--gpu-memory-utilization 0.9`（新版本默认已提到 0.92，显式写出避免歧义）；prefix caching / chunked prefill 用 V1 默认（APC 默认开，其影响见"坑 1"）。
+415:时长预估：C=1 一档 ≈ 200 × E2E ≈ 5~8 分钟（嫌慢可减到 100）；大 C 档位几分钟内完成；全程约 30~50 分钟。**扫描时开另一个终端盯服务端日志的 `Running / Waiting / GPU KV cache usage`**。
+502:3. 扫描期间 `Waiting` 恒为 0、`GPU KV cache usage` 峰值离 100% 还有多远？——这决定了你的**容量余量**，也是实验 4b 的伏笔。
+529:观察三件事：服务端日志 `GPU KV cache usage` 逼近 100%、出现被逐出/重算的请求（措辞随版本）、`overflow.json` 的 p99 对 `c256.json` 出现**尖刺**。对照 Day 4：η > 96% 的分页池也躲不过**硬容量**——$256 \times 1524 \times 144\text{KiB} \approx 56\,\text{GB} > 54\,\text{GB}$。
+[0m
+[0m$ [0mgrep -n "V1\|EngineCore\|AsyncLLM" /mnt/workspace/aiinfra/vllm/week1/day04_paged_attention_paper.md | head -30; echo ---; grep -n "^## \|^### " /mnt/workspace/aiinfra/vllm/week1/day05_serving_metrics.md | head -40
+21:- [ ] 权衡抢占的 **recompute vs swap**，说清论文选 recompute 的资源逻辑，以及 V1 只保留 recompute 的现状
+22:- [ ] 把论文机制**映射到 vLLM V1 源码坐标**（`KVCacheManager` / `BlockPool` / block table / `slot_mapping` / attention backend），为 Day 15/16 立好地图
+41:| **prefix caching（APC）** | 跨请求按块哈希自动共享/复用前缀（V1 默认开） | 今天只到机制层，Day 16 精读 |
+103:**① 逻辑视图**：每个序列的 KV cache 按 `block_size`（论文与 V1 默认 **16 token**）切成逻辑块。逻辑上序列仍然"连续"——第 $i$ 个 token 属于逻辑块 $\lfloor i/16 \rfloor$ 的第 $i \bmod 16$ 槽。尾块可以部分填充。
+107:**③ 物理块池**：启动时把 KV 预算**一次性**预分配成每层一个大张量（Day 2 §2.3 的"② KV 池"项），按 block_size 等大切块。**一个 block_id 同时索引每一层张量的同一段**——即一个逻辑块 = 全部 $L$ 层 × 16 token 的 KV（V1 中每层对应一个 `KVCacheTensor`，见 §4）。空闲块挂 free 队列，被引用块带 ref_cnt。
+135:| **共享前缀**（system prompt） | 所有请求的公共前缀 | 各自生成时 | 论文讨论的场景；**跨请求自动去重（APC）是论文之后加入 vLLM 的**，V1 默认开启（Day 16） |
+137:> **准确性备注**：论文的共享聚焦"运行中序列之间"；**自动前缀缓存（automatic prefix caching）**——用块哈希链跨请求自动发现并复用前缀、请求结束后仍保留可命中块——是论文发表后（2023 年底）合入 vLLM 的机制，V1 里默认开启。今天知道边界即可，细节（`hash_block_tokens` 的链式哈希、LRU 驱逐）留到 Day 16。
+156:**论文与 v0 支持两种、默认 recompute；V1 只保留 recompute**（swap 路径已移除）——理由正是上表第一行：**用空闲资源换稀缺资源**。这个选择不是永恒真理，Day 29 讲 P/D 分离时会看到它翻转的条件。抢占的触发路径与指标（`/metrics` 的 preemption 计数）→ Day 12。
+166:# 分页：查表逐块读（论文的自研 kernel / V1 的 FA3·FlashInfer 都这么做）
+176:**V1 现状**（重要的演进点）：GPU 路径上论文的自研 CUDA kernel 已被**原生支持 paged KV 的注意力后端**取代——FlashAttention / FlashInfer / Triton（`vllm/v1/attention/backends/`，`page_size = block_size`，Day 17 精读）；论文 kernel 的实现仍保留在仓库中供部分非 GPU 后端使用（以你手上版本为准）。
+288:论文与 V1 默认 **16**；V1 中实际值由 attention 后端的 `KVCacheSpec` 协商（不同后端/模型可能不同，如部分 MLA 后端用更大块，以版本为准）；**vllm-ascend 历史上倾向 128**（NPU 连续段敏感性，§2.6）。"给定平台与负载选 $b$"是 W6 项目的潜在实验题。
+316:## 4. 关键代码与 vLLM V1 的实际联系
+318:> **版本说明**（同 Day 2 §4）：以下坐标以 v0.8 ~ v0.10 的 `vllm/v1/` 主线为准；V1 仍在演进（如 v0.10 起引入 `KVCacheCoordinator` 管理多组 attention 的块组），**类名/签名可能变化，Day 15/16 逐行精读**。今天只建立"论文机制 → 源码坐标"的地图，记住结构比记住名字重要。
+320:![vLLM V1 KV 管理调用链与 block 生命周期](assets/day04_v1_kv_callchain.svg)
+322:### 4.1 论文机制 → V1 源码映射表
+324:| 论文机制 | V1 源码坐标 | 关键类 / 函数 |
+356:**论文伪代码 ↔ V1 语义重构**（简化自 `allocate_slots`，不可运行，只为记住语义）：
+362:    # ① 前缀命中（V1 默认开启）：hash_k = H(hash_{k-1}, tokens_k, extra_hash)
+382:### 4.3 论文 → V1 的演进表（面试"你知道后续吗"）
+384:| 论文时代（v0 首发） | V1 现状 | 备注 |
+407:BLOCK = 16                                  # 论文 / V1 默认 block size
+545:### 实验 2（可选，需 GPU）：与 vLLM V1 启动日志对账
+556:**思考**：日志里的 Maximum concurrency 按 `max_model_len` 满长计算（保守口径 44.8×）；真实负载平均 2000 token 时，分页池实际能容纳 ~182 路（§3.2）——**这 44.8 → 182 的差距正是 PagedAttention 的 payoff**，只要 `max_num_seqs`（V1 默认 1024）与 TPOT SLO 不先封顶。若版本支持 `--block-size` 可再试 8/32 观察块数变化（新版本由后端协商，CLI 可能被覆盖，以实际行为为准；APC 开关的对比实验留给 Day 16）。
+586:> 骨架：① 小 b：尾部浪费小（∝ b）、APC 命中粒度细，但表项 ∝ 1/b、访存连续段 ∝ b（coalescing 恶化）、管理开销升；② 大 b：反之，b=L_max 退化回朴素方案（内部碎片全回来）；③ b=1 纯 token 级，访存完全随机，kernel 崩；④ 论文/V1 默认 16（4 KB 单头单块连续段）；平台差异：NPU 上 vllm-ascend 历史倾向 128 保连续段。**收尾**：给数字——b=16 @E[L]=2000 尾部浪费 0.38%，b=256 是 6.4%。
+594:> 骨架：① 资源账：swap 花 HBM↔CPU 往返带宽（稀缺、与 TP 通信/权重加载争抢），recompute 花 prefill 算力——decode 阶段算力大量闲置（计算项比访存项小两个数量级，Day 2）；② 用闲置资源换瓶颈资源，同投机解码一个母题；③ V1 干脆只留 recompute；④ 翻转条件：P/D 分离后 prefill 算力不再空闲（Day 29）、或互连带宽充裕（NVLink 内搬 KV 便宜）——决策是负载与拓扑的函数。
+598:> 骨架：① 要求：按 block table 查表寻址，逐块 gather 非连续 KV；② 救命性质：块内连续（16×128×2B=4 KB/头/块），coalescing 仍友好；③ 损失：每块一次查表 + 跨块跳变，论文微基准是个位数百分比量级；④ V1 现状：FlashAttention/FlashInfer 原生 paged KV 接口（page_size=block_size），自研 kernel 已退居非 GPU 后端。**收尾**：相对它换来的 4× batch 上限，这个损失是零头——"系统级收益买 kernel 级开销"。
+610:3. **共享**：KV 只读不变性（Day 1 的因果性推导）使多序列共享安全——ref_cnt 管生死，COW 管分叉；n 路并行采样拷 n−1 块（每块 2.25 MiB），成本收益比 ~1:75；跨请求 APC 是论文后加入的演进，V1 默认开。
+611:4. **抢占**：recompute 用 decode 闲置算力换稀缺带宽，优于 swap；V1 只留 recompute；P/D 分离后此决策会翻转。
+613:6. **V1 坐标**：`KVCacheManager.allocate_slots/free` + `BlockPool`（free 队列/cached_blocks）+ `InputBatch.block_table` + `slot_mapping` + `vllm/v1/attention/backends/` 的 paged gather——三层结构十年未变，kernel 换了三代。
+647:**Q5**：V1 为什么删掉了 swap 抢占？说说这个决策的资源和场景依赖。
+---
+13:## 0. 今日学习目标
+27:## 1. 核心概念速览
+48:## 2. 原理深入讲解
+50:### 2.1 回顾 Day 1~4：我们一直缺的那一层
+70:### 2.2 一条时间线定义六个指标
+97:### 2.3 恒等式一：E2E = TTFT + (n−1)·TPOT —— 分解归因的第一刀
+126:### 2.4 恒等式二：Little's Law —— 容量的桥梁
+148:### 2.5 吞吐的物理：TPOT(C) 曲线 → 吞吐曲线（把 Day 2 系统化）
+171:### 2.6 SLO 与 goodput：膝点、容量与部署点
+211:### 2.7 三重上限：容量是三维的
+235:### 2.8 诊断速查表（Day 51 诊断树的雏形）
+250:## 3. 定量推导：三道手算题（今日核心）
+254:### 3.0 记号与基准配置
+266:### 3.1 题 1（完整面试题）：H100 + Qwen3-8B BF16，目标并发 64 @ 8K —— 全套指标
+318:### 3.2 题 2（Day 4 预告兑现）：PagedAttention 的 182 路，在 TPOT SLO 下打多少折扣？
+351:### 3.3 题 3（TTFT 侧）：8K prompt 的 TTFT SLO 可行性
+386:### 3.4 手算流程卡（3 分钟白板版，面试直接用）
+404:## 4. 关键代码与 vLLM V1 的实际联系
+408:### 4.1 指标的生产者 / 消费者全景
+432:### 4.2 定义如何被代码化（`vllm/benchmarks/serve.py::calculate_metrics` 节选）
+450:### 4.3 指标 → 源码映射表
+464:## 5. 动手实验（约 60~90 分钟）
+466:### 实验 1（无需 GPU）：指标计算器 + 开环排队模拟——亲眼看到 goodput 膝点
+642:### 实验 2：制作指标定义卡片（今天的正式产出物）
+650:### 实验 3（可选）：手画 goodput 曲线 + 自造一道题
+657:## 6. 面试高频问题（含答题骨架）
+689:## 7. 今日总结
+700:## 8. 今日自测题（先自己做，再展开答案）
+746:## 9. 今日产出物
+758:### 9.1 卡片模板（直接抄）
+787:## 10. 明日预告（Day 6）
+[0m
+现在我来核实一下 V1 架构相关的事实，并对照官方 vLLM 文档进行核对，以确保准确性。
+[0m✗ [0mWebFetch https://blog.vllm.ai/2025/01/27/vllm-v1-alpha.html failed
+[91m[1mError: [0mStatusCode: non 2xx status code (404 GET https://blog.vllm.ai/2025/01/27/vllm-v1-alpha.html)
+[0m% [0mWebFetch https://docs.vllm.ai/en/latest/design/v1/arch_overview/v1.html
+[0m✗ [0mWebFetch https://blog.vllm.ai/2025/01/27/vllm-v1-alpha/ failed
+[91m[1mError: [0mStatusCode: non 2xx status code (404 GET https://blog.vllm.ai/2025/01/27/vllm-v1-alpha/)
+[0m✗ [0mWebFetch https://api.github.com/repos/vllm-project/vllm/contents/docs/design/v1 failed
+[91m[1mError: [0mStatusCode: non 2xx status code (404 GET https://api.github.com/repos/vllm-project/vllm/contents/docs/design/v1)
+[0m% [0mWebFetch https://blog.vllm.ai/
+[0m% [0mWebFetch https://api.github.com/repos/vllm-project/vllm/contents/docs/design
+博客列表和文档结构提供了很好的参考。让我获取那两份最权威的资料：V1 架构概览设计文档以及《Anatomy of vLLM》博客。
+[0m% [0mWebFetch https://raw.githubusercontent.com/vllm-project/vllm/main/docs/design/arch_overview.md
+[0m% [0mWebFetch https://blog.vllm.ai/blog/2025-09-05-anatomy-of-vllm
+这真是一座宝库。让我先在保存的博客索引中查找 V1 alpha 公告的 URL，并确认几个源码层面的细节。
+[0m
+[0m$ [0mgrep -o '/blog/[0-9a-z-]*' /root/.local/share/opencode/tool-output/tool_0f8b8df8f001hXkk2OlngjoVIs 2>/dev/null | grep -iE "v1|alpha|beta" | sort -u | head; echo ---; grep -i "v1 alpha\|V1 Alpha" /root/.local/share/opencode/tool-output/tool_0f8b8df8f001hXkk2OlngjoVIs | head -5
+---
+[0m
+[0m✗ [0mWebFetch https://blog.vllm.ai/blog/2025-01-27-vllm-v1-alpha failed
+[91m[1mError: [0mStatusCode: non 2xx status code (404 GET https://blog.vllm.ai/blog/2025-01-27-vllm-v1-alpha)
+[0m
+[0m$ [0mgrep -oE "2025-0[1-4]-[0-9]{2}[^\"/]*" /root/.local/share/opencode/tool-output/tool_0f8b8df8f001hXkk2OlngjoVIs | sort -u | head -20; echo ===; grep -oE "\(/blog/[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+\)" /root/.local/share/opencode/tool-output/tool_0f8b8df8f001hXkk2OlngjoVIs | sort -u | tail -20
+===
+(/blog/2025-09-05-beyond-text-generation)
+(/blog/2025-09-11-semantic-router)
+(/blog/2026-09-15-kimi-k3-dspark)
+(/blog/2026-09-24-watermarking-in-vllm)
+[0m
+[0m✗ [0mWebFetch https://web.archive.org/web/2025/https://blog.vllm.ai/2025/01/27/vllm-v1-alpha.html failed
+[91m[1mError: [0mRequest timed out
+Wayback 超时了；我已经从 README 和 anatomy 博客中获取了足够的 V1-alpha 事实信息。现在让我来核实 v0.11 版本中关键的源码级声明（这是该系列的版本基准）。
+[0m
+[0m$ [0mcd /tmp/opencode && curl -sL --max-time 60 -o core.py https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/engine/core.py && wc -l core.py && curl -sL --max-time 60 -o abstract.py https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/executor/abstract.py && wc -l abstract.py
+1235 core.py
+137 abstract.py
+[0m
+[0m$ [0mcd /tmp/opencode && grep -n "class \|^async def \|^def \|def step\|def run_busy_loop\|setproctitle\|_busy_loop\|has_unfinished" core.py | head -40
+63:class EngineCore:
+113:                "Using configured V1 scheduler class %s. "
+272:    def step(self) -> tuple[dict[int, EngineCoreOutputs], bool]:
+300:    def step_with_batch_queue(
+367:        if self.scheduler.has_unfinished_requests():
+453:class EngineCoreProc(EngineCore):
+505:            # Threads handle Socket <-> Queues and core_busy_loop uses Queue.
+701:            engine_core.run_busy_loop()
+720:    def run_busy_loop(self):
+944:class DPEngineCoreProc(EngineCoreProc):
+1036:    def run_busy_loop(self):
+1048:            local_unfinished_reqs = self.scheduler.has_unfinished_requests()
+1085:        return ParallelConfig.has_unfinished_dp(self.dp_group,
+1133:class DPEngineCoreActor(DPEngineCoreProc):
+1227:            self.run_busy_loop()
+[0m
+[0m$ [0mcd /tmp/opencode && grep -n "class \|def \|Executor" abstract.py | head -40
+11:from vllm.executor.executor_base import ExecutorBase
+13:    ExecutorWithExternalLauncher as ExecutorWithExternalLauncherV0)
+15:    UniProcExecutor as UniProcExecutorV0)
+24:class Executor(ExecutorBase):
+26:    Abstract class for v1 executors, mainly define some methods for v1.
+27:    For methods shared by v0 and v1, define them in ExecutorBase"""
+30:    def get_class(vllm_config: VllmConfig) -> type["Executor"]:
+31:        executor_class: type[Executor]
+37:            if not issubclass(distributed_executor_backend, ExecutorBase):
+39:                    "distributed_executor_backend must be a subclass of "
+40:                    f"ExecutorBase. Got {distributed_executor_backend}.")
+41:            executor_class = distributed_executor_backend
+44:                RayDistributedExecutor)
+45:            executor_class = RayDistributedExecutor
+47:            from vllm.v1.executor.multiproc_executor import MultiprocExecutor
+48:            executor_class = MultiprocExecutor
+50:            executor_class = UniProcExecutor
+54:            executor_class = ExecutorWithExternalLauncher
+56:            executor_class = resolve_obj_by_qualname(
+58:            if not issubclass(executor_class, ExecutorBase):
+60:                    "distributed_executor_backend must be a subclass of "
+61:                    f"ExecutorBase. Got {executor_class}.")
+67:    def initialize_from_config(self,
+77:    def register_failure_callback(self, callback: FailureCallback):
+84:    def determine_available_memory(self) -> list[int]:  # in bytes
+87:    def get_kv_cache_specs(self) -> list[dict[str, KVCacheSpec]]:
+90:    def collective_rpc(self,
+98:    def execute_model(
+108:    def execute_dummy_batch(self) -> None:
+111:    def take_draft_token_ids(self) -> Optional[DraftTokenIds]:
+116:    def max_concurrent_batches(self) -> int:
+119:    def profile(self, is_start: bool = True):
+123:class UniProcExecutor(UniProcExecutorV0, Executor):
+127:class ExecutorWithExternalLauncher(ExecutorWithExternalLauncherV0, Executor):
+129:    def determine_available_memory(self) -> list[int]:  # in bytes
+[0m
+[0m$ [0mcd /tmp/opencode && sed -n '63,130p' core.py && echo "=====STEP=====" && sed -n '272,300p' core.py
+class EngineCore:
+    """Inner loop of vLLM's Engine."""
+
+    def __init__(self,
+                 vllm_config: VllmConfig,
+                 executor_class: type[Executor],
+                 log_stats: bool,
+                 executor_fail_callback: Optional[Callable] = None):
+
+        # plugins need to be loaded at the engine/scheduler level too
+        from vllm.plugins import load_general_plugins
+        load_general_plugins()
+
+        self.vllm_config = vllm_config
+        logger.info("Initializing a V1 LLM engine (v%s) with config: %s",
+                    VLLM_VERSION, vllm_config)
+
+        self.log_stats = log_stats
+
+        # Setup Model.
+        self.model_executor = executor_class(vllm_config)
+        if executor_fail_callback is not None:
+            self.model_executor.register_failure_callback(
+                executor_fail_callback)
+
+        self.available_gpu_memory_for_kv_cache = -1
+
+        # Setup KV Caches and update CacheConfig after profiling.
+        num_gpu_blocks, num_cpu_blocks, kv_cache_config = \
+            self._initialize_kv_caches(vllm_config)
+
+        vllm_config.cache_config.num_gpu_blocks = num_gpu_blocks
+        vllm_config.cache_config.num_cpu_blocks = num_cpu_blocks
+        self.collective_rpc("initialize_cache",
+                            args=(num_gpu_blocks, num_cpu_blocks))
+
+        self.structured_output_manager = StructuredOutputManager(vllm_config)
+
+        # Setup scheduler.
+        if isinstance(vllm_config.scheduler_config.scheduler_cls, str):
+            Scheduler = resolve_obj_by_qualname(
+                vllm_config.scheduler_config.scheduler_cls)
+        else:
+            Scheduler = vllm_config.scheduler_config.scheduler_cls
+
+        # This warning can be removed once the V1 Scheduler interface is
+        # finalized and we can maintain support for scheduler classes that
+        # implement it
+        if Scheduler is not V1Scheduler:
+            logger.warning(
+                "Using configured V1 scheduler class %s. "
+                "This scheduler interface is not public and "
+                "compatibility may not be maintained.",
+                vllm_config.scheduler_config.scheduler_cls)
+
+        if len(kv_cache_config.kv_cache_groups) == 0:
+            # Encoder models without KV cache don't support
+            # chunked prefill. But do SSM models?
+            logger.info("Disabling chunked prefill for model without KVCache")
+            vllm_config.scheduler_config.chunked_prefill_enabled = False
+
+        self.scheduler: SchedulerInterface = Scheduler(
+            vllm_config=vllm_config,
+            kv_cache_config=kv_cache_config,
+            structured_output_manager=self.structured_output_manager,
+            include_finished_set=vllm_config.parallel_config.data_parallel_size
+            > 1,
+            log_stats=self.log_stats,
+=====STEP=====
+    def step(self) -> tuple[dict[int, EngineCoreOutputs], bool]:
+        """Schedule, execute, and make output.
+
+        Returns tuple of outputs and a flag indicating whether the model
+        was executed.
+        """
+
+        # Check for any requests remaining in the scheduler - unfinished,
+        # or finished and not yet removed from the batch.
+        if not self.scheduler.has_requests():
+            return {}, False
+        scheduler_output = self.scheduler.schedule()
+        model_output = self.execute_model_with_error_logging(
+            self.model_executor.execute_model,  # type: ignore
+            scheduler_output)
+        engine_core_outputs = self.scheduler.update_from_output(
+            scheduler_output, model_output)  # type: ignore
+
+        return (engine_core_outputs,
+                scheduler_output.total_num_scheduled_tokens > 0)
+
+    def post_step(self, model_executed: bool) -> None:
+        if self.use_spec_decode and model_executed:
+            # Take the draft token ids.
+            draft_token_ids = self.model_executor.take_draft_token_ids()
+            if draft_token_ids is not None:
+                self.scheduler.update_draft_token_ids(draft_token_ids)
+
+    def step_with_batch_queue(
+[0m
+[0m$ [0mcd /tmp/opencode && sed -n '680,780p' core.py && echo "===KV===" && grep -n "_initialize_kv_caches" core.py
+# Either SIGTERM or SIGINT will terminate the engine_core
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+
+        engine_core: Optional[EngineCoreProc] = None
+        try:
+            parallel_config: ParallelConfig = kwargs[
+                "vllm_config"].parallel_config
+            if parallel_config.data_parallel_size > 1 or dp_rank > 0:
+                set_process_title("EngineCore", f"DP{dp_rank}")
+                decorate_logs()
+                # Set data parallel rank for this engine process.
+                parallel_config.data_parallel_rank = dp_rank
+                parallel_config.data_parallel_rank_local = local_dp_rank
+                engine_core = DPEngineCoreProc(*args, **kwargs)
+            else:
+                set_process_title("EngineCore")
+                decorate_logs()
+                engine_core = EngineCoreProc(*args, **kwargs)
+
+            engine_core.run_busy_loop()
+
+        except SystemExit:
+            logger.debug("EngineCore exiting.")
+            raise
+        except Exception as e:
+            if engine_core is None:
+                logger.exception("EngineCore failed to start.")
+            else:
+                logger.exception("EngineCore encountered a fatal error.")
+                engine_core._send_engine_dead()
+            raise e
+        finally:
+            if engine_core is not None:
+                engine_core.shutdown()
+
+    def _init_data_parallel(self, vllm_config: VllmConfig):
+        pass
+
+    def run_busy_loop(self):
+        """Core busy loop of the EngineCore."""
+
+        # Loop until process is sent a SIGINT or SIGTERM
+        while True:
+            # 1) Poll the input queue until there is work to do.
+            self._process_input_queue()
+            # 2) Step the engine core and return the outputs.
+            self._process_engine_step()
+
+    def _process_input_queue(self):
+        """Exits when an engine step needs to be performed."""
+
+        waited = False
+        while not self.engines_running and not self.scheduler.has_requests() \
+                and not self.batch_queue:
+            if logger.isEnabledFor(DEBUG) and self.input_queue.empty():
+                logger.debug("EngineCore waiting for work.")
+                waited = True
+            req = self.input_queue.get()
+            self._handle_client_request(*req)
+
+        if waited:
+            logger.debug("EngineCore loop active.")
+
+        # Handle any more client requests.
+        while not self.input_queue.empty():
+            req = self.input_queue.get_nowait()
+            self._handle_client_request(*req)
+
+    def _process_engine_step(self) -> bool:
+        """Called only when there are unfinished local requests."""
+
+        # Step the engine core.
+        outputs, model_executed = self.step_fn()
+        # Put EngineCoreOutputs into the output queue.
+        for output in (outputs.items() if outputs else ()):
+            self.output_queue.put_nowait(output)
+        # Post-step hook.
+        self.post_step(model_executed)
+
+        return model_executed
+
+    def _handle_client_request(self, request_type: EngineCoreRequestType,
+                               request: Any) -> None:
+        """Dispatch request from client."""
+
+        if request_type == EngineCoreRequestType.ADD:
+            req, request_wave = request
+            self.add_request(req, request_wave)
+        elif request_type == EngineCoreRequestType.ABORT:
+            self.abort_requests(request)
+        elif request_type == EngineCoreRequestType.UTILITY:
+            client_idx, call_id, method_name, args = request
+            output = UtilityOutput(call_id)
+            try:
+                method = getattr(self, method_name)
+                result = method(*self._convert_msgspec_args(method, args))
+                output.result = UtilityResult(result)
+            except BaseException as e:
+                logger.exception("Invocation of %s method failed", method_name)
+===KV===
+92:            self._initialize_kv_caches(vllm_config)
+169:    def _initialize_kv_caches(
+1118:            # use it in _initialize_kv_caches() rather than profiling.
+[0m
+[0m$ [0mcd /tmp/opencode && for f in __init__.py core_client.py utils.py async_llm.py processor.py; do curl -sL --max-time 60 -o $f https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/engine/$f; done && wc -l __init__.py core_client.py utils.py async_llm.py processor.py
+203 __init__.py
+  1334 core_client.py
+   860 utils.py
+   742 async_llm.py
+   545 processor.py
+  3684 total
+[0m
+[0m$ [0mcd /tmp/opencode && grep -n "class \|^def " __init__.py && echo "===CLIENT===" && grep -n "^class \|^    def \|^    async def " core_client.py | head -50
+24:class FinishReason(enum.IntEnum):
+43:class EngineCoreRequest(
+74:class EngineCoreEventType(enum.IntEnum):
+81:class EngineCoreEvent(msgspec.Struct):
+99:class EngineCoreOutput(
+127:class UtilityResult:
+134:class UtilityOutput(
+146:class EngineCoreOutputs(
+177:class EngineCoreRequestType(enum.Enum):
+190:class ReconfigureDistributedRequest(msgspec.Struct):
+198:class ReconfigureRankType(enum.IntEnum):
+===CLIENT===
+49:class EngineCoreClient(ABC):
+61:    def make_client(
+85:    def make_async_mp_client(
+105:    def shutdown(self):
+108:    def get_output(self) -> EngineCoreOutputs:
+111:    def get_supported_tasks(self) -> tuple[SupportedTask, ...]:
+114:    def add_request(self, request: EngineCoreRequest) -> None:
+117:    def profile(self, is_start: bool = True) -> None:
+120:    def reset_mm_cache(self) -> None:
+123:    def reset_prefix_cache(self) -> None:
+126:    def sleep(self, level: int = 1) -> None:
+129:    def wake_up(self, tags: Optional[list[str]] = None) -> None:
+132:    def is_sleeping(self) -> bool:
+135:    def execute_dummy_batch(self) -> None:
+138:    async def execute_dummy_batch_async(self) -> None:
+141:    def abort_requests(self, request_ids: list[str]) -> None:
+144:    def add_lora(self, lora_request: LoRARequest) -> bool:
+147:    def remove_lora(self, lora_id: int) -> bool:
+150:    def list_loras(self) -> set[int]:
+153:    def pin_lora(self, lora_id: int) -> bool:
+156:    def save_sharded_state(self,
+162:    def collective_rpc(self,
+169:    def dp_engines_running(self) -> bool:
+174:    async def scale_elastic_ep(self, new_data_parallel_size: int) -> None:
+177:    async def get_output_async(self) -> EngineCoreOutputs:
+180:    async def get_supported_tasks_async(self) -> tuple[SupportedTask, ...]:
+183:    async def add_request_async(self, request: EngineCoreRequest) -> None:
+186:    async def profile_async(self, is_start: bool = True) -> None:
+189:    async def reset_mm_cache_async(self) -> None:
+192:    async def reset_prefix_cache_async(self) -> None:
+195:    async def sleep_async(self, level: int = 1) -> None:
+198:    async def wake_up_async(self, tags: Optional[list[str]] = None) -> None:
+201:    async def is_sleeping_async(self) -> bool:
+204:    async def abort_requests_async(self, request_ids: list[str]) -> None:
+207:    async def add_lora_async(self, lora_request: LoRARequest) -> bool:
+210:    async def remove_lora_async(self, lora_id: int) -> bool:
+213:    async def list_loras_async(self) -> set[int]:
+216:    async def pin_lora_async(self, lora_id: int) -> bool:
+219:    async def save_sharded_state_async(self,
+225:    async def collective_rpc_async(
+234:class InprocClient(EngineCoreClient):
+244:    def __init__(self, *args, **kwargs):
+247:    def get_output(self) -> EngineCoreOutputs:
+251:    def get_supported_tasks(self) -> tuple[SupportedTask, ...]:
+254:    def add_request(self, request: EngineCoreRequest) -> None:
+258:    def abort_requests(self, request_ids: list[str]) -> None:
+262:    def shutdown(self) -> None:
+265:    def profile(self, is_start: bool = True) -> None:
+268:    def reset_mm_cache(self) -> None:
+271:    def reset_prefix_cache(self) -> None:
+[0m
+[0m$ [0mcd /tmp/opencode && grep -n "^class \|^def \|decorate_logs\|CoreEngineProcManager\|def set_process_title" utils.py | head -25 && echo "===ASYNC_LLM===" && grep -n "^class \|    def \|    async def " async_llm.py | head -35 && echo "===PROC===" && grep -n "^class \|    def " processor.py | head -15
+35:class CoreEngineState(Enum):
+41:class CoreEngine:
+52:class EngineZmqAddresses:
+68:class EngineHandshakeMetadata:
+77:class CoreEngineProcManager:
+159:def set_device_control_env_var(vllm_config: VllmConfig,
+173:def get_device_indices(device_control_env_var: str, local_dp_rank: int,
+196:class CoreEngineActorManager:
+201:    Different from CoreEngineProcManager, this class manages
+596:def launch_core_engines(
+602:        Optional[Union[CoreEngineProcManager, CoreEngineActorManager]],
+715:            local_engine_manager = CoreEngineProcManager(
+743:def wait_for_engine_startup(
+749:    proc_manager: Optional[CoreEngineProcManager],
+===ASYNC_LLM===
+52:class AsyncLLM(EngineClient):
+54:    def __init__(
+186:    def from_vllm_config(
+221:    def from_engine_args(
+245:    def __del__(self):
+248:    def shutdown(self):
+258:    async def get_supported_tasks(self) -> tuple[SupportedTask, ...]:
+261:    async def add_request(
+303:    async def _add_request(self, request: EngineCoreRequest,
+323:    async def generate(
+422:    def _run_output_handler(self):
+435:        async def output_handler():
+485:    async def abort(self, request_id: Union[str, Iterable[str]]) -> None:
+496:    async def encode(
+585:    async def get_vllm_config(self) -> VllmConfig:
+588:    async def get_model_config(self) -> ModelConfig:
+591:    async def get_input_preprocessor(self) -> InputPreprocessor:
+594:    async def get_tokenizer(self) -> AnyTokenizer:
+601:    async def is_tracing_enabled(self) -> bool:
+604:    async def do_log_stats(self) -> None:
+608:    async def check_health(self) -> None:
+613:    async def start_profile(self) -> None:
+619:    async def stop_profile(self) -> None:
+625:    async def reset_mm_cache(self) -> None:
+629:    async def reset_prefix_cache(self,
+635:    async def sleep(self, level: int = 1) -> None:
+639:    async def wake_up(self, tags: Optional[list[str]] = None) -> None:
+642:    async def is_sleeping(self) -> bool:
+645:    async def add_lora(self, lora_request: LoRARequest) -> bool:
+649:    async def remove_lora(self, lora_id: int) -> bool:
+653:    async def list_loras(self) -> set[int]:
+657:    async def pin_lora(self, lora_id: int) -> bool:
+661:    async def collective_rpc(self,
+672:    async def wait_for_requests_to_drain(self, drain_timeout: int = 300):
+687:    async def scale_elastic_ep(self,
+===PROC===
+36:class Processor:
+38:    def __init__(
+66:    def _validate_logprobs(
+94:    def _validate_sampling_params(
+114:    def _validate_logit_bias(
+134:    def _validate_supported_sampling_params(
+146:    def _validate_params(
+162:    def _validate_multi_modal_uuids(self, prompt: PromptType) -> None:
+170:        def _validate_single_prompt(single_prompt: Union[dict, str]) -> None:
+205:    def _validate_lora(self, lora_request: Optional[LoRARequest]) -> None:
+222:    def _validate_structured_output(self, params: SamplingParams) -> None:
+291:    def _maybe_build_mm_uuids(
+304:        def _extract_mm_data(p: PromptType):
+326:    def process_inputs(
+461:    def _validate_model_inputs(self, encoder_inputs: Optional[SingletonInputs],
+[0m
+[0m$ [0mcd /tmp/opencode && sed -n '54,185p' async_llm.py
+def __init__(
+        self,
+        vllm_config: VllmConfig,
+        executor_class: type[Executor],
+        log_stats: bool,
+        usage_context: UsageContext = UsageContext.ENGINE_CONTEXT,
+        mm_registry: MultiModalRegistry = MULTIMODAL_REGISTRY,
+        use_cached_outputs: bool = False,
+        log_requests: bool = True,
+        start_engine_loop: bool = True,
+        stat_loggers: Optional[list[StatLoggerFactory]] = None,
+        client_addresses: Optional[dict[str, str]] = None,
+        client_count: int = 1,
+        client_index: int = 0,
+    ) -> None:
+        """
+        Create an AsyncLLM.
+
+        Args:
+            vllm_config: global configuration.
+            executor_class: an Executor impl, e.g. MultiprocExecutor.
+            log_stats: Whether to log stats.
+            usage_context: Usage context of the LLM.
+            mm_registry: Multi-modal registry.
+            use_cached_outputs: Whether to use cached outputs.
+            log_requests: Whether to log requests.
+            start_engine_loop: Whether to start the engine loop.
+            stat_loggers: customized stat loggers for the engine.
+                If not provided, default stat loggers will be used.
+                PLEASE BE AWARE THAT STAT LOGGER IS NOT STABLE
+                IN V1, AND ITS BASE CLASS INTERFACE MIGHT CHANGE.
+
+        Returns:
+            None
+        """
+        if not envs.VLLM_USE_V1:
+            raise ValueError(
+                "Using V1 AsyncLLMEngine, but envs.VLLM_USE_V1=False. "
+                "This should not happen. As a workaround, try using "
+                "AsyncLLMEngine.from_vllm_config(...) or explicitly set "
+                "VLLM_USE_V1=0 or 1 and report this issue on Github.")
+
+        # Ensure we can serialize custom transformer configs
+        maybe_register_config_serialize_by_value()
+
+        self.model_config = vllm_config.model_config
+        self.vllm_config = vllm_config
+        self.observability_config = vllm_config.observability_config
+        self.log_requests = log_requests
+
+        self.log_stats = log_stats or (stat_loggers is not None)
+        if not log_stats and stat_loggers is not None:
+            logger.info(
+                "AsyncLLM created with log_stats=False and non-empty custom "
+                "logger list; enabling logging without default stat loggers")
+
+        if self.model_config.skip_tokenizer_init:
+            self.tokenizer = None
+        else:
+            # Tokenizer (+ ensure liveness if running in another process).
+            self.tokenizer = init_tokenizer_from_configs(
+                model_config=vllm_config.model_config)
+
+        # Processor (converts Inputs --> EngineCoreRequests).
+        self.processor = Processor(
+            vllm_config=vllm_config,
+            tokenizer=self.tokenizer,
+            mm_registry=mm_registry,
+        )
+
+        # OutputProcessor (converts EngineCoreOutputs --> RequestOutput).
+        self.output_processor = OutputProcessor(self.tokenizer,
+                                                log_stats=self.log_stats)
+        if self.observability_config.otlp_traces_endpoint is not None:
+            tracer = init_tracer(
+                "vllm.llm_engine",
+                self.observability_config.otlp_traces_endpoint)
+            self.output_processor.tracer = tracer
+
+        # EngineCore (starts the engine in background process).
+        self.engine_core = EngineCoreClient.make_async_mp_client(
+            vllm_config=vllm_config,
+            executor_class=executor_class,
+            log_stats=self.log_stats,
+            client_addresses=client_addresses,
+            client_count=client_count,
+            client_index=client_index,
+        )
+
+        # Loggers.
+        self.logger_manager: Optional[StatLoggerManager] = None
+        if self.log_stats:
+            self.logger_manager = StatLoggerManager(
+                vllm_config=vllm_config,
+                engine_idxs=self.engine_core.engine_ranks_managed,
+                custom_stat_loggers=stat_loggers,
+                enable_default_loggers=log_stats,
+                client_count=client_count,
+            )
+            self.logger_manager.log_engine_initialized()
+
+        self.output_handler: Optional[asyncio.Task] = None
+        try:
+            # Start output handler eagerly if we are in the asyncio eventloop.
+            asyncio.get_running_loop()
+            self._run_output_handler()
+        except RuntimeError:
+            pass
+
+        if envs.VLLM_TORCH_PROFILER_DIR:
+            logger.info(
+                "Torch profiler enabled. AsyncLLM CPU traces will be collected under %s",  # noqa: E501
+                envs.VLLM_TORCH_PROFILER_DIR)
+            worker_name = f"{socket.gethostname()}_{os.getpid()}.async_llm"
+            self.profiler = torch.profiler.profile(
+                activities=[
+                    torch.profiler.ProfilerActivity.CPU,
+                ],
+                with_stack=envs.VLLM_TORCH_PROFILER_WITH_STACK,
+                on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                    envs.VLLM_TORCH_PROFILER_DIR,
+                    worker_name=worker_name,
+                    use_gzip=True))
+        else:
+            self.profiler = None
+
+    @classmethod
+    @deprecate_kwargs(
+        "disable_log_requests",
+        additional_message=("This argument will have no effect. "
+                            "Use `enable_log_requests` instead."),
+    )
+[0m
+[0m$ [0mcd /tmp/opencode && sed -n '323,420p' async_llm.py && echo "===OUTHANDLER===" && sed -n '422,484p' async_llm.py
+async def generate(
+        self,
+        prompt: PromptType,
+        sampling_params: SamplingParams,
+        request_id: str,
+        lora_request: Optional[LoRARequest] = None,
+        trace_headers: Optional[Mapping[str, str]] = None,
+        priority: int = 0,
+        data_parallel_rank: Optional[int] = None,
+    ) -> AsyncGenerator[RequestOutput, None]:
+        """
+        Main function called by the API server to kick off a request
+            * 1) Making an AsyncStream corresponding to the Request.
+            * 2) Processing the Input.
+            * 3) Adding the Request to the Detokenizer.
+            * 4) Adding the Request to the EngineCore (separate process).
+
+        A separate output_handler loop runs in a background AsyncIO task,
+        pulling outputs from EngineCore and putting them into the
+        per-request AsyncStream.
+
+        The caller of generate() iterates the returned AsyncGenerator,
+        returning the RequestOutput back to the caller.
+        """
+
+        if (self.vllm_config.cache_config.kv_sharing_fast_prefill
+                and sampling_params.prompt_logprobs):
+            raise ValueError(
+                "--kv-sharing-fast-prefill produces incorrect logprobs for "
+                "prompt tokens, please disable it when the requests need "
+                "prompt logprobs")
+
+        try:
+            # We start the output_handler on the first call to generate() so
+            # we can call __init__ before the event loop, which enables us
+            # to handle startup failure gracefully in the OpenAI server.
+            self._run_output_handler()
+
+            tokenization_kwargs: dict[str, Any] = {}
+            truncate_prompt_tokens = sampling_params.truncate_prompt_tokens
+
+            _validate_truncation_size(
+                self.model_config.max_model_len,
+                truncate_prompt_tokens,
+                tokenization_kwargs,
+            )
+
+            q = await self.add_request(
+                request_id,
+                prompt,
+                sampling_params,
+                lora_request=lora_request,
+                trace_headers=trace_headers,
+                priority=priority,
+                tokenization_kwargs=tokenization_kwargs,
+                data_parallel_rank=data_parallel_rank,
+            )
+
+            # The output_handler task pushes items into the queue.
+            # This task pulls from the queue and yields to caller.
+            finished = False
+            while not finished:
+                # Note: drain queue without await if possible (avoids
+                # task switching under load which helps performance).
+                out = q.get_nowait() or await q.get()
+
+                # Note: both OutputProcessor and EngineCore handle their
+                # own request cleanup based on finished.
+                finished = out.finished
+                yield out
+
+        # If the request is disconnected by the client, generate()
+        # is cancelled or the generator is garbage collected. So,
+        # we abort the request if we end up here.
+        except (asyncio.CancelledError, GeneratorExit):
+            await self.abort(request_id)
+            if self.log_requests:
+                logger.info("Request %s aborted.", request_id)
+            raise
+
+        # Engine is dead. Do not abort since we shut down.
+        except EngineDeadError:
+            if self.log_requests:
+                logger.info("Request %s failed (engine dead).", request_id)
+            raise
+
+        # Request validation error.
+        except ValueError:
+            if self.log_requests:
+                logger.info("Request %s failed (bad request).", request_id)
+            raise
+
+        # Unexpected error in the generate() task (possibly recoverable).
+        except Exception as e:
+            await self.abort(request_id)
+            if self.log_requests:
+                logger.info("Request %s failed.", request_id)
+            raise EngineGenerateError() from e
+===OUTHANDLER===
+    def _run_output_handler(self):
+        """Background loop: pulls from EngineCore and pushes to AsyncStreams."""
+
+        if self.output_handler is not None:
+            return
+
+        # Ensure that the task doesn't have a circular ref back to the AsyncLLM
+        # object, or else it won't be garbage collected and cleaned up properly.
+        engine_core = self.engine_core
+        output_processor = self.output_processor
+        log_stats = self.log_stats
+        logger_manager = self.logger_manager
+
+        async def output_handler():
+            try:
+                while True:
+                    # 1) Pull EngineCoreOutputs from the EngineCore.
+                    outputs = await engine_core.get_output_async()
+                    num_outputs = len(outputs.outputs)
+
+                    iteration_stats = IterationStats() if (
+                        log_stats and num_outputs) else None
+
+                    # Split outputs into chunks of at most
+                    # VLLM_V1_OUTPUT_PROC_CHUNK_SIZE, so that we don't block the
+                    # event loop for too long.
+                    if num_outputs <= VLLM_V1_OUTPUT_PROC_CHUNK_SIZE:
+                        slices = (outputs.outputs, )
+                    else:
+                        slices = np.array_split(
+                            outputs.outputs,
+                            cdiv(num_outputs, VLLM_V1_OUTPUT_PROC_CHUNK_SIZE))
+
+                    for i, outputs_slice in enumerate(slices):
+                        # 2) Process EngineCoreOutputs.
+                        processed_outputs = output_processor.process_outputs(
+                            outputs_slice, outputs.timestamp, iteration_stats)
+                        # NOTE: RequestOutputs are pushed to their queues.
+                        assert not processed_outputs.request_outputs
+
+                        # Allow other asyncio tasks to run between chunks
+                        if i + 1 < len(slices):
+                            await asyncio.sleep(0)
+
+                        # 3) Abort any reqs that finished due to stop strings.
+                        await engine_core.abort_requests_async(
+                            processed_outputs.reqs_to_abort)
+
+                    # 4) Logging.
+                    # TODO(rob): make into a coroutine and launch it in
+                    # background thread once Prometheus overhead is non-trivial.
+                    if logger_manager:
+                        logger_manager.record(
+                            engine_idx=outputs.engine_index,
+                            scheduler_stats=outputs.scheduler_stats,
+                            iteration_stats=iteration_stats,
+                        )
+            except Exception as e:
+                logger.exception("AsyncLLM output_handler failed.")
+                output_processor.propagate_error(e)
+
+        self.output_handler = asyncio.create_task(output_handler())
+[0m
+[0m$ [0mcd /tmp/opencode && sed -n '261,322p' async_llm.py | head -50 && curl -sL --max-time 60 -o multiproc.py https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/executor/multiproc_executor.py && grep -n "set_process_title\|class WorkerProc\|def make_worker_process\|rpc_broadcast_mq\|worker_response_mq\|def worker_main" multiproc.py | head -20
+async def add_request(
+        self,
+        request_id: str,
+        prompt: PromptType,
+        params: Union[SamplingParams, PoolingParams],
+        arrival_time: Optional[float] = None,
+        lora_request: Optional[LoRARequest] = None,
+        tokenization_kwargs: Optional[dict[str, Any]] = None,
+        trace_headers: Optional[Mapping[str, str]] = None,
+        priority: int = 0,
+        data_parallel_rank: Optional[int] = None,
+    ) -> RequestOutputCollector:
+        """Add new request to the AsyncLLM."""
+
+        if self.errored:
+            raise EngineDeadError()
+
+        is_pooling = isinstance(params, PoolingParams)
+
+        # Create a new output collector for the request.
+        queue = RequestOutputCollector(output_kind=params.output_kind)
+
+        # Convert Input --> Request.
+        prompt_str, request = self.processor.process_inputs(
+            request_id, prompt, params, arrival_time, lora_request,
+            tokenization_kwargs, trace_headers, priority, data_parallel_rank)
+
+        if is_pooling or params.n == 1:
+            await self._add_request(request, prompt_str, None, 0, queue)
+            return queue
+
+        # Fan out child requests (for n>1).
+        parent_request = ParentRequest(request_id, params)
+        for idx in range(params.n):
+            request_id, params = parent_request.get_child_info(idx)
+            child_request = request if idx == params.n - 1 else copy(request)
+            child_request.request_id = request_id
+            child_request.sampling_params = params
+            await self._add_request(child_request, prompt_str, parent_request,
+                                    idx, queue)
+        return queue
+
+    async def _add_request(self, request: EngineCoreRequest,
+                           prompt: Optional[str],
+                           parent_req: Optional[ParentRequest], index: int,
+                           queue: RequestOutputCollector):
+
+        # Add the request to OutputProcessor (this process).
+        self.output_processor.add_request(request, prompt, parent_req, index,
+                                          queue)
+38:                        get_mp_context, get_open_port, set_process_title)
+82:        self.rpc_broadcast_mq = MessageQueue(self.world_size,
+85:        scheduler_output_handle = self.rpc_broadcast_mq.export_handle()
+110:            self.rpc_broadcast_mq.wait_until_ready()
+112:                w.worker_response_mq.wait_until_ready()
+234:            self.rpc_broadcast_mq.enqueue(
+244:                status, result = w.worker_response_mq.dequeue(
+258:                    # We must consume worker_response_mq from a single thread.
+315:                    w.worker_response_mq = None
+323:        self.rpc_broadcast_mq = None
+358:class WorkerProcHandle:
+361:    worker_response_mq: MessageQueue  # The worker process writes to this MQ
+367:            worker_response_mq: MessageQueue) -> "WorkerProcHandle":
+371:            worker_response_mq=worker_response_mq,
+376:class WorkerProc:
+409:        self.rpc_broadcast_mq = MessageQueue.create_from_handle(
+413:        self.worker_response_mq = MessageQueue(1, 1)
+440:    def make_worker_process(
+501:                    worker_response_mq = MessageQueue.create_from_handle(
+505:                            unready_proc_handle, worker_response_mq))
+[0m
+[0m$ [0mcd /tmp/opencode && curl -sL --max-time 90 -o gpu_model_runner.py https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/worker/gpu_model_runner.py && grep -n "^class \|def execute_model\|def _update_requests\|ModelInputForGPUBuilder\|def _gather_model_input\|GPUModelInput\|InputBatch" gpu_model_runner.py | head -20 && curl -sL --max-time 30 -o envs.py https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/envs.py && grep -n "MULTIPROCESSING\|ASYNC_SCHEDULING" envs.py | head
+102:from vllm.v1.worker.gpu_input_batch import CachedRequestState, InputBatch
+130:class AsyncGPUModelRunnerOutput(AsyncModelRunnerOutput):
+176:class GPUModelRunner(LoRAModelRunnerMixin, KVConnectorModelRunnerMixin):
+310:        self.input_batch = InputBatch(
+995:        # the InputBatch, we need to fill in the prompt embeds into the expected
+2231:    def execute_model(
+3742:            self.input_batch = InputBatch(
+117:    VLLM_ENABLE_V1_MULTIPROCESSING: bool = True
+1018:    "VLLM_ENABLE_V1_MULTIPROCESSING":
+1019:    lambda: bool(int(os.getenv("VLLM_ENABLE_V1_MULTIPROCESSING", "1"))),
+[0m
+[0m$ [0mcd /tmp/opencode && sed -n '440,470p' multiproc.py && grep -n "set_process_title" multiproc.py && grep -rn "process_title\|proctitle" multiproc.py | head; sed -n '303,322p' async_llm.py
+def make_worker_process(
+        vllm_config: VllmConfig,
+        local_rank: int,
+        rank: int,
+        distributed_init_method: str,
+        input_shm_handle,  # Receive SchedulerOutput
+        shared_worker_lock: LockType,
+    ) -> UnreadyWorkerProcHandle:
+        context = get_mp_context()
+        # (reader, writer)
+        reader, writer = context.Pipe(duplex=False)
+
+        # Create death pipe to detect parent process exit
+        death_reader, death_writer = context.Pipe(duplex=False)
+
+        process_kwargs = {
+            "vllm_config": vllm_config,
+            "local_rank": local_rank,
+            "rank": rank,
+            "distributed_init_method": distributed_init_method,
+            "input_shm_handle": input_shm_handle,
+            "ready_pipe": (reader, writer),
+            "death_pipe": death_reader,
+            "shared_worker_lock": shared_worker_lock,
+        }
+        # Run EngineCore busy loop in background process.
+        proc = context.Process(target=WorkerProc.worker_main,
+                               kwargs=process_kwargs,
+                               name=f"VllmWorker-{rank}",
+                               daemon=True)
+
+38:                        get_mp_context, get_open_port, set_process_title)
+699:        set_process_title(name=process_name)
+38:                        get_mp_context, get_open_port, set_process_title)
+699:        set_process_title(name=process_name)
+    async def _add_request(self, request: EngineCoreRequest,
+                           prompt: Optional[str],
+                           parent_req: Optional[ParentRequest], index: int,
+                           queue: RequestOutputCollector):
+
+        # Add the request to OutputProcessor (this process).
+        self.output_processor.add_request(request, prompt, parent_req, index,
+                                          queue)
+
+        # Add the EngineCoreRequest to EngineCore (separate process).
+        await self.engine_core.add_request_async(request)
+
+        if self.log_requests:
+            logger.info("Added request %s.", request.request_id)
+
+    # TODO: we should support multiple prompts in one call, as you
+    # can do with LLM.generate. So that for multi-prompt completion
+    # requests we don't need to send multiple messages to core proc,
+    # and so we don't need multiple streams which then get
+    # re-multiplexed in the API server anyhow.
+[0m
+[0m$ [0mcd /tmp/opencode && for u in vllm/v1/core/sched/scheduler.py vllm/entrypoints/cli/main.py vllm/entrypoints/openai/api_server.py vllm/v1/engine/output_processor.py vllm/v1/engine/detokenizer.py vllm/v1/engine/llm_engine.py; do code=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 30 https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/$u); echo "$code $u"; done
+200 vllm/v1/core/sched/scheduler.py
+200 vllm/entrypoints/cli/main.py
+200 vllm/entrypoints/openai/api_server.py
+200 vllm/v1/engine/output_processor.py
+200 vllm/v1/engine/detokenizer.py
+200 vllm/v1/engine/llm_engine.py
+[0m
+[0m$ [0mcd /tmp/opencode && sed -n '680,710p' multiproc.py && grep -rn "def set_process_title" /tmp/opencode/*.py; curl -sL --max-time 30 https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/utils/__init__.py 2>/dev/null | grep -n "def set_process_title" 
+@staticmethod
+    def setup_proc_title_and_log_prefix(enable_ep: bool) -> None:
+        dp_size = get_dp_group().world_size
+        dp_rank = get_dp_group().rank_in_group
+        pp_size = get_pp_group().world_size
+        pp_rank = get_pp_group().rank_in_group
+        tp_size = get_tp_group().world_size
+        tp_rank = get_tp_group().rank_in_group
+        process_name = "Worker"
+        if dp_size > 1:
+            process_name += f"_DP{dp_rank}"
+        if pp_size > 1:
+            process_name += f"_PP{pp_rank}"
+        if tp_size > 1:
+            process_name += f"_TP{tp_rank}"
+        if enable_ep:
+            ep_rank = get_ep_group().rank_in_group
+            process_name += f"_EP{ep_rank}"
+        set_process_title(name=process_name)
+        decorate_logs(process_name)
+
+
+def set_multiprocessing_worker_envs():
+    """ Set up environment variables that should be used when there are workers
+    in a multiprocessing environment. This should be called by the parent 
+    process before worker processes are created"""
+
+    _maybe_force_spawn()
+
+    # Configure thread parallelism if OMP_NUM_THREADS isn't set
+3443:def set_process_title(name: str,
+[0m
+[0m$ [0mcd /tmp/opencode && curl -sL --max-time 40 -o vllm_utils.py https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/utils/__init__.py && sed -n '3443,3465p' vllm_utils.py
+def set_process_title(name: str,
+                      suffix: str = "",
+                      prefix: str = envs.VLLM_PROCESS_NAME_PREFIX) -> None:
+    """
+    Set the current process title to a specific name with an
+    optional suffix.
+
+    Args:
+        name: The title to assign to the current process.
+        suffix: An optional suffix to append to the base name.
+        prefix: A prefix to prepend to the front separated by `::`.
+    """
+    if suffix:
+        name = f"{name}_{suffix}"
+    setproctitle.setproctitle(f"{prefix}::{name}")
+
+
+def _add_prefix(file: TextIO, worker_name: str, pid: int) -> None:
+    """Prepend each output line with process-specific prefix"""
+
+    prefix = f"{CYAN}({worker_name} pid={pid}){RESET} "
+    file_write = file.write
+[0m
+所有事实现已已对照实际的 v0.11.0 源码进行了验证。现在我将开始创建教程。首先是资源目录和三张 SVG 图表。
+[0m$ [0mmkdir -p /mnt/workspace/aiinfra/vllm/week2/assets && ls /mnt/workspace/aiinfra/vllm/week2/
+assets
+README.md
+[0m
+[0m← [0mWrite week2/assets/day08_v1_process_architecture.svg
+Wrote file successfully.
+[0m
+[0m← [0mWrite week2/assets/day08_startup_sequence.svg
+Wrote file successfully.
+[0m
+[0m← [0mWrite week2/assets/day08_step_ipc_timeline.svg
+Wrote file successfully.
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2/assets && for f in day08_*.svg; do python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('$f'); print('OK $f')"; done
+OK day08_startup_sequence.svg
+OK day08_step_ipc_timeline.svg
+OK day08_v1_process_architecture.svg
+[0m
+三张 SVG 均已校验通过。现在开始撰写主教程文件。
+[0m← [0mWrite week2/day08_v1_architecture_overview.md
+Wrote file successfully.
+[0m
+现在让我来验证已写入的文件——进行结构检查并确保所有引用均能正确解析。
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2 && wc -l day08_v1_architecture_overview.md && ls -la assets/day08_*.svg && grep -c '<details>' day08_v1_architecture_overview.md && grep -c '</details>' day08_v1_architecture_overview.md && grep -n 'assets/day08' day08_v1_architecture_overview.md && grep -n '^## ' day08_v1_architecture_overview.md
+617 day08_v1_architecture_overview.md
+-rw-r--r-- 1 root root 12514 Oct  2 02:35 assets/day08_startup_sequence.svg
+-rw-r--r-- 1 root root 11790 Oct  2 02:36 assets/day08_step_ipc_timeline.svg
+-rw-r--r-- 1 root root 17742 Oct  2 02:35 assets/day08_v1_process_architecture.svg
+6
+6
+9:> **配套材料**：`week2/README.md` Day 8 节；三张 SVG：`assets/day08_v1_process_architecture.svg`（今日主产出的参照图）、`assets/day08_startup_sequence.svg`（启动时序）、`assets/day08_step_ipc_timeline.svg`（step 时间线与 IPC 开销账）
+96:![vLLM V1 进程架构总览](assets/day08_v1_process_architecture.svg)
+204:![decode step 时间线与 IPC 开销](assets/day08_step_ipc_timeline.svg)
+399:![启动时序](assets/day08_startup_sequence.svg)
+14:## 0. 今日学习目标
+27:## 1. 核心概念速览
+49:## 2. 原理深入讲解
+176:## 3. 性能模型：进程分离的收益账（今日的数学）
+229:## 4. 关键代码走读（v0.11.0 逐行核对版）
+416:## 5. 动手实验（约 60~90 分钟）
+513:## 6. 面试高频问题（含答题骨架）
+545:## 7. 今日总结
+557:## 8. 今日自测题（先自己做，再展开答案）
+603:## 9. 今日产出物
+615:## 10. 明日预告（Day 9 · 请求入口链路）
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2 && ls -la day08_v1_architecture_overview.md && ls -la ../week1/day0*.md | awk '{print $5, $9}'
+-rw-r--r-- 1 root root 53038 Oct  2 02:39 day08_v1_architecture_overview.md
+39365 ../week1/day01_transformer_inference.md
+38026 ../week1/day02_memory_latency_hand_calc.md
+50999 ../week1/day03_roofline_model.md
+52409 ../week1/day04_paged_attention_paper.md
+57410 ../week1/day05_serving_metrics.md
+48535 ../week1/day06_env_setup_first_bench.md
+[0m
+文件大小为 53KB —— 正好处于现有天数（38-57KB）的范围内。让我进行最后一轮校对。
+[0m→ [0mRead week2/day08_v1_architecture_overview.md[90m [limit=180][0m
+[0m→ [0mRead week2/day08_v1_architecture_overview.md[90m [limit=240, offset=181][0m
+[0m→ [0mRead week2/day08_v1_architecture_overview.md[90m [limit=200, offset=421][0m
+内容完整且一致。需要进行三处微调：一处不一致的交叉引用、无 GPU 降级路径的头部描述，以及一个不自然的 LaTeX 表达式。
+[0m
+[0m← [0mEdit week2/day08_v1_architecture_overview.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
++++ /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
+@@ -4,9 +4,9 @@
+ > **今日位置**：第 1 周把推理系统当黑盒测出了曲线（Day 6），Day 4 又提前记下了 KV 管理的源码坐标。从今天起连续 7 天正式开盒——但**第一天刻意不进任何单个组件的细节**：先把 V1 的进程架构、模块地图、进程间通信立起来，谁在哪个进程、数据怎么跨边界、每个盒子对应哪段源码。这张地图是 Day 9~13（调度链路）与 Week 3（KV 与执行层）的坐标系——之后每读一个组件，都要能回答"它在图中的哪一格、和谁隔着进程边界"
+ > **前置要求**：Day 4（PagedAttention 机制与 V1 的 `KVCacheManager`/`BlockPool`/block table 坐标）、Day 5（TTFT/TPOT 的成分分解——今天要把每个成分钉到图上）、Day 6（`vllm serve` 部署台账、启动日志 KV 池 ≈ 36.6 万 token 对账、`/metrics` 端口）
+ > **预计用时**：3 ~ 3.5 小时（官方材料阅读 1h + 源码骨架走读 1h + 实验 1h + 画图收尾 0.5h）
+ > **背景衔接**：你在昇腾上熟悉"Host 下发任务 / Device 执行 / AICPU 管控制流"的分层——V1 的多进程架构是同一命题在软件层的重演：**API 进程 = 控制面**（连接管理、tokenize、输出格式化），**EngineCore = 任务调度器**（组批、记账、分发），**Worker/ModelRunner = 执行体**（真正吃 GPU）。把 Python GIL 想象成"单核上的控制总线"：控制面流量大时会饿死计算流，所以 V1 干脆把两者拆进不同进程。面试里"从昇腾 Host/Device 分层讲到 vLLM 前后端分离"是现成的跨平台叙事
+-> **实验环境**：复用 Day 6 的 1 × H100/A100 + Qwen3-8B 环境；实验 2/3 无 GPU 也有降级方案（纯源码走读）
++> **实验环境**：复用 Day 6 的 1 × H100/A100 + Qwen3-8B 环境；无 GPU 时做实验 0 + 实验 4B（纯源码走读，见 §5）
+ > **配套材料**：`week2/README.md` Day 8 节；三张 SVG：`assets/day08_v1_process_architecture.svg`（今日主产出的参照图）、`assets/day08_startup_sequence.svg`（启动时序）、`assets/day08_step_ipc_timeline.svg`（step 时间线与 IPC 开销账）
+ > **版本口径**：源码坐标按 **v0.10 ~ v0.11 主线**核对，关键代码逐行对照 **v0.11.0 tag**（2026-10 复核）；main 分支仍在演进（`processor.py` 正拆分为 input 处理、API server 入口迁往 `entrypoints/launchers/`、Model Runner V2 重构执行核），**以你 checkout 的 tag 为准**——坐标对不上时先怀疑版本，再怀疑理解
+ 
+ ---
+
+[0m
+[0m← [0mEdit week2/day08_v1_architecture_overview.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
++++ /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
+@@ -182,9 +182,9 @@
+ $$ITL_{\text{耦合}} \approx t_{engine} + t_{fe} + \text{GIL 抖动项}$$
+ 
+ 关键在**抖动项**：GIL 争抢不是简单的加法，而是排队论意义上的抢占——偶发的慢请求（长输出、大 prompt 的 detokenize）会把引擎的 CPU 段拉出**尾部尖刺**（Day 5 讲过为什么 p99 由尾部决定）。分离后：
+ 
+-$$ITL_{\text{分离}} \approx t_{engine} + t_{ipc}, \quad t_{ipc} \sim 10\text{s of }\mu s \ll t_{fe}$$
++$$ITL_{\text{分离}} \approx t_{engine} + t_{ipc}, \quad t_{ipc} \sim 几十\,\mu s \ll t_{fe}$$
+ 
+ 即：**用几十微秒的确定性 IPC，换掉百微秒~毫秒级且带尾部的共享解释器开销**。$t_{fe}$ 没有消失——它去 P0 并行了（另一个进程、另一个核），只在最宽松的意义下（P0 处理不及时导致输出延迟）影响用户体感。
+ 
+ ### 3.2 消息量级：IPC 永远不是瓶颈（要会现场算）
+
+[0m
+[0m← [0mEdit week2/day08_v1_architecture_overview.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
++++ /mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
+@@ -519,9 +519,9 @@
+ **Q2：tokenize/detokenize 为什么放在前端进程？stop string 为什么只能在前端判？**
+ 
+ > 骨架：① tokenize 在前端（`Processor.process_inputs`）→ 跨进程传 token ids 而非文本：定长小整数 + 增量传输，序列化开销小且引擎不需要文本；② detokenize/OutputProcessor 在前端 → 重 CPU 的输出处理与引擎循环隔离，且能直接对接流式 SSE；③ stop 判定的分裂是数据位置的推论：EOS/stop_token_ids/max_tokens 只看 token id → P1 的 `update_from_output` 判（最早、省算）；stop string 要看文本 → 只能 P0 的 `OutputProcessor` 判，命中后回发 `ABORT`，引擎可能多算几步（token 被丢弃）。**收尾**："数据在哪、判定就在哪"是分布式系统的一般设计原则。
+ 
+-**Q3：V0 → V1 的关键差异？**（背表题，§2.2 + 下表）
++**Q3：V0 → V1 的关键差异？**（背表题——完整对照表另见 `week2/README.md` §8.4）
+ 
+ > 骨架：进程模型（同进程 → P0/P1/P2 分离）；引擎抽象（LLMEngine/AsyncLLMEngine 双实现 → 单一 EngineCore）；tokenize/detokenize（引擎内 → 前端）；调度器（prefill/decode 分相 + chunked prefill 补丁 → 统一单循环、prefill/decode 可混排）；prefix caching（默认关 → 默认开，hash 近零开销）；preemption（recompute/swap 可选 → 仅 recompute）；默认参数（budget 2048→8192、seqs 256→1024）；CUDA Graph（有限 → 默认开、覆盖大）；调度与执行（串行 → async scheduling 重叠）。**收尾**：官方数字 DeepSeek-R1 H100 端到端最高 ~1.7×，但要补一句"不同负载差异大"。
+ 
+ **Q4：跨进程传什么数据？开销多大？怎么算？**
+
+[0m
+最后进行一下核对：
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2 && ls -la day08_v1_architecture_overview.md assets/ && grep -c "10s of\|下表" day08_v1_architecture_overview.md; for f in assets/day08_*.svg; do python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('$f')" && echo "valid: $f"; done && grep -n "实验 2/3 无 GPU" day08_v1_architecture_overview.md; echo "---final line count---"; wc -l day08_v1_architecture_overview.md
+-rw-r--r-- 1 root root 53073 Oct  2 02:40 day08_v1_architecture_overview.md
+
+assets/:
+total 56
+drwxr-xr-x 2 root root  4096 Oct  2 02:36 .
+drwxr-xr-x 3 root root  4096 Oct  2 02:39 ..
+-rw-r--r-- 1 root root 12514 Oct  2 02:35 day08_startup_sequence.svg
+-rw-r--r-- 1 root root 11790 Oct  2 02:36 day08_step_ipc_timeline.svg
+-rw-r--r-- 1 root root 17742 Oct  2 02:35 day08_v1_process_architecture.svg
+0
+valid: assets/day08_startup_sequence.svg
+valid: assets/day08_step_ipc_timeline.svg
+valid: assets/day08_v1_process_architecture.svg
+---final line count---
+617 day08_v1_architecture_overview.md
+[0m
+Day 8 教程已完成并写入磁盘，未改动任何已有文件。
+
+**产出文件**
+- `week2/day08_v1_architecture_overview.md`（617 行 / 53 KB，与 week1 各篇深度一致）
+- `week2/assets/day08_v1_process_architecture.svg` — 主图：P0 前端 / P1 EngineCore / P2 Worker 三层进程、ZMQ ×2 + shm ×2 通道、每盒源码坐标（README 要求的“自己画架构图”的参照图）
+- `week2/assets/day08_startup_sequence.svg` — 启动时序泳道图（vllm serve → EngineCore fork → Worker init → KV 汏 → CUDA Graph capture），含日志行归属与 Day 2/6 对账锚点
+- `week2/assets/day08_step_ipc_timeline.svg` — decode step 时间线：CPU/GPU/IPC 分解 + async scheduling 重叠对比
+
+**内容要点**（严格对应 README Day 8：V1 架构总览、EngineCore 分离进程、AsyncLLM → Processor → EngineCore → Executor/Worker → ModelRunner 链路）
+- 结构完整覆盖 prompt.md 十一件套：学习目标 / 概念速览 / 原理（V0 四宗罪→V1 答案、进程数公式、ZMQ+msgspec、Executor 家族、VllmConfig 与昇腾插件接口）/ 性能模型（IPC 消息量级 6 MB/s vs 3.35 TB/s、ITL 分解公式）/ v0.11.0 逐行核对的代码走读 / 5 个实验（ps 进程树、py-spy、InprocClient 对比、TP=2、画图）/ 7 道面试题骨架 / 6 道自测题 / 产出物 / 明日预告
+- 主动衔接 Day 1~6（144 KiB/token、16.4 GB 权重、366K token KV 池、44.8× 并发、客户端/服务端口径），并预告 Day 9~13
+- 所有源码坐标（`core.py::step()`、`Executor.get_class()`、`make_async_mp_client` 等）已对照 GitHub v0.11.0 tag 实际源码核验；main 分支演进（processor 拆分、MRV2 等）按 prompt 要求标注了不确定性

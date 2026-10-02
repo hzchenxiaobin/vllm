@@ -1,0 +1,102 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week2/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  6704 Oct  2 02:43 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 00:52 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  2 03:19 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     2 Oct  2 03:09 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 03:09 week1
+drwxr-xr-x  3 root root  4096 Oct  2 03:01 week2
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+total 160
+drwxr-xr-x  3 root root  4096 Oct  2 03:01 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+drwxr-xr-x  2 root root  4096 Oct  2 02:58 assets
+-rw-r--r--  1 root root 53073 Oct  2 02:40 day08_v1_architecture_overview.md
+-rw-r--r--  1 root root 61350 Oct  2 03:01 day09_request_entry_pipeline.md
+-rw-r--r--  1 root root 34602 Oct  1 23:18 README.md
+assets
+day01_transformer_inference.md
+day02_memory_latency_hand_calc.md
+day03_roofline_model.md
+day04_paged_attention_paper.md
+day05_serving_metrics.md
+day06_env_setup_first_bench.md
+day07_first_principles_review.md
+README.md
+[0m
+[0m→ [0mRead week2/day09_request_entry_pipeline.md[90m [limit=150][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/week2/assets/ && cat /mnt/workspace/aiinfra/vllm/.tutorial_progress
+day08_startup_sequence.svg
+day08_step_ipc_timeline.svg
+day08_v1_process_architecture.svg
+day09_request_entry_pipeline.svg
+day09_request_object_anatomy.svg
+day09_ttft_decomposition.svg
+7
+[0m
+[0m→ [0mRead week2/day09_request_entry_pipeline.md[90m [limit=340, offset=150][0m
+[0m→ [0mRead week2/day09_request_entry_pipeline.md[90m [offset=490][0m
+[0m
+[0m$ [0mgrep -n "Day 10" /mnt/workspace/aiinfra/vllm/week2/README.md | head; python -c "import vllm; print(vllm.__version__, vllm.__file__)" 2>/dev/null || pip show vllm 2>/dev/null | head -3 || echo "vllm not installed"
+205:    scheduler_output = self.scheduler.schedule()          # Day 10-12
+245:## Day 10：Scheduler（一）—— 队列与 budget
+617:| Day 10 | [ ] | |
+[0m
+[0m→ [0mRead week2/README.md[90m [limit=100, offset=240][0m
+[0m
+[0m$ [0mfind / -name "scheduler.py" -path "*v1/core*" 2>/dev/null | head -5; ls /mnt/workspace/aiinfra/vllm/vllm 2>/dev/null | head
+(no output)
+[0m
+[0m$ [0mpip show vllm 2>/dev/null | head -4; python3 -c "import vllm, os; print(os.path.dirname(vllm.__file__))" 2>&1 | tail -1; ls /usr/lib/python3/dist-packages 2>/dev/null | grep -i vllm; find /opt /usr/local/lib -maxdepth 6 -name "scheduler.py" -path "*vllm*" 2>/dev/null | head
+ModuleNotFoundError: No module named 'vllm'
+[0m
+[0m→ [0mRead week2/assets/day09_ttft_decomposition.svg[90m [limit=80][0m
+vLLM 未安装在本地，我将依据系列既定口径（v0.11.0，与 Day 8/9 一致）撰写源码走读。先看一下已有 SVG 的风格和 Day 8 的开头，保持系列一致。
+[0m→ [0mRead week2/day08_v1_architecture_overview.md[90m [limit=60][0m
+[0m
+[0m$ [0mgrep -n "144\|4.93\|366\|36.6" /mnt/workspace/aiinfra/vllm/week1/day02_memory_latency_hand_calc.md | head -20; grep -n "8192\|2048\|budget" /mnt/workspace/aiinfra/vllm/week1/day06_env_setup_first_bench.md | head -10
+8:> **配套材料**：`week1/README.md` Day 2 节；Day 1 的 §3.5 数值拆解（Qwen3-8B 权重 16.4 GB / GEMM 每步读 15.1 GB / KV 144 KiB/token）今天直接复用。
+52:但当时留了两个"口子"：KV_per_token 的显存公式只给了结论（144 KiB/token），decode 时延只算了 Qwen3-8B 一个例子。今天把这两个口子正式化成**四组公式**：
+105:| Qwen3-8B | 36 | 8 | 128 | **144 KiB** | 1.21 GB | 19.3 GB |
+294:\text{KV\_per\_token} = 2 \times 36 \times 8 \times 128 \times 2 = 147{,}456\,\text{B} = 144\,\text{KiB} \quad (\text{Day 1 已推})
+297:\text{单序列@8K} = 8192 \times 144\,\text{KiB} = 1.21\,\text{GB}
+332:**必背锚点**：A100 = 2.04 TB/s、H100 = 3.35 TB/s；屋脊点 153 / 295 FLOP/B（Day 1）；Qwen3-8B = 16.4 GB 权重 / 144 KiB KV；Llama-3-70B = 141 GB BF16 / 320 KiB KV。
+437:Qwen3-8B             144 KiB    1.21G    19.3G
+452:KV/token = 144 KiB；单序列 = 1.21 GB
+476:| KV 池（tokens） | `GPU KV cache size` | $54.1\,\text{GB} / 144\,\text{KiB} \approx 37.6$ 万 | $A_{\text{act}}$ 实测 vs 1.5 GB 假设 |
+539:5. **锚点数字**（面试抽背）：A100 2.04 / H100 3.35 TB/s；Qwen3-8B 16.4 GB / 144 KiB / 44 路@8K 单卡；Llama-3-70B 141 GB BF16 / 320 KiB / FP8 TP2 ≈ 103 路 4K。
+550:$2 \times 64 \times 8 \times 128 \times 2 = 262{,}144$ B = **256 KiB/token**。128K 单序列：$131072 \times 256\,\text{KiB} = 34.4$ GB——一张 80GB 卡去掉 65.6 GB 权重后连一路都放不下，必须 KV 量化或 TP/多卡。
+75:**③ EngineCore 独立进程**（`vllm/v1/engine/core.py`）：调度心脏——`Processor`（输入规整）→ `Scheduler`（waiting/running 队列 + token budget，Day 10/11）→ `KVCacheManager`（Day 4 的 BlockPool/块表，Day 15/16）。**为什么独立进程**：崩溃隔离（引擎炸了 API 进程还活着）+ 引擎循环不被前端 Python GIL 拖慢——细节 Day 8 展开，今天记住后果即可：**前端进程的 tokenize/输出处理是客户端 TTFT 的一部分，但不占引擎时间**。
+143:1. **混跑**：新请求的 prefill 要与 C 路 decode 共享每个 step 的 token budget（chunked prefill，Day 11）。C 越大，每个 step 越慢（TPOT(C)↑），prefill 段等待越久；
+165:| @8192 满长并发 | ≈ 44 路（启动日志会打印） | Day 2 题 3 |
+295:| `Maximum concurrency for 8,192 tokens per sequence: 44.x` | 36.6 万 ÷ 8192 ≈ 44.8 | 同上；注意这是**满长口径**，真实负载平均 2000 token 时实际可容纳 ~182 路（Day 4 §3.2） |
+348:  --max-model-len 8192 \
+354:参数解释（台账里各写一句"为什么"）：`--max-model-len 8192` 对齐 Day 2 题 3 的手算口径；`--gpu-memory-utilization 0.9`（新版本默认已提到 0.92，显式写出避免歧义）；prefix caching / chunked prefill 用 V1 默认（APC 默认开，其影响见"坑 1"）。
+554:> 骨架：① TPOT 缓升：decode 访存 bound，每 step 读 $W + C\bar{s}\text{KV\_tok}$ 字节，权重项被 batch 摊销，增长只来自 KV 读 → 近似平坦后再线性；② TTFT 早拐陡升：成分是排队 + prefill + 输出路径，三个都随 C 恶化——新请求 prefill 与 C 路 decode 抢 token budget（chunked prefill 混跑）、每步变慢、前端输出路径拥挤，且 p99 由长尾 prompt 主导；③ 联系 chunked prefill：它把"prefill 到来时 decode 卡顿"换成"prefill 被拉长"——TTFT 换 TPOT 平滑（Day 11 展开）。**收尾**：所以诊断树里"TTFT 升 / ITL 稳 → prefill 拥塞"（Day 51）。
+630:`vllm:num_requests_waiting`（waiting 队列长度）与 `vllm:num_requests_running`（running 批大小）。闭环 C ≤ 256 < max_num_seqs(1024) 时正常读数：running ≈ C、waiting ≈ 0；若 waiting 持续 > 0，说明有请求进不了 running——去查 KV 余量（`gpu_cache_usage`）与 token budget（Day 10/11 的伏笔）。（指标名随版本微调，先 `curl /metrics` 枚举。）
+[0m

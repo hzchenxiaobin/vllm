@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 660" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="660" fill="#ffffff"/>
+  <text x="620" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">Goodput 膝点：为什么容量 ≠ 吞吐峰值，部署点 ≠ 拐点</text>
+  <text x="620" y="52" text-anchor="middle" font-size="12.5" fill="#64748b">数据取自 Day 5 实验 Part B（开环 M/G/1 模拟：泊松到达 × LogNormal prefill，E[S]=120ms，μ=8.35 req/s，SLO: TTFT ≤ 500 ms）</text>
+
+  <!-- ===== 左图：吞吐 vs goodput ===== -->
+  <rect x="30" y="72" width="590" height="498" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="325" y="98" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0f172a">开环扫描：raw 吞吐 vs goodput</text>
+
+  <rect x="90" y="120" width="300" height="380" fill="#f0fdf4" opacity="0.55"/>
+  <line x1="210" y1="120" x2="210" y2="500" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="330" y1="120" x2="330" y2="500" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="450" y1="120" x2="450" y2="500" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="570" y1="120" x2="570" y2="500" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="90" y1="412" x2="600" y2="412" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="90" y1="324" x2="600" y2="324" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="90" y1="236" x2="600" y2="236" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="90" y1="148" x2="600" y2="148" stroke="#e2e8f0" stroke-width="1"/>
+
+  <line x1="90" y1="500" x2="610" y2="500" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="90" y1="500" x2="90" y2="112" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="80" y="416" text-anchor="end" font-size="10.5" fill="#64748b">2</text>
+  <text x="80" y="328" text-anchor="end" font-size="10.5" fill="#64748b">4</text>
+  <text x="80" y="240" text-anchor="end" font-size="10.5" fill="#64748b">6</text>
+  <text x="80" y="152" text-anchor="end" font-size="10.5" fill="#64748b">8</text>
+  <text x="82" y="516" font-size="10.5" fill="#64748b">0</text>
+  <text x="210" y="518" text-anchor="middle" font-size="10.5" fill="#64748b">2</text>
+  <text x="330" y="518" text-anchor="middle" font-size="10.5" fill="#64748b">4</text>
+  <text x="450" y="518" text-anchor="middle" font-size="10.5" fill="#64748b">6</text>
+  <text x="570" y="518" text-anchor="middle" font-size="10.5" fill="#64748b">8</text>
+  <text x="350" y="545" text-anchor="middle" font-size="11.5" fill="#334155">到达率 λ（req/s，开环泊松）</text>
+  <text x="52" y="310" font-size="11.5" fill="#334155" transform="rotate(-90 52 310)">req/s（吞吐 / goodput）</text>
+
+  <line x1="90" y1="500" x2="591" y2="133" stroke="#059669" stroke-width="2.5"/>
+  <line x1="591" y1="133" x2="608" y2="133" stroke="#059669" stroke-width="2.5" stroke-dasharray="5 4"/>
+  <text x="597" y="152" font-size="10.5" font-weight="bold" fill="#047857" text-anchor="end">饱和在 μ=8.35（队列发散）</text>
+
+  <polyline points="210,413 330,334 390,304 450,291 480,297 510,328 540,346"
+            fill="none" stroke="#ea580c" stroke-width="3"/>
+  <circle cx="210" cy="413" r="4.5" fill="#ea580c"/>
+  <circle cx="330" cy="334" r="4.5" fill="#ea580c"/>
+  <circle cx="390" cy="304" r="4.5" fill="#ea580c"/>
+  <circle cx="450" cy="291" r="5.5" fill="#ea580c" stroke="#7c2d12" stroke-width="2"/>
+  <circle cx="480" cy="297" r="4.5" fill="#ea580c"/>
+  <circle cx="510" cy="328" r="4.5" fill="#ea580c"/>
+  <circle cx="540" cy="346" r="4.5" fill="#ea580c"/>
+
+  <line x1="450" y1="500" x2="450" y2="122" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="443" y="115" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#b91c1c">knee：goodput 峰值 ≈ 4.8 req/s（ρ ≈ 0.72）</text>
+
+  <text x="240" y="462" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#047857">部署区：knee 左侧</text>
+  <text x="240" y="480" text-anchor="middle" font-size="11.5" fill="#047857">留 20~30% 余量</text>
+
+  <line x1="540" y1="356" x2="540" y2="410" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arR)"/>
+  <text x="546" y="430" text-anchor="middle" font-size="10.5" fill="#b91c1c">过载：P(TTFT ≤ 500ms) 崩塌</text>
+  <text x="546" y="446" text-anchor="middle" font-size="10.5" fill="#b91c1c">goodput 掉头向下（吞吐还没掉）</text>
+
+  <rect x="96" y="130" width="240" height="70" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <line x1="110" y1="150" x2="140" y2="150" stroke="#059669" stroke-width="3"/>
+  <text x="148" y="154" font-size="11" fill="#334155">raw 吞吐 = λ（能力内全部完成）</text>
+  <line x1="110" y1="174" x2="140" y2="174" stroke="#ea580c" stroke-width="3"/>
+  <text x="148" y="178" font-size="11" fill="#334155">goodput = λ × P(SLO 达标)</text>
+  <line x1="110" y1="192" x2="140" y2="192" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="148" y="196" font-size="11" fill="#334155">knee（容量 = goodput 峰值）</text>
+
+  <!-- ===== 右图：1/(1-rho) ===== -->
+  <rect x="650" y="72" width="560" height="498" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="930" y="98" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0f172a">为什么必须留余量：平均时延 ~ 1/(1−ρ)</text>
+
+  <rect x="1025" y="120" width="62" height="380" fill="#f0fdf4" opacity="0.5"/>
+  <line x1="720" y1="500" x2="1190" y2="500" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="720" y1="500" x2="720" y2="112" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="955" y="518" text-anchor="middle" font-size="10.5" fill="#64748b">0.5</text>
+  <text x="1049" y="518" text-anchor="middle" font-size="10.5" fill="#64748b">0.7</text>
+  <text x="1143" y="518" text-anchor="middle" font-size="10.5" fill="#64748b">0.9</text>
+  <text x="955" y="545" text-anchor="middle" font-size="11.5" fill="#334155">利用率 ρ = λ · E[S]</text>
+  <text x="688" y="310" font-size="11.5" fill="#334155" transform="rotate(-90 688 310)">平均时延（× E[S]）</text>
+  <text x="712" y="516" font-size="10.5" fill="#64748b">0</text>
+
+  <path d="M 720,500 C 830,494 900,486 955,481 C 1000,474 1030,462 1049,456
+           C 1070,447 1085,437 1096,424 C 1115,398 1125,370 1134,361
+           C 1145,330 1152,290 1157,247 C 1162,205 1164,165 1166,140"
+        fill="none" stroke="#7c3aed" stroke-width="3"/>
+
+  <circle cx="1049" cy="456" r="5" fill="#059669"/>
+  <text x="1043" y="445" text-anchor="end" font-size="11" font-weight="bold" fill="#047857">ρ=0.7 → 3.3×E[S]</text>
+  <circle cx="1096" cy="424" r="5" fill="#d97706"/>
+  <text x="1102" y="416" font-size="11" font-weight="bold" fill="#b45309">ρ=0.8 → 5×</text>
+  <circle cx="1143" cy="329" r="5" fill="#dc2626"/>
+  <text x="1137" y="318" text-anchor="end" font-size="11" font-weight="bold" fill="#b91c1c">ρ=0.9 → 10×</text>
+  <text x="1168" y="168" font-size="11.5" font-weight="bold" fill="#7c3aed">ρ→1：发散 ↗</text>
+
+  <text x="1056" y="136" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#047857">部署带 ρ≈0.7</text>
+  <text x="930" y="580" text-anchor="middle" font-size="10.5" fill="#64748b">（M/M/1 形状示意；重尾服务只会更陡——你在线上容量规划里见过同一条曲线）</text>
+
+  <!-- ===== 底部公式条 ===== -->
+  <rect x="30" y="596" width="1180" height="52" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="620" y="618" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#92400e">goodput(λ) = λ · P( 该请求所有 SLO 同时满足 ｜ λ )　—— 多 SLO 取交集：vllm bench serve --goodput ttft:500,tpot:20（一个请求全部达标才计数）</text>
+  <text x="620" y="638" text-anchor="middle" font-size="11.5" fill="#b45309">raw throughput 优化的是机器，goodput 优化的是生意 —— 膝点右边的每一分吞吐都是拿 SLO 换的</text>
+</svg>

@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 900" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar19a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar19b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+    <marker id="ar19c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <pattern id="hatchRed" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#fef2f2"/><line x1="0" y1="0" x2="0" y2="6" stroke="#fca5a5" stroke-width="2"/></pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="900" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">无重叠 vs 重叠：decode step 的 CPU/GPU 时间线与 bubble 账（v0.11.0 机制）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">上左：同步模式五段串行账单 · 上右：步长公式与成立条件 · 中：同步时间线（GPU 等 CPU） · 下：异步时间线（三级重叠）</text>
+
+  <!-- ================= Panel A-left: serial bill ================= -->
+  <text x="60" y="76" font-size="13.5" font-weight="bold" fill="#0f172a">① 同步模式（v0.11.0 默认）：一个 decode step 的五段串行账单</text>
+  <rect x="40" y="88" width="690" height="232" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.2"/>
+
+  <!-- stacked bar -->
+  <g>
+    <rect x="60" y="108" width="105" height="24" fill="#fecaca" stroke="#dc2626"/><text x="112" y="124" text-anchor="middle" font-size="8.6" fill="#7f1d1d">schedule</text>
+    <rect x="165" y="108" width="90" height="24" fill="#ffedd5" stroke="#ea580c"/><text x="210" y="124" text-anchor="middle" font-size="8.6" fill="#7c2d12">prep+H2D</text>
+    <rect x="255" y="108" width="235" height="24" fill="#bfdbfe" stroke="#2563eb"/><text x="372" y="124" text-anchor="middle" font-size="8.6" fill="#1e3a8a">forward + 采样（GPU）</text>
+    <rect x="490" y="108" width="85" height="24" fill="#fbcfe8" stroke="#db2777"/><text x="532" y="124" text-anchor="middle" font-size="8.6" fill="#831843">D2H 同步</text>
+    <rect x="575" y="108" width="105" height="24" fill="#c7d2fe" stroke="#4f46e5"/><text x="627" y="124" text-anchor="middle" font-size="8.6" fill="#312e81">update</text>
+  </g>
+
+  <g font-size="8.6" fill="#334155">
+    <rect x="62" y="142" width="10" height="10" fill="#fecaca" stroke="#dc2626"/><text x="78" y="151">C_sched 0.2~1 ms：Scheduler.schedule()——running 扫描 + allocate_slots + token budget（随 batch/并发增长）</text>
+    <rect x="62" y="162" width="10" height="10" fill="#ffedd5" stroke="#ea580c"/><text x="78" y="171">C_prep 0.1~0.5 ms：_prepare_inputs 写持久 buffer + H2D（Day 18 的「replay 前写状态」）</text>
+    <rect x="62" y="182" width="10" height="10" fill="#bfdbfe" stroke="#2563eb"/><text x="78" y="191">T_gpu：CG 后 ≈ Day 2 访存下界（Qwen3-8B@H100：batch=1 ≈ 4.9 ms，batch=32 ≈ 5.4 ms）</text>
+    <rect x="62" y="202" width="10" height="10" fill="#fbcfe8" stroke="#db2777"/><text x="78" y="211">C_sync 0.1~0.3 ms：sampled_token_ids 的 D2H + .tolist()——阻塞到 forward 完全排空（gpu_model_runner.py:2124）</text>
+    <rect x="62" y="222" width="10" height="10" fill="#c7d2fe" stroke="#4f46e5"/><text x="78" y="231">C_upd 0.2~1 ms：update_from_output——stop 检查 + bookkeeping + free + 打包 EngineCoreOutputs</text>
+  </g>
+  <rect x="58" y="244" width="616" height="26" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="366" y="261" text-anchor="middle" font-size="11" font-weight="bold" fill="#0f172a">T_step(同步) = C_sched + C_prep + T_gpu + C_sync + C_upd —— GPU 只在 T_gpu 段忙碌</text>
+  <text x="58" y="290" font-size="8.6" fill="#991b1b">GPU 利用率 ≈ T_gpu / T_step；其余全是 bubble。数量级：C 串行合计 ≈ 1~3 ms，batch=32 时 bubble ≈ 15~35%（实验 2 实测你机器的值）</text>
+  <text x="58" y="306" font-size="8.6" fill="#64748b">Day 18 的 CG 把 step 内部 launch 间隙消掉后，step 之间的 CPU 串行段成为新的可优化对象——「优化转移瓶颈」的下一环</text>
+
+  <!-- ================= Panel A-right: formulas ================= -->
+  <text x="756" y="76" font-size="13.5" font-weight="bold" fill="#0f172a">② 重叠后的步长与成立条件</text>
+  <rect x="750" y="88" width="450" height="232" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.2"/>
+  <rect x="768" y="104" width="414" height="52" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="975" y="124" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#065f46">T_step(异步) = max( C_cpu_path , T_gpu )</text>
+  <text x="975" y="142" text-anchor="middle" font-size="8.6" fill="#166534">C_cpu_path = C_sched + C_prep + C_upd + C_ipc（调度下一步 + 收上一步，全程与 GPU 并行）</text>
+  <rect x="768" y="166" width="414" height="52" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="975" y="184" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">成立条件：C_cpu_path &lt; T_gpu → bubble 全被吃掉</text>
+  <text x="975" y="200" text-anchor="middle" font-size="8.6" fill="#166534">违反时（小模型 / batch=1 / 极快 kernel）：CPU 成为新瓶颈，异步只隐藏一部分</text>
+  <rect x="768" y="228" width="414" height="72" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="975" y="248" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#065f46">β（bubble 比例）= C_串行 ÷ (C_串行 + T_gpu)</text>
+  <text x="975" y="266" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">收益上限 = T_同步 ÷ T_异步 − 1</text>
+  <text x="975" y="286" text-anchor="middle" font-size="8.6" fill="#166534">例：C=2 ms、T_gpu=5 ms → β≈29%；异步后步长 ≈ 5 ms，TPOT 改善 ≈ 28%</text>
+
+  <!-- ================= Panel B: sync timeline ================= -->
+  <text x="60" y="346" font-size="13.5" font-weight="bold" fill="#0f172a">③ 同步时间线：GPU 在每个 step 之间等 CPU（红色 hatch = bubble）</text>
+  <rect x="40" y="358" width="1160" height="205" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.2"/>
+
+  <!-- CPU lane -->
+  <text x="58" y="392" font-size="9" fill="#475569">CPU</text>
+  <g>
+    <rect x="100" y="382" width="90" height="17" fill="#fecaca" stroke="#dc2626"/><text x="145" y="394" text-anchor="middle" font-size="7.5" fill="#7f1d1d">sched(N)</text>
+    <rect x="190" y="382" width="70" height="17" fill="#ffedd5" stroke="#ea580c"/><text x="225" y="394" text-anchor="middle" font-size="7.5" fill="#7c2d12">prep(N)</text>
+    <rect x="260" y="382" width="210" height="17" fill="#e2e8f0" stroke="#94a3b8"/><text x="365" y="394" text-anchor="middle" font-size="7.5" fill="#475569">阻塞等 forward(N) 输出</text>
+    <rect x="470" y="382" width="40" height="17" fill="#fbcfe8" stroke="#db2777"/><text x="490" y="394" text-anchor="middle" font-size="7.5" fill="#831843">D2H</text>
+    <rect x="510" y="382" width="80" height="17" fill="#c7d2fe" stroke="#4f46e5"/><text x="550" y="394" text-anchor="middle" font-size="7.5" fill="#312e81">update(N)</text>
+    <rect x="600" y="382" width="90" height="17" fill="#fecaca" stroke="#dc2626"/><text x="645" y="394" text-anchor="middle" font-size="7.5" fill="#7f1d1d">sched(N+1)</text>
+    <rect x="690" y="382" width="70" height="17" fill="#ffedd5" stroke="#ea580c"/><text x="725" y="394" text-anchor="middle" font-size="7.5" fill="#7c2d12">prep(N+1)</text>
+    <rect x="760" y="382" width="210" height="17" fill="#e2e8f0" stroke="#94a3b8"/><text x="865" y="394" text-anchor="middle" font-size="7.5" fill="#475569">阻塞等 forward(N+1) 输出</text>
+    <rect x="970" y="382" width="40" height="17" fill="#fbcfe8" stroke="#db2777"/><text x="990" y="394" text-anchor="middle" font-size="7.5" fill="#831843">D2H</text>
+    <rect x="1010" y="382" width="80" height="17" fill="#c7d2fe" stroke="#4f46e5"/><text x="1050" y="394" text-anchor="middle" font-size="7.5" fill="#312e81">update(N+1)</text>
+  </g>
+  <!-- GPU lane -->
+  <text x="58" y="442" font-size="9" fill="#475569">GPU</text>
+  <g>
+    <rect x="265" y="432" width="205" height="17" fill="#bfdbfe" stroke="#2563eb"/><text x="367" y="444" text-anchor="middle" font-size="7.5" fill="#1e3a8a">forward(N)</text>
+    <rect x="470" y="432" width="130" height="17" fill="url(#hatchRed)" stroke="#dc2626" stroke-dasharray="3,2"/><text x="535" y="444" text-anchor="middle" font-size="7.5" fill="#991b1b">bubble</text>
+    <rect x="600" y="432" width="205" height="17" fill="#bfdbfe" stroke="#2563eb"/><text x="702" y="444" text-anchor="middle" font-size="7.5" fill="#1e3a8a">forward(N+1)</text>
+    <rect x="805" y="432" width="130" height="17" fill="url(#hatchRed)" stroke="#dc2626" stroke-dasharray="3,2"/><text x="870" y="444" text-anchor="middle" font-size="7.5" fill="#991b1b">bubble</text>
+    <rect x="935" y="432" width="160" height="17" fill="#bfdbfe" stroke="#2563eb"/><text x="1015" y="444" text-anchor="middle" font-size="7.5" fill="#1e3a8a">forward(N+2)</text>
+  </g>
+  <!-- alignment lines -->
+  <g stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3">
+    <line x1="260" y1="378" x2="260" y2="455"/>
+    <line x1="470" y1="378" x2="470" y2="455"/>
+    <line x1="600" y1="378" x2="600" y2="455"/>
+  </g>
+  <line x1="535" y1="455" x2="535" y2="478" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar19b)"/>
+  <text x="535" y="492" text-anchor="middle" font-size="9" fill="#991b1b">bubble = C_sync + C_upd + C_sched + C_prep：GPU 空转等 CPU 收上一步、备下一步</text>
+  <text x="620" y="516" text-anchor="middle" font-size="8.6" fill="#64748b">eager 模式下 forward 内部还有 kernel 间隙（Day 18 图 1）；CG 后 step 内部致密，bubble 集中在 step 之间——正是今天要吃掉的部分</text>
+  <text x="620" y="536" text-anchor="middle" font-size="8.6" fill="#64748b">稳态：T_step = C_sched + C_prep + T_gpu + C_sync + C_upd（五段全串行，P1 与 P2 无法并行工作）</text>
+
+  <!-- ================= Panel C: async timeline ================= -->
+  <text x="60" y="590" font-size="13.5" font-weight="bold" fill="#0f172a">④ 异步时间线（--async-scheduling）：调度领先执行一步，三级重叠</text>
+  <rect x="40" y="602" width="1160" height="286" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.2"/>
+
+  <!-- overlap shading 1: sched(N+1) during fwd(N) -->
+  <rect x="218" y="640" width="118" height="180" fill="#dcfce7" opacity="0.55"/>
+  <!-- overlap shading 2: D2H copy(N) during fwd(N+1) -->
+  <rect x="520" y="640" width="200" height="180" fill="#dcfce7" opacity="0.55"/>
+
+  <!-- L1: EngineCore -->
+  <text x="58" y="668" font-size="9" fill="#475569">P1 调度</text>
+  <g>
+    <rect x="100" y="656" width="90" height="17" fill="#fecaca" stroke="#dc2626"/><text x="145" y="668" text-anchor="middle" font-size="7.5" fill="#7f1d1d">sched(N)</text>
+    <rect x="190" y="656" width="28" height="17" fill="#e2e8f0" stroke="#94a3b8"/><text x="204" y="668" text-anchor="middle" font-size="7" fill="#475569">提交</text>
+    <rect x="218" y="656" width="90" height="17" fill="#fecaca" stroke="#dc2626"/><text x="263" y="668" text-anchor="middle" font-size="7.5" fill="#7f1d1d">sched(N+1)</text>
+    <rect x="308" y="656" width="28" height="17" fill="#e2e8f0" stroke="#94a3b8"/><text x="322" y="668" text-anchor="middle" font-size="7" fill="#475569">提交</text>
+    <rect x="336" y="656" width="134" height="17" fill="#e2e8f0" stroke="#94a3b8"/><text x="403" y="668" text-anchor="middle" font-size="7.5" fill="#475569">future.result()：等 copy(N)</text>
+    <rect x="470" y="656" width="70" height="17" fill="#c7d2fe" stroke="#4f46e5"/><text x="505" y="668" text-anchor="middle" font-size="7.5" fill="#312e81">update(N)</text>
+    <rect x="540" y="656" width="90" height="17" fill="#fecaca" stroke="#dc2626"/><text x="585" y="668" text-anchor="middle" font-size="7.5" fill="#7f1d1d">sched(N+2)</text>
+    <rect x="630" y="656" width="28" height="17" fill="#e2e8f0" stroke="#94a3b8"/><text x="644" y="668" text-anchor="middle" font-size="7" fill="#475569">提交</text>
+    <rect x="658" y="656" width="134" height="17" fill="#e2e8f0" stroke="#94a3b8"/><text x="725" y="668" text-anchor="middle" font-size="7.5" fill="#475569">future.result()：等 copy(N+1)</text>
+    <rect x="792" y="656" width="70" height="17" fill="#c7d2fe" stroke="#4f46e5"/><text x="827" y="668" text-anchor="middle" font-size="7.5" fill="#312e81">update(N+1)</text>
+    <rect x="862" y="656" width="90" height="17" fill="#fecaca" stroke="#dc2626"/><text x="907" y="668" text-anchor="middle" font-size="7.5" fill="#7f1d1d">sched(N+3)</text>
+  </g>
+  <text x="1160" y="668" font-size="8" fill="#166534">batch_queue=2：队列未满时早返回，调度一路领先</text>
+
+  <!-- L2: worker main thread -->
+  <text x="58" y="718" font-size="9" fill="#475569">P2 主线程</text>
+  <g>
+    <rect x="225" y="706" width="50" height="17" fill="#ffedd5" stroke="#ea580c"/><text x="250" y="718" text-anchor="middle" font-size="7.2" fill="#7c2d12">prep(N)</text>
+    <rect x="275" y="706" width="160" height="17" fill="#f1f5f9" stroke="#cbd5e1"/><text x="355" y="718" text-anchor="middle" font-size="7.2" fill="#64748b">等 MQ（GPU 在跑）</text>
+    <rect x="435" y="706" width="60" height="17" fill="#fef9c3" stroke="#ca8a04"/><text x="465" y="718" text-anchor="middle" font-size="7.2" fill="#713f12">bookkeep(N)</text>
+    <rect x="495" y="706" width="50" height="17" fill="#ffedd5" stroke="#ea580c"/><text x="520" y="718" text-anchor="middle" font-size="7.2" fill="#7c2d12">prep(N+1)</text>
+    <rect x="545" y="706" width="145" height="17" fill="#f1f5f9" stroke="#cbd5e1"/><text x="617" y="718" text-anchor="middle" font-size="7.2" fill="#64748b">等 MQ</text>
+    <rect x="690" y="706" width="60" height="17" fill="#fef9c3" stroke="#ca8a04"/><text x="720" y="718" text-anchor="middle" font-size="7.2" fill="#713f12">bookkeep(N+1)</text>
+    <rect x="750" y="706" width="50" height="17" fill="#ffedd5" stroke="#ea580c"/><text x="775" y="718" text-anchor="middle" font-size="7.2" fill="#7c2d12">prep(N+2)</text>
+  </g>
+
+  <!-- L3: GPU -->
+  <text x="58" y="768" font-size="9" fill="#475569">GPU</text>
+  <g>
+    <rect x="240" y="756" width="200" height="17" fill="#bfdbfe" stroke="#2563eb"/><text x="340" y="768" text-anchor="middle" font-size="7.5" fill="#1e3a8a">forward(N)</text>
+    <rect x="440" y="756" width="80" height="17" fill="url(#hatchRed)" stroke="#dc2626" stroke-dasharray="3,2"/><text x="480" y="768" text-anchor="middle" font-size="7" fill="#991b1b">残余</text>
+    <rect x="520" y="756" width="200" height="17" fill="#bfdbfe" stroke="#2563eb"/><text x="620" y="768" text-anchor="middle" font-size="7.5" fill="#1e3a8a">forward(N+1)</text>
+    <rect x="720" y="756" width="50" height="17" fill="url(#hatchRed)" stroke="#dc2626" stroke-dasharray="3,2"/><text x="745" y="768" text-anchor="middle" font-size="7" fill="#991b1b">残余</text>
+    <rect x="770" y="756" width="200" height="17" fill="#bfdbfe" stroke="#2563eb"/><text x="870" y="768" text-anchor="middle" font-size="7.5" fill="#1e3a8a">forward(N+2)</text>
+  </g>
+
+  <!-- L4: side stream + copy thread -->
+  <text x="58" y="818" font-size="9" fill="#475569">旁路流+拷贝线程</text>
+  <g>
+    <rect x="445" y="806" width="26" height="17" fill="#fbcfe8" stroke="#db2777"/><text x="458" y="818" text-anchor="middle" font-size="6.8" fill="#831843">D2H</text>
+    <rect x="473" y="806" width="46" height="17" fill="#fce7f3" stroke="#db2777"/><text x="496" y="818" text-anchor="middle" font-size="6.8" fill="#831843">get_output(N)</text>
+    <rect x="725" y="806" width="26" height="17" fill="#fbcfe8" stroke="#db2777"/><text x="738" y="818" text-anchor="middle" font-size="6.8" fill="#831843">D2H</text>
+    <rect x="751" y="806" width="46" height="17" fill="#fce7f3" stroke="#db2777"/><text x="774" y="818" text-anchor="middle" font-size="6.8" fill="#831843">get_output(N+1)</text>
+  </g>
+
+  <!-- overlap badges -->
+  <circle cx="277" cy="632" r="10" fill="#059669"/><text x="277" y="636" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">1</text>
+  <text x="292" y="636" font-size="9" font-weight="bold" fill="#047857">sched(N+1) ∥ forward(N)：调度领先一步（placeholder 乐观记账）</text>
+  <circle cx="620" cy="632" r="10" fill="#059669"/><text x="620" y="636" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">2</text>
+  <text x="635" y="636" font-size="9" font-weight="bold" fill="#047857">D2H copy(N) ∥ forward(N+1)：旁路 stream + WorkerAsyncOutputCopy 线程</text>
+  <circle cx="1075" cy="818" r="10" fill="#059669"/><text x="1075" y="822" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">3</text>
+  <text x="1090" y="822" font-size="9" font-weight="bold" fill="#047857">detokenize/HTTP ∥ 引擎主循环（前端进程）</text>
+
+  <!-- annotations -->
+  <line x1="480" y1="775" x2="480" y2="796" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar19b)"/>
+  <text x="400" y="845" font-size="9" fill="#991b1b">残余 bubble：P2 主线程的 bookkeep(N) + prep(N+1)——异步后瓶颈转移到 worker 自身 CPU 链（比同步模式的 bubble 窄得多）</text>
+  <text x="400" y="863" font-size="8.6" fill="#475569">稳态：T_step = max(C_cpu_path, T_gpu + 残余) ；GPU 背靠背执行，CPU 三段（sched/prep/update）全部藏在 GPU 时间里</text>
+  <text x="400" y="881" font-size="8.6" fill="#64748b">注意 update(N) 晚于 schedule(N+1) 发生：调度器做 N+1 决策时，N 的输出还没回来——「晚一步」语义的全部正确性问题由此而来（图 3）</text>
+</svg>

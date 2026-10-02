@@ -1,0 +1,3325 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && find /mnt/workspace/aiinfra/vllm -name "day*.md" -not -path "*/node_modules/*" | sort
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  6704 Oct  2 02:43 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 06:00 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  2 06:52 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     3 Oct  2 06:25 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 03:09 week1
+drwxr-xr-x  3 root root  4096 Oct  2 06:00 week2
+drwxr-xr-x  3 root root  4096 Oct  2 06:22 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+/mnt/workspace/aiinfra/vllm/week1/day01_transformer_inference.md
+/mnt/workspace/aiinfra/vllm/week1/day02_memory_latency_hand_calc.md
+/mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
+/mnt/workspace/aiinfra/vllm/week1/day04_paged_attention_paper.md
+/mnt/workspace/aiinfra/vllm/week1/day05_serving_metrics.md
+/mnt/workspace/aiinfra/vllm/week1/day06_env_setup_first_bench.md
+/mnt/workspace/aiinfra/vllm/week1/day07_first_principles_review.md
+/mnt/workspace/aiinfra/vllm/week2/day08_v1_architecture_overview.md
+/mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md
+/mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+/mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week3/ && ls /mnt/workspace/aiinfra/vllm/week2/
+total 112
+drwxr-xr-x  3 root root  4096 Oct  2 06:22 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+drwxr-xr-x  2 root root  4096 Oct  2 06:19 assets
+-rw-r--r--  1 root root 60544 Oct  2 06:24 day15_kv_cache_manager_block_pool.md
+-rw-r--r--  1 root root 37509 Oct  1 23:15 README.md
+assets
+day08_v1_architecture_overview.md
+day09_request_entry_pipeline.md
+day11_chunked_prefill.md
+day12_preemption.md
+day14_request_state_machine_review.md
+README.md
+[0m
+[0m→ [0mRead week3/day15_kv_cache_manager_block_pool.md
+[0m→ [0mRead week3/day15_kv_cache_manager_block_pool.md[90m [offset=591][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/week3/assets/ /mnt/workspace/aiinfra/vllm/week2/assets/ 2>/dev/null; cat /mnt/workspace/aiinfra/vllm/.tutorial_progress; cat /mnt/workspace/aiinfra/vllm/build.py
+/mnt/workspace/aiinfra/vllm/week2/assets/:
+day08_startup_sequence.svg
+day08_step_ipc_timeline.svg
+day08_v1_process_architecture.svg
+day09_request_entry_pipeline.svg
+day09_request_object_anatomy.svg
+day09_ttft_decomposition.svg
+day11_budget_tradeoff.svg
+day11_chunked_prefill_timeline.svg
+day11_unified_scheduling_ledger.svg
+day12_preemption_flow.svg
+day12_preemption_state_machine.svg
+day12_recompute_vs_swap.svg
+day14_request_state_machine.svg
+day14_ten_requests_six_kv_timeline.svg
+day14_week2_one_graph_flow.svg
+
+/mnt/workspace/aiinfra/vllm/week3/assets/:
+day15_capacity_handcalc_lru.svg
+day15_request_kv_lifecycle.svg
+day15_three_layer_architecture.svg
+15
+#!/usr/bin/env python3
+"""
+Build the website for GitHub Pages.
+
+Generates public/ (deployment root):
+  - Shared css/js (copied from static/)
+  - Landing page index.html (built by build.home)
+  - Plan page plan.html + prompt page prompt.html (built by build.weeks)
+  - week1~weekN overview + day pages (built by build.weeks)
+"""
+
+import shutil
+from pathlib import Path
+
+from build.common import (
+    WEEK_DIR_PATTERN,
+    copy_static_assets,
+    discover_week_dirs,
+)
+from build.home import build_home
+from build.weeks import (
+    build_plan_page,
+    build_prompt_page,
+    build_week,
+)
+
+
+def main() -> None:
+    repo_root = Path(__file__).parent
+    public_dir = repo_root / "public"
+
+    if public_dir.exists():
+        shutil.rmtree(public_dir)
+    public_dir.mkdir()
+    (public_dir / ".nojekyll").write_text("", encoding="utf-8")
+
+    print("Copying static assets (css/js)...")
+    copy_static_assets(public_dir)
+
+    week_dirs = discover_week_dirs()
+    week_numbers = [int(WEEK_DIR_PATTERN.match(d.name).group(1)) for d in week_dirs]
+
+    weeks = []
+    for week_dir, week_num in zip(week_dirs, week_numbers):
+        print(f"Building Week {week_num} website...")
+        weeks.append(build_week(week_num, public_dir, week_numbers))
+
+    print("Building plan + prompt pages...")
+    build_plan_page(public_dir, week_numbers)
+    build_prompt_page(public_dir)
+
+    print("Building landing page (index.html)...")
+    build_home(public_dir, weeks)
+
+    print("Website built successfully in public/")
+
+
+if __name__ == "__main__":
+    main()
+[0m
+[0m$ [0mpip show vllm 2>/dev/null | head -5; python -c "import vllm; print(vllm.__file__, vllm.__version__)" 2>/dev/null; find / -maxdepth 4 -name "attention" -type d -path "*vllm*" 2>/dev/null | head
+(no output)
+[0m
+[0m$ [0mhead -30 /mnt/workspace/aiinfra/vllm/generate_tutorials.sh; grep -n "Day 17" /mnt/workspace/aiinfra/vllm/week3/README.md | head; grep -n "Day 16\|Day 17\|Day 18" /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md | head
+#!/usr/bin/env bash
+#
+# generate_tutorials.sh — 按天调用 cannbot 生成 vLLM 推理系统教程（Day 1 ~ Day 56）
+#
+# 行为：
+#   - 每次只向 cannbot 发送「一天」的教程生成任务；
+#   - 默认单线程：前一天生成完成（产出 dayNN_*.md）后才发送下一天；
+#     需要加速时可用 JOBS=2 等开启并发；
+#   - 支持断点续跑：已生成的 Day 自动跳过；
+#   - 不重试：某天失败则记录并继续生成下一天，失败的 Day 在结束时汇总，
+#     重新运行本脚本即可补跑；
+#   - 每天之间冷却 COOLDOWN 秒（默认 600，即 10 分钟）：缓解网关限流；
+#   - 模型思考强度 CANNBOT_VARIANT（默认 low）：GLM-5.3 默认思考过长，
+#     复盘类任务会烧 3 万+ reasoning token 撞输出上限（finish=length）导致
+#     空退，low 可避免该失败模式；
+#   - 末尾自动补跑：第一轮结束后，对缺失的 Day 最多再补跑 MAX_PASSES-1 轮
+#     （默认共 3 轮），轮间同样冷却。
+#
+# 用法：
+#   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
+#   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
+#   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
+#   COOLDOWN=600 ./generate_tutorials.sh    # 自定义冷却秒数（默认 600，即 10 分钟）
+#   CANNBOT_VARIANT=medium ./generate_tutorials.sh   # 调整思考强度（默认 low）
+#   MAX_PASSES=5 ./generate_tutorials.sh    # 最多补跑轮数（默认 3）
+#
+set -u
+
+WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$WORKDIR"
+34:GPUModelRunner.execute_model()                ── Day 17/18/19（本周核心②）
+36:    │  ├─ Attention 后端写 KV + 算 attention（Day 17）
+151:3. `block_size` 默认多少？它同时是哪几样东西的单位？（提示：分配粒度、hash 粒度、**attention 算子 gather 的 tile 粒度**——Day 17 呼应）
+241:## Day 17：Attention 后端抽象
+622:量化专题会回到 Day 15 的 `kv_cache_dtype`（FP8 KV cache = 每 block 显存减半 → 可用 block 数翻倍的连锁反应）；投机解码会回到 Day 17 的 `AttentionType.PREFILL_ONLY` 与 Day 18 的"decode 步变短后 launch 开销占比上升"。**本周这三处伏笔先在笔记里标出来。**
+[0m
+[0m$ [0msed -n '225,330p' /mnt/workspace/aiinfra/vllm/week3/README.md
+2. hash 冲突怎么处理？（读代码：`cached_block` 命中后是否校验 `token_ids`？）
+3. chunked prefill 把 prompt 切成多段，中间被打断的请求已算好的块怎么办？（W2 Day 11 × 本天的交叉点：未完成请求的块保留不释放，避免重算——找 `cache_unfinished` 相关路径）
+4. 如果两个请求共享前缀但 `block_size=16`，前缀长 100，能共享几个块？（6 个满块，剩 4 token 不能共享——解释"块粒度截断"）
+
+### 与昇腾经验的连接
+
+你做 ASW 模板提升 L2 命中率的本质是**让重复访问的数据驻留高带宽层**；prefix caching 是同一思想在系统层的实现——"重复计算 → 命中即跳过"。面试可以主动把这层映射讲出来：算子层的 reuse 优化 vs 引擎层的复用优化，都是"以便宜资源换昂贵资源"。
+
+### 产出
+
+- [ ] hash 链 + COW + 驱逐三张时序/状态图（手画）
+- [ ] 实验数据表：hit rate 与 TTFT 改善（≥3 组前缀长度梯度）
+- [ ] 思考题答案
+
+---
+
+## Day 17：Attention 后端抽象
+
+### 目标
+
+讲清：① vLLM 怎么把 FlashAttention/FlashInfer/Triton 后端"插拔"进同一套模型代码；② 一次 attention 调用里 `slot_mapping` 和 `block_table` 分别解决什么问题；③ **如果给新硬件（比如昇腾）写后端，要实现哪些接口**——这是你 W6 项目 A 的直接前置。
+
+### 抽象分层（自上而下）
+
+```
+模型代码                attn = Attention(num_heads, head_size, num_kv_heads, ...)
+                          attn.forward(q, k, v, attn_metadata)     ← 模型只见这一层
+                              │
+platform 选择          vllm/platforms/cuda.py 声明支持的后端集合
+                       （env VLLM_ATTENTION_BACKEND 可强制指定）
+                              │
+registry              vllm/attention/registry.py: enum → Builder 的注册表
+                              │
+AttentionBackend      静态能力描述：get_kv_cache_shape()（物理布局！）、
+                       支持特性（prefix caching / MLA / sliding window…）
+                              │
+AttentionImpl         每层一个实例：forward = "写 KV + 算 attention"
+                              │
+MetadataBuilder       batch 级：SchedulerOutput → 该后端的 AttentionMetadata
+```
+
+要点：
+- `Attention` 层（`layer.py`）是模型实现（如 `llama.py`）唯一 import 的东西——**后端对模型代码完全透明**，这就是"插拔"的实现方式。
+- `AttentionType` 区分 DECODER / ENCODER / ENCODER_DECODER / PREFILL_ONLY（MTP draft 层用，W4 Day 25 呼应）。
+
+### 一次 forward 里两个关键映射
+
+**`slot_mapping`（写入侧）**：batch 中第 i 个 token 的 KV 要写到哪个物理槽位。
+
+```
+slot = block_id × block_size + 块内偏移
+```
+
+prefill 阶段模型计算出的 k/v，由 attention 后端按 slot_mapping scatter 进 kv_caches tensor。这个映射在 `gpu_model_runner.py` 构建 input 时算好。
+
+**`block_table`（读取侧）**：attention 计算时，每个序列去哪读历史 KV。decode kernel 沿序列的 block 列表逐块 gather——**KV 永不搬移，靠间接寻址读非连续内存**，这是 PagedAttention 论文（W1 Day 4）在代码层的落点。
+
+`CommonAttentionMetadata`（各后端共享部分）核心字段：`query_start_loc`（batch 内每序列 query 的起止，varlen 场景代替 padding）、`seq_lens`、`num_reqs`。
+
+**读代码任务**：跳进 `flash_attn.py` 的 `AttentionImpl.forward`，分辨出：哪段把 k/v 写进 cache（slot_mapping 用法）、哪段分派到 prefill（varlen）/decode（paged）kernel、`unified_attention` 这类"一步式"接口怎么同时处理 prefill+decode 混合 batch（V1 chunked prefill 决定了混合 batch 是常态——W2 Day 11 的呼应）。
+
+### 写作业：新硬件 backend 接入清单（对接你的昇腾经验）
+
+如果让你给一块新 NPU 写 attention 后端（vllm-ascend 的 `AscendAttentionBackend` 就是这么来的），最小工作集：
+
+1. **`AttentionBackend` 子类**：
+   - `get_kv_cache_shape(...)`：决定这块硬件上 KV cache 的物理形状/布局——**这是你最有发言权的地方**：哪个维度连续能让你 NPU 的搬运合并成大 burst？`block_size` 要不要为了对齐约束调整？
+2. **`AttentionImpl` 子类**：
+   - `forward`：写 KV + 调你的 paged attention 算子（prefill 走 varlen、decode 走 paged gather；或统一 kernel）
+3. **`AttentionMetadataBuilder` 子类**：把 `SchedulerOutput` + block table 翻译成你算子要的参数格式（如昇腾侧的 tiling 参数、block 索引数组）
+4. **平台注册**：platform 类里声明支持 + 默认选择逻辑
+5. **特性声明**：支持不支持 prefix caching / MLA / 特定精度，决定上层功能开关
+
+把这份清单写进笔记——W6 选 vllm-ascend 贡献点时（Day 36），直接拿它当 checklist 扫 issue。
+
+### 实验
+
+```bash
+# 对比不同后端（你的卡支持哪几个就跑哪几个）：
+VLLM_ATTENTION_BACKEND=FLASH_ATTN  vllm serve ... 
+VLLM_ATTENTION_BACKEND=FLASHINFER  vllm serve ...
+VLLM_ATTENTION_BACKEND=TRITON_ATTN vllm serve ...
+# 各跑一次 vllm bench serve，记录 TPOT/TTFT；再跑一次长上下文（如 32K）看差距是否拉大
+```
+
+```python
+# 代码级确认选择逻辑（比背文档可靠）：
+from vllm.platforms import current_platform
+# 起服务时打日志/断点，观察最终实例化的 AttentionImpl 类名
+```
+
+### 思考题
+
+1. `block_size` 从 16 改成 8/32，分别影响哪四样东西？（hash 粒度、碎片、block table 大小、**decode kernel 每次 gather 的连续长度**）
+2. 为什么 prefill 用 varlen（`query_start_loc`）而不是 padding 到最长序列？
+3. backend 报"不支持某模型"时，常见原因是什么？（head_size / 注意力类型 / hybrid 结构不在支持列表）
+
+### 产出
+
+- [ ] 后端抽象分层图 + forward 调用链笔记（带源码行号）
+- [ ] 《新硬件 backend 接入清单》一页（W6 直接复用）
+- [ ] 后端对比实验数据表
+
+---
+
+## Day 18：CUDA Graph
+[0m
+现在检查是否能获取 vLLM v0.11.0 源码来核对行号（保持与 Day 15 相同的「逐行核对」口径）：
+[0m$ [0mcd /tmp/opencode && timeout 60 pip download vllm==0.11.0 --no-deps --no-binary :all: -d /tmp/opencode/vllm_src 2>&1 | tail -3
+[notice] A new release of pip is available: 26.1.2 -> 26.2.1
+[notice] To update, run: pip install --upgrade pip
+ERROR: Failed to build 'vllm' when installing build dependencies for vllm
+[0m
+[0m$ [0mcd /tmp/opencode && timeout 90 curl -sL -o vllm-0.11.0.tar.gz https://github.com/vllm-project/vllm/archive/refs/tags/v0.11.0.tar.gz && ls -la vllm-0.11.0.tar.gz && tar xzf vllm-0.11.0.tar.gz && ls vllm-0.11.0/vllm/attention/ | head -30
+-rw-r--r-- 1 root root 10714612 Oct  2 06:55 vllm-0.11.0.tar.gz
+backends
+__init__.py
+layer.py
+layers
+ops
+selector.py
+utils
+[0m
+源码下载成功。现在开始核对 v0.11.0 的 attention 相关源码结构：
+[0m$ [0mls /tmp/opencode/vllm-0.11.0/vllm/attention/backends/ && ls /tmp/opencode/vllm-0.11.0/vllm/v1/worker/ | head -20 && wc -l /tmp/opencode/vllm-0.11.0/vllm/attention/layer.py /tmp/opencode/vllm-0.11.0/vllm/attention/selector.py /tmp/opencode/vllm-0.11.0/vllm/attention/backends/flash_attn.py /tmp/opencode/vllm-0.11.0/vllm/attention/backends/flashinfer.py /tmp/opencode/vllm-0.11.0/vllm/attention/backends/triton_attn.py
+abstract.py
+__init__.py
+utils.py
+block_table.py
+cpu_model_runner.py
+cpu_worker.py
+gpu_input_batch.py
+gpu_model_runner.py
+gpu_ubatch_wrapper.py
+gpu_worker.py
+__init__.py
+kv_connector_model_runner_mixin.py
+lora_model_runner_mixin.py
+tpu_input_batch.py
+tpu_model_runner.py
+tpu_worker.py
+ubatching.py
+ubatch_splitting.py
+ubatch_utils.py
+utils.py
+worker_base.py
+xpu_model_runner.py
+xpu_worker.py
+  645 /tmp/opencode/vllm-0.11.0/vllm/attention/layer.py
+  245 /tmp/opencode/vllm-0.11.0/vllm/attention/selector.py
+  890 total
+wc: /tmp/opencode/vllm-0.11.0/vllm/attention/backends/flash_attn.py: No such file or directory
+wc: /tmp/opencode/vllm-0.11.0/vllm/attention/backends/flashinfer.py: No such file or directory
+wc: /tmp/opencode/vllm-0.11.0/vllm/attention/backends/triton_attn.py: No such file or directory
+[0m
+[0m$ [0mls /tmp/opencode/vllm-0.11.0/vllm/attention/backends/ /tmp/opencode/vllm-0.11.0/vllm/attention/ops/ /tmp/opencode/vllm-0.11.0/vllm/attention/layers/ 2>/dev/null; find /tmp/opencode/vllm-0.11.0/vllm/attention -name "*.py" | xargs wc -l | sort -rn | head -25
+/tmp/opencode/vllm-0.11.0/vllm/attention/backends/:
+abstract.py
+__init__.py
+utils.py
+
+/tmp/opencode/vllm-0.11.0/vllm/attention/layers/:
+chunked_local_attention.py
+cross_attention.py
+encoder_only_attention.py
+__init__.py
+
+/tmp/opencode/vllm-0.11.0/vllm/attention/ops/:
+chunked_prefill_paged_decode.py
+common.py
+flashmla.py
+__init__.py
+merge_attn_states.py
+paged_attn.py
+pallas_kv_cache_update.py
+prefix_prefill.py
+rocm_aiter_mla.py
+rocm_aiter_paged_attn.py
+triton_decode_attention.py
+triton_flash_attention.py
+triton_merge_attn_states.py
+triton_reshape_and_cache_flash.py
+triton_unified_attention.py
+  6947 total
+   984 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/triton_flash_attention.py
+   928 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/prefix_prefill.py
+   894 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/triton_unified_attention.py
+   691 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/triton_decode_attention.py
+   645 /tmp/opencode/vllm-0.11.0/vllm/attention/layer.py
+   405 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/chunked_prefill_paged_decode.py
+   345 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/common.py
+   262 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/paged_attn.py
+   245 /tmp/opencode/vllm-0.11.0/vllm/attention/selector.py
+   204 /tmp/opencode/vllm-0.11.0/vllm/attention/backends/abstract.py
+   192 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/flashmla.py
+   175 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/triton_reshape_and_cache_flash.py
+   162 /tmp/opencode/vllm-0.11.0/vllm/attention/layers/cross_attention.py
+   124 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/pallas_kv_cache_update.py
+   104 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/rocm_aiter_mla.py
+   102 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/rocm_aiter_paged_attn.py
+    97 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/triton_merge_attn_states.py
+    93 /tmp/opencode/vllm-0.11.0/vllm/attention/layers/chunked_local_attention.py
+    86 /tmp/opencode/vllm-0.11.0/vllm/attention/layers/encoder_only_attention.py
+    85 /tmp/opencode/vllm-0.11.0/vllm/attention/utils/fa_utils.py
+    43 /tmp/opencode/vllm-0.11.0/vllm/attention/ops/merge_attn_states.py
+    33 /tmp/opencode/vllm-0.11.0/vllm/attention/utils/kv_sharing_utils.py
+    33 /tmp/opencode/vllm-0.11.0/vllm/attention/backends/utils.py
+    15 /tmp/opencode/vllm-0.11.0/vllm/attention/__init__.py
+[0m
+[0m$ [0mls /tmp/opencode/vllm-0.11.0/vllm/v1/attention/ && find /tmp/opencode/vllm-0.11.0/vllm -name "*.py" -path "*attention*" | grep -v "vllm/attention/" | head -40
+backends
+__init__.py
+/tmp/opencode/vllm-0.11.0/vllm/model_executor/layers/attention_layer_base.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/gdn_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/tree_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/short_conv_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mamba2_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/rocm_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flash_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/utils.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mamba1_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/__init__.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/cpu_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/xformers.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/pallas.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/rocm_aiter_fa.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/triton_mla.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/cutlass_mla.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/__init__.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/indexer.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/flashattn_mla.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/flashmla.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/flashinfer_mla.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/common.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/rocm_aiter_mla.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/flashmla_sparse.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/linear_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flex_attention.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mamba_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/triton_attn.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/__init__.py
+[0m
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0/vllm/v1/attention && wc -l backends/*.py | sort -rn | head -12 && echo --- && cat /tmp/opencode/vllm-0.11.0/vllm/attention/__init__.py
+8238 total
+  1181 backends/flashinfer.py
+   990 backends/utils.py
+   919 backends/cpu_attn.py
+   861 backends/flex_attention.py
+   795 backends/flash_attn.py
+   549 backends/rocm_aiter_fa.py
+   451 backends/tree_attn.py
+   438 backends/xformers.py
+   426 backends/rocm_attn.py
+   409 backends/pallas.py
+   361 backends/triton_attn.py
+---
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+from vllm.attention.backends.abstract import (AttentionBackend,
+                                              AttentionMetadata, AttentionType)
+from vllm.attention.layer import Attention
+from vllm.attention.selector import get_attn_backend
+
+__all__ = [
+    "Attention",
+    "AttentionBackend",
+    "AttentionMetadata",
+    "AttentionType",
+    "get_attn_backend",
+]
+[0m
+[0m$ [0mgrep -rn "class AttentionRegistry\|AttentionRegistry" /tmp/opencode/vllm-0.11.0/vllm/ --include="*.py" -l | head; find /tmp/opencode/vllm-0.11.0/vllm -name "registry.py" | head
+/tmp/opencode/vllm-0.11.0/vllm/model_executor/models/registry.py
+/tmp/opencode/vllm-0.11.0/vllm/transformers_utils/chat_templates/registry.py
+/tmp/opencode/vllm-0.11.0/vllm/multimodal/registry.py
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/attention/selector.py
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/attention/backends/abstract.py
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/attention/layer.py
+[0m
+[0m$ [0mgrep -n "get_attn_backend_cls\|_supported_attention_backends\|class CUDAPlatform\|class CUDAPost10\|class CUDAPre10\|def get_default_attn_backend\|_default_attention" /tmp/opencode/vllm-0.11.0/vllm/platforms/cuda.py | head -30; echo ===; grep -n "get_attn_backend_cls\|def get_default" /tmp/opencode/vllm-0.11.0/vllm/platforms/interface.py /tmp/opencode/vllm-0.11.0/vllm/platforms/__init__.py 2>/dev/null | head
+240:    def get_attn_backend_cls(cls, selected_backend, head_size, dtype,
+===
+/tmp/opencode/vllm-0.11.0/vllm/platforms/interface.py:194:    def get_attn_backend_cls(cls, selected_backend: _Backend, head_size: int,
+[0m
+[0m$ [0msed -n '120,330p' /tmp/opencode/vllm-0.11.0/vllm/platforms/cuda.py
+parallel_config.worker_cls = \
+                        "vllm.v1.worker.gpu_worker.Worker"
+                else:
+                    parallel_config.worker_cls = "vllm.worker.worker.Worker"
+
+        cache_config = vllm_config.cache_config
+        if cache_config and cache_config.block_size is None:
+            cache_config.block_size = 16
+
+        # TODO(lucas): handle this more gracefully
+        # Note: model_config may be None during testing
+        if model_config is not None and model_config.use_mla:
+            use_sparse = hasattr(vllm_config.model_config.hf_config,
+                                 "index_topk")
+            # If `VLLM_ATTENTION_BACKEND` is not set and we are using MLA,
+            # then we default to FlashMLA backend for non-blackwell GPUs,
+            # else we default to CutlassMLA. For each case, we force the
+            # required block_size.
+            use_flashmla = False
+            use_cutlass_mla = False
+            use_flashinfer_mla = False
+
+            if envs.VLLM_ATTENTION_BACKEND is None:
+                # Default case
+                if cls.is_device_capability(100):
+                    # Blackwell => Force CutlassMLA.
+                    use_cutlass_mla = True
+                    # TODO: This does not work, because the
+                    # global_force_attn_backend_context_manager is not set.
+                    # See vllm/attention/selector.py:_cached_get_attn_backend
+                    envs.VLLM_ATTENTION_BACKEND = "CUTLASS_MLA"
+                else:
+                    # Not Blackwell
+                    use_flashmla = True
+            else:
+                # Forced case
+                use_flashmla = (envs.VLLM_ATTENTION_BACKEND == "FLASHMLA")
+                use_cutlass_mla = (
+                    envs.VLLM_ATTENTION_BACKEND == "CUTLASS_MLA")
+                use_flashinfer_mla = (
+                    envs.VLLM_ATTENTION_BACKEND == "FLASHINFER_MLA")
+
+            from vllm.attention.ops.flashmla import is_flashmla_supported
+            if use_flashmla and is_flashmla_supported()[0] \
+                and cache_config.block_size != 64:
+                cache_config.block_size = 64
+                logger.info(
+                    "Forcing kv cache block size to 64 for FlashMLA backend.")
+
+            if use_cutlass_mla and cache_config.block_size != 128:
+                cache_config.block_size = 128
+                logger.info("Forcing kv cache block size to 128 for "
+                            "CUTLASS_MLA backend.")
+
+            if use_flashinfer_mla and cache_config.block_size not in [32, 64]:
+                cache_config.block_size = 64
+                logger.info(
+                    "Forcing kv cache block size to 64 for FlashInferMLA "
+                    "backend.")
+
+            # TODO(Chen): remove this hacky code
+            if use_sparse and cache_config.block_size != 64:
+                cache_config.block_size = 64
+                logger.info(
+                    "Forcing kv cache block size to 64 for FlashMLASparse "
+                    "backend.")
+        # lazy import to avoid circular import
+        from vllm.config import CUDAGraphMode
+
+        compilation_config = vllm_config.compilation_config
+        if (envs.VLLM_ALL2ALL_BACKEND == "deepep_high_throughput"
+                and parallel_config.data_parallel_size > 1
+                and compilation_config.cudagraph_mode != CUDAGraphMode.NONE):
+            # TODO: Piecewise Cuda graph might be enabled
+            # if torch compile cache key issue fixed
+            # See https://github.com/vllm-project/vllm/pull/25093
+            logger.info(
+                "WideEP: Disabling CUDA Graphs since DeepEP high-throughput "
+                "kernels are optimized for prefill and are incompatible with "
+                "CUDA Graphs. "
+                "In order to use CUDA Graphs for decode-optimized workloads, "
+                "set VLLM_ALL2ALL_BACKEND to another option, such as "
+                "deepep_low_latency, pplx, or allgather_reducescatter.")
+            compilation_config.cudagraph_mode = CUDAGraphMode.NONE
+
+    @classmethod
+    def get_current_memory_usage(cls,
+                                 device: Optional[torch.types.Device] = None
+                                 ) -> float:
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats(device)
+        return torch.cuda.max_memory_allocated(device)
+
+    @classmethod
+    def get_vit_attn_backend(cls, head_size: int,
+                             dtype: torch.dtype) -> _Backend:
+
+        # For Blackwell GPUs, force TORCH_SDPA for now.
+        # See https://github.com/facebookresearch/xformers/issues/1317#issuecomment-3199392579 # noqa: E501
+        if cls.has_device_capability(100):
+            return _Backend.TORCH_SDPA
+
+        if dtype not in (torch.float16, torch.bfloat16):
+            return _Backend.XFORMERS
+
+        if cls.has_device_capability(80):
+            FLASH_ATTN_V1 = "vllm.v1.attention.backends.flash_attn.FlashAttentionBackend"  # noqa: E501
+            from vllm.attention.selector import is_attn_backend_supported
+            is_default_fa_supported = is_attn_backend_supported(
+                FLASH_ATTN_V1, head_size, dtype, allow_import_error=False)
+            if is_default_fa_supported:
+                return _Backend.FLASH_ATTN
+            else:
+                # Fallback to XFORMERS
+                return _Backend.XFORMERS
+        else:
+            # Fallback for Volta/Turing GPUs or FA not supported
+            return _Backend.XFORMERS
+
+    @classmethod
+    def get_attn_backend_cls(cls, selected_backend, head_size, dtype,
+                             kv_cache_dtype, block_size, use_v1, use_mla,
+                             has_sink, use_sparse) -> str:
+        if use_mla:
+            if not use_v1:
+                raise RuntimeError(
+                    "MLA attention backends require the V1 engine. "
+                    "Set VLLM_USE_V1=1 to enable them.")
+
+            from vllm.attention.ops.flashmla import is_flashmla_supported
+            from vllm.attention.utils.fa_utils import flash_attn_supports_mla
+
+            if use_sparse:
+                logger.info_once("Using Sparse MLA backend on V1 engine.")
+                return ("vllm.v1.attention.backends.mla.flashmla_sparse."
+                        "FlashMLASparseBackend")
+
+            use_cutlassmla = selected_backend == _Backend.CUTLASS_MLA or (
+                selected_backend is None and cls.is_device_capability(100)
+                and block_size == 128)
+            use_flashinfermla = selected_backend == _Backend.FLASHINFER_MLA or (
+                selected_backend is None and cls.is_device_capability(100)
+                and block_size in [32, 64])
+            use_flashmla = selected_backend == _Backend.FLASHMLA or (
+                selected_backend is None and is_flashmla_supported()[0])
+            use_flashattn = selected_backend == _Backend.FLASH_ATTN_MLA or (
+                selected_backend is None and flash_attn_supports_mla())
+            use_triton = selected_backend == _Backend.TRITON_MLA or (
+                selected_backend is None)
+
+            if use_cutlassmla:
+                logger.info_once("Using Cutlass MLA backend on V1 engine.")
+                return ("vllm.v1.attention.backends.mla."
+                        "cutlass_mla.CutlassMLABackend")
+            if use_flashinfermla:
+                from vllm.v1.attention.backends.utils import (
+                    set_kv_cache_layout)
+                set_kv_cache_layout("HND")
+                logger.info_once("Using FlashInfer MLA backend on V1 engine.")
+                return ("vllm.v1.attention.backends.mla."
+                        "flashinfer_mla.FlashInferMLABackend")
+            if use_flashmla:
+                if block_size != 64:
+                    logger.warning(
+                        "FlashMLA backend is not supported for block size %d"
+                        " (currently only supports block size 64).",
+                        block_size)
+                else:
+                    logger.info_once("Using FlashMLA backend on V1 engine.")
+                    return ("vllm.v1.attention.backends.mla."
+                            "flashmla.FlashMLABackend")
+            if use_flashattn:
+                logger.info_once(
+                    "Using FlashAttention MLA backend on V1 engine.")
+                return ("vllm.v1.attention.backends.mla."
+                        "flashattn_mla.FlashAttnMLABackend")
+            if use_triton:
+                logger.info_once("Using Triton MLA backend on V1 engine.")
+                return ("vllm.v1.attention.backends.mla."
+                        "triton_mla.TritonMLABackend")
+        if use_v1:
+            FLASHINFER_V1 = "vllm.v1.attention.backends.flashinfer.FlashInferBackend"  # noqa: E501
+            FLEX_ATTENTION_V1 = "vllm.v1.attention.backends.flex_attention.FlexAttentionBackend"  # noqa: E501
+            TRITON_ATTN = "vllm.v1.attention.backends.triton_attn.TritonAttentionBackend"  # noqa: E501
+            FLASH_ATTN_V1 = "vllm.v1.attention.backends.flash_attn.FlashAttentionBackend"  # noqa: E501
+            TREE_ATTN_V1 = "vllm.v1.attention.backends.tree_attn.TreeAttentionBackend"  # noqa: E501
+            XFORMERS_V1 = "vllm.v1.attention.backends.xformers.XFormersAttentionBackend"  # noqa: E501
+
+            use_fp8_kv_cache = (kv_cache_dtype is not None
+                                and kv_cache_dtype.startswith("fp8"))
+
+            if selected_backend == _Backend.FLASHINFER:
+                logger.info_once("Using FlashInfer backend on V1 engine.")
+                if cls.has_device_capability(100):
+                    from vllm.v1.attention.backends.utils import (
+                        set_kv_cache_layout)
+                    set_kv_cache_layout("HND")
+                return FLASHINFER_V1
+            elif selected_backend == _Backend.FLEX_ATTENTION:
+                logger.info_once("Using FlexAttention backend on V1 engine.")
+                return FLEX_ATTENTION_V1
+            elif selected_backend == _Backend.TRITON_ATTN:
+                logger.info_once("Using Triton backend on V1 engine.")
+                return TRITON_ATTN
+            elif selected_backend == _Backend.FLASH_ATTN:
+                logger.info_once("Using Flash Attention backend on V1 engine.")
+                return FLASH_ATTN_V1
+            elif selected_backend == _Backend.TREE_ATTN:
+                logger.info_once("Using Tree Attention backend on V1 engine.")
+                return TREE_ATTN_V1
+            elif selected_backend == _Backend.XFORMERS:
+[0m
+[0m$ [0msed -n '330,440p' /tmp/opencode/vllm-0.11.0/vllm/platforms/cuda.py
+elif selected_backend == _Backend.XFORMERS:
+                logger.info_once("Using XFormers backend on V1 engine.")
+                return XFORMERS_V1
+
+            from vllm.attention.selector import is_attn_backend_supported
+
+            # Default backends for V1 engine
+            # Prefer FlashInfer for Blackwell GPUs if installed
+            if cls.is_device_capability(100):
+                if is_default_backend_supported := is_attn_backend_supported(
+                        FLASHINFER_V1, head_size, dtype):
+                    from vllm.v1.attention.backends.utils import (
+                        set_kv_cache_layout)
+
+                    logger.info_once(
+                        "Using FlashInfer backend with HND KV cache layout on "
+                        "V1 engine by default for Blackwell (SM 10.0) GPUs.")
+                    set_kv_cache_layout("HND")
+
+                    return FLASHINFER_V1
+
+                if not is_default_backend_supported.can_import:
+                    logger.warning_once(
+                        "FlashInfer failed to import for V1 engine on "
+                        "Blackwell (SM 10.0) GPUs; it is recommended to "
+                        "install FlashInfer for better performance.")
+
+            # FlashAttention is the default for SM 8.0+ GPUs
+            if cls.has_device_capability(80):
+                if (has_sink or
+                        use_fp8_kv_cache) and not cls.is_device_capability(90):
+                    logger.info_once("Using Triton backend on V1 engine.")
+                    return TRITON_ATTN
+                elif is_default_backend_supported := is_attn_backend_supported(
+                        FLASH_ATTN_V1, head_size, dtype,
+                        allow_import_error=False):
+                    logger.info_once("Using Flash Attention backend on "
+                                     "V1 engine.")
+                    return FLASH_ATTN_V1
+
+            # FlexAttention is the default for older GPUs
+            else:
+                logger.info_once("Using FlexAttention backend on V1 engine.")
+                return FLEX_ATTENTION_V1
+
+            assert not is_default_backend_supported
+
+            use_flex_attention_reason = {}
+            if not is_default_backend_supported.head_size:
+                use_flex_attention_reason["head_size"] = head_size
+            if not is_default_backend_supported.dtype:
+                use_flex_attention_reason["dtype"] = dtype
+
+            logger.info_once(
+                "Using FlexAttention backend for %s on V1 engine.",
+                ", ".join(f"{k}={v}"
+                          for k, v in use_flex_attention_reason.items()),
+            )
+            return FLEX_ATTENTION_V1
+
+        raise RuntimeError(
+            "V0 attention backends have been removed. Set VLLM_USE_V1=1 "
+            "to select a supported backend.")
+
+    @classmethod
+    def get_punica_wrapper(cls) -> str:
+        return "vllm.lora.punica_wrapper.punica_gpu.PunicaWrapperGPU"
+
+    @classmethod
+    def get_device_communicator_cls(cls) -> str:
+        return "vllm.distributed.device_communicators.cuda_communicator.CudaCommunicator"  # noqa
+
+    @classmethod
+    def supports_fp8(cls) -> bool:
+        return cls.has_device_capability(89)
+
+    @classmethod
+    def use_custom_allreduce(cls) -> bool:
+        return True
+
+    @classmethod
+    def opaque_attention_op(cls) -> bool:
+        return True
+
+    @classmethod
+    def get_static_graph_wrapper_cls(cls) -> str:
+        return "vllm.compilation.cuda_graph.CUDAGraphWrapper"
+
+    @classmethod
+    def stateless_init_device_torch_dist_pg(
+        cls,
+        backend: str,
+        prefix_store: PrefixStore,
+        group_rank: int,
+        group_size: int,
+        timeout: timedelta,
+    ) -> ProcessGroup:
+        assert is_nccl_available()
+        pg: ProcessGroup = ProcessGroup(
+            prefix_store,
+            group_rank,
+            group_size,
+        )
+        from torch.distributed.distributed_c10d import ProcessGroupNCCL
+
+        backend_options = ProcessGroupNCCL.Options()
+        backend_options._timeout = timeout
+
+        backend_class = ProcessGroupNCCL(prefix_store, group_rank, group_size,
+                                         backend_options)
+        backend_type = ProcessGroup.BackendType.NCCL
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/utils.py
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flash_attn.py
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/attention/ops/triton_reshape_and_cache_flash.py
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/attention/utils/fa_utils.py
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/attention/ops/triton_decode_attention.py[90m [limit=330][0m
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/triton_attn.py
+[0m→ [0mRead /tmp/opencode/vllm-0.11.0/vllm/attention/ops/triton_unified_attention.py[90m [limit=120][0m
+[0m
+[0m$ [0mgrep -n "class FlashInferBackend\|class FlashInferImpl\|class FlashInferMetadata\|def get_kv_cache_shape\|def forward\|trtllm_batch_context_with_kv_cache\|def plan\|use_trtllm\|single_prefill\|def get_name\|accept_output_buffer\|get_supported_head_sizes\|get_supported_dtypes" /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py | head -30
+15:from flashinfer.prefill import trtllm_batch_context_with_kv_cache
+28:from vllm.utils.flashinfer import (can_use_trtllm_attention,
+31:                                   use_trtllm_attention)
+144:class FlashInferBackend(AttentionBackend):
+145:    accept_output_buffer: bool = True
+148:    def get_supported_dtypes(cls) -> list[torch.dtype]:
+152:    def get_supported_head_sizes(cls) -> list[int]:
+158:        supported_head_sizes = cls.get_supported_head_sizes()
+168:    def get_name() -> str:
+184:    def get_kv_cache_shape(
+217:class FlashInferMetadata:
+231:    prefill_use_trtllm: bool
+232:    decode_use_trtllm: bool
+251:class FlashInferMetadataBuilder(AttentionMetadataBuilder[FlashInferMetadata]):
+308:            can_use_trtllm_attention(self.num_qo_heads, self.num_kv_heads)
+502:        prefill_use_trtllm = use_trtllm_attention(self.num_qo_heads,
+511:        decode_use_trtllm = use_trtllm_attention(self.num_qo_heads,
+520:        if self.has_sinks and not (prefill_use_trtllm and decode_use_trtllm):
+528:        if not (prefill_use_trtllm and decode_use_trtllm):
+540:            prefill_use_trtllm=prefill_use_trtllm,
+541:            decode_use_trtllm=decode_use_trtllm,
+602:                if not attn_metadata.prefill_use_trtllm:
+650:                if not attn_metadata.decode_use_trtllm:
+684:class FlashInferImpl(AttentionImpl):
+745:    def forward(
+790:            assert (attn_metadata.prefill_use_trtllm and
+791:                    attn_metadata.decode_use_trtllm), "Must use TRT-LLM attn"
+886:            if not attn_metadata.prefill_use_trtllm:
+943:                trtllm_batch_context_with_kv_cache(
+968:            if not attn_metadata.decode_use_trtllm:
+[0m
+[0m$ [0msed -n '144,216p' /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py; echo ======; sed -n '684,760p' /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py
+class FlashInferBackend(AttentionBackend):
+    accept_output_buffer: bool = True
+
+    @classmethod
+    def get_supported_dtypes(cls) -> list[torch.dtype]:
+        return [torch.float16, torch.bfloat16]
+
+    @classmethod
+    def get_supported_head_sizes(cls) -> list[int]:
+        # https://github.com/flashinfer-ai/flashinfer/blob/3d55c71a62052c590c130897d3a3db49b14fcc34/include/flashinfer/utils.cuh#L157
+        return [64, 128, 256]
+
+    @classmethod
+    def validate_head_size(cls, head_size: int) -> None:
+        supported_head_sizes = cls.get_supported_head_sizes()
+        if head_size not in supported_head_sizes:
+            attn_type = cls.__name__.removesuffix("Backend")
+            raise ValueError(
+                f"Head size {head_size} is not supported by {attn_type}. "
+                f"Supported head sizes are: {supported_head_sizes}. "
+                "Set VLLM_ATTENTION_BACKEND=FLEX_ATTENTION to use "
+                "FlexAttention backend which supports all head sizes.")
+
+    @staticmethod
+    def get_name() -> str:
+        return "FLASHINFER"
+
+    @staticmethod
+    def get_impl_cls() -> type[FlashInferImpl]:
+        return FlashInferImpl
+
+    @staticmethod
+    def get_metadata_cls() -> type[FlashInferMetadata]:
+        return FlashInferMetadata
+
+    @staticmethod
+    def get_builder_cls() -> type[FlashInferMetadataBuilder]:
+        return FlashInferMetadataBuilder
+
+    @staticmethod
+    def get_kv_cache_shape(
+        num_blocks: int,
+        block_size: int,
+        num_kv_heads: int,
+        head_size: int,
+        cache_dtype_str: str = "auto",
+    ) -> tuple[int, ...]:
+        return (num_blocks, 2, block_size, num_kv_heads, head_size)
+
+    @staticmethod
+    def get_kv_cache_stride_order() -> tuple[int, ...]:
+        # `stride_order` indicates the permutation that gets us from
+        # `get_kv_cache_shape` to the actual memory layout we want.
+        cache_layout = get_kv_cache_layout()
+        if cache_layout == "NHD":
+            stride_order = (0, 1, 2, 3, 4)
+        elif cache_layout == "HND":
+            stride_order = (0, 1, 3, 2, 4)
+        else:
+            raise ValueError(f"Unknown cache layout format {cache_layout}.")
+        return stride_order
+
+    @staticmethod
+    def get_fp8_dtype_for_flashinfer(kv_cache_dtype: str) -> torch.dtype:
+        if kv_cache_dtype in ("fp8", "fp8_e4m3"):
+            return torch.float8_e4m3fn
+        elif kv_cache_dtype == "fp8_e5m2":
+            return torch.float8_e5m2
+        else:
+            raise ValueError(f"Unrecognized FP8 dtype: {kv_cache_dtype}")
+
+
+@dataclass
+======
+class FlashInferImpl(AttentionImpl):
+
+    def __init__(
+        self,
+        num_heads: int,
+        head_size: int,
+        scale: float,
+        num_kv_heads: int,
+        alibi_slopes: Optional[list[float]],
+        sliding_window: Optional[int],
+        kv_cache_dtype: str,
+        logits_soft_cap: Optional[float] = None,
+        attn_type: AttentionType = AttentionType.DECODER,
+        kv_sharing_target_layer_name: Optional[int] = None,
+        sinks: Optional[torch.Tensor] = None,
+    ) -> None:
+        self.num_heads = num_heads
+        self.head_size = head_size
+        self.scale = float(scale)
+        self.num_kv_heads = num_kv_heads
+        if alibi_slopes is not None:
+            alibi_slopes = torch.tensor(alibi_slopes, dtype=torch.float32)
+        self.alibi_slopes = alibi_slopes
+        if sliding_window is None:
+            self.sliding_window = (-1, -1)
+        else:
+            self.sliding_window = (sliding_window - 1, 0)
+        self.window_left = (self.sliding_window[0]
+                            if self.sliding_window is not None else -1)
+        self.kv_cache_dtype = kv_cache_dtype
+        self.logits_soft_cap = logits_soft_cap
+        self.kv_sharing_target_layer_name = kv_sharing_target_layer_name
+
+        self.num_queries_per_kv = self.num_heads // self.num_kv_heads
+
+        if attn_type != AttentionType.DECODER:
+            raise NotImplementedError("Encoder self-attention and "
+                                      "encoder/decoder cross-attention "
+                                      "are not implemented for "
+                                      "FlashInferImpl")
+
+        self.sinks: Optional[torch.Tensor] = None
+        if sinks is not None:
+            if sinks.shape[0] != num_heads:
+                raise ValueError(
+                    "Sinks must have the same number of heads as the number of "
+                    f"heads in the layer. Expected {num_heads}, but got "
+                    f"{sinks.shape[0]}.")
+            self.sinks = sinks
+
+        self.support_trtllm_attn = (supports_trtllm_attention()
+                                    and num_heads % num_kv_heads == 0)
+        self.bmm1_scale: Optional[float] = None
+        self.bmm2_scale: Optional[float] = None
+        self.o_sf_scale: Optional[float] = None
+
+    def fused_output_quant_supported(self, quant_key: QuantKey):
+        return (self.support_trtllm_attn
+                and self.kv_cache_dtype.startswith("fp8")
+                and quant_key in (kFp8StaticTensorSym, kNvfp4Quant))
+
+    def forward(
+        self,
+        layer: torch.nn.Module,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        kv_cache: torch.Tensor,
+        attn_metadata: FlashInferMetadata,
+        output: Optional[torch.Tensor] = None,
+        output_scale: Optional[torch.Tensor] = None,
+        output_block_scale: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Forward pass with FlashInfer.
+
+        Args:
+            query: shape = [num_tokens, num_heads, head_size]
+[0m
+[0m$ [0mgrep -n "def _update_attention_metadata\|def _resolve_common_attention_metadata\|common_attn_metadata\|def initialize_attn_backend\|def bind_kv_cache\|forward_context\|attn_metadata =\|attn_metadata\[" /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py | head -40
+36:from vllm.forward_context import (BatchDescriptor, DPMetadata,
+37:                                  set_forward_context)
+1139:            attn_metadata = [dict() for _ in range(len(ubatch_slices))]
+1146:        spec_decode_common_attn_metadata = None
+1189:            common_attn_metadata = CommonAttentionMetadata(
+1208:                    and spec_decode_common_attn_metadata is None):
+1212:                        spec_decode_common_attn_metadata = common_attn_metadata
+1214:                    spec_decode_common_attn_metadata = common_attn_metadata
+1239:                    common_attn_metadata_list = split_attn_metadata(
+1240:                        ubatch_slices, common_attn_metadata)
+1241:                    for ubid, common_attn_metadata in enumerate(
+1242:                            common_attn_metadata_list):
+1246:                                common_attn_metadata=common_attn_metadata))
+1249:                            attn_metadata[ubid][layer_name] = attn_metadata_i
+1254:                        common_attn_metadata=common_attn_metadata,
+1257:                        attn_metadata[layer_name] = attn_metadata_i
+1264:                num_scheduled_tokens, spec_decode_common_attn_metadata,
+2255:                 num_scheduled_tokens_np, spec_decode_common_attn_metadata,
+2287:        with (set_forward_context(
+2370:            assert spec_decode_common_attn_metadata is not None
+2380:                    spec_decode_common_attn_metadata,
+2395:        input_fits_in_drafter = spec_decode_common_attn_metadata and (
+2396:            spec_decode_common_attn_metadata.seq_lens.max() +
+2467:        common_attn_metadata: CommonAttentionMetadata,
+2524:                        common_attn_metadata,
+2548:                    common_attn_metadata, token_indices =\
+2550:                            common_attn_metadata,
+2554:                    common_attn_metadata, token_indices, \
+2557:                            common_attn_metadata,
+2582:                common_attn_metadata=common_attn_metadata,
+3024:            attn_metadata = {}
+3026:                attn_metadata = [dict() for _ in range(len(ubatch_slices))]
+3046:                common_attn_metadata = CommonAttentionMetadata(
+3065:                        common_attn_metadata_list = split_attn_metadata(
+3066:                            ubatch_slices, common_attn_metadata)
+3067:                        for ubid, common_attn_metadata in enumerate(
+3068:                                common_attn_metadata_list):
+3069:                            assert common_attn_metadata.max_query_len == 1
+3072:                                               .build_for_cudagraph_capture(common_attn_metadata))
+3075:                                attn_metadata[ubid][
+[0m
+[0m$ [0msed -n '1130,1270p' /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py
+self.num_decode_draft_tokens.copy_to_gpu()
+
+        logits_indices_padded = None
+        if self.cache_config.kv_sharing_fast_prefill:
+            logits_indices_padded = self._prepare_kv_sharing_fast_prefill(
+                logits_indices)
+
+        attn_metadata: PerLayerAttnMetadata = {}
+        if ubatch_slices is not None:
+            attn_metadata = [dict() for _ in range(len(ubatch_slices))]
+
+        # Used in the below loop.
+        query_start_loc_cpu = self.query_start_loc.cpu[:num_reqs + 1]
+        seq_lens_cpu = self.seq_lens.cpu[:num_reqs]
+        num_computed_tokens_cpu = (
+            self.input_batch.num_computed_tokens_cpu_tensor[:num_reqs])
+        spec_decode_common_attn_metadata = None
+        if use_spec_decode:
+            self.num_accepted_tokens.np[:num_reqs] = (
+                self.input_batch.num_accepted_tokens_cpu[:num_reqs])
+            self.num_accepted_tokens.np[num_reqs:].fill(1)
+            self.num_accepted_tokens.copy_to_gpu()
+
+        # Prepare the attention metadata for each KV cache group and make layers
+        # in the same group share the same metadata.
+        for kv_cache_group_id, kv_cache_group_spec in enumerate(
+                self.kv_cache_config.kv_cache_groups):
+            encoder_seq_lens = self._get_encoder_seq_lens(
+                scheduler_output, kv_cache_group_spec.kv_cache_spec, num_reqs)
+
+            if isinstance(kv_cache_group_spec.kv_cache_spec,
+                          EncoderOnlyAttentionSpec):
+                # Encoder-only layers do not have KV cache, so we need to
+                # create a dummy block table and slot mapping for them.
+                blk_table_tensor = torch.zeros(
+                    (num_reqs, 1),
+                    dtype=torch.int32,
+                    device=self.device,
+                )
+                slot_mapping = torch.zeros(
+                    (total_num_scheduled_tokens, ),
+                    dtype=torch.int64,
+                    device=self.device,
+                )
+                num_common_prefix_blocks = 0
+            else:
+                blk_table = self.input_batch.block_table[kv_cache_group_id]
+                blk_table_tensor = blk_table.get_device_tensor(num_reqs)
+                slot_mapping = blk_table.slot_mapping.gpu[:
+                                                          total_num_scheduled_tokens]
+
+                # Fill unused with -1. Needed for reshape_and_cache in full cuda
+                # graph mode.
+                blk_table.slot_mapping.gpu[total_num_scheduled_tokens:].fill_(
+                    -1)
+                num_common_prefix_blocks = (
+                    scheduler_output.
+                    num_common_prefix_blocks[kv_cache_group_id])
+
+            common_attn_metadata = CommonAttentionMetadata(
+                query_start_loc=query_start_loc,
+                query_start_loc_cpu=query_start_loc_cpu,
+                seq_lens=seq_lens,
+                seq_lens_cpu=seq_lens_cpu,
+                num_computed_tokens_cpu=num_computed_tokens_cpu,
+                num_reqs=num_reqs,
+                num_actual_tokens=total_num_scheduled_tokens,
+                max_query_len=max_num_scheduled_tokens,
+                max_seq_len=max_seq_len,
+                block_table_tensor=blk_table_tensor,
+                slot_mapping=slot_mapping,
+                logits_indices_padded=logits_indices_padded,
+                num_logits_indices=logits_indices.size(0),
+                causal=True,
+                encoder_seq_lens=encoder_seq_lens,
+            )
+
+            if (self.speculative_config
+                    and spec_decode_common_attn_metadata is None):
+                if isinstance(self.drafter, EagleProposer):
+                    if (self.drafter.attn_layer_names[0]
+                            in kv_cache_group_spec.layer_names):
+                        spec_decode_common_attn_metadata = common_attn_metadata
+                else:
+                    spec_decode_common_attn_metadata = common_attn_metadata
+
+            for attn_group in self.attn_groups[kv_cache_group_id]:
+                # Prepare for cascade attention if enabled & beneficial.
+                common_prefix_len = 0
+                builder = attn_group.get_metadata_builder()
+                if self.cascade_attn_enabled:
+                    common_prefix_len = self._compute_cascade_attn_prefix_len(
+                        num_scheduled_tokens,
+                        num_common_prefix_blocks,
+                        attn_group.kv_cache_spec,
+                        builder,
+                    )
+
+                extra_attn_metadata_args = {}
+                if use_spec_decode and isinstance(builder,
+                                                  GDNAttentionMetadataBuilder):
+                    extra_attn_metadata_args = dict(
+                        num_accepted_tokens=self.num_accepted_tokens.
+                        gpu[:num_reqs],
+                        num_decode_draft_tokens_cpu=self.
+                        num_decode_draft_tokens.cpu[:num_reqs],
+                    )
+
+                if ubatch_slices is not None:
+                    common_attn_metadata_list = split_attn_metadata(
+                        ubatch_slices, common_attn_metadata)
+                    for ubid, common_attn_metadata in enumerate(
+                            common_attn_metadata_list):
+                        attn_metadata_i = (attn_group.get_metadata_builder(
+                            ubatch_id=ubid).build(
+                                common_prefix_len=common_prefix_len,
+                                common_attn_metadata=common_attn_metadata))
+                        for layer_name in kv_cache_group_spec.layer_names:
+                            assert type(attn_metadata) is list
+                            attn_metadata[ubid][layer_name] = attn_metadata_i
+                else:
+                    assert isinstance(attn_metadata, dict)
+                    attn_metadata_i = builder.build(
+                        common_prefix_len=common_prefix_len,
+                        common_attn_metadata=common_attn_metadata,
+                        **extra_attn_metadata_args)
+                    for layer_name in attn_group.layer_names:
+                        attn_metadata[layer_name] = attn_metadata_i
+
+        # Hot-Swap lora model
+        if self.lora_config:
+            self.set_active_loras(self.input_batch, num_scheduled_tokens)
+
+        return (attn_metadata, logits_indices, spec_decode_metadata,
+                num_scheduled_tokens, spec_decode_common_attn_metadata,
+                max_num_scheduled_tokens, ubatch_slices,
+                num_tokens_after_padding)
+
+    def _compute_cascade_attn_prefix_len(
+        self,
+        num_scheduled_tokens: np.ndarray,
+[0m
+[0m$ [0mgrep -n "class AttentionGroup\|attn_groups\|def _init_attn_groups\|get_metadata_builder\|def _get_attn_backend_cls\|def load_model\|builder_cls(" /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py | head; echo ===; sed -n '2280,2300p' /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py; echo ===; grep -rn "class AttentionGroup" /tmp/opencode/vllm-0.11.0/vllm/v1/
+269:        self.attn_groups: list[list[AttentionGroup]] = []
+1216:            for attn_group in self.attn_groups[kv_cache_group_id]:
+1219:                builder = attn_group.get_metadata_builder()
+1243:                        attn_metadata_i = (attn_group.get_metadata_builder(
+2597:    def load_model(self, eep_scale_up: bool = False) -> None:
+3063:                for attn_group in self.attn_groups[kv_cache_group_id]:
+3071:                                               .get_metadata_builder(ubatch_id=ubid)\
+3079:                        attn_metadata_i = attn_group.get_metadata_builder()\
+3542:        assert len(self.attn_groups) == 0, \
+3545:        class AttentionGroupKey(NamedTuple):
+===
+        # This is currently to get around the assert in the DPMetadata
+        # where it wants `num_tokens_across_dp` to align with `num_tokens`
+        if ubatch_slices is not None:
+            num_input_tokens = ubatch_slices[0].num_tokens
+
+        # Run the model.
+        # Use persistent buffers for CUDA graphs.
+        with (set_forward_context(
+                attn_metadata,
+                self.vllm_config,
+                num_tokens=num_input_tokens,
+                num_tokens_across_dp=num_tokens_across_dp,
+                cudagraph_runtime_mode=cudagraph_runtime_mode,
+                batch_descriptor=batch_descriptor,
+                ubatch_slices=ubatch_slices,
+        ), record_function_or_nullcontext("Forward"),
+              self.maybe_get_kv_connector_output(scheduler_output) as
+              kv_connector_output):
+            model_output = self.model(
+                input_ids=input_ids,
+                positions=positions,
+===
+/tmp/opencode/vllm-0.11.0/vllm/v1/worker/utils.py:131:class AttentionGroup:
+/tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py:3545:        class AttentionGroupKey(NamedTuple):
+[0m
+[0m$ [0msed -n '120,170p' /tmp/opencode/vllm-0.11.0/vllm/v1/worker/utils.py; echo ===; sed -n '3535,3660p' /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py
+max_decoder_items_per_batch = max_num_reqs * max_items_per_prompt
+
+        max_items_per_batch = max(
+            1,
+            min(max_encoder_items_per_batch, max_decoder_items_per_batch),
+        )
+
+        return max_items_per_prompt, max_items_per_batch
+
+
+@dataclass
+class AttentionGroup:
+    backend: type[AttentionBackend]
+    # When ubatching is enabled we will have a metadata builder for each ubatch
+    # so that if they use internal persistant buffers for cudagraphs, and they
+    # won't have to worry about conflicting with the other ubatches.
+    metadata_builders: list[AttentionMetadataBuilder]
+    layer_names: list[str]
+    kv_cache_spec: KVCacheSpec
+
+    @staticmethod
+    def create_with_metadata_builders(
+        backend: type[AttentionBackend],
+        layer_names: list[str],
+        kv_cache_spec: KVCacheSpec,
+        vllm_config: VllmConfig,
+        device: torch.device,
+        num_metadata_builders: int = 1,
+    ) -> 'AttentionGroup':
+        metadata_builders = [
+            backend.get_builder_cls()(kv_cache_spec, layer_names, vllm_config,
+                                      device)
+            for _ in range(num_metadata_builders)
+        ]
+        return AttentionGroup(backend, metadata_builders, layer_names,
+                              kv_cache_spec)
+
+    def get_metadata_builder(self,
+                             ubatch_id: int = 0) -> AttentionMetadataBuilder:
+        assert len(self.metadata_builders) > ubatch_id
+        return self.metadata_builders[ubatch_id]
+
+
+def sanity_check_mm_encoder_outputs(
+    mm_embeddings: MultiModalEmbeddings,
+    expected_num_items: int,
+) -> None:
+    """
+    Perform sanity checks for the result of
+    [`vllm.model_executor.models.SupportsMultiModal.get_multimodal_embeddings`][].
+    """
+===
+                            remove_lora=False)
+        self.maybe_remove_all_loras(self.lora_config)
+
+    def initialize_attn_backend(self, kv_cache_config: KVCacheConfig) -> None:
+        """
+        Initialize the attention backends and attention metadata builders.
+        """
+        assert len(self.attn_groups) == 0, \
+            "Attention backends are already initialized"
+
+        class AttentionGroupKey(NamedTuple):
+            attn_backend: type[AttentionBackend]
+            kv_cache_spec: KVCacheSpec
+
+        def get_attn_backends_for_group(
+            kv_cache_group_spec: KVCacheGroupSpec,
+        ) -> dict[AttentionGroupKey, list[str]]:
+            layers = get_layers_from_vllm_config(
+                self.vllm_config, AttentionLayerBase,
+                kv_cache_group_spec.layer_names)
+            attn_backends = {}
+            attn_backend_layers = defaultdict(list)
+            # Dedupe based on full class name; this is a bit safer than
+            # using the class itself as the key because when we create dynamic
+            # attention backend subclasses (e.g. ChunkedLocalAttention) unless
+            # they are cached correctly, there will be different objects per
+            # layer.
+            for layer_name in kv_cache_group_spec.layer_names:
+                attn_backend = layers[layer_name].get_attn_backend()
+
+                if layer_name in self.kv_sharing_fast_prefill_eligible_layers:
+                    attn_backend = create_fast_prefill_custom_backend(
+                        "FastPrefill",
+                        attn_backend,
+                    )
+
+                full_cls_name = attn_backend.full_cls_name()
+                layer_kv_cache_spec = kv_cache_group_spec.kv_cache_spec
+                if isinstance(layer_kv_cache_spec, UniformTypeKVCacheSpecs):
+                    layer_kv_cache_spec = layer_kv_cache_spec.kv_cache_specs[
+                        layer_name]
+                key = (full_cls_name, layer_kv_cache_spec)
+                attn_backends[key] = AttentionGroupKey(attn_backend,
+                                                       layer_kv_cache_spec)
+                attn_backend_layers[key].append(layer_name)
+            return {
+                attn_backends[k]: v
+                for k, v in attn_backend_layers.items()
+            }
+
+        def create_attn_groups(
+            attn_backends_map: dict[AttentionGroupKey, list[str]],
+        ) -> list[AttentionGroup]:
+            attn_groups: list[AttentionGroup] = []
+            for (attn_backend,
+                 kv_cache_spec), layer_names in attn_backends_map.items():
+                attn_group = AttentionGroup.create_with_metadata_builders(
+                    attn_backend,
+                    layer_names,
+                    kv_cache_spec,
+                    self.vllm_config,
+                    self.device,
+                    num_metadata_builders=1
+                    if not self.parallel_config.enable_dbo else 2,
+                )
+
+                attn_groups.append(attn_group)
+            return attn_groups
+
+        for kv_cache_group_spec in kv_cache_config.kv_cache_groups:
+            attn_backends = get_attn_backends_for_group(kv_cache_group_spec)
+            self.attn_groups.append(create_attn_groups(attn_backends))
+
+        # Calculate reorder batch threshold (if needed)
+        self.calculate_reorder_batch_threshold()
+
+    def initialize_cudagraph_capture(self) -> None:
+        min_cg_support = AttentionCGSupport.ALWAYS
+        min_cg_builder_name = None
+
+        for attn_group in self._attn_group_iterator():
+            builder = attn_group.get_metadata_builder()
+            if builder.cudagraph_support.value < min_cg_support.value:
+                min_cg_support = builder.cudagraph_support
+                min_cg_builder_name = builder.__class__.__name__
+        # Flexible resolve the cudagraph mode
+        cudagraph_mode = self.compilation_config.cudagraph_mode
+        # check cudagraph for mixed batch is supported
+        if cudagraph_mode.mixed_mode() == CUDAGraphMode.FULL \
+            and min_cg_support != AttentionCGSupport.ALWAYS:
+            msg = (f"CUDAGraphMode.{cudagraph_mode.name} is not supported "
+                   f"with {min_cg_builder_name} backend (support: "
+                   f"{min_cg_support})")
+            if min_cg_support == AttentionCGSupport.NEVER:
+                # if not supported any full cudagraphs, just raise it.
+                msg += "; please try cudagraph_mode=PIECEWISE, and "\
+                    "make sure compilation level is piecewise"
+                raise ValueError(msg)
+
+            # attempt to resolve the full cudagraph related mode
+            if self.compilation_config.splitting_ops_contain_attention():
+                msg += "; setting cudagraph_mode=FULL_AND_PIECEWISE"
+                cudagraph_mode = self.compilation_config.cudagraph_mode = \
+                    CUDAGraphMode.FULL_AND_PIECEWISE
+            else:
+                msg += "; setting cudagraph_mode=FULL_DECODE_ONLY"
+                cudagraph_mode = self.compilation_config.cudagraph_mode = \
+                    CUDAGraphMode.FULL_DECODE_ONLY
+            logger.warning(msg)
+
+        # check that if we are doing decode full-cudagraphs it is supported
+        if (cudagraph_mode.decode_mode() == CUDAGraphMode.FULL
+                and min_cg_support == AttentionCGSupport.NEVER):
+            msg = (f"CUDAGraphMode.{cudagraph_mode.name} is not supported "
+                   f"with {min_cg_builder_name} backend (support: "
+                   f"{min_cg_support})")
+            if (self.compilation_config.level == CompilationLevel.PIECEWISE and
+                (self.compilation_config.splitting_ops_contain_attention()
+                 or self.compilation_config.use_inductor_graph_partition)):
+                msg += "; setting cudagraph_mode=PIECEWISE because "\
+                    "attention is compiled piecewise"
+                cudagraph_mode = self.compilation_config.cudagraph_mode = \
+                    CUDAGraphMode.PIECEWISE
+            else:
+                msg += "; setting cudagraph_mode=NONE because "\
+                    "attention is not compiled piecewise"
+[0m
+[0m$ [0msed -n '3758,3860p' /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py; echo =====BIND; grep -n "def bind_kv_cache" -A 40 /tmp/opencode/vllm-0.11.0/vllm/model_executor/models/utils.py 2>/dev/null | head -50
+def _allocate_kv_cache_tensors(
+            self, kv_cache_config: KVCacheConfig) -> dict[str, torch.Tensor]:
+        """
+        Initializes the KV cache buffer with the correct size. The buffer needs
+        to be reshaped to the desired shape before being used by the models.
+
+        Args:
+            kv_cache_config: The KV cache config
+        Returns:
+            dict[str, torch.Tensor]: A map between layer names to their
+            corresponding memory buffer for KV cache.
+         """
+        kv_cache_raw_tensors: dict[str, torch.Tensor] = {}
+        for kv_cache_tensor in kv_cache_config.kv_cache_tensors:
+            tensor = torch.zeros(kv_cache_tensor.size,
+                                 dtype=torch.int8,
+                                 device=self.device)
+            for layer_name in kv_cache_tensor.shared_by:
+                kv_cache_raw_tensors[layer_name] = tensor
+
+        layer_names = set()
+        for group in kv_cache_config.kv_cache_groups:
+            for layer_name in group.layer_names:
+                if layer_name in self.runner_only_attn_layers:
+                    continue
+                layer_names.add(layer_name)
+        assert layer_names == set(kv_cache_raw_tensors.keys(
+        )), "Some layers are not correctly initialized"
+        return kv_cache_raw_tensors
+
+    def _attn_group_iterator(self) -> Iterator[AttentionGroup]:
+        return itertools.chain.from_iterable(self.attn_groups)
+
+    def _kv_cache_spec_attn_group_iterator(self) -> Iterator[AttentionGroup]:
+        if not self.kv_cache_config.kv_cache_groups:
+            return
+        for attn_groups in self.attn_groups:
+            yield from attn_groups
+
+    def _reshape_kv_cache_tensors(
+        self,
+        kv_cache_config: KVCacheConfig,
+        kv_cache_raw_tensors: dict[str, torch.Tensor],
+    ) -> dict[str, torch.Tensor]:
+        """
+        Reshape the KV cache tensors to the desired shape and dtype.
+
+        Args:
+            kv_cache_config: The KV cache config
+            kv_cache_raw_tensors: The KV cache buffer of each layer, with
+                correct size but uninitialized shape.
+        Returns:
+            Dict[str, torch.Tensor]: A map between layer names to their
+            corresponding memory buffer for KV cache.
+        """
+        kv_caches: dict[str, torch.Tensor] = {}
+        has_attn, has_mamba = False, False
+        for group in self._kv_cache_spec_attn_group_iterator():
+            kv_cache_spec = group.kv_cache_spec
+            attn_backend = group.backend
+            for layer_name in group.layer_names:
+                if layer_name in self.runner_only_attn_layers:
+                    continue
+                raw_tensor = kv_cache_raw_tensors[layer_name]
+                assert raw_tensor.numel() % kv_cache_spec.page_size_bytes == 0
+                num_blocks = (raw_tensor.numel() //
+                              kv_cache_spec.page_size_bytes)
+                if isinstance(kv_cache_spec, AttentionSpec):
+                    has_attn = True
+                    kv_cache_shape = attn_backend.get_kv_cache_shape(
+                        num_blocks,
+                        kv_cache_spec.block_size,
+                        kv_cache_spec.num_kv_heads,
+                        kv_cache_spec.head_size,
+                        cache_dtype_str=self.cache_config.cache_dtype)
+                    dtype = kv_cache_spec.dtype
+                    try:
+                        kv_cache_stride_order = \
+                            attn_backend.get_kv_cache_stride_order()
+                        assert len(kv_cache_stride_order) == len(
+                            kv_cache_shape)
+                    except (AttributeError, NotImplementedError):
+                        kv_cache_stride_order = tuple(
+                            range(len(kv_cache_shape)))
+                    # The allocation respects the backend-defined stride order
+                    # to ensure the semantic remains consistent for each
+                    # backend. We first obtain the generic kv cache shape and
+                    # then permute it according to the stride order which could
+                    # result in a non-contiguous tensor.
+                    kv_cache_shape = tuple(kv_cache_shape[i]
+                                           for i in kv_cache_stride_order)
+                    # Maintain original KV shape view.
+                    inv_order = [
+                        kv_cache_stride_order.index(i)
+                        for i in range(len(kv_cache_stride_order))
+                    ]
+                    kv_caches[layer_name] = kv_cache_raw_tensors[
+                        layer_name].view(dtype).view(kv_cache_shape).permute(
+                            *inv_order)
+                elif isinstance(kv_cache_spec, MambaSpec):
+                    has_mamba = True
+                    raw_tensor = kv_cache_raw_tensors[layer_name]
+                    state_tensors = []
+=====BIND
+[0m
+[0m$ [0mgrep -rn "def bind_kv_cache" /tmp/opencode/vllm-0.11.0/vllm/ | head -3; grep -rn "bind_kv_cache" /tmp/opencode/vllm-0.11.0/vllm/model_executor/models/intermediate_dm.py /tmp/opencode/vllm-0.11.0/vllm/model_executor/models/utils.py 2>/dev/null | head -5
+/tmp/opencode/vllm-0.11.0/vllm/v1/worker/utils.py:265:def bind_kv_cache(
+/tmp/opencode/vllm-0.11.0/vllm/utils/__init__.py:3057:def bind_kv_cache(
+[0m
+[0m$ [0msed -n '265,340p' /tmp/opencode/vllm-0.11.0/vllm/v1/worker/utils.py; echo ===CTX; sed -n '1,120p' /tmp/opencode/vllm-0.11.0/vllm/forward_context.py
+def bind_kv_cache(
+    kv_caches: dict[str, torch.Tensor],
+    forward_context: dict[str, "Attention"],
+    runner_kv_caches: list[torch.Tensor],
+    num_attn_module: Optional[int] = 1,
+) -> None:
+    """
+    Bind the allocated KV cache to both ModelRunner and forward context so
+    that the KV cache can be used in the forward pass.
+
+    This function:
+      1) Fills the ModelRunner's kv cache list (`runner_kv_caches`) with
+         kv_caches.
+      2) Associates each attention layer in the `forward_context` with its
+         corresponding KV cache in kv_caches.
+
+    Args:
+        kv_caches: The allocated kv_caches with layer names as keys.
+        forward_context: The global forward context containing all Attention
+            layers with layer names as keys.
+        runner_kv_caches: The kv_cache declared by ModelRunner.
+    """
+    # Bind kv_caches to ModelRunner
+    assert len(runner_kv_caches) == 0
+
+    # Convert kv_caches dict to a list of tensors in the order of layer_index.
+    index2name = defaultdict(list)
+    for layer_name in kv_caches:
+        index2name[extract_layer_index(layer_name,
+                                       num_attn_module)].append(layer_name)
+
+    for layer_index in sorted(index2name.keys()):
+        layer_names = index2name[layer_index]
+        if len(layer_names) > 1:
+            # One typical case is encoder-decoder model, e.g., bart.
+            # The cross attention and self attention in the same decoder layer
+            # has different layer_name but the same layer_index.
+
+            # TODO - analyze where runner_kv_caches is used and the right
+            # way to ensure it properly reflects multiple attention layers
+            # in the same decoder block.
+            if current_platform.is_cuda() or current_platform.is_xpu():
+                # We know that the GPU runner is not impacted by this
+                # case. Some test code depends on runner_kv_caches, but
+                # not in a way that's impacted by ignoring this.
+                pass
+            else:
+                raise NotImplementedError
+        layer_name = layer_names[0]
+        runner_kv_caches.append(kv_caches[layer_name])
+
+    # Bind kv_caches to forward context
+    for layer_name, kv_cache in kv_caches.items():
+        # NOTE: Use list because of v0 PP virtual engine.
+        forward_context[layer_name].kv_cache = [kv_cache]
+
+
+def is_residual_scattered_for_sp(vllm_config: VllmConfig,
+                                 num_input_tokens: int) -> bool:
+    """Check if the residual tensor is scattered for sequence parallelism.
+
+    The residual tensor is scattered across tensor parallel ranks when sequence
+    parallelism and tensor parallelism is enabled, and the number of
+    input tokens is one of the compilation sizes.
+    """
+    if not vllm_config.compilation_config.pass_config.\
+        enable_sequence_parallelism:
+        return False
+
+    tp = vllm_config.parallel_config.tensor_parallel_size
+
+    if tp == 1:
+        return False
+
+    # When sequence parallelism is enabled, we always pad num_input_tokens
+    # to be a multiple of tensor_parallel_size (tp) earlier.
+===CTX
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+import time
+from collections import defaultdict
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+
+import torch
+import torch.distributed as dist
+
+import vllm.envs as envs
+from vllm.config import CUDAGraphMode, ParallelConfig, VllmConfig
+from vllm.logger import init_logger
+from vllm.platforms import current_platform
+from vllm.v1.worker.ubatch_utils import UBatchSlices, is_second_ubatch_empty
+
+if TYPE_CHECKING:
+    from vllm.attention.backends.abstract import AttentionMetadata
+
+logger = init_logger(__name__)
+
+track_batchsize: bool = envs.VLLM_LOG_BATCHSIZE_INTERVAL >= 0
+last_logging_time: float = 0
+forward_start_time: float = 0
+batchsize_logging_interval: float = envs.VLLM_LOG_BATCHSIZE_INTERVAL
+batchsize_forward_time: defaultdict = defaultdict(list)
+
+
+class BatchDescriptor(NamedTuple):
+    """
+    Batch descriptor for cudagraph dispatching. We should keep the num of
+    items as minimal as possible to properly and uniquely describe the padded
+    batch for cudagraph.
+    """
+    num_tokens: int
+    uniform_decode: bool = False
+    """
+    False can also be used for an uniform decode batch to dispatch to the 
+    cudagraph supporting non-uniform batches.
+    """
+
+    @property
+    def non_uniform(self) -> "BatchDescriptor":
+        """
+        Return a non-uniform version of current batch descriptor.
+        """
+        return BatchDescriptor(self.num_tokens, uniform_decode=False)
+
+
+def _compute_sp_num_tokens(num_tokens_across_dp_cpu: torch.Tensor,
+                           sequence_parallel_size: int) -> list[int]:
+    sp_tokens = ((num_tokens_across_dp_cpu + sequence_parallel_size - 1) //
+                 sequence_parallel_size)
+
+    sp_tokens = sp_tokens.repeat_interleave(sequence_parallel_size)
+    return sp_tokens.tolist()
+
+
+def _compute_chunked_local_num_tokens(num_tokens_across_dp_cpu: torch.Tensor,
+                                      sequence_parallel_size: int,
+                                      max_num_tokens: int,
+                                      chunk_idx: int) -> list[int]:
+
+    sp_tokens = _compute_sp_num_tokens(num_tokens_across_dp_cpu,
+                                       sequence_parallel_size)
+    sp_size = len(sp_tokens)
+
+    local_size = [-1] * sp_size
+    for i in range(sp_size):
+        # Take into account sharding if MoE activation is sequence parallel.
+        local_size[i] = min(max_num_tokens,
+                            sp_tokens[i] - (max_num_tokens * chunk_idx))
+        if local_size[i] <= 0:
+            local_size[i] = 1  # ensure lockstep even if done
+    return local_size
+
+
+@dataclass
+class DPMetadata:
+    max_tokens_across_dp_cpu: torch.Tensor
+    num_tokens_across_dp_cpu: torch.Tensor
+
+    # NOTE: local_sizes should only be set by the chunked_sizes context manager
+    local_sizes: Optional[list[int]] = None
+
+    @staticmethod
+    def num_tokens_across_dp(num_tokens: int, dp_size: int,
+                             dp_rank: int) -> torch.Tensor:
+        """
+        Gather the num_tokens across all DP ranks and return results in a
+        CPU tensor of size dp_size.
+        """
+        from vllm.distributed.parallel_state import get_dp_group
+        device = current_platform.device_type
+        group = get_dp_group().device_group
+
+        # Transfering this tensor from GPU to CPU will introduce a GPU sync
+        # point that could adversely affect performance of vllm with asynch
+        # scheduling. This environment variable exists to quickly disable
+        # this optimization if we run into this case.
+        if envs.VLLM_DISABLE_NCCL_FOR_DP_SYNCHRONIZATION:
+            logger.info_once(
+                "Using CPU all reduce to syncronize DP padding between ranks.")
+            device = "cpu"
+            group = get_dp_group().cpu_group
+        num_tokens_across_dp = [0] * dp_size
+        num_tokens_across_dp[dp_rank] = num_tokens
+        num_tokens_tensor = torch.tensor(num_tokens_across_dp,
+                                         device=device,
+                                         dtype=torch.int32)
+        dist.all_reduce(num_tokens_tensor, group=group)
+        return num_tokens_tensor.cpu()
+
+    # Get the cumulative tokens across sequence parallel ranks.
+    # In this case the input to the MoEs will be distributed w.r.t both
+    # DP and TP rank.
+    # When sp_size==1, this is just the cummulative num tokens across DP.
+    def cu_tokens_across_sp(self, sp_size: int) -> torch.Tensor:
+[0m
+[0m$ [0msed -n '120,260p' /tmp/opencode/vllm-0.11.0/vllm/forward_context.py
+def cu_tokens_across_sp(self, sp_size: int) -> torch.Tensor:
+        num_tokens_across_sp_cpu = (
+            (self.num_tokens_across_dp_cpu - 1 + sp_size) // sp_size)
+        num_tokens_across_sp_cpu = (
+            num_tokens_across_sp_cpu.repeat_interleave(sp_size))
+        return torch.cumsum(num_tokens_across_sp_cpu, dim=0)
+
+    @staticmethod
+    def should_ubatch_across_dp(
+            should_ubatch: bool, orig_num_tokens_per_ubatch: int,
+            padded_num_tokens_per_ubatch: int, dp_size: int,
+            dp_rank: int) -> tuple[bool, Optional[torch.Tensor]]:
+        """
+        1. Decides if each DP rank is going to microbatch. Either all ranks
+        run with microbatching or none of them do. If this function decides
+        not to run with microbatching. It will "abort" meaning that no padding
+        information will be returned to the caller. It will return (False, None)
+
+        2. Determines the total number of tokens that each rank will run.
+        All ranks will be padded out so that the run with the same number
+        of tokens
+
+        Returns: tuple[
+            should_ubatch: Are all DP ranks going to microbatch
+            num_tokens_after_padding: A tensor containing the total number of
+            tokens per-microbatch for each DP rank including padding. Will be
+            None if should_ubatch if False
+        ]
+        """
+
+        device = current_platform.device_type
+        tensor = torch.zeros(3, dp_size, device=device, dtype=torch.int32)
+        tensor[0][dp_rank] = orig_num_tokens_per_ubatch
+        tensor[1][dp_rank] = padded_num_tokens_per_ubatch
+        tensor[2][dp_rank] = 1 if should_ubatch else 0
+
+        from vllm.distributed.parallel_state import get_dp_group
+        dist.all_reduce(tensor, group=get_dp_group().device_group)
+
+        result: bool = bool(torch.all(tensor[2] == 1).item())
+        if not result:
+            return result, None
+
+        orig_num_tokens_tensor = tensor[0, :]
+        padded_num_tokens_tensor = tensor[1, :]
+
+        orig_min_num_tokens = int(orig_num_tokens_tensor.min().item())
+        padded_max_num_tokens = int(padded_num_tokens_tensor.max().item())
+        if is_second_ubatch_empty(orig_min_num_tokens, padded_max_num_tokens):
+            logger.debug("Aborting ubatching %s %s", orig_min_num_tokens,
+                         padded_max_num_tokens)
+            return False, None
+        return result, padded_num_tokens_tensor.cpu()
+
+    @staticmethod
+    def make(
+        parallel_config: ParallelConfig,
+        attn_metadata: Any,
+        num_tokens: int,
+        num_tokens_across_dp_cpu: Optional[torch.Tensor] = None
+    ) -> "DPMetadata":
+
+        assert parallel_config.data_parallel_size > 1
+        dp_size = parallel_config.data_parallel_size
+        dp_rank = parallel_config.data_parallel_rank
+        if attn_metadata is not None and hasattr(attn_metadata,
+                                                 "num_prefill_tokens"):
+            # for v0 attention backends
+            batchsize = attn_metadata.num_prefill_tokens + \
+                attn_metadata.num_decode_tokens
+        else:
+            # for v1 attention backends or no attn_metadata
+            batchsize = num_tokens
+
+        # If num_tokens_across_dp is None, it will be computed by all_reduce
+        # Otherwise, num_tokens_across_dp[dp_rank] should be equal to batchsize
+        assert (num_tokens_across_dp_cpu is None
+                or num_tokens_across_dp_cpu[dp_rank] == batchsize
+                ), f"{num_tokens_across_dp_cpu[dp_rank]} {batchsize}"
+        if num_tokens_across_dp_cpu is None:
+            num_tokens_across_dp_cpu = DPMetadata.num_tokens_across_dp(
+                batchsize, dp_size, dp_rank)
+        max_tokens_across_dp_cpu = torch.max(num_tokens_across_dp_cpu)
+        return DPMetadata(max_tokens_across_dp_cpu, num_tokens_across_dp_cpu)
+
+    @contextmanager
+    def chunked_sizes(self, sequence_parallel_size: int,
+                      max_chunk_size_per_rank: int, chunk_idx: int):
+        """
+        Context manager to compute and temporarily set the per-rank local token
+        sizes for a specific chunk during chunked forward execution.
+
+        This is necessary to ensure each DP (data parallel) rank processes its
+        designated portion of tokens in lockstep with others, even when the
+        token counts are uneven or some ranks have completed their input early.
+
+        For chunked execution, we break up the total tokens on each rank into
+        multiple chunks (of at most `max_chunk_size_per_rank`), and for a given
+        `chunk_idx`, this context manager sets `self.local_sizes` to the number
+        of tokens to process in that chunk on each rank.
+
+        `self.local_sizes` is only valid inside the context.
+
+        Args:
+            sequence_parallel_size: When Attn is TP and MoE layers are EP,
+                                    we use SP between the layers to avoid
+                                    redundant ops. We need this value to
+                                    compute the chunked sizes.
+            max_chunk_size_per_rank: The max number of tokens each rank is 
+                                     allowed to process in this chunk.
+            chunk_idx: The index of the chunk to compute sizes for.
+        """
+        self.local_sizes = _compute_chunked_local_num_tokens(
+            self.num_tokens_across_dp_cpu, sequence_parallel_size,
+            max_chunk_size_per_rank, chunk_idx)
+        try:
+            yield self.local_sizes
+        finally:
+            self.local_sizes = None
+
+    @contextmanager
+    def sp_local_sizes(self, sequence_parallel_size: int):
+        """
+        Context mamager for setting self.local_sizes. Same as self.chunked_sizes
+        but without any chunking.
+        """
+        self.local_sizes = _compute_sp_num_tokens(
+            self.num_tokens_across_dp_cpu, sequence_parallel_size)
+        try:
+            yield self.local_sizes
+        finally:
+            self.local_sizes = None
+
+    def get_chunk_sizes_across_dp_rank(self) -> Optional[list[int]]:
+        assert self.local_sizes is not None
+        return self.local_sizes
+
+
+@dataclass
+class ForwardContext:
+    # copy from vllm_config.compilation_config.static_forward_context
+[0m
+[0m$ [0msed -n '260,340p' /tmp/opencode/vllm-0.11.0/vllm/forward_context.py
+# copy from vllm_config.compilation_config.static_forward_context
+    no_compile_layers: dict[str, Any]
+    """
+    Type AttentionMetadata for v0, 
+    Type Dict[str, AttentionMetadata] for v1, map from layer_name of each 
+    attention layer to its attention metadata
+    Type List[Dict[str, AttentionMetadata]] for DBO. List of size two, one
+    for each microbatch.
+    Set dynamically for each forward pass
+    """
+    attn_metadata: Union["AttentionMetadata", dict[str, "AttentionMetadata"],
+                         list[dict[str, "AttentionMetadata"]]]
+    # TODO: remove after making all virtual_engines share the same kv cache
+    virtual_engine: int  # set dynamically for each forward pass
+    # set dynamically for each forward pass
+    dp_metadata: Optional[DPMetadata] = None
+    # determine the cudagraph style at runtime to be FULL, PIECEWISE, or NONE.
+    # by default NONE, no cudagraph is used.
+    cudagraph_runtime_mode: CUDAGraphMode = CUDAGraphMode.NONE
+    batch_descriptor: Optional[BatchDescriptor] = None
+
+    ubatch_slices: Optional[UBatchSlices] = None
+
+    def __post_init__(self):
+        assert self.cudagraph_runtime_mode in [
+            CUDAGraphMode.NONE, CUDAGraphMode.PIECEWISE, CUDAGraphMode.FULL], \
+            f"Invalid cudagraph runtime mode: {self.cudagraph_runtime_mode}"
+
+
+_forward_context: Optional[ForwardContext] = None
+
+
+def get_forward_context() -> ForwardContext:
+    """Get the current forward context."""
+    assert _forward_context is not None, (
+        "Forward context is not set. "
+        "Please use `set_forward_context` to set the forward context.")
+    return _forward_context
+
+
+def create_forward_context(
+        attn_metadata: Any,
+        vllm_config: VllmConfig,
+        virtual_engine: int = 0,
+        dp_metadata: Optional[DPMetadata] = None,
+        cudagraph_runtime_mode: CUDAGraphMode = CUDAGraphMode.NONE,
+        batch_descriptor: Optional[BatchDescriptor] = None,
+        ubatch_slices: Optional[UBatchSlices] = None):
+    return ForwardContext(no_compile_layers=vllm_config.compilation_config.
+                          static_forward_context,
+                          virtual_engine=virtual_engine,
+                          attn_metadata=attn_metadata,
+                          dp_metadata=dp_metadata,
+                          cudagraph_runtime_mode=cudagraph_runtime_mode,
+                          batch_descriptor=batch_descriptor,
+                          ubatch_slices=ubatch_slices)
+
+
+@contextmanager
+def override_forward_context(forward_context: Optional[ForwardContext]):
+    """A context manager that overrides the current forward context.
+    This is used to override the forward context for a specific
+    forward pass.
+    """
+    global _forward_context
+    prev_context = _forward_context
+    _forward_context = forward_context
+    try:
+        yield
+    finally:
+        _forward_context = prev_context
+
+
+@contextmanager
+def set_forward_context(
+        attn_metadata: Any,
+        vllm_config: VllmConfig,
+        virtual_engine: int = 0,
+        num_tokens: Optional[int] = None,
+        num_tokens_across_dp: Optional[torch.Tensor] = None,
+        cudagraph_runtime_mode: CUDAGraphMode = CUDAGraphMode.NONE,
+[0m
+[0m$ [0mgrep -n "Attention(\|self.attn\|attn(" /tmp/opencode/vllm-0.11.0/vllm/model_executor/models/llama.py | head -15; echo ===; sed -n '1,93p' /tmp/opencode/vllm-0.11.0/vllm/attention/layers/chunked_local_attention.py
+103:class LlamaAttention(nn.Module):
+198:        self.attn = attn_cls(
+218:        attn_output = self.attn(q, k, v)
+280:        self.self_attn = LlamaAttention(
+293:            prefix=f"{prefix}.self_attn",
+322:        hidden_states = self.self_attn(positions=positions,
+503:        "attention": "self_attn",
+===
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+import functools
+from typing import ClassVar, List, Optional
+
+import torch
+
+from vllm import envs
+from vllm.attention.backends.abstract import (AttentionBackend,
+                                              AttentionMetadata)
+from vllm.attention.selector import get_attn_backend
+from vllm.config import CacheConfig, QuantizationConfig
+from vllm.v1.attention.backends.utils import (
+    AttentionCGSupport, CommonAttentionMetadata,
+    make_local_attention_virtual_batches, subclass_attention_backend)
+
+from ..layer import Attention
+
+
+@functools.lru_cache
+def create_chunked_local_attention_backend(
+    underlying_attn_backend: AttentionBackend,
+    attention_chunk_size: int,
+    block_size: int,
+) -> type[AttentionBackend]:
+    prefix = f"ChunkedLocalAttention_{attention_chunk_size}_{block_size}_"
+
+    underlying_builder = underlying_attn_backend.get_builder_cls()
+
+    class ChunkedLocalAttentionBuilder(underlying_builder):  # type: ignore
+        cudagraph_support: ClassVar[AttentionCGSupport] = \
+            AttentionCGSupport.NEVER
+
+        def build(self,
+                  common_prefix_len: int,
+                  common_attn_metadata: CommonAttentionMetadata,
+                  fast_build: bool = False) -> AttentionMetadata:
+            common_attn_metadata = make_local_attention_virtual_batches(
+                attention_chunk_size, common_attn_metadata, block_size)
+            return super().build(common_prefix_len, common_attn_metadata,
+                                 fast_build)
+
+    attn_backend = subclass_attention_backend(
+        name_prefix=prefix,
+        attention_backend_cls=underlying_attn_backend,
+        builder_cls=ChunkedLocalAttentionBuilder)
+
+    return attn_backend
+
+
+class ChunkedLocalAttention(Attention):
+
+    def __init__(self,
+                 num_heads: int,
+                 head_size: int,
+                 scale: float,
+                 attention_chunk_size: int,
+                 num_kv_heads: Optional[int] = None,
+                 alibi_slopes: Optional[List[float]] = None,
+                 cache_config: Optional[CacheConfig] = None,
+                 quant_config: Optional[QuantizationConfig] = None,
+                 kv_sharing_target_layer_name: Optional[str] = None,
+                 prefix: str = ""):
+        dtype = torch.get_default_dtype()
+        if cache_config is not None:
+            kv_cache_dtype = cache_config.cache_dtype
+            block_size = cache_config.block_size
+        else:
+            kv_cache_dtype = "auto"
+            block_size = 16
+
+        if envs.VLLM_USE_V1:
+            underlying_attn_backend = get_attn_backend(head_size, dtype,
+                                                       kv_cache_dtype,
+                                                       block_size)
+
+            attn_backend = create_chunked_local_attention_backend(
+                underlying_attn_backend, attention_chunk_size, block_size)
+        else:
+            # in v0 the local attention is handled inside the backends
+            attn_backend = None
+
+        super().__init__(
+            num_heads=num_heads,
+            head_size=head_size,
+            scale=scale,
+            num_kv_heads=num_kv_heads,
+            alibi_slopes=alibi_slopes,
+            cache_config=cache_config,
+            quant_config=quant_config,
+            prefix=prefix,
+            kv_sharing_target_layer_name=kv_sharing_target_layer_name,
+            attn_backend=attn_backend)
+[0m
+[0m$ [0msed -n '103,230p' /tmp/opencode/vllm-0.11.0/vllm/model_executor/models/llama.py
+class LlamaAttention(nn.Module):
+
+    def __init__(
+        self,
+        config: LlamaConfig,
+        hidden_size: int,
+        num_heads: int,
+        num_kv_heads: int,
+        rope_theta: float = 10000,
+        rope_scaling: Optional[dict[str, Any]] = None,
+        max_position_embeddings: int = 8192,
+        quant_config: Optional[QuantizationConfig] = None,
+        bias: bool = False,
+        bias_o_proj: bool = False,
+        cache_config: Optional[CacheConfig] = None,
+        prefix: str = "",
+        attn_type: str = AttentionType.DECODER,
+    ) -> None:
+        super().__init__()
+        layer_idx = extract_layer_index(prefix)
+        self.hidden_size = hidden_size
+        tp_size = get_tensor_model_parallel_world_size()
+        self.total_num_heads = num_heads
+        assert self.total_num_heads % tp_size == 0
+        self.num_heads = self.total_num_heads // tp_size
+        self.total_num_kv_heads = num_kv_heads
+        if self.total_num_kv_heads >= tp_size:
+            # Number of KV heads is greater than TP size, so we partition
+            # the KV heads across multiple tensor parallel GPUs.
+            assert self.total_num_kv_heads % tp_size == 0
+        else:
+            # Number of KV heads is less than TP size, so we replicate
+            # the KV heads across multiple tensor parallel GPUs.
+            assert tp_size % self.total_num_kv_heads == 0
+        self.num_kv_heads = max(1, self.total_num_kv_heads // tp_size)
+        # MistralConfig has an optional head_dim introduced by Mistral-Nemo
+        head_dim = getattr(config, "head_dim", None)
+        if head_dim is None:
+            head_dim = self.hidden_size // self.total_num_heads
+        self.head_dim = head_dim
+        # Phi models introduced a partial_rotary_factor parameter in the config
+        self.partial_rotary_factor = getattr(config, "partial_rotary_factor",
+                                             1)
+        self.q_size = self.num_heads * self.head_dim
+        self.kv_size = self.num_kv_heads * self.head_dim
+        self.scaling = self.head_dim**-0.5
+        self.rope_theta = rope_theta
+        self.max_position_embeddings = max_position_embeddings
+
+        self.qkv_proj = QKVParallelLinear(
+            hidden_size=hidden_size,
+            head_size=self.head_dim,
+            total_num_heads=self.total_num_heads,
+            total_num_kv_heads=self.total_num_kv_heads,
+            bias=bias,
+            quant_config=quant_config,
+            prefix=f"{prefix}.qkv_proj",
+        )
+
+        self.o_proj = RowParallelLinear(
+            input_size=self.total_num_heads * self.head_dim,
+            output_size=hidden_size,
+            bias=bias_o_proj,
+            quant_config=quant_config,
+            prefix=f"{prefix}.o_proj",
+        )
+
+        self._init_rotary_emb(config,
+                              rope_scaling=rope_scaling,
+                              quant_config=quant_config)
+
+        sliding_window = None
+        if layer_types := getattr(config, "layer_types", None):
+            # Fix for Eagle3 compatibility:
+            # for draft models, subtract target layer count
+            # to get draft-relative layer index starting from 0
+            if hasattr(config, 'target_layer_count'):
+                # This is a draft model,
+                # adjust layer_idx to be relative to draft layers
+                effective_layer_idx = layer_idx - config.target_layer_count
+            else:
+                # This is a target model, use layer_idx directly
+                effective_layer_idx = layer_idx
+            assert effective_layer_idx < len(layer_types), \
+                f"effective_layer_idx: {effective_layer_idx} \
+                is out of bounds for layer_types: {layer_types}"
+
+            is_sliding = layer_types[
+                effective_layer_idx] == "sliding_attention"
+            if is_sliding:
+                sliding_window = config.sliding_window
+
+        attn_cls = (EncoderOnlyAttention
+                    if attn_type == AttentionType.ENCODER_ONLY else Attention)
+
+        self.attn = attn_cls(
+            self.num_heads,
+            self.head_dim,
+            self.scaling,
+            num_kv_heads=self.num_kv_heads,
+            cache_config=cache_config,
+            quant_config=quant_config,
+            per_layer_sliding_window=sliding_window,
+            attn_type=attn_type,
+            prefix=f"{prefix}.attn",
+        )
+
+    def forward(
+        self,
+        positions: torch.Tensor,
+        hidden_states: torch.Tensor,
+    ) -> torch.Tensor:
+        qkv, _ = self.qkv_proj(hidden_states)
+        q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
+        q, k = self.rotary_emb(positions, q, k)
+        attn_output = self.attn(q, k, v)
+        output, _ = self.o_proj(attn_output)
+        return output
+
+    def _init_rotary_emb(self, config: LlamaConfig,
+                         rope_scaling: Optional[dict[str, Any]],
+                         quant_config: Optional[QuantizationConfig]) -> None:
+        is_neox_style = True
+        is_gguf = quant_config and quant_config.get_name() == "gguf"
+        if is_gguf and config.model_type == "llama":
+            is_neox_style = False
+
+        self.rotary_emb = get_rope(
+[0m
+[0m$ [0mgrep -n "query_start_loc.np\|np.cumsum\|seq_lens.np" /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py | head; echo ===CUSTOM_OP; grep -n "def reshape_and_cache_flash" -A 30 /tmp/opencode/vllm-0.11.0/vllm/_custom_ops.py
+821:        cu_num_tokens = np.cumsum(num_tokens, dtype=cumsum_dtype)
+1039:        self.query_start_loc.np[0] = 0
+1040:        self.query_start_loc.np[1:num_reqs + 1] = cu_num_tokens
+1043:        self.query_start_loc.np[num_reqs + 1:].fill(cu_num_tokens[-1])
+1060:        self.seq_lens.np[:num_reqs] = (
+1064:        self.seq_lens.np[num_reqs:].fill(0)
+1067:        max_seq_len = self.seq_lens.np[:num_reqs].max().item()
+1076:        discard_requests_mask = self.seq_lens.np[:num_reqs] < num_tokens_np
+2783:            offset = self.query_start_loc.np[req_idx].item()
+3035:            self.seq_lens.np[:num_reqs] = seq_lens
+===CUSTOM_OP
+1605:def reshape_and_cache_flash(
+1606-    key: torch.Tensor,
+1607-    value: torch.Tensor,
+1608-    key_cache: torch.Tensor,
+1609-    value_cache: torch.Tensor,
+1610-    slot_mapping: torch.Tensor,
+1611-    kv_cache_dtype: str,
+1612-    k_scale: torch.Tensor,
+1613-    v_scale: torch.Tensor,
+1614-) -> None:
+1615-    torch.ops._C_cache_ops.reshape_and_cache_flash(key, value, key_cache,
+1616-                                                   value_cache, slot_mapping,
+1617-                                                   kv_cache_dtype, k_scale,
+1618-                                                   v_scale)
+1619-
+1620-
+1621-def concat_and_cache_mla(
+1622-    kv_c: torch.Tensor,
+1623-    k_pe: torch.Tensor,
+1624-    kv_cache: torch.Tensor,
+1625-    slot_mapping: torch.Tensor,
+1626-    kv_cache_dtype: str,
+1627-    scale: torch.Tensor,
+1628-) -> None:
+1629-    torch.ops._C_cache_ops.concat_and_cache_mla(kv_c, k_pe, kv_cache,
+1630-                                                slot_mapping, kv_cache_dtype,
+1631-                                                scale)
+1632-
+1633-
+1634-def copy_blocks(key_caches: list[torch.Tensor],
+1635-                value_caches: list[torch.Tensor],
+[0m
+[0m$ [0msed -n '810,830p' /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py; sed -n '1030,1070p' /tmp/opencode/vllm-0.11.0/vllm/v1/worker/gpu_model_runner.py; echo ===FI; sed -n '880,990p' /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py
+def _get_cumsum_and_arange(
+        self,
+        num_tokens: np.ndarray,
+        cumsum_dtype: Optional[np.dtype] = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Get the cumulative sum and batched arange of the given array.
+        # E.g., [2, 5, 3] -> ([2, 7, 10], [0, 1, 0, 1, 2, 3, 4, 0, 1, 2])
+        # Equivalent to but faster than:
+        # np.concatenate([np.arange(n) for n in num_tokens])
+        """
+        # Step 1. [2, 5, 3] -> [2, 7, 10]
+        cu_num_tokens = np.cumsum(num_tokens, dtype=cumsum_dtype)
+        total_num_tokens = cu_num_tokens[-1]
+        # Step 2. [2, 7, 10] -> [0, 0, 2, 2, 2, 2, 2, 7, 7, 7]
+        cumsums_offsets = np.repeat(cu_num_tokens - num_tokens, num_tokens)
+        # Step 3. [0, 1, 0, 1, 2, 3, 4, 0, 1, 2]
+        arange = self.arange_np[:total_num_tokens] - cumsums_offsets
+
+        return cu_num_tokens, arange
+
+    def _prepare_input_ids(self, total_num_scheduled_tokens: int,
+
+                output_idx += num_sched
+
+        self.input_batch.block_table.compute_slot_mapping(
+            req_indices, positions_np)
+        self.input_batch.block_table.commit_slot_mapping(
+            total_num_scheduled_tokens)
+
+        # Prepare the attention metadata.
+        self.query_start_loc.np[0] = 0
+        self.query_start_loc.np[1:num_reqs + 1] = cu_num_tokens
+        # Note: pad query_start_loc to be non-decreasing, as kernels
+        # like FlashAttention requires that
+        self.query_start_loc.np[num_reqs + 1:].fill(cu_num_tokens[-1])
+        self.query_start_loc.copy_to_gpu()
+        query_start_loc = self.query_start_loc.gpu[:num_reqs + 1]
+
+        num_tokens_unpadded = scheduler_output.total_num_scheduled_tokens
+        num_tokens_padded = num_tokens_unpadded + self.get_local_padding(
+            num_tokens_unpadded)
+        uniform_decode = \
+            (max_num_scheduled_tokens == self.uniform_decode_query_len) and \
+            (total_num_scheduled_tokens == num_reqs * max_num_scheduled_tokens)
+        ubatch_slices, num_tokens_after_padding = \
+            ubatch_split(num_scheduled_tokens,
+                         num_tokens_unpadded,
+                         num_tokens_padded,
+                         uniform_decode=uniform_decode,
+                         vllm_config=self.vllm_config)
+
+        self.seq_lens.np[:num_reqs] = (
+            self.input_batch.num_computed_tokens_cpu[:num_reqs] +
+            num_scheduled_tokens)
+        # Fill unused with 0 for full cuda graph mode.
+        self.seq_lens.np[num_reqs:].fill(0)
+        self.seq_lens.copy_to_gpu()
+        seq_lens = self.seq_lens.gpu[:num_reqs]
+        max_seq_len = self.seq_lens.np[:num_reqs].max().item()
+
+        num_tokens = [
+            self.requests[r].num_tokens for r in self.input_batch.req_ids
+===FI
+        if num_prefill_tokens > 0:
+            prefill_wrapper = attn_metadata.prefill_wrapper
+            prefill_query = query[num_decode_tokens:]
+            assert prefill_query.shape[0] == num_prefill_tokens
+            assert prefill_wrapper is not None
+
+            if not attn_metadata.prefill_use_trtllm:
+                assert prefill_wrapper._causal
+                assert prefill_wrapper._window_left == self.window_left
+                assert prefill_wrapper._logits_soft_cap == (
+                    self.logits_soft_cap or 0.0)
+                assert prefill_wrapper._sm_scale == self.scale
+                prefill_wrapper.run(
+                    prefill_query,
+                    kv_cache_permute,
+                    k_scale=layer._k_scale_float,
+                    v_scale=layer._v_scale_float,
+                    out=output[num_decode_tokens:],
+                )
+            else:
+                # prefill_query may be non-contiguous
+                prefill_query = prefill_query.contiguous()
+                workspace_buffer = _get_trtllm_gen_workspace_buffer()
+                block_tables_prefill = attn_metadata.block_table_tensor[
+                    num_decodes:]
+                seq_lens_prefill = attn_metadata.seq_lens[num_decodes:]
+
+                # This path needs to be enabled with VLLM_KV_CACHE_LAYOUT = HND
+                assert get_kv_cache_layout() == "HND"
+                assert prefill_query.is_contiguous()
+                assert kv_cache_permute.is_contiguous()
+                assert workspace_buffer.is_contiguous()
+                assert block_tables_prefill.is_contiguous()
+                assert seq_lens_prefill.is_contiguous()
+
+                if output.dtype == FP4_DTYPE:
+                    assert self.o_sf_scale is not None
+                    out = FP4Tensor(data=output[num_decode_tokens:],
+                                    scale=output_block_scale,
+                                    scale_start_index=num_decode_tokens,
+                                    original_shape=prefill_query.shape)
+                else:
+                    assert self.o_sf_scale is None
+                    out = output[num_decode_tokens:]
+
+                if attn_metadata.q_data_type != FP8_DTYPE \
+                    and self.kv_cache_dtype.startswith("fp8"):
+                    # TRTLLM prefill attention does not support BF16 Q
+                    # and fp8 kv cache. So to enable prefill attention
+                    # with fp8 kv cache, we can construct a mock block
+                    # and mock kv cache with BF16 KV involved in the prefill
+                    mock_kv_cache, mock_block_table = (
+                        trtllm_prefill_attn_kvfp8_dequant(
+                            kv_cache_permute,
+                            block_tables_prefill,
+                            layer._k_scale,
+                            layer._v_scale,
+                            attn_metadata.q_data_type,
+                        ))
+                else:
+                    mock_kv_cache = kv_cache_permute
+                    mock_block_table = block_tables_prefill
+
+                trtllm_batch_context_with_kv_cache(
+                    query=prefill_query,
+                    kv_cache=mock_kv_cache,
+                    workspace_buffer=workspace_buffer,
+                    block_tables=mock_block_table,
+                    seq_lens=seq_lens_prefill,
+                    max_q_len=attn_metadata.max_q_len_prefill,
+                    max_kv_len=attn_metadata.max_seq_len,
+                    bmm1_scale=self.bmm1_scale,
+                    bmm2_scale=self.bmm2_scale,
+                    batch_size=attn_metadata.num_prefills,
+                    cum_seq_lens_q=attn_metadata.qo_indptr_gpu,
+                    cum_seq_lens_kv=attn_metadata.paged_kv_indptr_gpu,
+                    window_left=self.window_left,
+                    sinks=self.sinks,
+                    o_sf_scale=self.o_sf_scale,
+                    out=out,
+                )
+
+        if num_decode_tokens > 0:
+            decode_wrapper = attn_metadata.decode_wrapper
+            decode_query = query[:num_decode_tokens]
+            assert decode_query.shape[0] == num_decode_tokens
+            assert decode_wrapper is not None
+
+            if not attn_metadata.decode_use_trtllm:
+                assert decode_wrapper._window_left == self.window_left
+                assert decode_wrapper._logits_soft_cap == (self.logits_soft_cap
+                                                           or 0.0)
+                assert decode_wrapper._sm_scale == self.scale
+                decode_wrapper.run(
+                    decode_query,
+                    kv_cache_permute,
+                    k_scale=layer._k_scale_float,
+                    v_scale=layer._v_scale_float,
+                    out=output[:num_decode_tokens],
+                )
+            else:
+                # decode_query may be non-contiguous
+                decode_query = decode_query.contiguous()
+                workspace_buffer = _get_trtllm_gen_workspace_buffer()
+                block_tables_decode = attn_metadata.\
+                    block_table_tensor[:num_decode_tokens]
+                seq_lens_decode = attn_metadata.seq_lens[:num_decode_tokens]
+
+                # This path needs to be enabled with VLLM_KV_CACHE_LAYOUT = HND
+                assert get_kv_cache_layout() == "HND"
+                assert decode_query.is_contiguous()
+[0m
+[0m$ [0mgrep -n "kv_cache_permute\|def plan\|\.plan(\|prefill_wrapper = \|decode_wrapper = \|BatchPrefillWith\|BatchDecodeWith\|use_trtllm_attention" /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py | head -25; echo ===; sed -n '800,880p' /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py
+11:from flashinfer import (BatchDecodeWithPagedKVCacheWrapper,
+12:                        BatchPrefillWithPagedKVCacheWrapper,
+28:from vllm.utils.flashinfer import (can_use_trtllm_attention,
+31:                                   use_trtllm_attention)
+243:    prefill_wrapper: Optional[BatchPrefillWithPagedKVCacheWrapper] = None
+244:    decode_wrapper: Optional[BatchDecodeWithPagedKVCacheWrapper] = None
+263:        self._prefill_wrapper = None  # Wrapper for prefill/append
+264:        self._decode_wrapper = None  # Wrapper for decode (general shape)
+277:                int, BatchDecodeWithPagedKVCacheWrapper] = {}
+308:            can_use_trtllm_attention(self.num_qo_heads, self.num_kv_heads)
+367:            self._prefill_wrapper = BatchPrefillWithPagedKVCacheWrapper(
+375:            decode_wrapper = self._decode_wrappers_cudagraph.get(
+378:            decode_wrapper = self._decode_wrapper
+390:            decode_wrapper = BatchDecodeWithPagedKVCacheWrapper(
+407:                self._decode_wrapper = decode_wrapper
+502:        prefill_use_trtllm = use_trtllm_attention(self.num_qo_heads,
+511:        decode_use_trtllm = use_trtllm_attention(self.num_qo_heads,
+555:            attn_metadata.cascade_wrapper.plan(
+580:                attn_metadata.prefill_wrapper = self._get_prefill_wrapper()
+603:                    attn_metadata.prefill_wrapper.plan(
+648:                attn_metadata.decode_wrapper = self._get_decode_wrapper(
+876:        kv_cache_permute = kv_cache.permute(*stride_order)
+881:            prefill_wrapper = attn_metadata.prefill_wrapper
+894:                    kv_cache_permute,
+910:                assert kv_cache_permute.is_contiguous()
+===
+                raise ValueError(f"Unsupported output dtype: {output.dtype}")
+
+            # TRTLLM attn kernel requires to scale to pass as a host scalar,
+            # store the o scale as a host scalar in warmup run with cuda graph
+            # not enabled
+            if layer._o_scale_float is None:
+                layer._o_scale_float = output_scale.cpu().item()
+                if output.dtype == FP8_DTYPE:
+                    self.bmm2_scale = self.bmm2_scale / layer._o_scale_float
+                elif output.dtype == FP4_DTYPE:
+                    self.o_sf_scale = layer._o_scale_float
+
+        # Insert FP8 quant for query
+        if attn_metadata.q_data_type == FP8_DTYPE:
+            num_tokens, num_heads, head_size = query.shape
+            query, _ = ops.scaled_fp8_quant(
+                query.reshape(
+                    (num_tokens, num_heads * head_size)).contiguous(),
+                layer._q_scale)
+            query = query.reshape((num_tokens, num_heads, head_size))
+
+        # IMPORTANT!
+        # NOTE(woosuk): With piece-wise CUDA graphs, this method is executed in
+        # eager-mode PyTorch. Thus, we need to be careful about any CPU overhead
+        # in this method. For example, `view` and `slice` (or `[:n]`) operations
+        # are surprisingly slow even in the case they do not invoke any GPU ops.
+        # Minimize the PyTorch ops in this method as much as possible.
+        # Whenever making a change in this method, please benchmark the
+        # performance to make sure it does not introduce any overhead.
+
+        num_actual_tokens = attn_metadata.num_actual_tokens
+
+        if self.kv_sharing_target_layer_name is None:
+            # Reshape the input keys and values and store them in the cache.
+            # Skip this if sharing KV cache with an earlier attention layer.
+            # NOTE(woosuk): Here, key and value are padded while slot_mapping is
+            # not padded. However, we don't need to do key[:num_actual_tokens]
+            # and value[:num_actual_tokens] because the reshape_and_cache_flash
+            # op uses the slot_mapping's shape to determine the number of
+            # actual tokens.
+            torch.ops._C_cache_ops.reshape_and_cache_flash(
+                key,
+                value,
+                kv_cache[:, 0],
+                kv_cache[:, 1],
+                attn_metadata.slot_mapping,
+                self.kv_cache_dtype,
+                layer._k_scale,
+                layer._v_scale,
+            )
+
+            # The FlashInfer api requires data to be in fp8_e4m3 or fp8_e5m2
+            # to process the cache when the kv_cache_dtype is fp8
+            if self.kv_cache_dtype.startswith("fp8"):
+                torch_dtype = FlashInferBackend.get_fp8_dtype_for_flashinfer(
+                    self.kv_cache_dtype)
+                kv_cache = kv_cache.view(torch_dtype)
+
+        # Inputs and outputs may be padded for CUDA graphs
+        query = query[:num_actual_tokens]
+        output_padded = output
+        output = output[:num_actual_tokens]
+
+        if attn_metadata.use_cascade:
+            # Cascade attention (rare case).
+            assert attn_metadata.cascade_wrapper is not None
+            output.copy_(attn_metadata.cascade_wrapper.run(query, kv_cache))
+            return output
+
+        # When using spec decoding, num_decodes can be < num_decode_tokens
+        # because some decode requests may have more than one query token.
+        num_decodes = attn_metadata.num_decodes
+        num_decode_tokens = attn_metadata.num_decode_tokens
+        num_prefill_tokens = attn_metadata.num_prefill_tokens
+
+        stride_order = FlashInferBackend.get_kv_cache_stride_order()
+        kv_cache_permute = kv_cache.permute(*stride_order)
+        # Regular attention (common case).
+        # Decodes are at the front and prefills are at the back,
+        # according to reorder_batch()
+        if num_prefill_tokens > 0:
+[0m
+[0m$ [0mgrep -n "reorder_batch_threshold\|def reorder_batch\|_init_reorder" /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/*.py | head; echo ===; sed -n '251,300p' /tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py:255:    reorder_batch_threshold: int = 1
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py:309:        self._init_reorder_batch_threshold(1, supports_spec_as_decode)
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py:425:                                       decode_threshold=self.reorder_batch_threshold,
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/flashinfer.py:501:        uses_spec_reorder = self.reorder_batch_threshold > 1
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/common.py:439:    reorder_batch_threshold: int = 1
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/common.py:648:                              self.reorder_batch_threshold), \
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/common.py:652:        assert m.max_query_len <= self.reorder_batch_threshold  # decode only
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/common.py:684:                                       decode_threshold=self.reorder_batch_threshold)
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/flashattn_mla.py:67:    reorder_batch_threshold: int = 512
+/tmp/opencode/vllm-0.11.0/vllm/v1/attention/backends/mla/flashattn_mla.py:102:        self.reorder_batch_threshold = 1 \
+===
+class FlashInferMetadataBuilder(AttentionMetadataBuilder[FlashInferMetadata]):
+    cudagraph_support: ClassVar[AttentionCGSupport] = \
+        AttentionCGSupport.UNIFORM_SINGLE_TOKEN_DECODE
+
+    reorder_batch_threshold: int = 1
+
+    def __init__(self, kv_cache_spec: AttentionSpec, layer_names: list[str],
+                 vllm_config: VllmConfig, device: torch.device):
+        super().__init__(kv_cache_spec, layer_names, vllm_config, device)
+        self.cache_config = vllm_config.cache_config
+        self.model_config = vllm_config.model_config
+        self._workspace_buffer = None
+        self._prefill_wrapper = None  # Wrapper for prefill/append
+        self._decode_wrapper = None  # Wrapper for decode (general shape)
+
+        self.compilation_config = vllm_config.compilation_config
+        max_num_pages_per_req = cdiv(self.model_config.max_model_len,
+                                     self.kv_cache_spec.block_size)
+        max_num_reqs = vllm_config.scheduler_config.max_num_seqs
+        max_num_pages = max_num_reqs * max_num_pages_per_req
+        self.enable_cuda_graph = (self.compilation_config.cudagraph_mode.\
+            decode_mode() == CUDAGraphMode.FULL)
+        if self.enable_cuda_graph:
+            # For full cudagraph capture, one `decode_wrapper` for each batch
+            # size is needed for FlashInfer.
+            self._decode_wrappers_cudagraph: dict[
+                int, BatchDecodeWithPagedKVCacheWrapper] = {}
+            self._decode_cudagraph_max_bs = min(
+                max_num_reqs, self.compilation_config.max_capture_size)
+
+        self.num_qo_heads = self.model_config.get_num_attention_heads(
+            self.vllm_config.parallel_config)
+        self.num_kv_heads = self.kv_cache_spec.num_kv_heads
+        self.head_dim = self.kv_cache_spec.head_size
+        FlashInferBackend.validate_head_size(self.head_dim)
+        self.page_size = self.kv_cache_spec.block_size
+
+        self.cache_dtype = self.cache_config.cache_dtype
+        if self.cache_dtype.startswith("fp8"):
+            self.kv_cache_dtype = (
+                FlashInferBackend.get_fp8_dtype_for_flashinfer(
+                    self.cache_dtype))
+        else:
+            assert self.kv_cache_spec.dtype == self.model_config.dtype
+            self.kv_cache_dtype = self.kv_cache_spec.dtype
+
+        # Use model dtype as q dtype when TRTLLM attn is not supported, or
+        # VLLM_FLASHINFER_DISABLE_Q_QUANTIZATION is set to 1. Otherwise, try to
+        # use fp8 q if kv cache is fp8, and will fall back to model dtype
+        # if TRTLLM attention kernel is not used when building attn metadata
+[0m
+[0m$ [0mgrep -rn "PREFILL_ONLY" /tmp/opencode/vllm-0.11.0/vllm/ | head -5; echo ===ENUM; grep -n "class _Backend" -A 60 /tmp/opencode/vllm-0.11.0/vllm/platforms/interface.py | head -70
+===ENUM
+41:class _Backend(enum.Enum):
+42-    FLASH_ATTN = enum.auto()
+43-    TRITON_ATTN = enum.auto()
+44-    XFORMERS = enum.auto()
+45-    ROCM_FLASH = enum.auto()
+46-    ROCM_AITER_MLA = enum.auto()  # Supported by V1
+47-    ROCM_AITER_FA = enum.auto()  # used for ViT attn backend
+48-    TORCH_SDPA = enum.auto()
+49-    FLASHINFER = enum.auto()
+50-    FLASHINFER_MLA = enum.auto()
+51-    TRITON_MLA = enum.auto()  # Supported by V1
+52-    CUTLASS_MLA = enum.auto()
+53-    FLASHMLA = enum.auto()  # Supported by V1
+54-    FLASH_ATTN_MLA = enum.auto()  # Supported by V1
+55-    PALLAS = enum.auto()
+56-    IPEX = enum.auto()
+57-    DUAL_CHUNK_FLASH_ATTN = enum.auto()
+58-    DIFFERENTIAL_FLASH_ATTN = enum.auto()
+59-    NO_ATTENTION = enum.auto()
+60-    FLEX_ATTENTION = enum.auto()
+61-    TREE_ATTN = enum.auto()
+62-    ROCM_ATTN = enum.auto()
+63-
+64-
+65-class PlatformEnum(enum.Enum):
+66-    CUDA = enum.auto()
+67-    ROCM = enum.auto()
+68-    TPU = enum.auto()
+69-    XPU = enum.auto()
+70-    CPU = enum.auto()
+71-    OOT = enum.auto()
+72-    UNSPECIFIED = enum.auto()
+73-
+74-
+75-class CpuArchEnum(enum.Enum):
+76-    X86 = enum.auto()
+77-    ARM = enum.auto()
+78-    POWERPC = enum.auto()
+79-    S390X = enum.auto()
+80-    RISCV = enum.auto()
+81-    OTHER = enum.auto()
+82-    UNKNOWN = enum.auto()
+83-
+84-
+85-class DeviceCapability(NamedTuple):
+86-    major: int
+87-    minor: int
+88-
+89-    def as_version_str(self) -> str:
+90-        return f"{self.major}.{self.minor}"
+91-
+92-    def to_int(self) -> int:
+93-        """
+94-        Express device capability as an integer `<major><minor>`.
+95-
+96-        It is assumed that the minor version is always a single digit.
+97-        """
+98-        assert 0 <= self.minor < 10
+99-        return self.major * 10 + self.minor
+100-
+101-
+[0m
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0/vllm && grep -n "def get_attn_backend_cls\|def opaque_attention_op\|def get_current_memory_usage" platforms/cuda.py; grep -n "def _update_attention_metadata\|def initialize_attn_backend\|def _reshape_kv_cache_tensors\|def _allocate_kv_cache_tensors\|def _prepare_inputs" v1/worker/gpu_model_runner.py; grep -n "def execute_model" v1/worker/gpu_model_runner.py; grep -n "attn_groups\[kv_cache_group_id\]\|attn_metadata\[layer_name\]" v1/worker/gpu_model_runner.py | head -5
+206:    def get_current_memory_usage(cls,
+240:    def get_attn_backend_cls(cls, selected_backend, head_size, dtype,
+411:    def opaque_attention_op(cls) -> bool:
+923:    def _prepare_inputs(
+3538:    def initialize_attn_backend(self, kv_cache_config: KVCacheConfig) -> None:
+3758:    def _allocate_kv_cache_tensors(
+3797:    def _reshape_kv_cache_tensors(
+2231:    def execute_model(
+1216:            for attn_group in self.attn_groups[kv_cache_group_id]:
+1257:                        attn_metadata[layer_name] = attn_metadata_i
+3063:                for attn_group in self.attn_groups[kv_cache_group_id]:
+3082:                            attn_metadata[layer_name] = attn_metadata_i
+[0m
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0/vllm && awk 'NR>=1000 && NR<=1130 && /    def /' v1/worker/gpu_model_runner.py; grep -n "    def " v1/worker/gpu_model_runner.py | awk -F: '$1>900 && $1<1128' | tail -3; echo ===; grep -n "    def " v1/worker/gpu_model_runner.py | awk -F: '$1>2990 && $1<3050'; echo ===; sed -n '1128,1132p;3040,3050p' v1/worker/gpu_model_runner.py
+905:    def _get_encoder_seq_lens(
+923:    def _prepare_inputs(
+===
+===
+                                            num_reqs] = num_decode_draft_tokens
+            self.num_decode_draft_tokens.np[num_reqs:].fill(-1)
+            self.num_decode_draft_tokens.copy_to_gpu()
+
+        logits_indices_padded = None
+                num_scheduled_tokens)
+            self.query_start_loc.np[1:num_reqs + 1] = cum_num_tokens
+            self.query_start_loc.copy_to_gpu()
+
+            for kv_cache_group_id, kv_cache_group_spec in enumerate(
+                    self.kv_cache_config.kv_cache_groups):
+                common_attn_metadata = CommonAttentionMetadata(
+                    query_start_loc=self.query_start_loc.gpu[:num_reqs + 1],
+                    query_start_loc_cpu=self.query_start_loc.cpu[:num_reqs +
+                                                                 1],
+                    seq_lens=self.seq_lens.gpu[:num_reqs],
+[0m
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0/vllm && grep -n "^    def \|^def " v1/worker/gpu_model_runner.py | awk -F: '$1>920 && $1<1260'; echo; grep -n "def _build attn\|def build.*metadata\|_attn_metadata" v1/worker/gpu_model_runner.py | head
+923:    def _prepare_inputs(
+
+74:    reorder_batch_to_split_decodes_and_prefills, split_attn_metadata)
+1146:        spec_decode_common_attn_metadata = None
+1189:            common_attn_metadata = CommonAttentionMetadata(
+1208:                    and spec_decode_common_attn_metadata is None):
+1212:                        spec_decode_common_attn_metadata = common_attn_metadata
+1214:                    spec_decode_common_attn_metadata = common_attn_metadata
+1228:                extra_attn_metadata_args = {}
+1231:                    extra_attn_metadata_args = dict(
+1239:                    common_attn_metadata_list = split_attn_metadata(
+1240:                        ubatch_slices, common_attn_metadata)
+[0m
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0/vllm && grep -n "^    def \|^def " v1/worker/gpu_model_runner.py | awk -F: '$1>2900 && $1<3110'
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0/vllm && awk 'NR<=3082 && /^    def |^def /{last=NR": "$0} END{}' v1/worker/gpu_model_runner.py; grep -n "def " v1/worker/gpu_model_runner.py | awk -F: '$1<3082' | tail -2; sed -n '3000,3023p' v1/worker/gpu_model_runner.py
+2867:    def _get_mm_dummy_batch(
+2897:    def _dummy_run(
+            )
+            # Currently when DBO is enabled `ubatch_split` returns
+            # the num_tokens_after_padding for a single ubatch, but we have 2
+            # TODO(sage,lucas): this is cruft that should be addressed in the
+            # padding refactor.
+            if ubatch_num_tokens_after_padding is not None:
+                num_tokens_after_padding = ubatch_num_tokens_after_padding * 2
+
+        # If we failed to microbatch, currently need to resynchronize
+        # TODO(lucas,sage): we should be able to avoid this second sync by
+        #  refactoring `get_dp_padding_ubatch` and `get_dp_padding` into
+        #  a single `coordinate_batch_across_dp` function.
+        if num_tokens_after_padding is None:
+            num_pad, num_tokens_across_dp = self.get_dp_padding(num_tokens)
+            num_tokens_after_padding = num_tokens + num_pad
+        else:
+            num_tokens_across_dp = num_tokens_after_padding
+            num_tokens_after_padding = int(num_tokens_after_padding[0].item())
+
+        attn_metadata: Optional[PerLayerAttnMetadata] = None
+
+        # If force_attention is True, we always capture attention. Otherwise,
+        # it only happens for cudagraph_runtime_mode=FULL.
+        if force_attention or cudagraph_runtime_mode == CUDAGraphMode.FULL:
+[0m
+[0m$ [0msed -n '1,80p' /mnt/workspace/aiinfra/vllm/week3/README.md
+# 第 3 周：vLLM V1 源码精读（下）——KV 管理与执行（扩展版）
+
+> 本文档是根目录《八周按天打卡计划》第 3 周（Day 15-21）的逐天扩展。
+> **本周目标**：吃透 KV cache 管理与模型执行层，开始同步动手写 mini 引擎（项目 B）。
+> **前置依赖**（W1/W2 产出，开始前自检）：
+> - 能手算任意模型的 KV cache 显存与并发上限（W1 Day 2）
+> - 讲得清 Scheduler 的 waiting/running 队列、token budget、chunked prefill（W2 Day 10-11）
+> - 有一个能跑的 vLLM 服务环境 + `vllm bench serve` 压测脚本（W1 Day 6）
+>
+> **版本纪律**：全程以 vLLM V1 架构为准（V0 已删除，不要读旧代码/旧博客）。vLLM 迭代快，本文提到的类名/文件位置以你 `pip install` 的版本为准——**每周开始时先 `git log --oneline -5`（或看 PyPI 版本号）记录你的基线版本**，类名若有出入，以"职责"对齐而不是死抠名字。
+> **本周期望投入**：每天 2-4 小时；Day 20/21 可能需要 4 小时以上（写代码）。
+
+---
+
+## 0. 本周知识地图
+
+先建立全局视图，再逐天下钻。
+
+### 0.1 一个 decode step 的完整数据流（本周各天的位置）
+
+```
+请求到达（W2 已学）
+    │
+    ▼
+Scheduler.schedule()                          ── W2 已学
+    │  决定本步调度哪些请求、每个请求多少 token
+    ▼
+KVCacheManager.allocate_slots()               ── Day 15/16（本周核心①）
+    │  prefix 命中检查 → 分配新 block → 更新 block table
+    ▼
+SchedulerOutput（block table 增量、token ids、位置信息）
+    │
+    ▼
+GPUModelRunner.execute_model()                ── Day 17/18/19（本周核心②）
+    │  ├─ 构建 AttentionMetadata（slot_mapping / block_table / seq_lens）
+    │  ├─ Attention 后端写 KV + 算 attention（Day 17）
+    │  └─ CUDA Graph replay / torch.compile（Day 18）
+    ▼
+采样 → 输出 → 下一轮调度与执行重叠             ── Day 19
+```
+
+### 0.2 源码目录速查表（读代码前打印贴墙上）
+
+| 路径 | 内容 | 对应天 |
+|---|---|---|
+| `vllm/v1/core/kv_cache_manager.py` | KVCacheManager：请求视角的 KV 分配入口 | D15/16 |
+| `vllm/v1/core/kv_cache_utils.py` | `KVCacheBlock`、`FreeBlockQueue`、hash 工具、KV cache 布局工具 | D15/16 |
+| `vllm/v1/core/block_pool.py` | `BlockPool`：物理块池 + prefix caching 索引 | D15/16 |
+| `vllm/v1/core/scheduler.py`（新版在 `v1/core/sched/`） | 调度器，调用 KVCacheManager 的上游 | 复习 |
+| `vllm/attention/layer.py` | `Attention` 层：模型代码看到的统一接口 | D17 |
+| `vllm/attention/registry.py` | 后端注册表（enum → builder） | D17 |
+| `vllm/attention/backends/flash_attn.py` 等 | 各后端 Impl + MetadataBuilder | D17 |
+| `vllm/platforms/interface.py` + `cuda.py` | 平台声明支持哪些后端、如何选择 | D17 |
+| `vllm/v1/worker/gpu_model_runner.py` | 执行层核心：input 构建、CUDA Graph、采样 | D17/18/19 |
+| `vllm/v1/worker/gpu_worker.py` | Worker：显存 profiling、KV cache 初始化 | D15 |
+| `vllm/v1/engine/core.py` | EngineCore 主循环（async scheduling 在此体现） | D19 |
+
+**读源码技巧**（贯穿本周）：不要从第一行读到最后一行。每个文件先看 `class` 定义和公开方法签名，猜职责 → 再挑 1-2 个方法读实现验证猜想。配合 debug：`python -m pdb`/`breakpoint()` 打在目标函数，跑一次单请求生成，观察调用栈与实参。
+
+---
+
+## Day 15：KV Cache Manager（一）——block pool 与物理内存管理
+
+### 目标
+
+讲清三个问题：① KV cache 的物理内存是怎么组织的；② 一个请求怎么拿到 block、怎么归还；③ 系统怎么知道"还剩多少 KV 显存"。
+
+### 核心概念：三层数据结构
+
+KV cache 管理本质是**操作系统虚拟内存分页**的翻版，先建立这张对照表（面试可直接用）：
+
+| OS 虚拟内存 | vLLM V1 | 数据结构 |
+|---|---|---|
+| 物理页帧 | KV block（固定 token 数） | `KVCacheBlock`（`block_id` 唯一） |
+| 页表 | block table（每请求 → block id 列表） | `KVCacheBlocks`（request_id → blocks） |
+| 空闲页链表 | free block 队列 | `FreeBlockQueue`（双向链表） |
+| 页帧分配器 | block 池 | `BlockPool` |
+| 缺页/换出 | preemption、prefix 驱逐 | 调度器 + `FreeBlockQueue` 头部 |
+| 页共享 + COW | prefix caching + copy-on-write | `ref_cnt` + hash 链（Day 16） |
+[0m
+[0m→ [0mRead week3/assets/day15_three_layer_architecture.svg
+[0m
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0 && ls vllm/test/v1/attention/ 2>/dev/null | head; sed -n '3626,3632p' vllm/v1/worker/gpu_model_runner.py; grep -n "cascade_attn_enabled" vllm/v1/worker/gpu_model_runner.py | head -3; grep -n "class SchedulerOutput" -A 30 vllm/v1/core/sched/output.py | grep -n "num_common_prefix_blocks\|block_ids\|scheduled" | head -8
+f"with {min_cg_builder_name} backend (support: "
+                   f"{min_cg_support})")
+            if min_cg_support == AttentionCGSupport.NEVER:
+                # if not supported any full cudagraphs, just raise it.
+                msg += "; please try cudagraph_mode=PIECEWISE, and "\
+                    "make sure compilation level is piecewise"
+                raise ValueError(msg)
+238:        self.cascade_attn_enabled = not self.model_config.disable_cascade_attn
+1220:                if self.cascade_attn_enabled:
+3:124-    # list of the requests that are scheduled for the first time.
+6:127-    scheduled_new_reqs: list[NewRequestData]
+7:128-    # list of the requests that have been scheduled before.
+10:131-    scheduled_cached_reqs: CachedRequestData
+12:133-    # req_id -> num_scheduled_tokens
+13:134-    # Number of tokens scheduled for each request.
+14:135-    num_scheduled_tokens: dict[str, int]
+15:136-    # Total number of tokens scheduled for all requests.
+[0m
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0 && ls tests/v1/attention/ | head -20; grep -n "def initialize_cudagraph_capture" vllm/v1/worker/gpu_model_runner.py; grep -n "num_common_prefix_blocks" vllm/v1/core/sched/output.py vllm/v1/core/scheduler.py vllm/v1/core/kv_cache_manager.py 2>/dev/null | head -6
+test_attention_backends.py
+test_attention_backends_selection.py
+test_attention_splitting.py
+test_chunked_local_attention.py
+test_mla_backends.py
+test_sparse_mla_backends.py
+utils.py
+3611:    def initialize_cudagraph_capture(self) -> None:
+vllm/v1/core/sched/output.py:149:    num_common_prefix_blocks: list[int]
+vllm/v1/core/kv_cache_manager.py:332:    def get_num_common_prefix_blocks(
+vllm/v1/core/kv_cache_manager.py:372:        return self.coordinator.get_num_common_prefix_blocks(
+[0m
+源码核对完毕，材料齐全。现在梳理 Day 15 留给 Day 17 的伏笔，确认衔接点后开始写作：
+[0m$ [0mgrep -n "Day 17" /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md /mnt/workspace/aiinfra/vllm/week3/README.md | head -12; grep -n "get_num_common_prefix_blocks" -A 12 /tmp/opencode/vllm-0.11.0/vllm/v1/core/kv_cache_manager.py | head -16
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:7:> **背景衔接**：这套数据结构就是**操作系统虚拟内存分页的 Python 翻版**——`KVCacheBlock` 是页帧、block table 是页表、`FreeKVCacheBlockQueue` 是空闲链表、preemption 是换出、prefix 共享是页共享。你在昇腾上用偏移表管理 L1/L0A/L0B 多级 buffer 是同构问题：**用"小表 + 大池"换分配灵活性**，且分配逻辑永远在 Host（AI CPU）侧、从不在算子上。两个直接可迁移的经验：① free 队列的**逆序归还**是经典的 LRU 实现（链表序 = 驱逐序，无独立 evictor）；② `block_size × head_dim × dtype` 是否构成高效搬运粒度，就是你做 DMA burst 对齐（32B/64B）的同一道题——它同时决定 block table 行宽与 paged attention gather 的合并访存（Day 17 呼应）
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:45:| **`slot_mapping`** | 逻辑位置 → 物理 slot：`slot = block_table[row, pos÷B]×B + pos mod B`（:107-113） | 这是 attention kernel 写 KV 的地址翻译——Day 17 的入口 |
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:69:| Day 17 | 执行：attention 后端怎么按 block table gather | 待（今天的伏笔：slot_mapping、`[num_blocks,B,H,d]` 张量） |
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:146:1. **先 int8 后 view**：先按字节整块 `torch.zeros`（一个 `KVCacheTensor` 一次分配，避免碎片），再 `view(dtype).view(shape)` 拆成每层的 `[num_blocks, block_size, num_kv_heads, head_dim]`（K/V 各一或拼一维，具体由 attention 后端的 `get_kv_cache_shape` 决定——Day 17 细讲）。Qwen3-8B（Unitary）是 36 个 `KVCacheTensor`、每层一份 24.1k × 64 KiB ≈ 1.47 GiB。
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:191:| 谁读 | schedule() 每步 `get_blocks`(:521) 产生增量、`get_num_common_prefix_blocks`、free | AttentionMetadataBuilder → paged attention kernel（Day 17） |
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:203:例：pos=35、B=16、该行块表 `[7, 12, 3, …]` → 35÷16=2 → 块号 3 → slot = 3×16+3 = 51。**这就是 paged attention 一切"非连续 gather"的源头**（Day 17 的入口）。
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:382:3. **算子粒度（gather 效率）**：paged attention 的 gather 以 block 为 tile 单位（Day 17）。块内 `head_dim` 连续才好合并访存：16 token × 128 × 2B = 4 KiB/K 块，恰在 L2 line 与 DMA burst 的甜点区（对照你的 32B/64B 对齐经验——**跨平台同一道题**）。
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:384:平台覆盖逻辑（platforms/cuda.py:126-175）：CUDA 默认 16；某些 MLA/cutlass/sparse 路径强制 64/128——**换后端 = 换 block_size**，这也是 Day 17"后端决定 `get_kv_cache_shape`"的先声。面试一句话：*block_size 不是拍脑袋常数，是碎片率、表大小、缓存粒度、gather 效率的四方折中，平台/后端可以也应该各自选。*
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:621:- block table 有**两份副本**：P1 对象账本与 P2 张量账本，靠 `new_block_ids` 增量同步（add/append/replace 三种时机），P2 再翻译成 `slot_mapping` 喂 kernel（Day 17 入口）。
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md:665:3. block_size 默认 16（CUDA）；三重身份：分配粒度（碎片 B/2）、hash 缓存粒度（Day 16）、attention gather tile 粒度（Day 17）。
+/mnt/workspace/aiinfra/vllm/week3/README.md:34:GPUModelRunner.execute_model()                ── Day 17/18/19（本周核心②）
+/mnt/workspace/aiinfra/vllm/week3/README.md:36:    │  ├─ Attention 后端写 KV + 算 attention（Day 17）
+332:    def get_num_common_prefix_blocks(
+333-        self,
+334-        request: Request,
+335-        num_running_requests: int,
+336-    ) -> list[int]:
+337-        """Calculate the number of common prefix blocks shared by all requests
+338-        in the RUNNING state for each kv cache group.
+339-
+340-        The function determines this by selecting any request and iterating
+341-        through its blocks.  A block is considered a common prefix block if its
+342-        `ref_cnt` equals the total number of requests in the RUNNING state.
+343-
+344-        NOTE(woosuk): The number of requests in the RUNNING state is **greater
+--
+372:        return self.coordinator.get_num_common_prefix_blocks(
+373-            request.request_id, num_running_requests)
+[0m
+[0m# [0mTodos
+[•] 撰写 week3/day17_attention_backend_abstraction.md 正文
+[ ] 制作 SVG 1：后端抽象分层架构图
+[ ] 制作 SVG 2：一次 forward 的数据流图
+[ ] 制作 SVG 3：paged gather 非连续访存图
+[ ] 校验文件引用、行号一致性与格式
+[0m
+材料已全部核对完毕。现在创建待办并开始写作：
+[0m← [0mWrite week3/day17_attention_backend_abstraction.md
+Wrote file successfully.
+[0m
+正文完成。现在制作三张 SVG 图。先写图 1（五层插拔架构）：
+[0m← [0mWrite week3/assets/day17_backend_abstraction_layers.svg
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] 撰写 week3/day17_attention_backend_abstraction.md 正文
+[✓] 制作 SVG 1：后端抽象分层架构图
+[•] 制作 SVG 2：一次 forward 的数据流图
+[ ] 制作 SVG 3：paged gather 非连续访存图
+[ ] 校验文件引用、行号一致性与格式
+[0m
+[0m← [0mWrite week3/assets/day17_forward_dataflow.svg
+Wrote file successfully.
+[0m
+[0m← [0mWrite week3/assets/day17_paged_gather.svg
+Wrote file successfully.
+[0m
+三张 SVG 完成。现在校验正文中的关键行号引用与源码一致性：
+[0m$ [0mcd /tmp/opencode/vllm-0.11.0/vllm && grep -n "Using FlashInfer backend on V1 engine\|Using Triton backend on V1 engine\|Using Flash Attention backend on" platforms/cuda.py; grep -n "def fused_output_quant_supported" v1/attention/backends/flashinfer.py; grep -n "class FlashAttentionImpl\|class FlashAttentionMetadataBuilder" v1/attention/backends/flash_attn.py; grep -n "def use_cascade_attention\|def cascade_attention" v1/attention/backends/flash_attn.py
+312:                logger.info_once("Using FlashInfer backend on V1 engine.")
+322:                logger.info_once("Using Triton backend on V1 engine.")
+325:                logger.info_once("Using Flash Attention backend on V1 engine.")
+361:                    logger.info_once("Using Triton backend on V1 engine.")
+366:                    logger.info_once("Using Flash Attention backend on "
+740:    def fused_output_quant_supported(self, quant_key: QuantKey):
+154:class FlashAttentionMetadataBuilder(
+367:class FlashAttentionImpl(AttentionImpl):
+363:    def use_cascade_attention(self, *args, **kwargs) -> bool:
+636:def use_cascade_attention(
+705:def cascade_attention(
+[0m
+[0m✗ [0mEdit week3/day17_attention_backend_abstraction.md failed
+[91m[1mError: [0mCould not find oldString in the file. It must match exactly, including whitespace, indentation, and line endings.
+[0m
+[0m$ [0mgrep -n "cuda.py:298/321/338\|flashinfer.py:738-742\|cuda.py:296-301" /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+440:类属性两个：`accept_output_buffer`（True 则 runner 预分配 output、CG 友好，layer.py:211/297-302）与 `supports_quant_query_input`（FP8 query 在 layer 层量化、可被 torch.compile 融合，layer.py:256-261——W4 量化专题回接）。`AttentionImpl.forward` 的完整签名（abstract.py:158-171）注意两个可选参数 `output_scale/output_block_scale`：FP8/FP4 输出量化融合的挂点（FlashInfer 的 `fused_output_quant_supported`，flashinfer.py:738-742——同样 W4 伏笔）。
+582:观察点（填进 §9 产出③ 的表）：① 三家日志里的 `Using Flash Attention/Triton/FlashInfer backend on V1 engine`（cuda.py:298/321/338）确认 env 生效；② 短上下文 decode 为主时三家差距通常 < 5%（§3.1 的 3% 论证）；③ 长上下文 + 大 batch 时差距拉大（KV gather 占比上升 + FA3/FlashInfer 的 split-kv 调度更优）；④ FA3（H100）注意日志里的 AOT scheduler 与 `VLLM_FLASH_ATTN_MAX_NUM_SPLITS_FOR_CUDA_GRAPH`。⚠️ 不确定处（Blackwell 上 FlashInfer 需 HND、4090 无 FA3）**在表中标注卡型**，别把单卡结论说成普适。
+655:> 答：`VLLM_ATTENTION_BACKEND=FLASHINFER` 显式指定 → `get_attn_backend_cls` 命中 selected_backend 分支直接返回 FlashInfer（cuda.py:296-301）→ `Attention.__init__` 里 `validate_head_size` raise（flashinfer.py:156-166，96 ∉ {64,128,256}）。**显式指定不做 fallback，直接失败**；若不指定走默认链：H100 SM90 → 先查 FA（支持 96）→ 选中 FA。fallback 到 FlexAttention 只发生在**默认路径**上 FA 校验失败时（cuda.py:370-388）。区分"显式指定即硬约束"与"默认链软降级"是这道题的考点。
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -436,9 +436,9 @@
+ | `get_kv_cache_shape(num_blocks, block_size, H_kv, d, cache_dtype_str)` | `→ tuple[int,...]` | **你的硬件喜欢什么布局**（§2.4） |
+ | `get_kv_cache_stride_order()` | `→ tuple[int,...]` | NHD/HND 或自定（可不实现，runner 会兜底 identity，gpu_model_runner.py:3818-3824） |
+ | `get_supported_dtypes()` / `get_supported_head_sizes()`（或 `validate_head_size`） | `→ list` | 能力校验，selector 的 fallback 依据 |
+ 
+-类属性两个：`accept_output_buffer`（True 则 runner 预分配 output、CG 友好，layer.py:211/297-302）与 `supports_quant_query_input`（FP8 query 在 layer 层量化、可被 torch.compile 融合，layer.py:256-261——W4 量化专题回接）。`AttentionImpl.forward` 的完整签名（abstract.py:158-171）注意两个可选参数 `output_scale/output_block_scale`：FP8/FP4 输出量化融合的挂点（FlashInfer 的 `fused_output_quant_supported`，flashinfer.py:738-742——同样 W4 伏笔）。
++类属性两个：`accept_output_buffer`（True 则 runner 预分配 output、CG 友好，layer.py:211/297-302）与 `supports_quant_query_input`（FP8 query 在 layer 层量化、可被 torch.compile 融合，layer.py:256-261——W4 量化专题回接）。`AttentionImpl.forward` 的完整签名（abstract.py:158-171）注意两个可选参数 `output_scale/output_block_scale`：FP8/FP4 输出量化融合的挂点（FlashInfer 的 `fused_output_quant_supported`，flashinfer.py:740-744——同样 W4 伏笔）。
+ 
+ ### 4.2 `flash_attn.py`：六步 forward 的两处必读注释
+ 
+ 除了 §2.6 的代码，两段注释值得原文读：① :462-469 "With piece-wise CUDA graphs, this method is executed in eager-mode... `view` and `slice` are surprisingly slow"——**piecewise CG 下这段 Python 每 step 都要跑**，作者明令少写 PyTorch op（Day 18 的 pre-hook）；② :493-497 "we don't need `key[:num_actual_tokens]` because reshape_and_cache uses slot_mapping's shape"——写 KV 的 token 数由 slot_mapping 长度决定，padding 安全。
+
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -578,9 +578,9 @@
+   pkill -f "vllm serve"; sleep 20
+ done
+ ```
+ 
+-观察点（填进 §9 产出③ 的表）：① 三家日志里的 `Using Flash Attention/Triton/FlashInfer backend on V1 engine`（cuda.py:298/321/338）确认 env 生效；② 短上下文 decode 为主时三家差距通常 < 5%（§3.1 的 3% 论证）；③ 长上下文 + 大 batch 时差距拉大（KV gather 占比上升 + FA3/FlashInfer 的 split-kv 调度更优）；④ FA3（H100）注意日志里的 AOT scheduler 与 `VLLM_FLASH_ATTN_MAX_NUM_SPLITS_FOR_CUDA_GRAPH`。⚠️ 不确定处（Blackwell 上 FlashInfer 需 HND、4090 无 FA3）**在表中标注卡型**，别把单卡结论说成普适。
++观察点（填进 §9 产出③ 的表）：① 三家日志里的 `Using Flash Attention/Triton/FlashInfer backend on V1 engine`（显式分支 cuda.py:312/:322/:325，默认分支 :337/:361/:366）确认 env 生效；② 短上下文 decode 为主时三家差距通常 < 5%（§3.1 的 3% 论证）；③ 长上下文 + 大 batch 时差距拉大（KV gather 占比上升 + FA3/FlashInfer 的 split-kv 调度更优）；④ FA3（H100）注意日志里的 AOT scheduler 与 `VLLM_FLASH_ATTN_MAX_NUM_SPLITS_FOR_CUDA_GRAPH`。⚠️ 不确定处（Blackwell 上 FlashInfer 需 HND、4090 无 FA3）**在表中标注卡型**，别把单卡结论说成普适。
+ 
+ ### 实验 3（GPU，可选，20 min）：ncu 看 gather kernel 的真实带宽（Day 3 回炉）
+ 
+ ```bash
+
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -651,9 +651,9 @@
+ **T1**：§3.4 题 1：KV gather 字节数与理论时延？
+ > 答：每层 `2×16×8192×8×128×2B = 537 MB`？不对——先乘层数：**每层 33.6 MB，36 层共 1.21 GB**（每层 2×8192×8×128×2 = 33.55 MB，×16 请求 = 537 MB？注意公式是 `2·Σseq·H_kv·d·dtype` 已含 batch：Σseq=16×8192=131072，2×131072×8×128×2B = 537 MB **每层**，×36 层 ≈ **19.3 GB**）。只算 KV 项的时延下界 = 19.3 GB ÷ 3.35 TB/s ≈ **5.8 ms/step**（TPOT ≥ 5.8 ms）——对照实验：这个数加上权重的 16.4 GB（≈4.9 ms）就是 Day 2 公式在 16×8K 场景的展开：总 ≈ 35.7 GB ≈ 10.7 ms。**先算每层、再乘层数**是这道题最常见的错点。
+ 
+ **T2**：§3.4 题 2：FlashInfer + head_dim=96 的完整链路？
+-> 答：`VLLM_ATTENTION_BACKEND=FLASHINFER` 显式指定 → `get_attn_backend_cls` 命中 selected_backend 分支直接返回 FlashInfer（cuda.py:296-301）→ `Attention.__init__` 里 `validate_head_size` raise（flashinfer.py:156-166，96 ∉ {64,128,256}）。**显式指定不做 fallback，直接失败**；若不指定走默认链：H100 SM90 → 先查 FA（支持 96）→ 选中 FA。fallback 到 FlexAttention 只发生在**默认路径**上 FA 校验失败时（cuda.py:370-388）。区分"显式指定即硬约束"与"默认链软降级"是这道题的考点。
++> 答：`VLLM_ATTENTION_BACKEND=FLASHINFER` 显式指定 → `get_attn_backend_cls` 命中 selected_backend 分支直接返回 FlashInfer（cuda.py:310-313）→ `Attention.__init__` 里 `validate_head_size` raise（flashinfer.py:156-166，96 ∉ {64,128,256}）。**显式指定不做 fallback，直接失败**；若不指定走默认链：H100 SM90 → 先查 FA（支持 96）→ 选中 FA。fallback 到 FlexAttention 只发生在**默认路径**上 FA 校验失败时（cuda.py:370-388）。区分"显式指定即硬约束"与"默认链软降级"是这道题的考点。
+ 
+ **T3**：§3.4 题 3：block_size 16→8 的四项变化？
+ > 答：① block_table 行宽 ×2（4K ctx 从 256 列变 512 列，int32 显存与每 step 增量流量翻倍）；② slot_mapping 长度不变（逐 token），但公式中 B 换 8；③ kernel 单次连续段 `B·d·dtype` 从 4 KiB 降到 2 KiB（gather burst 效率降，§3.3）；④ hash/命中粒度减半（前缀 100 tok：6 个满块+余 4 → 12 个满块+余 4，Day 16 的"块粒度截断"浪费减少）。落点：四方拉扯，没有免费午餐——**新硬件按 DMA burst 需求选**。
+ 
+
+[0m
+[0m$ [0mgrep -n "info_once" /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md; grep -n "cuda.py:370-388" /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md | head
+464:selector.py:166-213 的 `@cache` 有个注释值得注意：env 值在 `get_attn_backend` 里读、显式传参给私有函数（:150-153）——避免 lru_cache 缓存住过期的 env 快照。cuda.py:240-399 走读时拿张纸把 §2.3 的决策树抄一遍，注意三个 `logger.info_once`：选 FlashInfer(HND) / Triton / FlexAttention fallback 都会打日志——**实验 2 的"确认选择"就用 grep 这些日志**。
+500:- 验收：`VLLM_ATTENTION_BACKEND=你的名字` 能强制选中；不设时默认决策正确并打 `info_once` 日志
+174:- **默认也会做能力校验再 fallback**：`is_attn_backend_supported`（selector.py:93-137）查三件事——`can_import`（库装没装）、`head_size`（FA 只支持 [32,64,96,128,160,192,224,256]，flash_attn.py:47-48；FlashInfer 只支持 [64,128,256]，flashinfer.py:152-155）、`dtype`。校验不过 → 降级 FlexAttention（cuda.py:370-388，错误信息里会写明是 head_size 还是 dtype 不符）。**这就是"backend 报不支持某模型"的机制层答案**（面试 Q5）。
+419:2. FlashInfer 后端跑 head_dim=96 的模型会怎样？完整 fallback 链是？（提示：§2.3 的三查 + cuda.py:370-388）
+625:骨架：三类——① head_size 不在列表（FA 8 档、FlashInfer 仅 {64,128,256}，§2.7 表）；② dtype 不支持；③ 库没装（can_import）。机制：`is_attn_backend_supported` 三查 → 默认链 fallback FlexAttention（cuda.py:370-388）；显式 env 指定时则直接报错列出合法值。落点：**校验是 fallback 链的触发器，宁可严格**。
+655:> 答：`VLLM_ATTENTION_BACKEND=FLASHINFER` 显式指定 → `get_attn_backend_cls` 命中 selected_backend 分支直接返回 FlashInfer（cuda.py:310-313）→ `Attention.__init__` 里 `validate_head_size` raise（flashinfer.py:156-166，96 ∉ {64,128,256}）。**显式指定不做 fallback，直接失败**；若不指定走默认链：H100 SM90 → 先查 FA（支持 96）→ 选中 FA。fallback 到 FlexAttention 只发生在**默认路径**上 FA 校验失败时（cuda.py:370-388）。区分"显式指定即硬约束"与"默认链软降级"是这道题的考点。
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -460,9 +460,9 @@
+ TILE_SIZE 启发式（:139-147）：`min(2048, next_pow2(H_kv·d))`，SM<9 时压到 512——**Triton 后端用自己这份实现而不用 CUDA op**，就是为了让无 flash-attn 二进制的环境也能跑通（写侧逻辑两家等价，§2.7 表末行）。
+ 
+ ### 4.4 selector + platform：选择链的最后一块
+ 
+-selector.py:166-213 的 `@cache` 有个注释值得注意：env 值在 `get_attn_backend` 里读、显式传参给私有函数（:150-153）——避免 lru_cache 缓存住过期的 env 快照。cuda.py:240-399 走读时拿张纸把 §2.3 的决策树抄一遍，注意三个 `logger.info_once`：选 FlashInfer(HND) / Triton / FlexAttention fallback 都会打日志——**实验 2 的"确认选择"就用 grep 这些日志**。
++selector.py:166-213 的 `@cache` 有个注释值得注意：env 值在 `get_attn_backend` 里读、显式传参给私有函数（:150-153）——避免 lru_cache 缓存住过期的 env 快照。cuda.py:240-399 走读时拿张纸把 §2.3 的决策树抄一遍，注意六处 `logger.info_once`（FlashInfer :312/:337、Triton :322/:361、Flash Attention :325/:366，显式分支与默认分支各三处）——**实验 2 的"确认选择"就用 grep 这些日志**。
+ 
+ ### 4.5 调用链速查表（今日总账）
+ 
+ | 时机 | 调用链 | 行号锚点 |
+
+[0m
+发现 §3.1 访存账有一处算术错误（漏乘层数，导致占比结论错误），需要修正正文与 SVG 3 中的数字：
+[0m→ [0mRead week3/day17_attention_backend_abstraction.md[90m [limit=22, offset=406][0m
+[0m→ [0mRead week3/day17_attention_backend_abstraction.md[90m [limit=22, offset=383][0m
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -379,16 +379,16 @@
+ ### 3.1 decode gather 的访存账：把 Day 2 的下界落到 kernel 层（图 3 右）
+ 
+ Day 2 背过：decode 单 token 理论时延下界 ≈ 每 step 必读字节数 ÷ HBM 带宽。今天把分子拆到 attention kernel（Qwen3-8B，BF16，B=16，H_kv=8，d=128）：
+ 
+-| 每 step 每层必读 | 公式 | 量级（seq=4K、batch=32） |
++| 每 step 必读 | 公式 | 量级（Qwen3-8B） |
+ |---|---|---|
+-| KV gather（K+V） | `2 · Σseq_len · H_kv · d · dtype` | 2×32×4096×8×128×2B ≈ **537 MB** |
+-| Q / O | `batch · H_q · d · 2 · dtype` | 32×32×128×2×2B ≈ 0.5 MB（可忽略） |
+-| block_table | `Σseq_len ÷ B × 4B` | 32×256×4B = 32 KB（可忽略） |
+-| 权重（non-attention 层） | 参数量 × dtype | 16.4 GB（Day 2 已算，占绝对大头） |
++| KV gather（K+V，**全部 36 层**） | `L · 2 · Σseq_len · H_kv · d · dtype`（= Σseq × 144 KiB，Day 15 每 token 全层） | 每**层** 537 MB @ batch=32/seq=4K → ×36 层 ≈ **19.3 GB** |
++| Q / O | `batch · H_q · d · 2 · dtype` × 层数 | ≈ 19 MB（可忽略） |
++| block_table | `Σseq_len ÷ B × 4B` × 层数 | ≈ 1.2 MB（可忽略） |
++| 权重（每 step 全读，batch 共享） | 参数量 × dtype | 16.4 GB（Day 2 已算） |
+ 
+-三个结论：① **attention gather 本身在权重面前是小头**（537 MB vs 16.4 GB ≈ 3%），所以"换更快的 attention kernel"对端到端 TPOT 的收益有上限——面试时能报出这个 3% 就是数字敏感度；② 但 attention 是**随 batch×seq 二次增长的唯一项**，长上下文大 batch 下权重项被摊薄、KV 项占比飙升（seq=32K、batch=32 时 KV ≈ 4.3 GB/step，占比 ~21%），这就是 FlashInfer/FA3 在长上下文 benchmark 拉开差距的地方（实验 2 会看到）；③ **间接寻址的代价不在字节数，在访存模式**——非连续 gather 的有效带宽低于顺序读（L2/TLB miss、burst 断裂），这正是 §2.7 说"块内 4 KiB 连续是甜点"的原因。ncu 里看 `dram__bytes_read` 与 kernel 时长算实际带宽，对照 HBM 峰值就是这行的实证（实验 3）。
++三个结论（**先把账算对，再说直觉**——最常见的错点是漏乘层数）：① KV gather 占比 = `144 KiB × Σseq ÷ 16.4 GB`，**单请求 seq=4K 时 ≈ 3%**（Day 2"参数/带宽"下界公式这时成立）；但它是**随 batch×seq 线性增长的唯一大项**——batch=32/seq=4K 时 KV ≈ 19.3 GB、与权重同量级（占比 ~54%），seq=32K/batch=32 时 ≈ 154 GB、KV 绝对主导（TPOT 下界 ≈ 46 ms）。**"attention 是小头"只在 batch 小时成立**，面试报出 3% → 54% 这条随 batch 翻转的曲线，才是数字敏感度；② 这也解释了为什么长上下文 + 大 batch 是 FA3/FlashInfer 拉开差距的战场（实验 2 会看到），以及为什么 decode 要靠 continuous batching 摊薄权重（Day 5 吞吐曲线的机制层）；③ **间接寻址的代价不在字节数，在访存模式**——非连续 gather 的有效带宽低于顺序读（L2/TLB miss、burst 断裂），这正是 §2.7 说"块内 4 KiB 连续是甜点"的原因。ncu 里看 `dram__bytes_read` 与 kernel 时长算实际带宽，对照 HBM 峰值就是这行的实证（实验 3）。
+ 
+ ### 3.2 cascade 的收益模型
+ 
+ N 个请求共享长 L 的前缀（如同一系统提示词 + few-shot）、各自 suffix 均长 S：
+
+[0m
+[0m$ [0mgrep -n "T1\*\*" /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md | head -3; sed -n '651,656p' /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+651:**T1**：§3.4 题 1：KV gather 字节数与理论时延？
+**T1**：§3.4 题 1：KV gather 字节数与理论时延？
+> 答：每层 `2×16×8192×8×128×2B = 537 MB`？不对——先乘层数：**每层 33.6 MB，36 层共 1.21 GB**（每层 2×8192×8×128×2 = 33.55 MB，×16 请求 = 537 MB？注意公式是 `2·Σseq·H_kv·d·dtype` 已含 batch：Σseq=16×8192=131072，2×131072×8×128×2B = 537 MB **每层**，×36 层 ≈ **19.3 GB**）。只算 KV 项的时延下界 = 19.3 GB ÷ 3.35 TB/s ≈ **5.8 ms/step**（TPOT ≥ 5.8 ms）——对照实验：这个数加上权重的 16.4 GB（≈4.9 ms）就是 Day 2 公式在 16×8K 场景的展开：总 ≈ 35.7 GB ≈ 10.7 ms。**先算每层、再乘层数**是这道题最常见的错点。
+
+**T2**：§3.4 题 2：FlashInfer + head_dim=96 的完整链路？
+> 答：`VLLM_ATTENTION_BACKEND=FLASHINFER` 显式指定 → `get_attn_backend_cls` 命中 selected_backend 分支直接返回 FlashInfer（cuda.py:310-313）→ `Attention.__init__` 里 `validate_head_size` raise（flashinfer.py:156-166，96 ∉ {64,128,256}）。**显式指定不做 fallback，直接失败**；若不指定走默认链：H100 SM90 → 先查 FA（支持 96）→ 选中 FA。fallback 到 FlexAttention 只发生在**默认路径**上 FA 校验失败时（cuda.py:370-388）。区分"显式指定即硬约束"与"默认链软降级"是这道题的考点。
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -648,9 +648,9 @@
+ 
+ ## 8. 今日自测题（先做，再展开答案）
+ 
+ **T1**：§3.4 题 1：KV gather 字节数与理论时延？
+-> 答：每层 `2×16×8192×8×128×2B = 537 MB`？不对——先乘层数：**每层 33.6 MB，36 层共 1.21 GB**（每层 2×8192×8×128×2 = 33.55 MB，×16 请求 = 537 MB？注意公式是 `2·Σseq·H_kv·d·dtype` 已含 batch：Σseq=16×8192=131072，2×131072×8×128×2B = 537 MB **每层**，×36 层 ≈ **19.3 GB**）。只算 KV 项的时延下界 = 19.3 GB ÷ 3.35 TB/s ≈ **5.8 ms/step**（TPOT ≥ 5.8 ms）——对照实验：这个数加上权重的 16.4 GB（≈4.9 ms）就是 Day 2 公式在 16×8K 场景的展开：总 ≈ 35.7 GB ≈ 10.7 ms。**先算每层、再乘层数**是这道题最常见的错点。
++> 答：Σseq = 16×8192 = 131,072 token；每 token 每层 KV = 2×8×128×2B = 4 KiB（Day 2/15 口径）；每层 = 131072×4 KiB ≈ 537 MB；**×36 层 ≈ 19.3 GB**（最容易漏的就是乘层数——公式 `L·2·Σseq·H_kv·d·dtype` 的 L）。只算 KV 项的时延下界 = 19.3 GB ÷ 3.35 TB/s ≈ **5.8 ms/step**（TPOT ≥ 5.8 ms）。对照：加上权重 16.4 GB（≈4.9 ms）就是 Day 2 公式在 16×8K 场景的完整展开：总 ≈ 35.7 GB ≈ 10.7 ms——此时 KV:权重 ≈ 54:46，**已经过了"权重主导"的临界点**（§3.1 的翻转曲线）。
+ 
+ **T2**：§3.4 题 2：FlashInfer + head_dim=96 的完整链路？
+ > 答：`VLLM_ATTENTION_BACKEND=FLASHINFER` 显式指定 → `get_attn_backend_cls` 命中 selected_backend 分支直接返回 FlashInfer（cuda.py:310-313）→ `Attention.__init__` 里 `validate_head_size` raise（flashinfer.py:156-166，96 ∉ {64,128,256}）。**显式指定不做 fallback，直接失败**；若不指定走默认链：H100 SM90 → 先查 FA（支持 96）→ 选中 FA。fallback 到 FlexAttention 只发生在**默认路径**上 FA 校验失败时（cuda.py:370-388）。区分"显式指定即硬约束"与"默认链软降级"是这道题的考点。
+ 
+
+[0m
+[0m$ [0mgrep -n "3%\|21%\|4.3 GB\|0.54 GB" /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md /mnt/workspace/aiinfra/vllm/week3/assets/day17_paged_gather.svg
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md:390:三个结论（**先把账算对，再说直觉**——最常见的错点是漏乘层数）：① KV gather 占比 = `144 KiB × Σseq ÷ 16.4 GB`，**单请求 seq=4K 时 ≈ 3%**（Day 2"参数/带宽"下界公式这时成立）；但它是**随 batch×seq 线性增长的唯一大项**——batch=32/seq=4K 时 KV ≈ 19.3 GB、与权重同量级（占比 ~54%），seq=32K/batch=32 时 ≈ 154 GB、KV 绝对主导（TPOT 下界 ≈ 46 ms）。**"attention 是小头"只在 batch 小时成立**，面试报出 3% → 54% 这条随 batch 翻转的曲线，才是数字敏感度；② 这也解释了为什么长上下文 + 大 batch 是 FA3/FlashInfer 拉开差距的战场（实验 2 会看到），以及为什么 decode 要靠 continuous batching 摊薄权重（Day 5 吞吐曲线的机制层）；③ **间接寻址的代价不在字节数，在访存模式**——非连续 gather 的有效带宽低于顺序读（L2/TLB miss、burst 断裂），这正是 §2.7 说"块内 4 KiB 连续是甜点"的原因。ncu 里看 `dram__bytes_read` 与 kernel 时长算实际带宽，对照 HBM 峰值就是这行的实证（实验 3）。
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md:402:代入：客服场景 L=4K、S=50、N=32 → 普通读 32×4050=129.6K unit，cascade 读 4K+1.6K=5.6K unit，**KV 读取降到 4.3%**——配合 §2.8 的阈值（≥256、≥8），这就是 cache-aware routing（W5 Day 34）能把共享前缀请求聚到同实例的量化理由。注意 CTA 模型（§2.8 ③）：请求多到 FlashDecoding 本身已铺满 SM 时，cascade 的收益被并行度差异吃掉——**带宽省了、wave 数变多，反而慢**，这是"优化要看两级资源"（带宽 + SM）的标准案例。
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md:582:观察点（填进 §9 产出③ 的表）：① 三家日志里的 `Using Flash Attention/Triton/FlashInfer backend on V1 engine`（显式分支 cuda.py:312/:322/:325，默认分支 :337/:361/:366）确认 env 生效；② 短上下文 decode 为主时三家差距通常 < 5%（§3.1 的 3% 论证）；③ 长上下文 + 大 batch 时差距拉大（KV gather 占比上升 + FA3/FlashInfer 的 split-kv 调度更优）；④ FA3（H100）注意日志里的 AOT scheduler 与 `VLLM_FLASH_ATTN_MAX_NUM_SPLITS_FOR_CUDA_GRAPH`。⚠️ 不确定处（Blackwell 上 FlashInfer 需 HND、4090 无 FA3）**在表中标注卡型**，别把单卡结论说成普适。
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md:646:- paged gather kernel 的四件套：**查表二步走、块内 4KiB 连续、online softmax、KV split**；访存账上 attention KV 只占端到端的小头（4K×32 路约 3%）但随 batch×seq 增长最快——长上下文是后端差距的主战场。
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md:696:> 一句话结论模板：在我的卡上，短上下文差距 __%（验证 §3.1 的"attention 只占 3%"），长上下文差距拉大到 __%，主因是 __（KV gather 占比 / split-kv 调度 / HND 布局）。
+/mnt/workspace/aiinfra/vllm/week3/assets/day17_paged_gather.svg:90:  <text x="686" y="234" font-size="9.2" fill="#334155">seq=4K, batch=32：KV ≈ 0.54 GB/step vs 权重 16.4 GB → 仅 ~3%</text>
+/mnt/workspace/aiinfra/vllm/week3/assets/day17_paged_gather.svg:91:  <text x="686" y="250" font-size="9.2" fill="#334155">seq=32K, batch=32：KV ≈ 4.3 GB/step → 占比升至 ~21%（唯一随 batch×seq 增长的项）</text>
+/mnt/workspace/aiinfra/vllm/week3/assets/day17_paged_gather.svg:117:  <text x="686" y="590" font-size="9.2" fill="#334155" font-family="Consolas, 'Courier New', monospace">普通 N×(L+S) → cascade L + N×S；L=4K, S=50, N=32 → 读取降到 4.3%</text>
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -578,9 +578,9 @@
+   pkill -f "vllm serve"; sleep 20
+ done
+ ```
+ 
+-观察点（填进 §9 产出③ 的表）：① 三家日志里的 `Using Flash Attention/Triton/FlashInfer backend on V1 engine`（显式分支 cuda.py:312/:322/:325，默认分支 :337/:361/:366）确认 env 生效；② 短上下文 decode 为主时三家差距通常 < 5%（§3.1 的 3% 论证）；③ 长上下文 + 大 batch 时差距拉大（KV gather 占比上升 + FA3/FlashInfer 的 split-kv 调度更优）；④ FA3（H100）注意日志里的 AOT scheduler 与 `VLLM_FLASH_ATTN_MAX_NUM_SPLITS_FOR_CUDA_GRAPH`。⚠️ 不确定处（Blackwell 上 FlashInfer 需 HND、4090 无 FA3）**在表中标注卡型**，别把单卡结论说成普适。
++观察点（填进 §9 产出③ 的表）：① 三家日志里的 `Using Flash Attention/Triton/FlashInfer backend on V1 engine`（显式分支 cuda.py:312/:322/:325，默认分支 :337/:361/:366）确认 env 生效；② 短上下文（输入 ~200 tok）decode 为主时 KV 占比低（§3.1：单请求 3% 量级）、权重主导，三家差距通常 < 5%；③ 长上下文 + 大 batch 时 KV 占比翻转（batch=32/seq=4K 已达 ~54%），差距拉大（KV gather 占比上升 + FA3/FlashInfer 的 split-kv 调度更优）；④ FA3（H100）注意日志里的 AOT scheduler 与 `VLLM_FLASH_ATTN_MAX_NUM_SPLITS_FOR_CUDA_GRAPH`。⚠️ 不确定处（Blackwell 上 FlashInfer 需 HND、4090 无 FA3）**在表中标注卡型**，别把单卡结论说成普适。
+ 
+ ### 实验 3（GPU，可选，20 min）：ncu 看 gather kernel 的真实带宽（Day 3 回炉）
+ 
+ ```bash
+
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -642,9 +642,9 @@
+ 
+ - Attention 后端抽象 = **五层各司其职**：Attention 层（门面，forward 签名只有 q/k/v）→ selector（三级优先）→ platform（决策树，**唯一认识硬件的地方**）→ Backend（静态能力：形状/dtype/head_size/CG 等级）→ Impl（每层：写 KV + 算 attention）+ Builder（每 group：batch 级翻译）；模型代码、编译器、调度器三者零感知。
+ - **两表一公式贯穿读写两侧**：`slot = 块号×B + 块内偏移`——写侧 slot_mapping 逐 token 预计算（scatter 进池），读侧 block_table 逐 tile kernel 内现查（gather 出池）；KV 数据永不搬移，这就是 PagedAttention 的执行层实现。
+ - v0.11.0 的 FA 用**单一 varlen+paged 调用**统一 prefill/decode/前缀历史（cu_seqlens_q + seqused_k + block_table + causal 四参数表达一切）；Triton 同理（unified kernel），FlashInfer 仍是两段式（reorder + 两个 wrapper）——接口不约束内部实现。
+-- paged gather kernel 的四件套：**查表二步走、块内 4KiB 连续、online softmax、KV split**；访存账上 attention KV 只占端到端的小头（4K×32 路约 3%）但随 batch×seq 增长最快——长上下文是后端差距的主战场。
++- paged gather kernel 的四件套：**查表二步走、块内 4KiB 连续、online softmax、KV split**；访存账上 KV gather 占比随 batch×seq 线性增长（单请求 seq=4K ≈ 3% → batch=32/seq=4K ≈ 54% → seq=32K 主导），过了临界点后 attention 就是 TPOT 的大头——长上下文大 batch 是后端差距的主战场。
+ - **《新硬件 backend 接入清单》六步**（Backend→Impl→Builder→Platform→特性传导→测试）就是 W6 项目 A 的路线图：`get_kv_cache_shape` 是布局话语权，`cudagraph_support` 决定 Day 18 的 CG 模式上限，vllm-ascend 是这套接口的现成参照。
+ 
+ ## 8. 今日自测题（先做，再展开答案）
+ 
+
+[0m
+[0m← [0mEdit week3/day17_attention_backend_abstraction.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
++++ /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+@@ -692,9 +692,9 @@
+ | FLASH_ATTN | ___ | ___ | ___ | ___ | ___ | Using Flash Attention backend |
+ | TRITON_ATTN | ___ | ___ | ___ | ___ | ___ | Using Triton backend |
+ | FLASHINFER | ___ | ___ | ___ | ___ | ___ | Using FlashInfer backend |
+ 
+-> 一句话结论模板：在我的卡上，短上下文差距 __%（验证 §3.1 的"attention 只占 3%"），长上下文差距拉大到 __%，主因是 __（KV gather 占比 / split-kv 调度 / HND 布局）。
++> 一句话结论模板：在我的卡上，短上下文差距 __%（此时权重主导，验证 §3.1 的低占比段），长上下文差距拉大到 __%（KV 占比翻转，batch=32/seq=4K 时 ~54%），主因是 __（KV gather 占比 / split-kv 调度 / HND 布局）。
+ 
+ ## 10. 明日预告（Day 18 · CUDA Graph）
+ 
+ 今天两次路过了明天的大门：① `cudagraph_support` 的四级枚举（ALWAYS/UNIFORM_BATCH/UNIFORM_SINGLE_TOKEN_DECODE/NEVER）——明天看它如何在 `initialize_cudagraph_capture`（gpu_model_runner.py:3611）里把 FULL 一路降级到 FULL_AND_PIECEWISE → FULL_DECODE_ONLY → PIECEWISE；② slot_mapping 的 **-1 padding** 与 FA3 的 `scheduler_metadata`/`max_num_splits` 静态化——为什么 decode 必须用 CUDA Graph（每 step 上百个 kernel launch，CPU 发射开销吃掉 GPU），capture 的 batch size bucket 怎么定，full CG 与 piecewise CG 的取舍在哪。实验用 `-O0/-O1/-O3` 对比 TPOT——今天的 `unified_attention` opaque op 正是 piecewise CG 的分割边界。
+
+[0m
+现在修正 SVG 3 中的访存账数字：
+[0m← [0mEdit week3/assets/day17_paged_gather.svg
+Index: /mnt/workspace/aiinfra/vllm/week3/assets/day17_paged_gather.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/assets/day17_paged_gather.svg
++++ /mnt/workspace/aiinfra/vllm/week3/assets/day17_paged_gather.svg
+@@ -80,17 +80,17 @@
+ <rect x="660" y="90" width="540" height="300" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.2"/>
+ 
+ <text x="676" y="114" font-size="10" font-weight="bold" fill="#9a3412">每 step 每 layer 必读（decode）</text>
+ <rect x="676" y="122" width="508" height="70" rx="6" fill="#ffffff" stroke="#fdba74"/>
+-<text x="686" y="140" font-size="9.6" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">KV gather = 2 · Σseq_len · H_kv · d · dtype  （K 和 V 各一份）</text>
+-<text x="686" y="156" font-size="9.2" fill="#9a3412">batch=16, seq=8K：每层 2×131072×8×128×2B = 537 MB → ×36 层 ≈ 19.3 GB</text>
++<text x="686" y="140" font-size="9.6" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">KV gather = L · 2 · Σseq_len · H_kv · d · dtype  ★别漏乘层数 L</text>
++<text x="686" y="156" font-size="9.2" fill="#9a3412">batch=16, seq=8K：每层 537 MB → ×36 层 ≈ 19.3 GB（= Σseq × 144 KiB，Day 15 口径）</text>
+ <text x="686" y="172" font-size="9.2" fill="#9a3412">只算 KV 项时延下界 = 19.3 GB ÷ 3.35 TB/s ≈ 5.8 ms/step（T1 手算路径）</text>
+ 
+ <rect x="676" y="200" width="508" height="76" rx="6" fill="#ffffff" stroke="#fdba74"/>
+-<text x="686" y="218" font-size="9.6" font-weight="bold" fill="#9a3412">attention KV 在端到端里的占比（关键直觉）</text>
+-<text x="686" y="234" font-size="9.2" fill="#334155">seq=4K, batch=32：KV ≈ 0.54 GB/step vs 权重 16.4 GB → 仅 ~3%</text>
+-<text x="686" y="250" font-size="9.2" fill="#334155">seq=32K, batch=32：KV ≈ 4.3 GB/step → 占比升至 ~21%（唯一随 batch×seq 增长的项）</text>
+-<text x="686" y="266" font-size="8.8" fill="#9a3412">⇒ 「换更快的 attention kernel」对短上下文 TPOT 收益有上限；长上下文才是 FA3/FlashInfer 拉开差距的战场</text>
++<text x="686" y="218" font-size="9.6" font-weight="bold" fill="#9a3412">KV 占比随 batch×seq 线性翻转（关键直觉）</text>
++<text x="686" y="234" font-size="9.2" fill="#334155">单请求 seq=4K：KV ≈ 0.59 GB vs 权重 16.4 GB → ~3%（Day 2 下界公式这时成立）</text>
++<text x="686" y="250" font-size="9.2" fill="#334155">batch=32/seq=4K：KV ≈ 19.3 GB → ~54%（与权重同量级，过了临界点）</text>
++<text x="686" y="266" font-size="8.8" fill="#9a3412">⇒ 「attention 是小头」只在 batch 小时成立；占比 = 144 KiB×Σseq ÷ 16.4 GB，报出翻转曲线才是数字敏感度</text>
+ 
+ <rect x="676" y="284" width="508" height="94" rx="6" fill="#ffffff" stroke="#fdba74"/>
+ <text x="686" y="302" font-size="9.6" font-weight="bold" fill="#9a3412">实际带宽怎么测（实验 3，Day 3 工具回炉）</text>
+ <text x="686" y="318" font-size="9.2" fill="#334155">nsys 找 kernel 名 → ncu --set roofline -k regex:flash 采样一次</text>
+
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week3 && grep -n "^#\|^## " day17_attention_backend_abstraction.md | head -30 && echo === && grep -c '```' day17_attention_backend_abstraction.md && grep -n "assets/day17" day17_attention_backend_abstraction.md && ls -la assets/ | grep day17 && wc -l day17_attention_backend_abstraction.md assets/day17*.svg
+1:# Day 17 · Attention 后端抽象——插拔机制、paged gather 与新硬件接入清单
+14:## 0. 今日学习目标
+29:## 1. 核心概念速览
+58:## 2. 原理深入讲解
+60:### 2.1 回顾与今日地图：从"账本"到"执行"
+73:### 2.2 五层抽象：插拔是怎么发生的（图 1）
+148:### 2.3 后端选择：从 `VLLM_ATTENTION_BACKEND` 到最终类名
+179:### 2.4 后端决定物理布局：`get_kv_cache_shape` 与 stride_order（Day 15 的兑现）
+184:# gpu_model_runner.py:3806-3838（节选）
+212:### 2.5 metadata 流水线：CommonAttentionMetadata → builder.build → forward context（图 2 上）
+245:### 2.6 `FlashAttentionImpl.forward` 全景：写 KV + 一次统一调用（图 2 下）
+303:### 2.7 paged gather kernel：非连续 block 怎么读（图 3，今日核心）
+310:# 每个 program 处理一个 (batch, q_head, kv_split)：grid=(batch, head_num, NUM_KV_SPLITS)
+351:### 2.8 cascade attention：共享前缀的带宽优化（Day 16 的直接延伸）
+366:### 2.9 组合的艺术：动态子类 backend（元编程层）
+377:## 3. 性能模型与复杂度：今日的数学
+379:### 3.1 decode gather 的访存账：把 Day 2 的下界落到 kernel 层（图 3 右）
+392:### 3.2 cascade 的收益模型
+404:### 3.3 block_size 的 gather 视角：三重身份之三的最终版
+416:### 3.4 练手对账题（答案见 §8）
+424:## 4. 关键代码走读（v0.11.0 逐行核对版）
+428:### 4.1 `abstract.py`：接口即文档（新硬件接入的第一张契约）
+442:### 4.2 `flash_attn.py`：六步 forward 的两处必读注释
+446:### 4.3 `triton_reshape_and_cache_flash.py`：写侧 scatter 的最小实现
+462:### 4.4 selector + platform：选择链的最后一块
+466:### 4.5 调用链速查表（今日总账）
+476:### 4.6 写作业：新硬件 backend 接入清单（v0.11.0 接口实测版）
+513:## 5. 动手实验（约 60~90 分钟）
+515:### 实验 0（必做，15 min；无 GPU）：决策树 dry-run + 目录寻宝
+531:### 实验 1（必做，30 min；无 GPU）：mini paged gather 仿真器——写侧/读侧镜像验证
+===
+30
+9:> **配套材料**：`week3/README.md` Day 17 节；三张 SVG：`assets/day17_backend_abstraction_layers.svg`（今日主图：五层插拔架构 + 目录迁移对照 + 选择决策树）、`assets/day17_forward_dataflow.svg`（一次 forward 全链路：metadata 构建 → forward context → 写 KV/读 KV 双路）、`assets/day17_paged_gather.svg`（非连续 gather 剖析：查表二步走 + online softmax + 访存账——产出物的底稿）
+75:![Attention 后端五层插拔架构](assets/day17_backend_abstraction_layers.svg)
+214:![一次 attention forward 的数据流](assets/day17_forward_dataflow.svg)
+305:![paged gather 读取非连续 block](assets/day17_paged_gather.svg)
+-rw-r--r-- 1 root root 17340 Oct  2 07:06 day17_backend_abstraction_layers.svg
+-rw-r--r-- 1 root root 19027 Oct  2 07:07 day17_forward_dataflow.svg
+-rw-r--r-- 1 root root 14830 Oct  2 07:10 day17_paged_gather.svg
+   700 day17_attention_backend_abstraction.md
+   172 assets/day17_backend_abstraction_layers.svg
+   200 assets/day17_forward_dataflow.svg
+   129 assets/day17_paged_gather.svg
+  1201 total
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week3 && grep -n "^## [6-9]\|^## 10" day17_attention_backend_abstraction.md; python3 -c "
+import xml.etree.ElementTree as ET
+for f in ['assets/day17_backend_abstraction_layers.svg','assets/day17_forward_dataflow.svg','assets/day17_paged_gather.svg']:
+    ET.parse(f); print(f, 'XML OK')
+"; python3 -m py_compile /tmp/opencode/check.py 2>/dev/null; python3 - <<'EOF'
+import re
+src = open('day17_attention_backend_abstraction.md').read()
+# extract python code blocks and syntax-check
+blocks = re.findall(r'```python\n(.*?)```', src, re.S)
+import ast
+ok = 0
+for i, b in enumerate(blocks):
+    try:
+        ast.parse(b); ok += 1
+    except SyntaxError as e:
+        print(f'block {i}: SyntaxError {e}')
+        print('---'); print(b[:400]); print('---')
+print(f'{ok}/{len(blocks)} python blocks parse OK')
+# bare < check (html-ish)
+for m in re.finditer(r'(?<![<\w`])<(?![<=])', src):
+    line = src[:m.start()].count(chr(10))+1
+    ctx = src[max(0,m.start()-30):m.start()+30].replace(chr(10),' ')
+    print('possible bare < at line', line, ':', ctx)
+EOF
+610:## 6. 面试高频问题（含答题骨架）
+641:## 7. 今日总结
+649:## 8. 今日自测题（先做，再展开答案）
+669:## 9. 今日产出物
+698:## 10. 明日预告（Day 18 · CUDA Graph）
+assets/day17_backend_abstraction_layers.svg XML OK
+assets/day17_forward_dataflow.svg XML OK
+assets/day17_paged_gather.svg XML OK
+block 0: SyntaxError positional argument follows keyword argument (<unknown>, line 3)
+---
+self.attn = Attention(                      # ← 模型唯一 import 的 attention 类
+    self.num_heads, self.head_dim, self.scaling,
+    num_kv_heads=self.num_kv_heads, cache_config=cache_config, ...)
+...
+def forward(self, positions, hidden_states):
+    qkv, _ = self.qkv_proj(hidden_states)
+    q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
+    q, k = self.rotary_emb(positions, q, k)
+---
+block 4: SyntaxError positional argument follows keyword argument (<unknown>, line 11)
+---
+common_attn_metadata = CommonAttentionMetadata(
+    query_start_loc=query_start_loc,       # [num_reqs+1] cumsum：每请求 query 起点前缀和
+    query_start_loc_cpu=query_start_loc_cpu,
+    seq_lens=seq_lens,                     # [num_reqs] 每请求总长（含历史 + 本步新增）
+    seq_lens_cpu=seq_lens_cpu,
+    num_computed_tokens_cpu=...,           # [num_reqs] 历史已算 token 数
+    num_reqs=num_reqs, num_actual_tokens=total_num_s
+---
+block 5: SyntaxError invalid syntax (<unknown>, line 1)
+---
+def forward(self, layer, query, key, value, kv_cache, attn_metadata, output, ...):
+    assert output is not None                    # accept_output_buffer=True（:39）
+    if attn_metadata is None:                    # profile run（Day 15 实验 0 的 dummy forward）
+        return output
+
+    # ① encoder 层不碰 KV cache，直接 varlen（:474-481）
+    if attn_type in (ENCODER_ONLY, ENCODER):
+        return self._forwa
+---
+6/9 python blocks parse OK
+possible bare < at line 169 :     否则 FA 可支持 → FLASH_ATTN SM < 8.0           : FLEX_ATTENTI
+possible bare < at line 237 : flash.py:35-37 的 `if slot_idx < 0: return`）。**这行是 Day 18"静态形
+possible bare < at line 318 : AGE_SIZE,         mask=offs_n < split_kv_end, other=0)     k
+possible bare < at line 362 : 这个函数本身就是一份小型性能模型**，值得读注释：① 前缀 < 256 token 不值得（省的带宽太少）；② < 8 
+possible bare < at line 362 :  前缀 < 256 token 不值得（省的带宽太少）；② < 8 个请求不值得；③ 已用 FlashDecoding（
+possible bare < at line 453 : _ptr + token_idx) if slot_idx < 0: return                   
+possible bare < at line 558 : 像！）         if tile_start + j < 40:             gathered.app
+possible bare < at line 582 : 低（§3.1：单请求 3% 量级）、权重主导，三家差距通常 < 5%；③ 长上下文 + 大 batch 时 KV 占比翻
+[0m
+伪代码块的语法告警均为教学节选（与 Day 15 风格一致），裸 `<` 均安全。最后通读关键段落做终检：
+[0m→ [0mRead week3/day17_attention_backend_abstraction.md[90m [limit=75, offset=245][0m
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week3 && grep -n "Day 16" day17_attention_backend_abstraction.md | head -12; echo ===; sed -n '669,700p' day17_attention_backend_abstraction.md
+4:> **今日位置**：Day 15 把 KV 的**元数据层**（块池/双账本/slot_mapping）读完了，Day 16 把**缓存层**（hash 链/COW/命中率）读完了。今天跨过进程边界走进**执行层**：P2 的 GPUModelRunner 每 step 拿到 block table 增量之后，**谁来写 KV、谁来读 KV、怎么读非连续的块**。答案是"Attention 后端"——一套五层抽象（Attention 层 → selector → platform → Backend/Impl/Builder → kernel），让 FlashAttention / FlashInfer / Triton / MLA 全家桶乃至昇腾后端共用同一份模型代码。三条主线：**① 插拔是怎么发生的（模型只见 `Attention(q, k, v)` 一行）；② 一次 forward 里 `slot_mapping`（写侧）与 `block_table`（读侧）的完整生命周期；③ paged gather kernel 的逐行剖析（查表二步走 + online softmax + KV split）**。Day 15 留下的三处伏笔（slot 公式、`get_kv_cache_shape`、block_size 的 gather 粒度）今天全部兑现；产出物《新硬件 backend 接入清单》就是 W6 项目 A（vllm-ascend 贡献）的入场券
+5:> **前置要求**：Day 15（**最重要**：slot = 块号×B+偏移、`[num_blocks,B,H,d]` 张量、`_reshape_kv_cache_tensors` 的 view/permute、block_size 三重身份）、Day 16（block hash 与 ref_cnt 共享——今天的 cascade attention 用 `ref_cnt == num_running` 判公共前缀）、Day 11（chunked prefill：**混合 batch 是常态**这个前提）、Day 2（decode 时延下界 = KV 字节数 ÷ 带宽——今天在 kernel 层兑现）、Day 3（Roofline / ncu：实验 3 回炉）、Day 9（Request 账本组）
+69:| Day 16：`ref_cnt` 共享、`get_num_common_prefix_blocks`（kv_cache_manager.py:332） | §2.8 cascade attention 的公共前缀判定 |
+241:`common_prefix_len` 是 cascade 的开关量：来自 `SchedulerOutput.num_common_prefix_blocks[group]`（output.py:149），而它在 P1 由 `KVCacheManager.get_num_common_prefix_blocks`（kv_cache_manager.py:332-373）算出——**遍历任一 running 请求的块表，`ref_cnt == num_running_requests` 的就是全批公共前缀**。Day 15 的引用计数、Day 16 的共享前缀，在这里接上了今天的执行层。
+351:### 2.8 cascade attention：共享前缀的带宽优化（Day 16 的直接延伸）
+565:跑完后回答三个问题（写进笔记）：① 写侧公式与读侧公式为什么可以相同？（都是"逻辑位置→物理 slot"，只是调用方与频率不同）；② 若 r0、r1 共享前缀块 2（ref_cnt=2，Day 16），gather 时会发生几次对块 2 的读？cascade 打开呢？（N 次 vs 1 次，§3.2）；③ 把 B 改成 8，`pool` 形状、gather 连续段、`reqs` 行宽各怎么变？
+658:> 答：① block_table 行宽 ×2（4K ctx 从 256 列变 512 列，int32 显存与每 step 增量流量翻倍）；② slot_mapping 长度不变（逐 token），但公式中 B 换 8；③ kernel 单次连续段 `B·d·dtype` 从 4 KiB 降到 2 KiB（gather burst 效率降，§3.3）；④ hash/命中粒度减半（前缀 100 tok：6 个满块+余 4 → 12 个满块+余 4，Day 16 的"块粒度截断"浪费减少）。落点：四方拉扯，没有免费午餐——**新硬件按 DMA burst 需求选**。
+663:**T5**：两个请求共享 2K token 前缀（128 块、ref_cnt=2，Day 16 的场景），今天在执行层会发生什么？
+664:> 答：① 调度器算 `get_num_common_prefix_blocks`：公共前缀 128 块（ref_cnt==2 的块，kv_cache_manager.py:332-373）→ `common_prefix_len = 2048 > 0` → builder 置 `use_cascade=True`；② FA 走 cascade：前缀 2048 token 用 block_table[:1] 只读**一次**（batch=1），两请求各自 suffix 再算，`merge_attn_states` 按 LSE 合并（flash_attn.py:741-794）；③ 无 cascade 时两请求各读一遍前缀（§3.2 的 2×→1×）。这就是 Day 16"共享"在 TPOT 上的变现。
+===
+## 9. 今日产出物
+
+**① 笔记《Attention 后端抽象分层图》**（闭卷重画，图 1 是底稿）：
+
+> 五层：Attention（layer.py:74，forward 只有 q/k/v）→ selector（:140 三级优先）→ platform（cuda.py:240 决策树）
+> 三类对象：Backend（静态能力）/ Impl（每层 forward = 写 KV + 算 attention）/ Builder（每 group build 一次）
+> 两张表：slot_mapping（写侧，scatter）/ block_table（读侧，gather）；一公式：slot = 块号×B + 偏移
+> 一布局：get_kv_cache_shape（FA (2,N,B,H,D) vs Triton/FlashInfer (N,2,B,H,D)）+ NHD/HND stride_order
+> 一调用：flash_attn_varlen_func(cu_seqlens_q, seqused_k, block_table, causal) 统一 prefill/decode
+
+**② 《新硬件 backend 接入清单》一页**（§4.6 的六步表格版，W6 Day 36 当 checklist 用）：
+
+> 1. Backend 子类：五个静态方法 + get_kv_cache_shape（布局话语权）+ dtype/head_size 校验（fallback 触发器）
+> 2. Impl 子类：forward 先写后读、profile run 早退、kv_sharing 跳写、output buffer 支持
+> 3. Builder 子类：build(common_prefix_len, common) + cudagraph_support（CG 上限）+ 持久 buffer
+> 4. Platform：get_attn_backend_cls 决策树 + block_size 默认值 + opaque_attention_op
+> 5. 特性传导：CG 降级链 / FlexAttention fallback / 不支持的参数要在 __init__ raise
+> 6. 测试：tests/v1/attention golden + selection；基线先量化（Day 37 纪律）
+
+**③ 三后端对比实验数据表**（实验 2，填你的数字）：
+
+| 后端 | 卡型/FA 版本 | 短上下文 TPOT p99 | 32K TPOT p99 | 32K TTFT p99 | 吞吐 | 日志确认行 |
+|---|---|---|---|---|---|---|
+| FLASH_ATTN | ___ | ___ | ___ | ___ | ___ | Using Flash Attention backend |
+| TRITON_ATTN | ___ | ___ | ___ | ___ | ___ | Using Triton backend |
+| FLASHINFER | ___ | ___ | ___ | ___ | ___ | Using FlashInfer backend |
+
+> 一句话结论模板：在我的卡上，短上下文差距 __%（此时权重主导，验证 §3.1 的低占比段），长上下文差距拉大到 __%（KV 占比翻转，batch=32/seq=4K 时 ~54%），主因是 __（KV gather 占比 / split-kv 调度 / HND 布局）。
+
+## 10. 明日预告（Day 18 · CUDA Graph）
+
+今天两次路过了明天的大门：① `cudagraph_support` 的四级枚举（ALWAYS/UNIFORM_BATCH/UNIFORM_SINGLE_TOKEN_DECODE/NEVER）——明天看它如何在 `initialize_cudagraph_capture`（gpu_model_runner.py:3611）里把 FULL 一路降级到 FULL_AND_PIECEWISE → FULL_DECODE_ONLY → PIECEWISE；② slot_mapping 的 **-1 padding** 与 FA3 的 `scheduler_metadata`/`max_num_splits` 静态化——为什么 decode 必须用 CUDA Graph（每 step 上百个 kernel launch，CPU 发射开销吃掉 GPU），capture 的 batch size bucket 怎么定，full CG 与 piecewise CG 的取舍在哪。实验用 `-O0/-O1/-O3` 对比 TPOT——今天的 `unified_attention` opaque op 正是 piecewise CG 的分割边界。
+[0m
+[0m# [0mTodos
+[✓] 撰写 week3/day17_attention_backend_abstraction.md 正文
+[✓] 制作 SVG 1：后端抽象分层架构图
+[✓] 制作 SVG 2：一次 forward 的数据流图
+[✓] 制作 SVG 3：paged gather 非连续访存图
+[✓] 校验文件引用、行号一致性与格式
+[0m
+Day 17 教程已完成并写入。
+
+## 交付文件
+
+| 文件 | 内容 |
+|---|---|
+| `week3/day17_attention_backend_abstraction.md`（700 行） | Day 17 完整教程 |
+| `week3/assets/day17_backend_abstraction_layers.svg` | 五层插拔架构 + 目录迁移对照 + 选择决策树 |
+| `week3/assets/day17_forward_dataflow.svg` | metadata 流水线 + 写 KV/读 KV 双路 + cascade |
+| `week3/assets/day17_paged_gather.svg` | 查表二步走 + online softmax + 访存账 |
+
+## 主要内容
+
+- **严格对应 README Day 17 主题**：插拔接口（五层抽象：Attention → selector → platform → Backend/Impl/Builder）、paged gather kernel 剖析（`triton_decode_attention.py:112-127` 查表二步走逐行讲解）、《新硬件 backend 接入清单》（六步 + 验收标准，对接昇腾经验与 W6 项目 A）
+- **源码逐行核对**：下载 vLLM v0.11.0 tarball 核对了全部行号引用。发现并纠正了 week3/README.md 四处过时说法（后端已迁至 `vllm/v1/attention/backends/`、`registry.py` 不存在、无 `PREFILL_ONLY`、FA 已是单一统一调用），按 Day 15 的版本口径风格标注
+- **衔接前天**：兑现 Day 15 三处伏笔（slot 公式、`get_kv_cache_shape`、block_size gather 粒度）；cascade attention 接上 Day 16 的 `ref_cnt` 共享；预告 Day 18（`cudagraph_support` 降级链）
+- **完整结构**：学习目标 / 概念速览 / 原理（9 小节）/ 性能模型（含访存账 3%→54% 翻转曲线）/ 代码走读 / 4 个实验（2 个无 GPU）/ 9 道面试题 / 自测题 / 3 项产出物 / 明日预告

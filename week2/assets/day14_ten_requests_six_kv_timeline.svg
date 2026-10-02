@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 870" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="t14b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <pattern id="wait14" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+      <rect width="7" height="7" fill="#f1f5f9"/><line x1="0" y1="0" x2="0" y2="7" stroke="#cbd5e1" stroke-width="2.5"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="870" fill="#ffffff"/>
+  <text x="620" y="24" text-anchor="middle" font-size="18" font-weight="bold" fill="#0f172a">自测推演：10 个请求、KV 只够 6 个（README Day 14.2）</text>
+  <text x="620" y="42" text-anchor="middle" font-size="10.5" fill="#64748b">R1..R10 同时到达 · prompt 8192 / output 512 · max_num_batched_tokens 16384 · max_num_seqs 64 · KV 池 3264 块（block 16）· 数字为 day12 仿真器换参复跑实测</text>
+
+  <!-- setting card -->
+  <rect x="40" y="54" width="700" height="62" rx="6" fill="#fffbeb" stroke="#f59e0b"/>
+  <text x="390" y="72" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#78350f">三行手算（推演前必做）</text>
+  <text x="390" y="87" text-anchor="middle" font-size="8.8" fill="#78350f">每请求 prompt = 8192 tok = 512 块 · 满上下文 = 8192+512 = 8704 tok = 544 块</text>
+  <text x="390" y="100" text-anchor="middle" font-size="8.8" fill="#78350f">KV 池 = 6 × 544 = 3264 块（"恰好 6 个满上下文"，零冗余）· budget = 2 × 8192（每步恰收 2 个整段 prefill）</text>
+  <text x="390" y="113" text-anchor="middle" font-size="8.8" fill="#78350f">结论先行：预算够 ≠ KV 够——第 4 步起瓶颈从 budget 切换为 KV，系统进入"6 路 decode + 4 路干等"</text>
+
+  <!-- legend -->
+  <rect x="770" y="54" width="430" height="62" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="786" y="68" width="26" height="10" fill="#3b82f6"/><text x="818" y="77" font-size="8.6" fill="#334155">prefill（整段 / chunk / 残段）</text>
+  <line x1="950" y1="73" x2="980" y2="73" stroke="#10b981" stroke-width="3"/><text x="986" y="77" font-size="8.6" fill="#334155">decode（每步 +1）</text>
+  <rect x="786" y="88" width="26" height="10" fill="url(#wait14)" stroke="#cbd5e1"/><text x="818" y="97" font-size="8.6" fill="#334155">waiting（每步队首尝试、每步失败）</text>
+  <path d="M 950 84 L 955 92 L 945 92 z" fill="#0f172a"/><text x="986" y="97" font-size="8.6" fill="#334155">FINISHED_LENGTH_CAPPED</text>
+  <path d="M 1120 71 l 5 10 h-10 z" fill="#ef4444"/><text x="1130" y="77" font-size="8.6" fill="#334155">preemption</text>
+  <text x="1120" y="101" font-size="8" fill="#64748b">（变体见底栏）</text>
+
+  <!-- phase headers -->
+  <rect x="40" y="128" width="130" height="40" fill="#ffffff"/>
+  <rect x="170" y="128" width="160" height="40" fill="#eff6ff" stroke="#93c5fd"/><text x="250" y="145" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">入场期</text><text x="250" y="159" text-anchor="middle" font-size="8.4" fill="#1e3a8a">step 1~3（budget 主导）</text>
+  <rect x="330" y="128" width="310" height="40" fill="#f0fdf4" stroke="#6ee7b7"/><text x="485" y="145" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">6 路 decode 期</text><text x="485" y="159" text-anchor="middle" font-size="8.4" fill="#065f46">step 4~511（KV 主导，R7~R10 干等）</text>
+  <rect x="640" y="128" width="160" height="40" fill="#fefce8" stroke="#fde047"/><text x="720" y="145" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#713f12">交接期</text><text x="720" y="159" text-anchor="middle" font-size="8.4" fill="#713f12">step 512~515（完成 + 补位）</text>
+  <rect x="800" y="128" width="380" height="40" fill="#f0fdf4" stroke="#6ee7b7"/><text x="990" y="145" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">第二波 decode 期</text><text x="990" y="159" text-anchor="middle" font-size="8.4" fill="#065f46">step 516~1026（4 路跑完）</text>
+
+  <!-- rows -->
+  <!-- R1 -->
+  <text x="52" y="186" font-size="9.5" font-weight="bold" fill="#334155">R1</text><text x="80" y="186" font-size="7.8" fill="#94a3b8">入场@1 · 完成@512</text>
+  <rect x="170" y="176" width="53" height="14" fill="#3b82f6"/><text x="196" y="187" text-anchor="middle" font-size="7.4" fill="#ffffff">8192</text>
+  <line x1="223" y1="183" x2="645" y2="183" stroke="#10b981" stroke-width="3"/>
+  <path d="M 645 176 L 650 183 L 645 190 z" fill="#0f172a"/>
+  <!-- R2 -->
+  <text x="52" y="210" font-size="9.5" font-weight="bold" fill="#334155">R2</text><text x="80" y="210" font-size="7.8" fill="#94a3b8">入场@1 · 完成@512</text>
+  <rect x="170" y="200" width="53" height="14" fill="#3b82f6"/><text x="196" y="211" text-anchor="middle" font-size="7.4" fill="#ffffff">8192</text>
+  <line x1="223" y1="207" x2="645" y2="207" stroke="#10b981" stroke-width="3"/>
+  <path d="M 645 200 L 650 207 L 645 214 z" fill="#0f172a"/>
+  <!-- R3 -->
+  <text x="52" y="234" font-size="9.5" font-weight="bold" fill="#334155">R3</text><text x="80" y="234" font-size="7.8" fill="#94a3b8">入场@2 · 完成@513</text>
+  <rect x="223" y="224" width="53" height="14" fill="#3b82f6"/><text x="249" y="235" text-anchor="middle" font-size="7.4" fill="#ffffff">8192</text>
+  <line x1="276" y1="231" x2="685" y2="231" stroke="#10b981" stroke-width="3"/>
+  <path d="M 685 224 L 690 231 L 685 238 z" fill="#0f172a"/>
+  <!-- R4 -->
+  <text x="52" y="258" font-size="9.5" font-weight="bold" fill="#334155">R4</text><text x="80" y="258" font-size="7.8" fill="#94a3b8">入场@2 · 完成@514</text>
+  <rect x="223" y="248" width="53" height="14" fill="#60a5fa"/><text x="249" y="259" text-anchor="middle" font-size="7.4" fill="#ffffff">8190</text>
+  <line x1="276" y1="255" x2="725" y2="255" stroke="#10b981" stroke-width="3"/>
+  <path d="M 725 248 L 730 255 L 725 262 z" fill="#0f172a"/>
+  <!-- R5 -->
+  <text x="52" y="282" font-size="9.5" font-weight="bold" fill="#334155">R5</text><text x="80" y="282" font-size="7.8" fill="#94a3b8">入场@3 · 完成@514</text>
+  <rect x="276" y="272" width="53" height="14" fill="#3b82f6"/><text x="302" y="283" text-anchor="middle" font-size="7.4" fill="#ffffff">8192</text>
+  <line x1="329" y1="279" x2="725" y2="279" stroke="#10b981" stroke-width="3"/>
+  <path d="M 725 272 L 730 279 L 725 286 z" fill="#0f172a"/>
+  <!-- R6 -->
+  <text x="52" y="306" font-size="9.5" font-weight="bold" fill="#334155">R6</text><text x="80" y="306" font-size="7.8" fill="#94a3b8">入场@3 · 完成@515</text>
+  <rect x="276" y="296" width="53" height="14" fill="#60a5fa"/><text x="302" y="307" text-anchor="middle" font-size="7.4" fill="#ffffff">8187</text>
+  <line x1="329" y1="303" x2="765" y2="303" stroke="#10b981" stroke-width="3"/>
+  <path d="M 765 296 L 770 303 L 765 310 z" fill="#0f172a"/>
+  <!-- R7 -->
+  <text x="52" y="330" font-size="9.5" font-weight="bold" fill="#334155">R7</text><text x="80" y="330" font-size="7.8" fill="#94a3b8">入场@513 · 完成@1024</text>
+  <rect x="170" y="320" width="470" height="14" fill="url(#wait14)" stroke="#cbd5e1"/>
+  <rect x="640" y="320" width="40" height="14" fill="#3b82f6"/>
+  <line x1="680" y1="327" x2="1165" y2="327" stroke="#10b981" stroke-width="3"/>
+  <path d="M 1165 320 L 1170 327 L 1165 334 z" fill="#0f172a"/>
+  <!-- R8 -->
+  <text x="52" y="354" font-size="9.5" font-weight="bold" fill="#334155">R8</text><text x="80" y="354" font-size="7.8" fill="#94a3b8">入场@513 · 完成@1025</text>
+  <rect x="170" y="344" width="470" height="14" fill="url(#wait14)" stroke="#cbd5e1"/>
+  <rect x="640" y="344" width="40" height="14" fill="#60a5fa"/>
+  <line x1="680" y1="351" x2="1170" y2="351" stroke="#10b981" stroke-width="3"/>
+  <path d="M 1170 344 L 1175 351 L 1170 358 z" fill="#0f172a"/>
+  <!-- R9 -->
+  <text x="52" y="378" font-size="9.5" font-weight="bold" fill="#334155">R9</text><text x="80" y="378" font-size="7.8" fill="#94a3b8">入场@514 · 完成@1025</text>
+  <rect x="170" y="368" width="510" height="14" fill="url(#wait14)" stroke="#cbd5e1"/>
+  <rect x="680" y="368" width="40" height="14" fill="#3b82f6"/>
+  <line x1="720" y1="375" x2="1170" y2="375" stroke="#10b981" stroke-width="3"/>
+  <path d="M 1170 368 L 1175 375 L 1170 382 z" fill="#0f172a"/>
+  <!-- R10 -->
+  <text x="52" y="402" font-size="9.5" font-weight="bold" fill="#334155">R10</text><text x="80" y="402" font-size="7.8" fill="#94a3b8">入场@515 · 完成@1026</text>
+  <rect x="170" y="392" width="550" height="14" fill="url(#wait14)" stroke="#cbd5e1"/>
+  <rect x="720" y="392" width="40" height="14" fill="#3b82f6"/>
+  <line x1="760" y1="399" x2="1175" y2="399" stroke="#10b981" stroke-width="3"/>
+  <path d="M 1175 392 L 1180 399 L 1175 406 z" fill="#0f172a"/>
+
+  <!-- phase separators -->
+  <line x1="330" y1="176" x2="330" y2="412" stroke="#e2e8f0" stroke-dasharray="4 3"/>
+  <line x1="640" y1="176" x2="640" y2="412" stroke="#e2e8f0" stroke-dasharray="4 3"/>
+  <line x1="800" y1="176" x2="800" y2="412" stroke="#e2e8f0" stroke-dasharray="4 3"/>
+
+  <!-- callouts -->
+  <rect x="170" y="420" width="610" height="44" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="475" y="436" text-anchor="middle" font-size="8.6" fill="#1e3a8a">step 1：R1+R2 整段 prefill（16384 = budget 恰好用满）· step 2：R3 整段 + <tspan font-weight="bold">R4 残段 8190</tspan> · step 3：R5 整段 + <tspan font-weight="bold">R6 残段 8187</tspan></text>
+  <text x="475" y="450" text-anchor="middle" font-size="8.6" fill="#1e3a8a">残段 = running 的 decode 先扣预算（每路 1~2 token）→ 剩余才给 prefill——README 口径 A/B「两种理解都要会讲」，仿真器 step 日志可直接看到</text>
+
+  <rect x="800" y="420" width="380" height="44" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="990" y="436" text-anchor="middle" font-size="8.6" fill="#991b1b">step 4：R7 首次队首尝试失败（free ≈ 187 &lt; 512）→ :483 break（HOL 保序）</text>
+  <text x="990" y="450" text-anchor="middle" font-size="8.6" fill="#991b1b">step 4~511：每步重试每步失败——queue time 全程累积，num_preemptions = 0</text>
+
+  <rect x="640" y="466" width="380" height="30" rx="4" fill="#fefce8" stroke="#fde047"/>
+  <text x="830" y="480" text-anchor="middle" font-size="8.6" fill="#713f12">step 512~514：R1-R6 依次 FINISHED_LENGTH_CAPPED，每个让出 544 块（hash 保留 → cached）</text>
+  <text x="830" y="491" text-anchor="middle" font-size="8.6" fill="#713f12">step 513：R7/R8 入场（驱逐 R1/R2 缓存块）· R9 @514 · R10 @515</text>
+
+  <!-- metric lanes -->
+  <text x="52" y="530" font-size="10" font-weight="bold" fill="#0f172a">指标联动（推演检查点 ④：全程哪些指标怎么动）</text>
+  <rect x="40" y="538" width="1160" height="104" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <text x="56" y="558" font-size="8.6" font-weight="bold" fill="#334155">Running 数</text>
+  <line x1="170" y1="576" x2="1180" y2="576" stroke="#cbd5e1"/>
+  <path d="M 170 576 L 190 566 L 210 556 L 230 546 L 640 546 L 645 576 L 685 560 L 725 550 L 800 550 L 810 586 L 1175 586" fill="none" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="400" y="542" font-size="7.8" fill="#2563eb">2→4→6（入场期每步 +2）</text>
+  <text x="980" y="601" font-size="7.8" fill="#2563eb">交接期换血后 4 路 → 0</text>
+
+  <text x="56" y="620" font-size="8.6" font-weight="bold" fill="#334155">gpu_cache_usage</text>
+  <line x1="170" y1="634" x2="1180" y2="634" stroke="#cbd5e1"/>
+  <path d="M 170 634 C 240 630 300 622 330 618 C 420 610 560 604 638 600 L 640 600 C 660 618 690 622 730 620 C 780 626 800 624 820 616 C 900 610 1050 612 1175 628" fill="none" stroke="#ea580c" stroke-width="1.8"/>
+  <text x="360" y="597" font-size="7.8" fill="#ea580c">0.31→0.63→0.94（step 3 末，free 187）→ 钉在 ~1.0</text>
+  <text x="700" y="638" font-size="7.8" fill="#ea580c">完成即 free（APC 下变 cached，指标回落）→ 第二波回升</text>
+
+  <text x="56" y="655" font-size="8.6" font-weight="bold" fill="#334155">budget 利用率</text>
+  <line x1="170" y1="668" x2="1180" y2="668" stroke="#cbd5e1"/>
+  <path d="M 170 668 L 170 656 L 330 656 L 330 667 L 640 667 L 640 655 L 800 655 L 800 667 L 1180 667" fill="none" stroke="#7c3aed" stroke-width="1.8"/>
+  <text x="250" y="652" font-size="7.8" fill="#7c3aed">100%（满预算 prefill）</text>
+  <text x="490" y="664" font-size="7.8" fill="#7c3aed">6/16384 = 0.04%</text>
+  <text x="1000" y="664" font-size="7.8" fill="#7c3aed">4/16384 = 0.02%</text>
+
+  <!-- variant panel -->
+  <rect x="40" y="656" width="1160" height="150" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <rect x="56" y="670" width="570" height="124" rx="6" fill="#fef2f2" stroke="#ef4444"/>
+  <text x="341" y="690" text-anchor="middle" font-size="10" font-weight="bold" fill="#991b1b">抢占变体：把 output 从 512 改成 600（6×544 = 3264 装不下 6×550）</text>
+  <text x="70" y="708" font-size="8.6" fill="#7c2d12">① step 514：某 running 请求要第 545 块而池空 → allocate_slots → None</text>
+  <text x="70" y="722" font-size="8.6" fill="#7c2d12">② victim = R6（最新者，ctx 8702 ≈ 544 块；不是触发失败的请求！）→ 六步复位 → waiting 队首，排在 R7 前</text>
+  <text x="70" y="736" font-size="8.6" fill="#7c2d12">③ step 515~600：让路型等待（free − hit ≈ 0），幸存者的增长吃掉它 30 块缓存（544 → 514）</text>
+  <text x="70" y="750" font-size="8.6" fill="#7c2d12">④ step 601：R1/R2 完成后复活——自命中 514 块，重算仅 478 token（≈ 2 块）→ @690 完成</text>
+  <text x="70" y="764" font-size="8.6" fill="#7c2d12">⑤ 全程：总抢占 1 次 · makespan 1202 步 · R6 的 ITL 有一段 ~86 步的长毛刺（客户端只觉得慢，不失败）</text>
+  <text x="70" y="782" font-size="8.6" font-weight="bold" fill="#991b1b">对照 Day 12：形态 A（让路型）+ 缓存被幸存者逐块吃掉（hit 打折）——同一场戏，换个舞台</text>
+
+  <rect x="640" y="670" width="544" height="124" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="912" y="690" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">修复推演：KV FP8（池 ×2 = 6528 块 ≥ 10 × 544）</text>
+  <text x="654" y="708" font-size="8.6" fill="#047857">① R7/R8 @step 4、R9/R10 @step 5 全部入场 → 全程 10 路 decode → makespan 517 步（约 2×）</text>
+  <text x="654" y="722" font-size="8.6" fill="#047857">② 墙钟口径（Day 6 台账 TPOT ≈ 9ms、prefill ρ ≈ 32µs/tok）：主场景 ≈ 6 个满预算步 ×0.52s + 1020 个 decode 步 ×9ms ≈ 12.3s</text>
+  <text x="654" y="736" font-size="8.6" fill="#047857">　 修复后 ≈ 5×0.52s + 512×9ms ≈ 7.2s（1.7×——步数 2× 但 prefill 重步占比变了，墙钟改善打折）</text>
+  <text x="654" y="750" font-size="8.6" fill="#047857">③ 收益集中在尾部：R7 的 TTFT 6.7s → 2.1s（3.2×）——goodput 视角（Day 5）的典型形态</text>
+  <text x="654" y="764" font-size="8.6" fill="#047857">④ 诊断链：ITL 平滑 + num_preemptions=0 + usage≈1.0 + TTFT 尾部爆炸 → KV 容量问题</text>
+  <text x="654" y="782" font-size="8.6" font-weight="bold" fill="#065f46">　→ 旋钮在 KV 侧（FP8 / util↑ / 加卡），budget 与 max_num_seqs 都不是这题的旋钮</text>
+
+  <text x="620" y="838" text-anchor="middle" font-size="9.5" fill="#64748b">一句话：这道题的全部戏剧性来自「池恰好 = 6 × 满上下文」——预算充沛（0.04% 利用率）与 KV 饥饿（usage 1.0）同屏出现；换个池大小，故事就换成抢占或排队</text>
+</svg>

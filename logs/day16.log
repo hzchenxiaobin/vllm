@@ -1,0 +1,123 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "week*/**/*.md"[90m 21 matches[0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/ && ls /mnt/workspace/aiinfra/vllm/week3/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week2/ 2>/dev/null
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+assets
+day15_kv_cache_manager_block_pool.md
+README.md
+assets
+day08_v1_architecture_overview.md
+day09_request_entry_pipeline.md
+day11_chunked_prefill.md
+day12_preemption.md
+day14_request_state_machine_review.md
+README.md
+[0m
+[0m→ [0mRead week3/day15_kv_cache_manager_block_pool.md
+[0m→ [0mRead week3/day15_kv_cache_manager_block_pool.md[90m [offset=591][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/week3/assets/ && ls /mnt/workspace/aiinfra/vllm/week2/assets/ 2>/dev/null
+day15_capacity_handcalc_lru.svg
+day15_request_kv_lifecycle.svg
+day15_three_layer_architecture.svg
+day08_startup_sequence.svg
+day08_step_ipc_timeline.svg
+day08_v1_process_architecture.svg
+day09_request_entry_pipeline.svg
+day09_request_object_anatomy.svg
+day09_ttft_decomposition.svg
+day11_budget_tradeoff.svg
+day11_chunked_prefill_timeline.svg
+day11_unified_scheduling_ledger.svg
+day12_preemption_flow.svg
+day12_preemption_state_machine.svg
+day12_recompute_vs_swap.svg
+day14_request_state_machine.svg
+day14_ten_requests_six_kv_timeline.svg
+day14_week2_one_graph_flow.svg
+[0m
+[0m→ [0mRead week3/README.md
+[0m→ [0mRead week3/assets/day15_request_kv_lifecycle.svg
+现在我来检查一下 vLLM 的源代码，以确认用于 prefix caching 的实际类/方法名。
+[0m
+[0m$ [0mpip show vllm 2>/dev/null | head -5; python -c "import vllm; print(vllm.__file__, vllm.__version__)" 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/vllm 2>/dev/null | head
+(no output)
+[0m
+[0m$ [0mls -a /mnt/workspace/aiinfra/vllm/ && cat /mnt/workspace/aiinfra/vllm/generate_tutorials.sh 2>/dev/null | head -30
+.
+..
+.arts
+build
+build.py
+generate_tutorials.sh
+.git
+.github
+.gitignore
+logs
+.opencode
+prompt.md
+public
+README.md
+static
+.tutorial_progress
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+#!/usr/bin/env bash
+#
+# generate_tutorials.sh — 按天调用 cannbot 生成 vLLM 推理系统教程（Day 1 ~ Day 56）
+#
+# 行为：
+#   - 每次只向 cannbot 发送「一天」的教程生成任务；
+#   - 默认单线程：前一天生成完成（产出 dayNN_*.md）后才发送下一天；
+#     需要加速时可用 JOBS=2 等开启并发；
+#   - 支持断点续跑：已生成的 Day 自动跳过；
+#   - 不重试：某天失败则记录并继续生成下一天，失败的 Day 在结束时汇总，
+#     重新运行本脚本即可补跑；
+#   - 每天之间冷却 COOLDOWN 秒（默认 600，即 10 分钟）：缓解网关限流；
+#   - 模型思考强度 CANNBOT_VARIANT（默认 low）：GLM-5.3 默认思考过长，
+#     复盘类任务会烧 3 万+ reasoning token 撞输出上限（finish=length）导致
+#     空退，low 可避免该失败模式；
+#   - 末尾自动补跑：第一轮结束后，对缺失的 Day 最多再补跑 MAX_PASSES-1 轮
+#     （默认共 3 轮），轮间同样冷却。
+#
+# 用法：
+#   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
+#   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
+#   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
+#   COOLDOWN=600 ./generate_tutorials.sh    # 自定义冷却秒数（默认 600，即 10 分钟）
+#   CANNBOT_VARIANT=medium ./generate_tutorials.sh   # 调整思考强度（默认 low）
+#   MAX_PASSES=5 ./generate_tutorials.sh    # 最多补跑轮数（默认 3）
+#
+set -u
+
+WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$WORKDIR"
+[0m

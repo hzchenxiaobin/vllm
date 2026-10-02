@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 780" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="780" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">一个 decode step 的时间线：CPU / GPU / 进程边界各占多少</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">数量级示意（batch=64 · H100 · Qwen3-8B，对齐 Day 6 实测 TPOT ≈ 7~9 ms）· 精确值用 nsys 实测（Day 19）· 横轴 1 格 = 1 ms</text>
+
+  <!-- ============ 上半部：串行时间线 ============ -->
+  <text x="46" y="72" font-size="12" font-weight="bold" fill="#0f172a">① 串行视角（调度与执行不重叠）</text>
+
+  <!-- 时间轴 -->
+  <line x1="200" y1="66" x2="1100" y2="66" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ar3)"/>
+  <text x="1112" y="70" font-size="9" fill="#64748b">t/ms</text>
+  <g font-size="9" fill="#64748b" text-anchor="middle">
+    <text x="200" y="58">0</text><text x="300" y="58">1</text><text x="400" y="58">2</text><text x="500" y="58">3</text>
+    <text x="600" y="58">4</text><text x="700" y="58">5</text><text x="800" y="58">6</text><text x="900" y="58">7</text>
+    <text x="1000" y="58">8</text><text x="1100" y="58">9</text>
+  </g>
+  <g stroke="#e2e8f0" stroke-width="1">
+    <line x1="300" y1="66" x2="300" y2="322"/><line x1="400" y1="66" x2="400" y2="322"/>
+    <line x1="500" y1="66" x2="500" y2="322"/><line x1="600" y1="66" x2="600" y2="322"/>
+    <line x1="700" y1="66" x2="700" y2="322"/><line x1="800" y1="66" x2="800" y2="322"/>
+    <line x1="900" y1="66" x2="900" y2="322"/><line x1="1000" y1="66" x2="1000" y2="322"/>
+    <line x1="1100" y1="66" x2="1100" y2="322"/>
+  </g>
+
+  <!-- 行标签 -->
+  <text x="46" y="102" font-size="10.5" font-weight="bold" fill="#1e3a8a">P0 前端</text>
+  <text x="46" y="116" font-size="8.5" fill="#64748b">output_handler</text>
+  <text x="46" y="127" font-size="8.5" fill="#64748b">detokenize·SSE</text>
+  <text x="46" y="162" font-size="10.5" font-weight="bold" fill="#92400e">P1 EngineCore</text>
+  <text x="46" y="176" font-size="8.5" fill="#64748b">schedule /</text>
+  <text x="46" y="187" font-size="8.5" fill="#64748b">update_from_output</text>
+  <text x="46" y="222" font-size="10.5" font-weight="bold" fill="#166534">P2 Worker</text>
+  <text x="46" y="236" font-size="8.5" fill="#64748b">组输入 / gather</text>
+  <text x="46" y="282" font-size="10.5" font-weight="bold" fill="#0f172a">GPU</text>
+  <text x="46" y="296" font-size="8.5" fill="#64748b">forward + sample</text>
+  <text x="46" y="307" font-size="8.5" fill="#64748b">（读权重+全部 KV）</text>
+
+  <!-- P1 schedule -->
+  <rect x="200" y="92" width="40" height="28" rx="3" fill="#fbbf24"/>
+  <text x="220" y="110" text-anchor="middle" font-size="8.6" fill="#78350f">schedule 0.4</text>
+  <!-- IPC down -->
+  <line x1="242" y1="122" x2="242" y2="204" stroke="#ea580c" stroke-width="1.6" stroke-dasharray="3 2" marker-end="url(#arO)"/>
+  <text x="250" y="160" font-size="8.2" fill="#c2410c">IPC↓ 0.05（shm 广播 / 直调）</text>
+  <!-- P2 prep -->
+  <rect x="245" y="204" width="55" height="28" rx="3" fill="#4ade80"/>
+  <text x="272" y="222" text-anchor="middle" font-size="8.6" fill="#14532d">prep 0.55</text>
+  <!-- GPU -->
+  <rect x="300" y="262" width="650" height="34" rx="3" fill="#0f172a"/>
+  <text x="625" y="278" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#f1f5f9">forward + sample　6.5 ms（访存 bound：读 16.4 GB 权重 + 全部 KV）</text>
+  <text x="625" y="290" text-anchor="middle" font-size="8.4" fill="#94a3b8">CUDA Graph replay：免逐 kernel 启动开销（Day 18）</text>
+  <!-- P2 gather -->
+  <rect x="950" y="204" width="10" height="28" rx="2" fill="#4ade80"/>
+  <text x="962" y="222" font-size="8.4" fill="#14532d">gather 0.1</text>
+  <!-- IPC up -->
+  <line x1="961" y1="202" x2="961" y2="122" stroke="#16a34a" stroke-width="1.6" stroke-dasharray="3 2" marker-end="url(#arG)"/>
+  <text x="968" y="160" font-size="8.2" fill="#15803d">IPC↑ 0.05</text>
+  <text x="968" y="172" font-size="8.2" fill="#15803d">(rank0)</text>
+  <!-- P1 update -->
+  <rect x="965" y="92" width="35" height="28" rx="3" fill="#fbbf24"/>
+  <text x="982" y="110" text-anchor="middle" font-size="8.4" fill="#78350f">update 0.35</text>
+  <!-- ZMQ to P0 -->
+  <line x1="1003" y1="90" x2="1003" y2="60" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="3 2" marker-end="url(#arB)"/>
+  <text x="1010" y="80" font-size="8.2" fill="#1d4ed8">ZMQ 0.05</text>
+  <!-- P0 out -->
+  <rect x="1005" y="44" width="55" height="28" rx="3" fill="#93c5fd"/>
+  <text x="1032" y="62" text-anchor="middle" font-size="8.4" fill="#1e3a8a">输出 0.55</text>
+
+  <!-- 总时长标注 -->
+  <line x1="200" y1="336" x2="1060" y2="336" stroke="#475569" stroke-width="1.2" marker-start="url(#ar3)" marker-end="url(#ar3)"/>
+  <text x="630" y="352" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#0f172a">ITL（串行） ≈ 8.6 ms：CPU 段（P1 调度 + P2 组批 + P0 输出 ≈ 2 ms）+ GPU 段（6.5 ms）+ 三次 IPC（≈ 0.15 ms）</text>
+
+  <!-- ============ 下半部：async scheduling ============ -->
+  <text x="46" y="392" font-size="12" font-weight="bold" fill="#0f172a">② async scheduling（v0.10+ 的默认方向，Day 19 精读）：step N+1 的 CPU 与 step N 的 GPU 重叠</text>
+
+  <line x1="200" y1="404" x2="1100" y2="404" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ar3)"/>
+  <g font-size="9" fill="#64748b" text-anchor="middle">
+    <text x="200" y="396">0</text><text x="300" y="396">1</text><text x="400" y="396">2</text><text x="500" y="396">3</text>
+    <text x="600" y="396">4</text><text x="700" y="396">5</text><text x="800" y="396">6</text><text x="900" y="396">7</text>
+    <text x="1000" y="396">8</text><text x="1100" y="396">9</text>
+  </g>
+  <g stroke="#e2e8f0" stroke-width="1">
+    <line x1="300" y1="404" x2="300" y2="540"/><line x1="400" y1="404" x2="400" y2="540"/>
+    <line x1="500" y1="404" x2="500" y2="540"/><line x1="600" y1="404" x2="600" y2="540"/>
+    <line x1="700" y1="404" x2="700" y2="540"/><line x1="800" y1="404" x2="800" y2="540"/>
+    <line x1="900" y1="404" x2="900" y2="540"/><line x1="1000" y1="404" x2="1000" y2="540"/>
+  </g>
+
+  <text x="46" y="432" font-size="10.5" font-weight="bold" fill="#92400e">P1 CPU</text>
+  <text x="46" y="490" font-size="10.5" font-weight="bold" fill="#0f172a">GPU</text>
+
+  <!-- step N CPU -->
+  <rect x="200" y="416" width="40" height="24" rx="3" fill="#fbbf24"/>
+  <text x="220" y="432" text-anchor="middle" font-size="8.4" fill="#78350f">sched N</text>
+  <rect x="245" y="416" width="55" height="24" rx="3" fill="#4ade80"/>
+  <text x="272" y="432" text-anchor="middle" font-size="8.4" fill="#14532d">prep N</text>
+  <!-- step N GPU -->
+  <rect x="300" y="474" width="650" height="30" rx="3" fill="#0f172a"/>
+  <text x="625" y="493" text-anchor="middle" font-size="9" font-weight="bold" fill="#f1f5f9">GPU step N（6.5 ms）</text>
+  <!-- step N+1 CPU overlapped -->
+  <rect x="500" y="416" width="40" height="24" rx="3" fill="#fbbf24" opacity="0.85"/>
+  <text x="520" y="432" text-anchor="middle" font-size="8.4" fill="#78350f">sched N+1</text>
+  <rect x="545" y="416" width="55" height="24" rx="3" fill="#4ade80" opacity="0.85"/>
+  <text x="572" y="432" text-anchor="middle" font-size="8.4" fill="#14532d">prep N+1</text>
+  <!-- overlap shading -->
+  <rect x="500" y="410" width="100" height="106" rx="4" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-dasharray="3 2"/>
+  <text x="550" y="530" text-anchor="middle" font-size="8.2" fill="#1d4ed8">重叠区：GPU 忙，CPU 同时准备下一步</text>
+  <!-- step N+1 GPU -->
+  <rect x="950" y="474" width="150" height="30" rx="3" fill="#334155"/>
+  <text x="1025" y="493" text-anchor="middle" font-size="8.6" fill="#e2e8f0">GPU step N+1 …</text>
+
+  <line x1="300" y1="552" x2="950" y2="552" stroke="#475569" stroke-width="1.2" marker-start="url(#ar3)" marker-end="url(#ar3)"/>
+  <text x="625" y="568" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#0f172a">周期 T ≈ max(t_cpu ≈ 1.0, t_gpu ≈ 6.5) = 6.5 ms → ITL 从 8.6 降到 ≈ 6.7 ms（CPU 段几乎隐身）</text>
+
+  <!-- ============ 底部公式与开销账 ============ -->
+  <rect x="40" y="590" width="383" height="100" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="52" y="610" font-size="10" font-weight="bold" fill="#0f172a">公式卡</text>
+  <text x="52" y="630" font-size="9.2" fill="#475569">串行：ITL ≈ t_sched + t_ipc↓ + t_prep + t_gpu + t_gather</text>
+  <text x="52" y="645" font-size="9.2" fill="#475569">　　　　　　+ t_ipc↑ + t_update + t_out</text>
+  <text x="52" y="665" font-size="9.2" fill="#475569">重叠：ITL ≈ max(t_cpu, t_gpu) + ε</text>
+  <text x="52" y="682" font-size="8.6" fill="#64748b">t_cpu = t_sched + t_prep + t_update（引擎侧 CPU 三件）</text>
+
+  <rect x="443" y="590" width="374" height="100" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="455" y="610" font-size="10" font-weight="bold" fill="#0f172a">IPC 开销账（每 step 上行消息）</text>
+  <text x="455" y="630" font-size="9.2" fill="#475569">B ≈ batch × ~100 B（token ids + finish 等字段）</text>
+  <text x="455" y="645" font-size="9.2" fill="#475569">1024 并发 ≈ 0.1 MB/step × 60 step/s ≈ 6 MB/s</text>
+  <text x="455" y="665" font-size="9.2" fill="#475569">比 HBM 3.35 TB/s 低约 6 个数量级 → IPC 不是瓶颈</text>
+  <text x="455" y="682" font-size="8.6" fill="#64748b">进程分离买的是 GIL 隔离与崩溃隔离，不是省 IPC</text>
+
+  <rect x="837" y="590" width="363" height="100" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="849" y="610" font-size="10" font-weight="bold" fill="#0f172a">怎么实测（把示意变成数据）</text>
+  <text x="849" y="630" font-size="9.2" fill="#475569">nsys 追 decode step 的 CPU/GPU 时间线（Day 19）</text>
+  <text x="849" y="645" font-size="9.2" fill="#475569">py-spy top 两进程：引擎与前端各吃多少 CPU（今天）</text>
+  <text x="849" y="665" font-size="9.2" fill="#475569">日志 stats 行：Running/Waiting/KV usage（Day 6）</text>
+  <text x="849" y="682" font-size="8.6" fill="#64748b">数字为示意，比例结构（GPU 主导）才是今天的结论</text>
+
+  <rect x="40" y="706" width="1160" height="54" rx="6" fill="#fefce8" stroke="#eab308"/>
+  <text x="600" y="726" text-anchor="middle" font-size="10" font-weight="bold" fill="#854d0e">一句话结论：decode step 的物理主体是 GPU 访存（6.5/8.6 ≈ 75%）；架构的目标 = 让其余 25% 的 CPU/IPC 工作要么移出关键路径（P0 分离），要么与 GPU 重叠（async scheduling）</text>
+  <text x="600" y="744" text-anchor="middle" font-size="9" fill="#a16207">对应 Day 1 的结论"decode 访存 bound"在系统层的延伸——kernel 优化与系统优化做的是同一道题的不同部分</text>
+</svg>

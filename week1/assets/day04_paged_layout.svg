@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="720" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">PagedAttention 三层数据结构：逻辑块 → block table → 物理块池（含 COW）</text>
+  <text x="620" y="48" text-anchor="middle" font-size="12.5" fill="#64748b">论文 Fig.4/5 复刻 · 并行采样：S1 与 S2 来自同一 prompt，共享前缀块；分叉后首次追加触发 copy-on-write</text>
+
+  <!-- ========== 左侧主区 ========== -->
+
+  <!-- 层 1：逻辑视图 -->
+  <rect x="28" y="64" width="920" height="180" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="44" y="88" font-size="12.5" font-weight="bold" fill="#0f172a">① 逻辑视图（每个序列独立、逻辑连续）</text>
+  <text x="44" y="106" font-size="10.5" fill="#64748b">序列按 block_size = 16 tok 切块；尾块可部分填充</text>
+
+  <!-- S1 -->
+  <text x="44" y="140" font-size="12" font-weight="bold" fill="#1e3a8a">S1（候选 1）</text>
+  <rect x="120" y="122" width="130" height="34" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/><text x="185" y="143" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t0 … t15</text>
+  <rect x="250" y="122" width="130" height="34" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/><text x="315" y="143" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t16 … t31</text>
+  <rect x="380" y="122" width="130" height="34" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/><text x="445" y="143" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t32 … t47</text>
+  <rect x="510" y="122" width="130" height="34" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/><text x="575" y="143" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t48 … t63</text>
+  <rect x="640" y="122" width="130" height="34" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/><rect x="640" y="122" width="60" height="34" fill="#bfdbfe"/><text x="705" y="136" text-anchor="middle" font-size="10" fill="#1e3a8a">a1…a9</text><text x="705" y="150" text-anchor="middle" font-size="9" fill="#475569">(9/16 满)</text>
+  <text x="790" y="143" font-size="10.5" fill="#64748b">prompt 共 64 tok + 已生成 9 tok</text>
+
+  <!-- S2 -->
+  <text x="44" y="196" font-size="12" font-weight="bold" fill="#9a3412">S2（候选 2）</text>
+  <rect x="120" y="178" width="130" height="34" fill="#bfdbfe" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="none"/><text x="185" y="193" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t0 … t15</text><text x="185" y="206" text-anchor="middle" font-size="9" fill="#1e3a8a">= S1 同块</text>
+  <rect x="250" y="178" width="130" height="34" fill="#bfdbfe" stroke="#2563eb" stroke-width="2.5"/><text x="315" y="193" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t16 … t31</text><text x="315" y="206" text-anchor="middle" font-size="9" fill="#1e3a8a">= S1 同块</text>
+  <rect x="380" y="178" width="130" height="34" fill="#bfdbfe" stroke="#2563eb" stroke-width="2.5"/><text x="445" y="193" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t32 … t47</text><text x="445" y="206" text-anchor="middle" font-size="9" fill="#1e3a8a">= S1 同块</text>
+  <rect x="510" y="178" width="130" height="34" fill="#bfdbfe" stroke="#2563eb" stroke-width="2.5"/><text x="575" y="193" text-anchor="middle" font-size="10.5" fill="#1e3a8a">t48 … t63</text><text x="575" y="206" text-anchor="middle" font-size="9" fill="#1e3a8a">= S1 同块</text>
+  <rect x="640" y="178" width="130" height="34" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5"/><rect x="640" y="178" width="46" height="34" fill="#fed7aa"/><text x="705" y="192" text-anchor="middle" font-size="10" fill="#7c2d12">b1…b5</text><text x="705" y="206" text-anchor="middle" font-size="9" fill="#7c2d12">(5/16 满)</text>
+  <text x="790" y="196" font-size="10.5" fill="#7c2d12">共享 prompt 块 + 自己的分叉尾块</text>
+  <!-- fork 箭头 -->
+  <path d="M 705 160 C 800 160 800 178 705 178" fill="none" stroke="#475569" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <text x="836" y="222" font-size="10" fill="#475569">并行采样 fork：同一 prompt 采样 n 路</text>
+
+  <!-- 层 2：block table -->
+  <rect x="28" y="256" width="920" height="118" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="44" y="280" font-size="12.5" font-weight="bold" fill="#1e3a8a">② block table（逻辑块号 → 物理块号；CPU 侧 list + GPU 侧 int32 张量）</text>
+  <text x="44" y="298" font-size="10.5" fill="#475569">查表即「地址翻译」——GPU 没有 MMU，这一层间接全靠软件与 kernel 自觉维护</text>
+  <g font-size="12" font-weight="bold">
+    <rect x="120" y="308" width="130" height="28" fill="#ffffff" stroke="#2563eb"/><text x="185" y="327" text-anchor="middle" fill="#1e3a8a">#7</text>
+    <rect x="250" y="308" width="130" height="28" fill="#ffffff" stroke="#2563eb"/><text x="315" y="327" text-anchor="middle" fill="#1e3a8a">#2</text>
+    <rect x="380" y="308" width="130" height="28" fill="#ffffff" stroke="#2563eb"/><text x="445" y="327" text-anchor="middle" fill="#1e3a8a">#15</text>
+    <rect x="510" y="308" width="130" height="28" fill="#ffffff" stroke="#2563eb"/><text x="575" y="327" text-anchor="middle" fill="#1e3a8a">#4</text>
+    <rect x="640" y="308" width="130" height="28" fill="#dcfce7" stroke="#16a34a"/><text x="705" y="327" text-anchor="middle" fill="#14532d">#8</text>
+    <rect x="120" y="340" width="130" height="28" fill="#ffffff" stroke="#2563eb"/><text x="185" y="359" text-anchor="middle" fill="#1e3a8a">#7</text>
+    <rect x="250" y="340" width="130" height="28" fill="#ffffff" stroke="#2563eb"/><text x="315" y="359" text-anchor="middle" fill="#1e3a8a">#2</text>
+    <rect x="380" y="340" width="130" height="28" fill="#ffffff" stroke="#2563eb"/><text x="445" y="359" text-anchor="middle" fill="#1e3a8a">#15</text>
+    <rect x="510" y="340" width="130" height="28" fill="#ffffff" stroke="#2563eb"/><text x="575" y="359" text-anchor="middle" fill="#1e3a8a">#4</text>
+    <rect x="640" y="340" width="130" height="28" fill="#ffedd5" stroke="#ea580c"/><text x="705" y="359" text-anchor="middle" fill="#7c2d12">#9</text>
+  </g>
+  <text x="790" y="322" font-size="10.5" fill="#14532d">S1 表：前 4 项与 S2 相同 → 共享</text>
+  <text x="790" y="340" font-size="10.5" fill="#7c2d12">S2 表：尾块指向 #9（COW 产物）</text>
+  <text x="790" y="358" font-size="10.5" fill="#475569">V1 坐标：vllm/v1/core/kv_cache_manager.py</text>
+  <!-- 逻辑块到表的箭头（代表性两根） -->
+  <line x1="185" y1="156" x2="185" y2="304" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar2)"/>
+  <line x1="705" y1="156" x2="705" y2="304" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar2)"/>
+
+  <!-- 层 3：物理块池 -->
+  <rect x="28" y="386" width="920" height="248" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="44" y="410" font-size="12.5" font-weight="bold" fill="#0f172a">③ 物理块池（启动时一次性预分配，等大切块；free 队列 + 引用计数管理）</text>
+  <text x="44" y="428" font-size="10.5" fill="#64748b">一个 block_id 同时索引每一层 KV 张量的同一段 → 一个逻辑块 = L 层 × 16 tok 的 KV（V1：每层一个 KVCacheTensor）</text>
+
+  <g font-size="10.5">
+    <!-- row 1: #0..#9 -->
+    <rect x="44"  y="440" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="84"  y="465" text-anchor="middle" fill="#94a3b8">#0 free</text>
+    <rect x="124" y="440" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="164" y="465" text-anchor="middle" fill="#94a3b8">#1 free</text>
+    <rect x="204" y="440" width="80" height="42" fill="#bfdbfe" stroke="#2563eb" stroke-width="2"/><text x="244" y="458" text-anchor="middle" fill="#1e3a8a" font-weight="bold">#2</text><text x="244" y="472" text-anchor="middle" fill="#1e3a8a">ref=2</text>
+    <rect x="284" y="440" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="324" y="465" text-anchor="middle" fill="#94a3b8">#3 free</text>
+    <rect x="364" y="440" width="80" height="42" fill="#bfdbfe" stroke="#2563eb" stroke-width="2"/><text x="404" y="458" text-anchor="middle" fill="#1e3a8a" font-weight="bold">#4</text><text x="404" y="472" text-anchor="middle" fill="#1e3a8a">ref=2 ▶ 尾块 9/16</text>
+    <rect x="444" y="440" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="484" y="465" text-anchor="middle" fill="#94a3b8">#5 free</text>
+    <rect x="524" y="440" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="564" y="465" text-anchor="middle" fill="#94a3b8">#6 free</text>
+    <rect x="604" y="440" width="80" height="42" fill="#bfdbfe" stroke="#2563eb" stroke-width="2"/><text x="644" y="458" text-anchor="middle" fill="#1e3a8a" font-weight="bold">#7</text><text x="644" y="472" text-anchor="middle" fill="#1e3a8a">ref=2</text>
+    <rect x="684" y="440" width="80" height="42" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><rect x="684" y="440" width="45" height="42" fill="#86efac"/><text x="724" y="458" text-anchor="middle" fill="#14532d" font-weight="bold">#8</text><text x="724" y="472" text-anchor="middle" fill="#14532d">S1 尾 9/16</text>
+    <rect x="764" y="440" width="80" height="42" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><rect x="764" y="440" width="25" height="42" fill="#fed7aa"/><text x="804" y="458" text-anchor="middle" fill="#7c2d12" font-weight="bold">#9</text><text x="804" y="472" text-anchor="middle" fill="#7c2d12">S2 尾 5/16</text>
+    <!-- row 2: #10..#19 -->
+    <rect x="44"  y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="84"  y="513" text-anchor="middle" fill="#94a3b8">#10 free</text>
+    <rect x="124" y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="164" y="513" text-anchor="middle" fill="#94a3b8">#11 free</text>
+    <rect x="204" y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="244" y="513" text-anchor="middle" fill="#94a3b8">#12 free</text>
+    <rect x="284" y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="324" y="513" text-anchor="middle" fill="#94a3b8">#13 free</text>
+    <rect x="364" y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="404" y="513" text-anchor="middle" fill="#94a3b8">#14 free</text>
+    <rect x="444" y="488" width="80" height="42" fill="#bfdbfe" stroke="#2563eb" stroke-width="2"/><text x="484" y="506" text-anchor="middle" fill="#1e3a8a" font-weight="bold">#15</text><text x="484" y="520" text-anchor="middle" fill="#1e3a8a">ref=2</text>
+    <rect x="524" y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="564" y="513" text-anchor="middle" fill="#94a3b8">#16 free</text>
+    <rect x="604" y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="644" y="513" text-anchor="middle" fill="#94a3b8">#17 free</text>
+    <rect x="684" y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="724" y="513" text-anchor="middle" fill="#94a3b8">#18 free</text>
+    <rect x="764" y="488" width="80" height="42" fill="#ffffff" stroke="#cbd5e1"/><text x="804" y="513" text-anchor="middle" fill="#94a3b8">#19 free</text>
+  </g>
+
+  <!-- COW 箭头：#4 → #9 -->
+  <path d="M 404 484 C 404 560 804 560 804 484" fill="none" stroke="#ea580c" stroke-width="2.2" stroke-dasharray="7 4" marker-end="url(#arB)"/>
+  <rect x="452" y="548" width="320" height="60" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="612" y="568" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">COW：ref_cnt=2 的块首次被追加写入时</text>
+  <text x="612" y="585" text-anchor="middle" font-size="10.5" fill="#9a3412">新分配 #9 → 拷贝 #4 的 16 tok × L 层（Qwen3-8B ≈ 2.25 MiB）</text>
+  <text x="612" y="601" text-anchor="middle" font-size="10.5" fill="#9a3412">→ 之后 S1 写 #4、S2 写 #9，互不干扰（同进程 fork 的 COW）</text>
+
+  <text x="44" y="628" font-size="10.5" fill="#475569">kernel 的 paged gather：for 逻辑块 i：物理号 = table[i]；读 K/V[ table[i] · b : (table[i]+1) · b , head ]——块内连续（单头单块 K = b·d·P = 4 KB @BF16）→ coalescing 友好</text>
+
+  <!-- ========== 右侧：OS 类比面板 ========== -->
+  <rect x="964" y="64" width="248" height="570" rx="10" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="1088" y="92" text-anchor="middle" font-size="13" font-weight="bold" fill="#065f46">OS 虚拟内存 ↔ PagedAttention</text>
+  <line x1="980" y1="104" x2="1196" y2="104" stroke="#059669" stroke-width="1"/>
+
+  <g font-size="10.5">
+    <text x="980" y="128" fill="#065f46">页 page（4 KiB）</text>
+    <text x="980" y="144" fill="#334155">→ block（16 tok 的 KV）</text>
+    <text x="980" y="164" fill="#065f46">页表 page table</text>
+    <text x="980" y="180" fill="#334155">→ block table（int32）</text>
+    <text x="980" y="200" fill="#065f46">物理帧 frame</text>
+    <text x="980" y="216" fill="#334155">→ 池中物理块（按层切）</text>
+    <text x="980" y="236" fill="#065f46">地址翻译（MMU/TLB）</text>
+    <text x="980" y="252" fill="#334155">→ kernel 查表 + slot 映射</text>
+    <text x="980" y="272" fill="#334155">　（纯软件，无硬件 MMU）</text>
+    <text x="980" y="292" fill="#065f46">缺页 → 按需分配</text>
+    <text x="980" y="308" fill="#334155">→ 追加时从 free 队列取块</text>
+    <text x="980" y="328" fill="#334155">　（同步分配，无 lazy）</text>
+    <text x="980" y="348" fill="#065f46">fork + COW</text>
+    <text x="980" y="364" fill="#334155">→ 并行采样：共享前缀</text>
+    <text x="980" y="380" fill="#334155">　+ 引用计数 + COW</text>
+    <text x="980" y="400" fill="#065f46">swap 换出/换入</text>
+    <text x="980" y="416" fill="#334155">→ 抢占：recompute 优先</text>
+    <text x="980" y="432" fill="#334155">　（V1 只留 recompute）</text>
+    <text x="980" y="452" fill="#065f46">外部碎片</text>
+    <text x="980" y="468" fill="#334155">→ 结构性消灭（等大块</text>
+    <text x="980" y="484" fill="#334155">　任意顶替，无空洞概念）</text>
+    <text x="980" y="504" fill="#065f46">compaction / 碎片整理</text>
+    <text x="980" y="520" fill="#334155">→ 不需要（这是相对 OS</text>
+    <text x="980" y="536" fill="#334155">　更简单的地方）</text>
+  </g>
+  <rect x="980" y="556" width="216" height="64" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1"/>
+  <text x="1088" y="578" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#065f46">论文的核心移植术：</text>
+  <text x="1088" y="594" text-anchor="middle" font-size="10.5" fill="#047857">借「间接层」的思想，</text>
+  <text x="1088" y="610" text-anchor="middle" font-size="10.5" fill="#047857">不借 OS 的任何机制</text>
+
+  <!-- 底部要点 -->
+  <text x="620" y="668" text-anchor="middle" font-size="11" fill="#334155">① 逻辑连续与物理散布解耦——碎片问题在「等大块 + 间接层」下从分配器里消失；② 追加写 = 尾块原位写新槽位（零拷贝，Day 1 §3.6 预告的兑现）</text>
+  <text x="620" y="690" text-anchor="middle" font-size="11" fill="#334155">③ 共享不复制、分叉才复制（COW）；④ 剩余浪费只剩块尾（≤ b−1 tok/序列）→ 论文实测 &lt;4%，§3.2 给出推导</text>
+</svg>

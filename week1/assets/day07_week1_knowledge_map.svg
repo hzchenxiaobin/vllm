@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 790" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="790" fill="#ffffff"/>
+  <text x="620" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">第 1 周知识地图：从一条公理到一张实测曲线（六层结构）</text>
+  <text x="620" y="54" text-anchor="middle" font-size="12.5" fill="#64748b">每层都是下一层的推论。复盘讲"为什么"从底往上（推导链）；线上诊断查"哪里坏了"从顶往下（归因链）</text>
+
+  <!-- 左侧推导方向箭头 -->
+  <line x1="46" y1="700" x2="46" y2="96" stroke="#475569" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="30" y="400" font-size="12" fill="#475569" transform="rotate(-90 30 400)" text-anchor="middle">逐层推导（为什么）</text>
+  <!-- 右侧归因方向箭头 -->
+  <line x1="1214" y1="96" x2="1214" y2="700" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ard)"/>
+  <text x="1230" y="400" font-size="12" fill="#94a3b8" transform="rotate(90 1230 400)" text-anchor="middle">归因 / 对账（哪里坏了）</text>
+
+  <!-- ===== L5 实测层（Day 6） ===== -->
+  <rect x="80" y="80" width="1116" height="94" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <rect x="94" y="94" width="86" height="24" rx="6" fill="#dc2626"/>
+  <text x="137" y="111" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">Day 6</text>
+  <text x="192" y="111" font-size="14" font-weight="bold" fill="#991b1b">实测层 · 让每个数字落地（第一张曲线）</text>
+  <text x="192" y="133" font-size="11" fill="#334155">BW_eff = 必读字节 ÷ 实测 TPOT；效率系数 = 实测 ÷ 下界（健康区间 1.2~2×，本机校准 1.5×）</text>
+  <text x="192" y="151" font-size="11" fill="#334155">对账锚点：throughput × TPOT ≈ C（±15%）；启动日志 KV 池 36.6 万 token / 44.8× 并发</text>
+  <text x="192" y="169" font-size="11" fill="#334155">曲线三特征：TPOT p99 缓升（权重摊销）· TTFT p99 早拐（排队+长尾 prompt）· 吞吐先线性后饱和</text>
+  <rect x="880" y="90" width="302" height="74" rx="6" fill="#ffffff" stroke="#fecaca"/>
+  <text x="894" y="108" font-size="10" fill="#94a3b8">必背锚点</text>
+  <text x="894" y="126" font-size="11" fill="#991b1b">C=1 TPOT 7.3 ms（工程口径）</text>
+  <text x="894" y="144" font-size="11" fill="#991b1b">C=64 → 6.5K tok/s · E2E 5.2 s</text>
+  <text x="894" y="159" font-size="10.5" fill="#b91c1c">闭环测服务，开环测容量</text>
+
+  <!-- ===== L4 指标层（Day 5） ===== -->
+  <rect x="80" y="184" width="1116" height="94" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <rect x="94" y="198" width="86" height="24" rx="6" fill="#d97706"/>
+  <text x="137" y="215" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">Day 5</text>
+  <text x="192" y="215" font-size="14" font-weight="bold" fill="#92400e">指标层 · 把物理翻译成体验与容量</text>
+  <text x="192" y="237" font-size="11" fill="#334155">六指标一条时间线：TTFT（排队+prefill，算力侧）· ITL（分布，看尖刺）· TPOT = (E2E−TTFT)/(n−1)</text>
+  <text x="192" y="255" font-size="11" fill="#334155">两个恒等式：E2E = TTFT + (n−1)·TPOT（归因第一刀）；Little's Law：C = λ·E2E（容量桥梁，守恒律）</text>
+  <text x="192" y="273" font-size="11" fill="#334155">goodput = λ·P(全 SLO 达标)：膝点在 ρ≈0.7 而非饱和点（排队 1/(1−ρ) 发散）→ 部署在膝点左侧留 20~30%</text>
+  <rect x="880" y="194" width="302" height="74" rx="6" fill="#ffffff" stroke="#fde68a"/>
+  <text x="894" y="212" font-size="10" fill="#94a3b8">必背锚点</text>
+  <text x="894" y="230" font-size="11" fill="#92400e">对话 SLO：TTFT p99 0.5 s</text>
+  <text x="894" y="248" font-size="11" fill="#92400e">TPOT p99 50~100 ms（阅读速度）</text>
+  <text x="894" y="263" font-size="10.5" fill="#b45309">mean/p99 差 3~10×，必报 p99</text>
+
+  <!-- ===== L3 系统层（Day 4 + Day 5） ===== -->
+  <rect x="80" y="288" width="1116" height="94" rx="10" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <rect x="94" y="302" width="86" height="24" rx="6" fill="#059669"/>
+  <text x="137" y="319" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">Day 4</text>
+  <text x="192" y="319" font-size="14" font-weight="bold" fill="#065f46">系统层 · 显存管理与容量（PagedAttention）</text>
+  <text x="192" y="341" font-size="11" fill="#334155">等大块 + block table + 引用计数/COW：η 24.4%→99.6%，外部碎片被结构性消灭（不是被清理）</text>
+  <text x="192" y="359" font-size="11" fill="#334155">并发 ∝ η：44→182 路；池满时每步字节不变 → TPOT 不变 → 吞吐 ×4.1 = 1/η</text>
+  <text x="192" y="377" font-size="11" fill="#334155">三重上限 C* = min(C_kv, C_slo, max_num_seqs)；无解判据：TPOT_SLO &lt; W/BW → 此硬件无解</text>
+  <rect x="880" y="298" width="302" height="74" rx="6" fill="#ffffff" stroke="#a7f3d0"/>
+  <text x="894" y="316" font-size="10" fill="#94a3b8">必背锚点</text>
+  <text x="894" y="334" font-size="11" fill="#065f46">η：24.4% → 99.6%（尾块 ≤15 tok）</text>
+  <text x="894" y="352" font-size="11" fill="#065f46">44 → 182 路，吞吐 ×4.1 = 1/η</text>
+  <text x="894" y="367" font-size="10.5" fill="#047857">C_slo@20ms = 87 &lt; C_kv（SLO 绑定）</text>
+
+  <!-- ===== L2 判定层（Day 3） ===== -->
+  <rect x="80" y="392" width="1116" height="94" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <rect x="94" y="406" width="86" height="24" rx="6" fill="#7c3aed"/>
+  <text x="137" y="423" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">Day 3</text>
+  <text x="192" y="423" font-size="14" font-weight="bold" fill="#5b21b6">判定层 · Roofline（先判 bound，再动手）</text>
+  <text x="192" y="445" font-size="11" fill="#334155">P = min(F_peak, AI×BW)；ridge = F_peak/BW 十年稳定 150~600 FLOP/B → decode 的 memory bound 平台无关</text>
+  <text x="192" y="463" font-size="11" fill="#334155">decode 整步 AI 被 KV 封顶：2N/(ctx·KV_tok)（8B@8K 仅 13.6）→ batch 再大也翻不上屋顶（翻转需 ctx ≤ 377）</text>
+  <text x="192" y="481" font-size="11" fill="#334155">斜坡优化 = 横轴右移（量化/batch/复用）；屋顶优化 = 贴满（tiling/精度）——两种药方不可互换</text>
+  <rect x="880" y="402" width="302" height="74" rx="6" fill="#ffffff" stroke="#ddd6fe"/>
+  <text x="894" y="420" font-size="10" fill="#94a3b8">必背锚点</text>
+  <text x="894" y="438" font-size="11" fill="#5b21b6">ridge：A100 153 / H100 295 / FP8 591</text>
+  <text x="894" y="456" font-size="11" fill="#5b21b6">decode AI ≈ 1~2 FLOP/B（差 150~600×）</text>
+  <text x="894" y="471" font-size="10.5" fill="#6d28d9">T_mem/T_calc = ridge/AI（一次除法）</text>
+
+  <!-- ===== L1 账单层（Day 1 + Day 2） ===== -->
+  <rect x="80" y="496" width="1116" height="94" rx="10" fill="#ecfeff" stroke="#0891b6" stroke-width="1.5"/>
+  <rect x="94" y="510" width="86" height="24" rx="6" fill="#0891b6"/>
+  <text x="137" y="527" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">Day 1-2</text>
+  <text x="192" y="527" font-size="14" font-weight="bold" fill="#155e75">账单层 · 两张账单 + 两个公式</text>
+  <text x="192" y="549" font-size="11" fill="#334155">prefill：FLOPs ≈ 2Ns + 2LHs² → TTFT ≈ 2Ns/(MFU·F_peak)（算力侧下界 = Roofline 屋顶）</text>
+  <text x="192" y="567" font-size="11" fill="#334155">decode：bytes ≈ NP（与 B 无关！）+ B·ctx·KV_tok → TPOT ≥ 字节/BW（带宽侧下界 = 斜坡）</text>
+  <text x="192" y="585" font-size="11" fill="#334155">KV/token = 2×L×H_kv×d×P（GQA 代 H_kv，最易错）；B* = NP/(ctx·KV_tok) 摊销临界点</text>
+  <rect x="880" y="506" width="302" height="74" rx="6" fill="#ffffff" stroke="#a5f3fc"/>
+  <text x="894" y="524" font-size="10" fill="#94a3b8">必背锚点</text>
+  <text x="894" y="542" font-size="11" fill="#155e75">Qwen3-8B：16.4 GB / 144 KiB/token</text>
+  <text x="894" y="560" font-size="11" fill="#155e75">TPOT 下界：8B→8 ms@A100</text>
+  <text x="894" y="575" font-size="10.5" fill="#0e7490">70B FP8→21 ms@H100</text>
+
+  <!-- ===== L0 公理层（Day 1） ===== -->
+  <rect x="80" y="600" width="1116" height="94" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <rect x="94" y="614" width="86" height="24" rx="6" fill="#2563eb"/>
+  <text x="137" y="631" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">Day 1</text>
+  <text x="192" y="631" font-size="14" font-weight="bold" fill="#1e3a8a">公理层 · 自回归的数据依赖（一切的根源）</text>
+  <text x="192" y="653" font-size="11" fill="#334155">prompt 的 s 个 token 互相无数据依赖 → 可一次并行计算（M = s 的大 GEMM，AI ≈ s）</text>
+  <text x="192" y="671" font-size="11" fill="#334155">生成的第 i 个 token 依赖第 i−1 个的采样结果 → 只能逐 token 串行（M = B 的 GEMV，AI ≈ B）</text>
+  <text x="192" y="689" font-size="11" fill="#334155">KV cache 可行性 = 因果性（历史 K/V 不变 + 单调增长）→ 空间换时间，代价是 O(ctx) 显存</text>
+  <rect x="880" y="610" width="302" height="74" rx="6" fill="#ffffff" stroke="#bfdbfe"/>
+  <text x="894" y="628" font-size="10" fill="#94a3b8">必背锚点</text>
+  <text x="894" y="646" font-size="11" fill="#1e3a8a">AI = 2M/P（BF16 下 ≈ M）</text>
+  <text x="894" y="664" font-size="11" fill="#1e3a8a">prefill AI ≈ s ≳ 300 → 屋顶</text>
+  <text x="894" y="679" font-size="10.5" fill="#1d4ed8">decode AI ≈ 1 → 斜坡深处</text>
+
+  <!-- 底部注释 -->
+  <rect x="80" y="712" width="1116" height="56" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="640" y="735" text-anchor="middle" font-size="12" fill="#334155">六层共用一套记号（N, L, H_kv, d, P, s̄, B, BW）与一本账（权重 16.4 GB + KV 池 54.1 GB + 激活 1.5 GB）——</text>
+  <text x="640" y="755" text-anchor="middle" font-size="12" fill="#334155">换尺子不换答案：AI 判定、账单下界、Roofline 三套方法在 70B FP8 上收敛于同一个 21 ms（Day 3 题 2 的检验标准）</text>
+</svg>

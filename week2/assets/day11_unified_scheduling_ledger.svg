@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 700" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar11b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="700" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">chunked prefill 的实现：统一调度模型 + 账本推进（vLLM V1 · v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：Scheduler.schedule() 的切块路径（文件:行号均按 v0.11.0 核对） · 右：一个 6000-token prompt 的跨 step 账本</text>
+
+  <!-- ================= 左列：schedule() 流程 ================= -->
+  <rect x="30" y="58" width="556" height="42" rx="6" fill="#eef2ff" stroke="#818cf8"/>
+  <text x="308" y="76" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">EngineCore.engine_step（v1/engine/core.py:283-287）</text>
+  <text x="308" y="91" text-anchor="middle" font-size="8.4" fill="#1e3a8a">scheduler.schedule() → execute_model() → update_from_output() —— 每 step 一次</text>
+  <line x1="308" y1="100" x2="308" y2="116" stroke="#475569" stroke-width="1.2" marker-end="url(#ar11b)"/>
+
+  <rect x="30" y="118" width="556" height="112" rx="6" fill="#f0f9ff" stroke="#60a5fa"/>
+  <text x="44" y="136" font-size="10" font-weight="bold" fill="#0c1e4e">① RUNNING 循环（scheduler.py:209-320）—— 列表序 = 入 running 时间序，先到先得</text>
+  <text x="44" y="153" font-size="8.4" fill="#0f172a">need = num_tokens_with_spec + num_output_placeholders − num_computed_tokens（:213）</text>
+  <text x="44" y="168" font-size="8.4" fill="#0f172a">钳位 min① long_prefill_token_threshold（:216，默认 0 = 不钳）</text>
+  <text x="44" y="183" font-size="8.4" font-weight="bold" fill="#1d4ed8">钳位 min② 剩余 token_budget（:220）★ 切块就发生在这一行</text>
+  <text x="44" y="198" font-size="8.4" fill="#0f172a">钳位 min③ max_model_len − 1 − computed（:224，spec 场景护栏）</text>
+  <text x="44" y="213" font-size="8.4" fill="#0f172a">allocate_slots(chunk) 返回 None → 抢占（:254-292，Day 12）</text>
+  <text x="44" y="226" font-size="8" fill="#64748b">→ 老 decode 排列表前部，每步先各扣 1 token；chunk 用剩余预算</text>
+  <line x1="308" y1="230" x2="308" y2="246" stroke="#475569" stroke-width="1.2" marker-end="url(#ar11b)"/>
+
+  <rect x="30" y="248" width="556" height="112" rx="6" fill="#f0fdf4" stroke="#6ee7b7"/>
+  <text x="44" y="266" font-size="10" font-weight="bold" fill="#065f46">② 无抢占且 token_budget &gt; 0 → WAITING 循环（:335-537）</text>
+  <text x="44" y="283" font-size="8.4" fill="#0f172a">队首 peek（FCFS）；FSM / 远端 KV / LoRA 超限 → 跳过塞回队首（:340-374）</text>
+  <text x="44" y="298" font-size="8.4" fill="#0f172a">prefix cache 命中：get_computed_blocks 扣减已算 token（:380-384，Day 16）</text>
+  <text x="44" y="313" font-size="8.4" fill="#0f172a">chunked_prefill_enabled=False 且 need &gt; budget → 整请求跳过回队首（:431-435）</text>
+  <text x="44" y="328" font-size="8.4" font-weight="bold" fill="#1d4ed8">num_new_tokens = min(need, 剩余 budget)（:437）→ allocate_slots（chunk 粒度 :471）</text>
+  <text x="44" y="343" font-size="8.4" fill="#0f172a">入 running 尾部 append + SCHEDULED 事件（:507-510）；首块同时发生</text>
+  <text x="44" y="356" font-size="8" fill="#64748b">waiting 只在「本步没有抢占」时才被调度（:335）—— 抢占优先止血</text>
+  <line x1="308" y1="360" x2="308" y2="376" stroke="#475569" stroke-width="1.2" marker-end="url(#ar11b)"/>
+
+  <rect x="30" y="378" width="556" height="66" rx="6" fill="#fefce8" stroke="#facc15"/>
+  <text x="44" y="396" font-size="10" font-weight="bold" fill="#78350f">③ _update_after_schedule（:629-645）—— 账本推进</text>
+  <text x="44" y="413" font-size="8.4" fill="#0f172a">每个被调度请求：num_computed_tokens += num_scheduled_tokens（:645）</text>
+  <text x="44" y="428" font-size="8.4" fill="#0f172a">调度后立即推进（不等 forward 返回）→ 下一步它仍在 running，从新游标续算下一块</text>
+  <text x="44" y="440" font-size="8" fill="#64748b">这就是「跨 step 的 chunked prefill」的全部状态机——没有额外的 phase 字段</text>
+  <line x1="308" y1="444" x2="308" y2="460" stroke="#475569" stroke-width="1.2" marker-end="url(#ar11b)"/>
+
+  <rect x="30" y="462" width="556" height="52" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="44" y="480" font-size="10" font-weight="bold" fill="#0f172a">④ SchedulerOutput（:582-599）</text>
+  <text x="44" y="497" font-size="8.4" fill="#0f172a">num_scheduled_tokens: dict[req_id → 本步 token 数] + block 增量 → 跨进程发 Worker → ModelRunner 组混合批</text>
+
+  <rect x="30" y="528" width="556" height="58" rx="6" fill="#fff1f2" stroke="#fda4af"/>
+  <text x="308" y="548" text-anchor="middle" font-size="9" font-weight="bold" fill="#991b1b">schedule() 顶部注释（:180-189）——统一调度模型</text>
+  <text x="308" y="563" text-anchor="middle" font-size="8.2" fill="#991b1b">"There's no 'decoding phase' nor 'prefill phase' in the scheduler."</text>
+  <text x="308" y="577" text-anchor="middle" font-size="8.2" fill="#991b1b">调度器只有一个目标：让每个请求的 num_computed_tokens 追上 num_tokens_with_spec</text>
+
+  <!-- ================= 右列：账本推进表 ================= -->
+  <text x="608" y="66" font-size="10.5" font-weight="bold" fill="#0f172a">示例账本：D1~D3 已在 decode（各 1 token/步）· A 新到（prompt 6000）· budget=2048 · 无 prefix 命中</text>
+
+  <rect x="605" y="78" width="605" height="26" fill="#0f172a"/>
+  <text x="618" y="95" font-size="8.6" font-weight="bold" fill="#f1f5f9">step</text>
+  <text x="668" y="95" font-size="8.6" font-weight="bold" fill="#f1f5f9">本步批组成（token 数）</text>
+  <text x="845" y="95" font-size="8.6" font-weight="bold" fill="#f1f5f9">A 的输入切片 all_token_ids[c : c+n]</text>
+  <text x="1048" y="95" font-size="8.6" font-weight="bold" fill="#f1f5f9">A.computed</text>
+  <text x="1118" y="95" font-size="8.6" font-weight="bold" fill="#f1f5f9">A 的输出</text>
+
+  <rect x="605" y="104" width="605" height="52" fill="#f0f9ff" stroke="#bfdbfe"/>
+  <text x="632" y="126" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">1</text>
+  <text x="668" y="124" font-size="8.4" fill="#0f172a">D1×1 + D2×1 + D3×1</text>
+  <text x="668" y="140" font-size="8.4" font-weight="bold" fill="#1d4ed8">A×2045（吃剩余预算）</text>
+  <text x="845" y="132" font-size="8.4" fill="#0f172a">[0 : 2045)</text>
+  <text x="1052" y="132" text-anchor="middle" font-size="8.6" font-weight="bold" fill="#0f172a">2045</text>
+  <text x="1118" y="126" font-size="8.2" fill="#991b1b">无输出</text>
+  <text x="1118" y="140" font-size="7.6" fill="#64748b">（部分 prefill）</text>
+
+  <rect x="605" y="156" width="605" height="52" fill="#ffffff" stroke="#bfdbfe"/>
+  <text x="632" y="178" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">2</text>
+  <text x="668" y="176" font-size="8.4" fill="#0f172a">D1~D3 ×1 + A×2045</text>
+  <text x="845" y="184" font-size="8.4" fill="#0f172a">[2045 : 4090)</text>
+  <text x="1052" y="184" text-anchor="middle" font-size="8.6" font-weight="bold" fill="#0f172a">4090</text>
+  <text x="1118" y="184" font-size="8.2" fill="#991b1b">无输出</text>
+
+  <rect x="605" y="208" width="605" height="52" fill="#f0fdf4" stroke="#a7f3d0"/>
+  <text x="632" y="230" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">3</text>
+  <text x="668" y="228" font-size="8.4" fill="#0f172a">D1~D3 ×1 + A×1910</text>
+  <text x="668" y="244" font-size="7.8" fill="#065f46">（最后一块 1910 = 6000 − 4090）</text>
+  <text x="845" y="236" font-size="8.4" fill="#0f172a">[4090 : 6000)</text>
+  <text x="1052" y="236" text-anchor="middle" font-size="8.6" font-weight="bold" fill="#065f46">6000</text>
+  <text x="1118" y="230" font-size="8.2" font-weight="bold" fill="#065f46">✓ 首 token</text>
+  <text x="1118" y="244" font-size="7.6" fill="#64748b">（最后一块才采样）</text>
+
+  <rect x="605" y="260" width="605" height="52" fill="#ffffff" stroke="#bfdbfe"/>
+  <text x="632" y="282" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">4+</text>
+  <text x="668" y="280" font-size="8.4" fill="#0f172a">D1~D3 ×1 + A×1（A 变成 decode）</text>
+  <text x="845" y="288" font-size="8.4" fill="#0f172a">逐 token 跟进</text>
+  <text x="1052" y="288" text-anchor="middle" font-size="8.6" font-weight="bold" fill="#0f172a">6001, …</text>
+  <text x="1118" y="288" font-size="8.2" fill="#065f46">每步 1 token</text>
+
+  <rect x="605" y="326" width="605" height="48" rx="6" fill="#f0fdf4" stroke="#6ee7b7"/>
+  <text x="618" y="344" font-size="8.8" font-weight="bold" fill="#065f46">k = ⌈6000 / (2048−3)⌉ = 3 步</text>
+  <text x="618" y="360" font-size="8.2" fill="#0f172a">decode 先扣 3，A 吃剩余预算 → chunk 大小是「剩余预算」，不是固定值；</text>
+  <text x="618" y="371" font-size="8.2" fill="#0f172a">KV block 按块增量分配（每步 ~128 块，block_size=16，Day 15 展开）</text>
+
+  <rect x="605" y="384" width="605" height="48" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="618" y="402" font-size="8.8" font-weight="bold" fill="#1e3a8a">中间步的采样被丢弃</text>
+  <text x="618" y="418" font-size="8.2" fill="#0f172a">seq_lens(A) &lt; num_tokens(A) → discard_requests_mask（gpu_model_runner.py:1076）</text>
+  <text x="618" y="429" font-size="8.2" fill="#0f172a">源码注释："…we do so for simplicity. We will ignore the sampled tokens."（:1099）</text>
+
+  <rect x="605" y="442" width="605" height="48" rx="6" fill="#fffbeb" stroke="#fcd34d"/>
+  <text x="618" y="460" font-size="8.8" font-weight="bold" fill="#78350f">配置不变量：max_num_batched_tokens ≥ max_num_seqs</text>
+  <text x="618" y="476" font-size="8.2" fill="#0f172a">（config/scheduler.py:245-249 强制校验）→ 每个 running 每步至少分到 1 token</text>
+  <text x="618" y="487" font-size="8.2" fill="#0f172a">—— 这条校验正是「decode 不被 prefill 饿死」的制度保证（不开投机解码时）</text>
+
+  <rect x="605" y="500" width="605" height="56" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="618" y="518" font-size="8.8" font-weight="bold" fill="#334155">推演（留给 Day 13 压测验证）</text>
+  <text x="618" y="534" font-size="8.2" fill="#0f172a">chunk 进行中，比它晚入 running 的请求、以及 waiting 新请求，暂时分不到预算</text>
+  <text x="618" y="545" font-size="8.2" fill="#0f172a">（先到先得）→ long_prefill_token_threshold / max_num_partial_prefills 旋钮为此而生</text>
+  <text x="618" y="556" font-size="8.2" fill="#64748b">（config docstring："allow shorter prompts to jump the queue … improving latency"）</text>
+
+  <text x="620" y="586" text-anchor="middle" font-size="8.5" fill="#64748b">口径：以上行号按 v0.11.0 tag 逐行核对；budget 默认值与 partial-prefill 旋钮行为随版本演进，读码先对版本</text>
+</svg>

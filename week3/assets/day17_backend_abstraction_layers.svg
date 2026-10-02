@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 840" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar17a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar17b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"/></marker>
+    <marker id="ar17c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="840" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">Attention 后端的五层插拔架构：模型只见 Attention(q, k, v) 一行（v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：自上而下的调用栈（模型 → 层 → custom op → Impl → kernel） · 右上：目录迁移对照 · 右中：三类对象 · 右下：后端选择决策树</text>
+
+  <!-- ================= Left: call stack ================= -->
+  <!-- model code -->
+  <rect x="40" y="66" width="580" height="58" rx="8" fill="#f0fdf4" stroke="#34d399" stroke-width="1.4"/>
+  <text x="60" y="88" font-size="13.5" font-weight="bold" fill="#064e3b">模型代码（如 llama.py:198-218）</text>
+  <text x="60" y="106" font-size="9.5" fill="#065f46">self.attn = Attention(num_heads, head_dim, ...)   ·   attn_output = self.attn(q, k, v)</text>
+  <text x="60" y="118" font-size="9" fill="#047857">不 import 任何 backend、不传 metadata / kv_cache —— 插拔对模型完全透明</text>
+
+  <line x1="330" y1="124" x2="330" y2="140" stroke="#475569" stroke-width="1.6" marker-end="url(#ar17a)"/>
+  <text x="342" y="136" font-size="9" fill="#64748b">__init__ 选后端 · forward 时隐式取 context</text>
+
+  <!-- Attention layer -->
+  <rect x="40" y="142" width="580" height="86" rx="8" fill="#eef2ff" stroke="#818cf8" stroke-width="1.4"/>
+  <text x="60" y="164" font-size="13.5" font-weight="bold" fill="#1e1b4b">Attention 层（vllm/attention/layer.py:74）—— 门面</text>
+  <text x="60" y="182" font-size="9.5" fill="#312e81">__init__ :186-201：attn_backend = get_attn_backend(...) → impl = backend.get_impl_cls()(...)</text>
+  <text x="60" y="196" font-size="9.5" fill="#312e81">forward :263：签名只有 (query, key, value) —— kv_cache / attn_metadata 从 forward context 取</text>
+  <text x="60" y="210" font-size="9.5" fill="#312e81">static_forward_context[prefix] = self（:215）：layer 名 → 层对象，custom op 靠它找回来</text>
+  <text x="60" y="224" font-size="9" fill="#4338ca">use_direct_call ? impl.forward(...) : torch.ops.vllm.unified_attention(q,k,v,layer_name)（:317-345）</text>
+
+  <line x1="330" y1="228" x2="330" y2="244" stroke="#475569" stroke-width="1.6" marker-end="url(#ar17a)"/>
+  <text x="342" y="240" font-size="9" fill="#64748b">opaque custom op（CUDA 平台，layer.py:560-578）</text>
+
+  <!-- forward context -->
+  <rect x="40" y="246" width="580" height="60" rx="8" fill="#fefce8" stroke="#facc15" stroke-width="1.4"/>
+  <text x="60" y="268" font-size="13" font-weight="bold" fill="#713f12">forward context（forward_context.py:259）—— 每 step 注入一次</text>
+  <text x="60" y="286" font-size="9.5" fill="#854d0e">execute_model → set_forward_context（gpu_model_runner.py:2287）：attn_metadata = {layer_name → metadata}</text>
+  <text x="60" y="300" font-size="9" fill="#a16207">no_compile_layers[name] → layer 对象（含 kv_cache）· 签名干净 = torch.compile 不下钻 kernel</text>
+
+  <line x1="330" y1="306" x2="330" y2="322" stroke="#475569" stroke-width="1.6" marker-end="url(#ar17a)"/>
+  <text x="342" y="318" font-size="9" fill="#64748b">每层每 step 一次调用</text>
+
+  <!-- Impl -->
+  <rect x="40" y="324" width="580" height="94" rx="8" fill="#fdf2f8" stroke="#f472b6" stroke-width="1.4"/>
+  <text x="60" y="346" font-size="13.5" font-weight="bold" fill="#831843">AttentionImpl（每层一个实例，如 FlashAttentionImpl flash_attn.py:367）</text>
+  <text x="60" y="364" font-size="9.5" fill="#9d174d">forward(layer, q, k, v, kv_cache, attn_metadata, output)（abstract.py:158）—— 调用约定不可变：</text>
+  <text x="60" y="378" font-size="9.5" fill="#9d174d">① 写 KV：reshape_and_cache_flash(k, v, cache, slot_mapping)（flash_attn.py:498）★ 写侧查表</text>
+  <text x="60" y="392" font-size="9.5" fill="#9d174d">② 算 attention：flash_attn_varlen_func(k=key_cache, block_table, cu_seqlens_q, seqused_k)（:526）★ 读侧查表</text>
+  <text x="60" y="406" font-size="9" fill="#be185d">⑥ cascade 分支（公共前缀 ≥256 &amp; ≥8 请求，:551-575）· profile run（metadata=None）直接 return</text>
+
+  <line x1="330" y1="418" x2="330" y2="434" stroke="#475569" stroke-width="1.6" marker-end="url(#ar17a)"/>
+  <text x="342" y="430" font-size="9" fill="#64748b">kernel 互不相同，接口完全一致</text>
+
+  <!-- kernels -->
+  <rect x="40" y="436" width="186" height="76" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="133" y="458" text-anchor="middle" font-size="11" font-weight="bold" fill="#0f172a">FlashAttention</text>
+  <text x="133" y="474" text-anchor="middle" font-size="8.6" fill="#334155">vllm_flash_attn（C++）</text>
+  <text x="133" y="487" text-anchor="middle" font-size="8.6" fill="#334155">FA3@Hopper / FA2</text>
+  <text x="133" y="500" text-anchor="middle" font-size="8.6" fill="#334155">形状 (2,N,B,H,D)</text>
+
+  <rect x="237" y="436" width="186" height="76" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="330" y="458" text-anchor="middle" font-size="11" font-weight="bold" fill="#0f172a">Triton</text>
+  <text x="330" y="474" text-anchor="middle" font-size="8.6" fill="#334155">attention/ops/（自带源码）</text>
+  <text x="330" y="487" text-anchor="middle" font-size="8.6" fill="#334155">unified / decode 两套</text>
+  <text x="330" y="500" text-anchor="middle" font-size="8.6" fill="#334155">形状 (N,2,B,H,D)</text>
+
+  <rect x="434" y="436" width="186" height="76" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="527" y="458" text-anchor="middle" font-size="11" font-weight="bold" fill="#0f172a">FlashInfer</text>
+  <text x="527" y="474" text-anchor="middle" font-size="8.6" fill="#334155">flashinfer 库 / trtllm-gen</text>
+  <text x="527" y="487" text-anchor="middle" font-size="8.6" fill="#334155">prefill/decode 两 wrapper</text>
+  <text x="527" y="500" text-anchor="middle" font-size="8.6" fill="#334155">形状 (N,2,B,H,D)+HND</text>
+
+  <!-- AttentionGroup note -->
+  <rect x="40" y="524" width="580" height="56" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="330" y="545" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#065f46">AttentionGroup（worker/utils.py:131）：同 KV group 内按 (backend 类, spec) 再分组</text>
+  <text x="330" y="562" text-anchor="middle" font-size="9.5" fill="#065f46">每组共享一个 MetadataBuilder（每 step 只 build 一次）· 同模型可混多种后端变体（§2.9 动态子类）</text>
+
+  <!-- one-line essence -->
+  <rect x="40" y="592" width="580" height="60" rx="6" fill="#f0f9ff" stroke="#7dd3fc"/>
+  <text x="330" y="613" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#0c4a6e">一句话本质</text>
+  <text x="330" y="631" text-anchor="middle" font-size="9.5" fill="#0c4a6e">写死的调用约定（先写 KV 再算 attention）+ 两张可插拔的表（slot_mapping / block_table）</text>
+  <text x="330" y="645" text-anchor="middle" font-size="9.5" fill="#0c4a6e">+ 后端自决的物理布局（get_kv_cache_shape）—— 会查表就自动享受 PagedAttention 的全部好处</text>
+
+  <!-- version discipline -->
+  <rect x="40" y="664" width="580" height="54" rx="6" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="330" y="684" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#9a3412">版本纪律（与旧博客 / README 速查表不一致时，以 checkout 的 tag 为准）</text>
+  <text x="330" y="700" text-anchor="middle" font-size="9" fill="#9a3412">v0.11.0：后端实现在 vllm/v1/attention/backends/ · registry.py 不存在（选择链 = selector + platform）· 无 PREFILL_ONLY · FA 单一统一调用</text>
+
+  <!-- ================= Right top: directory migration ================= -->
+  <text x="660" y="82" font-size="13.5" font-weight="bold" fill="#0f172a">目录迁移对照（v0.11.0 实测）</text>
+  <rect x="650" y="92" width="550" height="112" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <line x1="650" y1="118" x2="1200" y2="118" stroke="#cbd5e1" stroke-width="1"/>
+  <line x1="905" y1="92" x2="905" y2="204" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="662" y="108" font-size="9.6" font-weight="bold" fill="#334155">README / 旧博客说法</text>
+  <text x="915" y="108" font-size="9.6" font-weight="bold" fill="#334155">v0.11.0 实际</text>
+  <text x="662" y="132" font-size="9" fill="#b91c1c">vllm/attention/backends/flash_attn.py</text><text x="915" y="132" font-size="9" fill="#0f172a">vllm/v1/attention/backends/flash_attn.py</text>
+  <text x="662" y="150" font-size="9" fill="#b91c1c">vllm/attention/registry.py 注册表</text><text x="915" y="150" font-size="9" fill="#0f172a">不存在：selector.py:140 + cuda.py:240</text>
+  <text x="662" y="168" font-size="9" fill="#b91c1c">AttentionType.PREFILL_ONLY</text><text x="915" y="168" font-size="9" fill="#0f172a">仅 DECODER/ENCODER/ENCODER_ONLY/ENCODER_DECODER</text>
+  <text x="662" y="186" font-size="9" fill="#b91c1c">FA 分派 prefill/decode 两个 kernel</text><text x="915" y="186" font-size="9" fill="#0f172a">单一 flash_attn_varlen_func 统一调用</text>
+  <text x="662" y="200" font-size="8.6" fill="#64748b">抽象层仍在 vllm/attention/（layer/selector/abstract + Triton ops）</text>
+
+  <!-- ================= Right middle: three object roles ================= -->
+  <text x="660" y="232" font-size="13.5" font-weight="bold" fill="#0f172a">三类对象的生命周期与职责</text>
+  <rect x="650" y="242" width="550" height="150" rx="8" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.2"/>
+  <rect x="664" y="256" width="168" height="120" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="748" y="276" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#4c1d95">AttentionBackend</text>
+  <text x="748" y="292" text-anchor="middle" font-size="8.8" fill="#5b21b6">纯静态 · 模型加载时用</text>
+  <text x="748" y="308" text-anchor="middle" font-size="8.8" fill="#5b21b6">get_impl/builder/metadata_cls</text>
+  <text x="748" y="322" text-anchor="middle" font-size="8.8" fill="#5b21b6">get_kv_cache_shape ★布局</text>
+  <text x="748" y="336" text-anchor="middle" font-size="8.8" fill="#5b21b6">get_kv_cache_stride_order</text>
+  <text x="748" y="350" text-anchor="middle" font-size="8.8" fill="#5b21b6">dtype / head_size 校验</text>
+  <text x="748" y="366" text-anchor="middle" font-size="8.4" fill="#7c3aed">abstract.py:27-83</text>
+
+  <rect x="841" y="256" width="168" height="120" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="925" y="276" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#4c1d95">AttentionImpl</text>
+  <text x="925" y="292" text-anchor="middle" font-size="8.8" fill="#5b21b6">每层一个实例</text>
+  <text x="925" y="308" text-anchor="middle" font-size="8.8" fill="#5b21b6">forward = 写KV+算attention</text>
+  <text x="925" y="322" text-anchor="middle" font-size="8.8" fill="#5b21b6">__init__ 校验 head_size</text>
+  <text x="925" y="336" text-anchor="middle" font-size="8.8" fill="#5b21b6">调用 native kernel</text>
+  <text x="925" y="350" text-anchor="middle" font-size="8.8" fill="#5b21b6">CPU 开销敏感（CG eager 段）</text>
+  <text x="925" y="366" text-anchor="middle" font-size="8.4" fill="#7c3aed">abstract.py:114-182</text>
+
+  <rect x="1018" y="256" width="168" height="120" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="1102" y="276" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#4c1d95">MetadataBuilder</text>
+  <text x="1102" y="292" text-anchor="middle" font-size="8.8" fill="#5b21b6">每 AttentionGroup 一个</text>
+  <text x="1102" y="308" text-anchor="middle" font-size="8.8" fill="#5b21b6">build(prefix_len, common)</text>
+  <text x="1102" y="322" text-anchor="middle" font-size="8.8" fill="#5b21b6">cudagraph_support ★CG上限</text>
+  <text x="1102" y="336" text-anchor="middle" font-size="8.8" fill="#5b21b6">reorder_batch / cascade</text>
+  <text x="1102" y="350" text-anchor="middle" font-size="8.8" fill="#5b21b6">build_for_drafting（W4）</text>
+  <text x="1102" y="366" text-anchor="middle" font-size="8.4" fill="#7c3aed">utils.py:232-341</text>
+
+  <!-- ================= Right bottom: decision tree ================= -->
+  <text x="660" y="418" font-size="13.5" font-weight="bold" fill="#0f172a">后端选择决策树（selector.py:140 → cuda.py:240-399）</text>
+  <rect x="650" y="428" width="550" height="290" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.2"/>
+
+  <rect x="668" y="442" width="514" height="34" rx="6" fill="#ffffff" stroke="#34d399"/>
+  <text x="925" y="456" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#065f46">三级优先：global_force（selector:60） &gt; VLLM_ATTENTION_BACKEND（:189） &gt; platform 默认</text>
+  <text x="925" y="469" text-anchor="middle" font-size="8.6" fill="#047857">env 值必须命中 _Backend enum（interface.py:41，21 项）→ 返回 qualname 字符串 → resolve_obj_by_qualname 懒加载</text>
+
+  <line x1="925" y1="476" x2="925" y2="490" stroke="#059669" stroke-width="1.6" marker-end="url(#ar17c)"/>
+
+  <rect x="668" y="492" width="246" height="60" rx="6" fill="#ffffff" stroke="#fbbf24"/>
+  <text x="791" y="508" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#92400e">use_mla?</text>
+  <text x="791" y="522" text-anchor="middle" font-size="8.6" fill="#a16207">CUTLASS_MLA(SM100,bs=128) / FLASHINFER_MLA</text>
+  <text x="791" y="534" text-anchor="middle" font-size="8.6" fill="#a16207">FLASHMLA(bs=64) / FLASH_ATTN_MLA / TRITON_MLA</text>
+  <text x="791" y="546" text-anchor="middle" font-size="8.2" fill="#b45309">block_size 被后端强制改写（cuda.py:139-175）</text>
+
+  <rect x="936" y="492" width="246" height="60" rx="6" fill="#ffffff" stroke="#34d399"/>
+  <text x="1059" y="508" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#065f46">显式指定 backend?</text>
+  <text x="1059" y="522" text-anchor="middle" font-size="8.6" fill="#047857">FLASHINFER / TRITON_ATTN / FLASH_ATTN</text>
+  <text x="1059" y="534" text-anchor="middle" font-size="8.6" fill="#047857">/ FLEX_ATTENTION / TREE_ATTN / XFORMERS</text>
+  <text x="1059" y="546" text-anchor="middle" font-size="8.2" fill="#059669">直接返回，不做能力 fallback（T2 考点）</text>
+
+  <line x1="925" y1="552" x2="925" y2="566" stroke="#059669" stroke-width="1.6" marker-end="url(#ar17c)"/>
+  <text x="935" y="562" font-size="8.6" fill="#047857">默认链（is_attn_backend_supported 三查：can_import / head_size / dtype）</text>
+
+  <rect x="668" y="568" width="514" height="66" rx="6" fill="#ffffff" stroke="#34d399"/>
+  <text x="925" y="584" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#065f46">SM 10.0（Blackwell）→ FlashInfer 优先（装了就用 + set_kv_cache_layout("HND")）</text>
+  <text x="925" y="598" text-anchor="middle" font-size="9" fill="#047857">SM 8.0+ → 有 sink 或 FP8 KV（非 SM90）→ TRITON_ATTN；否则 FlashAttention（FA3@SM90 / FA2）</text>
+  <text x="925" y="612" text-anchor="middle" font-size="9" fill="#047857">SM &lt; 8.0 → FLEX_ATTENTION（torch.compile 生成，兜底）</text>
+  <text x="925" y="626" text-anchor="middle" font-size="8.4" fill="#059669">校验不过自动降级 FlexAttention，日志写明原因（head_size=… / dtype=…，cuda.py:370-388）</text>
+
+  <!-- cg support table -->
+  <rect x="668" y="642" width="514" height="62" rx="6" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="925" y="658" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#4c1d95">cudagraph_support（utils.py:215）—— Day 18 CUDA Graph 模式的上限</text>
+  <text x="925" y="673" text-anchor="middle" font-size="9" fill="#5b21b6">Triton = ALWAYS · FA3 = ALWAYS（混合 batch 也能捕图）· FA2 = UNIFORM_BATCH</text>
+  <text x="925" y="687" text-anchor="middle" font-size="9" fill="#5b21b6">FlashInfer = UNIFORM_SINGLE_TOKEN_DECODE（需按 bs 预分配 decode wrapper）</text>
+  <text x="925" y="698" text-anchor="middle" font-size="8.4" fill="#7c3aed">取所有 builder 的最小值 → initialize_cudagraph_capture（:3611）决定 FULL / PIECEWISE 降级链</text>
+
+  <!-- footer -->
+  <rect x="650" y="728" width="550" height="32" rx="6" fill="#f0fdf4" stroke="#34d399"/>
+  <text x="925" y="748" text-anchor="middle" font-size="9.5" fill="#065f46">新硬件接入 = 把"platform 决策树 + 三类对象"换成你的实现（vllm-ascend 即此路线，§4.6 清单）</text>
+</svg>

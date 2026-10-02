@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 700" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar11a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar11r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="700" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">chunked prefill 的核心价值：把单步 prefill 的「时间洞」切成有界的 chunk</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">Qwen3-8B · H100 · 16K-token prompt 突发到达 · 已有 3 个 decode 请求在飞 · ρ ≈ 30~35 µs/token（量级示意，以实测为准）</text>
+
+  <!-- ================= Panel A: 无 chunked prefill ================= -->
+  <text x="70" y="82" font-size="13.5" font-weight="bold" fill="#991b1b">A · 不开 chunked prefill（等价于 budget ≥ prompt 长度）：一整步的「时间洞」</text>
+  <rect x="60" y="92" width="1120" height="216" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- decode-only steps -->
+  <rect x="80" y="126" width="16" height="34" fill="#10b981"/>
+  <rect x="104" y="126" width="16" height="34" fill="#10b981"/>
+  <rect x="128" y="126" width="16" height="34" fill="#10b981"/>
+  <rect x="152" y="126" width="16" height="34" fill="#10b981"/>
+  <rect x="176" y="126" width="16" height="34" fill="#10b981"/>
+  <text x="136" y="118" text-anchor="middle" font-size="8" fill="#065f46">decode-only step ≈ 5~10ms（3×1 token）</text>
+
+  <!-- monolithic prefill -->
+  <rect x="214" y="126" width="500" height="34" fill="#0f172a"/>
+  <text x="464" y="140" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#f1f5f9">16K-token prefill：单步 ≈ 0.5~0.8s（compute-bound）</text>
+  <text x="464" y="153" text-anchor="middle" font-size="7.8" fill="#cbd5e1">2·8e9·16384 ≈ 262 GFLOP ÷ ~500 TFLOPS（Day 1/2 手算法）</text>
+
+  <!-- decode steps after -->
+  <rect x="730" y="126" width="16" height="34" fill="#10b981"/>
+  <rect x="754" y="126" width="16" height="34" fill="#10b981"/>
+  <rect x="778" y="126" width="16" height="34" fill="#10b981"/>
+  <rect x="802" y="126" width="16" height="34" fill="#10b981"/>
+  <rect x="826" y="126" width="16" height="34" fill="#10b981"/>
+  <text x="785" y="118" text-anchor="middle" font-size="8" fill="#065f46">恢复 decode</text>
+
+  <line x1="74" y1="172" x2="1150" y2="172" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ar11a)"/>
+  <text x="1160" y="176" font-size="9" fill="#64748b">t</text>
+  <text x="464" y="192" text-anchor="middle" font-size="8.5" fill="#7c2d12">这一步里，3 个 decode 请求的下一个 token 全部原地滞留</text>
+
+  <!-- ITL sequence A -->
+  <text x="74" y="222" font-size="10" font-weight="bold" fill="#0f172a">某个在飞 decode 请求的 ITL 序列：</text>
+  <circle cx="92" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="110" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="128" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="146" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="164" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="744" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="762" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="780" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="798" cy="240" r="3.5" fill="#10b981"/>
+  <circle cx="816" cy="240" r="3.5" fill="#10b981"/>
+
+  <line x1="172" y1="262" x2="738" y2="262" stroke="#ef4444" stroke-width="1.4" marker-start="url(#ar11r)" marker-end="url(#ar11r)"/>
+  <text x="455" y="282" text-anchor="middle" font-size="10" font-weight="bold" fill="#991b1b">ITL 尖峰 ≈ T_prefill(16K) ≈ 500~800ms —— 无上界，随 prompt 长度线性增长（TPOT p99 / 抖动的主导项）</text>
+  <text x="74" y="300" font-size="8.5" fill="#64748b">对照 Day 1：prefill 是 compute-bound，长 prompt 把单步时间推到数百 ms；decode 的 token 节奏（Day 5 的 ITL）被打断</text>
+
+  <!-- ================= Panel B: chunked prefill ================= -->
+  <text x="70" y="336" font-size="13.5" font-weight="bold" fill="#065f46">B · chunked prefill（budget = 2048）：切成 8 个满块 step + 1 个收尾 step（24 token，产出首 token）</text>
+  <rect x="60" y="346" width="1120" height="248" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- 9 mixed step bars: chunk 2045 + 3 decode -->
+  <g>
+    <rect x="80"  y="378" width="90" height="34" fill="#60a5fa"/><rect x="171" y="378" width="2" height="34" fill="#10b981"/><rect x="174" y="378" width="2" height="34" fill="#10b981"/><rect x="177" y="378" width="2" height="34" fill="#10b981"/>
+    <rect x="192" y="378" width="90" height="34" fill="#60a5fa"/><rect x="283" y="378" width="2" height="34" fill="#10b981"/><rect x="286" y="378" width="2" height="34" fill="#10b981"/><rect x="289" y="378" width="2" height="34" fill="#10b981"/>
+    <rect x="304" y="378" width="90" height="34" fill="#60a5fa"/><rect x="395" y="378" width="2" height="34" fill="#10b981"/><rect x="398" y="378" width="2" height="34" fill="#10b981"/><rect x="401" y="378" width="2" height="34" fill="#10b981"/>
+    <rect x="416" y="378" width="90" height="34" fill="#60a5fa"/><rect x="507" y="378" width="2" height="34" fill="#10b981"/><rect x="510" y="378" width="2" height="34" fill="#10b981"/><rect x="513" y="378" width="2" height="34" fill="#10b981"/>
+    <rect x="528" y="378" width="90" height="34" fill="#60a5fa"/><rect x="619" y="378" width="2" height="34" fill="#10b981"/><rect x="622" y="378" width="2" height="34" fill="#10b981"/><rect x="625" y="378" width="2" height="34" fill="#10b981"/>
+    <rect x="640" y="378" width="90" height="34" fill="#60a5fa"/><rect x="731" y="378" width="2" height="34" fill="#10b981"/><rect x="734" y="378" width="2" height="34" fill="#10b981"/><rect x="737" y="378" width="2" height="34" fill="#10b981"/>
+    <rect x="752" y="378" width="90" height="34" fill="#60a5fa"/><rect x="843" y="378" width="2" height="34" fill="#10b981"/><rect x="846" y="378" width="2" height="34" fill="#10b981"/><rect x="849" y="378" width="2" height="34" fill="#10b981"/>
+    <rect x="864" y="378" width="90" height="34" fill="#60a5fa"/><rect x="955" y="378" width="2" height="34" fill="#10b981"/><rect x="958" y="378" width="2" height="34" fill="#10b981"/><rect x="961" y="378" width="2" height="34" fill="#10b981"/>
+    <rect x="976" y="378" width="12" height="34" fill="#93c5fd"/><rect x="990" y="378" width="2" height="34" fill="#10b981"/><rect x="993" y="378" width="2" height="34" fill="#10b981"/><rect x="996" y="378" width="2" height="34" fill="#10b981"/>
+  </g>
+  <text x="128" y="424" text-anchor="middle" font-size="7.4" fill="#1e3a8a">2045+3</text>
+  <text x="240" y="424" text-anchor="middle" font-size="7.4" fill="#1e3a8a">2045+3</text>
+  <text x="352" y="424" text-anchor="middle" font-size="7.4" fill="#1e3a8a">2045+3</text>
+  <text x="464" y="424" text-anchor="middle" font-size="7.4" fill="#1e3a8a">2045+3</text>
+  <text x="576" y="424" text-anchor="middle" font-size="7.4" fill="#1e3a8a">2045+3</text>
+  <text x="688" y="424" text-anchor="middle" font-size="7.4" fill="#1e3a8a">2045+3</text>
+  <text x="800" y="424" text-anchor="middle" font-size="7.4" fill="#1e3a8a">2045+3</text>
+  <text x="912" y="424" text-anchor="middle" font-size="7.4" fill="#1e3a8a">2045+3</text>
+  <text x="993" y="424" text-anchor="middle" font-size="7.4" fill="#065f46">24+3 ✓</text>
+  <text x="1010" y="390" font-size="9" font-weight="bold" fill="#065f46">首 token ✓</text>
+
+  <text x="74" y="442" font-size="8.5" fill="#0f172a">每个 step ≈ 2048 token ≈ 65~85ms（ρ·B + T_fixed），步长被 budget 钉死；3 个 decode 每 step 都搭上车（piggybacking，GEMM 边际成本 ≈ 0）</text>
+
+  <!-- ITL sequence B -->
+  <text x="74" y="472" font-size="10" font-weight="bold" fill="#0f172a">同一个 decode 请求的 ITL 序列：</text>
+  <g fill="#10b981">
+    <circle cx="92" cy="490" r="3.5"/><circle cx="126" cy="490" r="3.5"/><circle cx="160" cy="490" r="3.5"/><circle cx="194" cy="490" r="3.5"/><circle cx="228" cy="490" r="3.5"/><circle cx="262" cy="490" r="3.5"/><circle cx="296" cy="490" r="3.5"/><circle cx="330" cy="490" r="3.5"/><circle cx="364" cy="490" r="3.5"/><circle cx="398" cy="490" r="3.5"/><circle cx="432" cy="490" r="3.5"/><circle cx="466" cy="490" r="3.5"/><circle cx="500" cy="490" r="3.5"/><circle cx="534" cy="490" r="3.5"/><circle cx="568" cy="490" r="3.5"/><circle cx="602" cy="490" r="3.5"/><circle cx="636" cy="490" r="3.5"/><circle cx="670" cy="490" r="3.5"/><circle cx="704" cy="490" r="3.5"/><circle cx="738" cy="490" r="3.5"/><circle cx="772" cy="490" r="3.5"/><circle cx="806" cy="490" r="3.5"/><circle cx="840" cy="490" r="3.5"/><circle cx="874" cy="490" r="3.5"/><circle cx="908" cy="490" r="3.5"/><circle cx="942" cy="490" r="3.5"/><circle cx="976" cy="490" r="3.5"/><circle cx="1010" cy="490" r="3.5"/>
+  </g>
+  <text x="551" y="518" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">最大 ITL ≤ T_step(2048) ≈ 70~90ms —— 有界，且不随 prompt 长度变化；p99 ≈ p50，抖动消失（本例约 8× 改善）</text>
+  <text x="74" y="552" font-size="8.5" fill="#64748b">对照：A 图与 B 图的 prefill 总时长几乎相同（FLOPs 守恒）—— 变的不是总量，是分布：decode 平滑了，A 自己的 TTFT 多付 (k−1)·T_fixed</text>
+  <text x="74" y="576" font-size="8.5" fill="#64748b">其余代价：混排步不能整图 CUDA Graph 回放（Day 18）；中间 chunk 的采样被丢弃（§2.5）；chunk 进行中晚到请求暂时排队（§2.7）</text>
+
+  <!-- ================= Bottom formula strip ================= -->
+  <rect x="60" y="608" width="1120" height="74" rx="6" fill="#fffbeb" stroke="#fcd34d"/>
+  <text x="620" y="632" text-anchor="middle" font-size="11" font-weight="bold" fill="#78350f">ITL_max：无 chunk ≈ ρ·L（随 prompt 无界） → chunked ≈ ρ·B + T_fixed（B 是可调旋钮）</text>
+  <text x="620" y="652" text-anchor="middle" font-size="9.5" fill="#78350f">FLOPs 守恒：chunk i 只算「新 Q × 已有全部 KV」，两种方式的 query-key 对总数同为 ≈ L²/2，GEMM 部分逐 token 只算一次</text>
+  <text x="620" y="672" text-anchor="middle" font-size="9.5" fill="#78350f">chunked prefill 改变的是时延的分布（decode 尾部平滑 / prefill 略慢），不是计算总量 —— 这就是它近乎免费的原因</text>
+</svg>

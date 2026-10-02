@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar12b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar12c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/></marker>
+    <marker id="ar12d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="720" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">preemption 两侧视图：P1 状态机 与 P2 持久批 / block table 语义</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：RequestStatus（request.py:205-217）在抢占下的循环 · 右：GPUModelRunner 的持久批与 CachedRequestState（gpu_model_runner.py） · v0.11.0</text>
+
+  <!-- ================= Left: state machine ================= -->
+  <text x="70" y="82" font-size="13.5" font-weight="bold" fill="#0f172a">P1 · 请求状态机（含抢占环路）</text>
+  <rect x="60" y="92" width="560" height="560" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- WAITING -->
+  <rect x="100" y="120" width="150" height="44" rx="22" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.6"/>
+  <text x="175" y="139" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">WAITING</text>
+  <text x="175" y="154" text-anchor="middle" font-size="8" fill="#1e3a8a">waiting 队列（FCFS/堆）</text>
+
+  <!-- RUNNING -->
+  <rect x="410" y="120" width="150" height="44" rx="22" fill="#d1fae5" stroke="#10b981" stroke-width="1.6"/>
+  <text x="485" y="139" text-anchor="middle" font-size="11" font-weight="bold" fill="#065f46">RUNNING</text>
+  <text x="485" y="154" text-anchor="middle" font-size="8" fill="#065f46">running 列表（时间序）</text>
+
+  <!-- PREEMPTED -->
+  <rect x="410" y="300" width="150" height="44" rx="22" fill="#fee2e2" stroke="#ef4444" stroke-width="1.6"/>
+  <text x="485" y="319" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">PREEMPTED</text>
+  <text x="485" y="334" text-anchor="middle" font-size="8" fill="#991b1b">带回 waiting 队首</text>
+
+  <!-- WAITING -> RUNNING -->
+  <line x1="250" y1="134" x2="404" y2="134" stroke="#475569" stroke-width="1.6" marker-end="url(#ar12b)"/>
+  <text x="327" y="112" text-anchor="middle" font-size="8.5" fill="#475569">waiting 循环收编（:498-526）</text>
+  <text x="327" y="124" text-anchor="middle" font-size="8" fill="#64748b">SCHEDULED 事件（首次）· status=RUNNING</text>
+
+  <!-- RUNNING -> PREEMPTED -->
+  <line x1="500" y1="164" x2="500" y2="296" stroke="#ef4444" stroke-width="1.8" marker-end="url(#ar12c)"/>
+  <text x="508" y="200" font-size="8.5" fill="#991b1b">running 循环 KV 失守（:275）</text>
+  <text x="508" y="212" font-size="8" fill="#991b1b">victim = 最新者（:271）</text>
+  <text x="508" y="224" font-size="8" fill="#991b1b">· computed = 0（:276）</text>
+  <text x="508" y="236" font-size="8" fill="#991b1b">· output 保留</text>
+  <text x="508" y="248" font-size="8" fill="#991b1b">· PREEMPTED 事件（:278）</text>
+  <text x="508" y="260" font-size="8" fill="#991b1b">· free 全部块（:273）</text>
+
+  <!-- PREEMPTED -> WAITING (queue head) -->
+  <path d="M 410 322 C 240 322 175 260 175 168" fill="none" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#ar12c)"/>
+  <text x="252" y="282" text-anchor="middle" font-size="8.5" fill="#991b1b">waiting.prepend_request（:281）</text>
+  <text x="252" y="294" text-anchor="middle" font-size="8" fill="#991b1b">队首复活：优先恢复 + 防饥饿</text>
+
+  <!-- PREEMPTED -> RUNNING (resume) -->
+  <path d="M 460 296 C 380 220 380 190 410 158" fill="none" stroke="#059669" stroke-width="1.6" marker-end="url(#ar12d)"/>
+  <text x="356" y="196" text-anchor="middle" font-size="8.5" fill="#065f46">resume：waiting 循环再次收编</text>
+  <text x="356" y="208" text-anchor="middle" font-size="8" fill="#065f46">→ scheduled_resumed_reqs（:513-514）</text>
+
+  <!-- FINISHED region -->
+  <rect x="96" y="420" width="478" height="150" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="6 3"/>
+  <text x="335" y="442" text-anchor="middle" font-size="10" font-weight="bold" fill="#475569">终态区：is_finished = status &gt; PREEMPTED（IntEnum 技巧，Day 9）</text>
+  <rect x="120" y="458" width="120" height="34" rx="4" fill="#f1f5f9" stroke="#94a3b8"/><text x="180" y="479" text-anchor="middle" font-size="8.6" fill="#334155">FINISHED_STOPPED</text>
+  <rect x="252" y="458" width="140" height="34" rx="4" fill="#f1f5f9" stroke="#94a3b8"/><text x="322" y="479" text-anchor="middle" font-size="8.6" fill="#334155">FINISHED_LENGTH_CAPPED</text>
+  <rect x="404" y="458" width="110" height="34" rx="4" fill="#f1f5f9" stroke="#94a3b8"/><text x="459" y="479" text-anchor="middle" font-size="8.6" fill="#334155">FINISHED_ABORTED</text>
+  <text x="335" y="516" text-anchor="middle" font-size="8.6" fill="#64748b">RUNNING → 终态：update_from_output 的 stop 判定（:920-937）</text>
+  <text x="335" y="530" text-anchor="middle" font-size="8.6" fill="#991b1b">PREEMPTED → 终态：请求在 waiting 里被 abort/判停（stopped_preempted_reqs，:937/:984-986）</text>
+  <text x="335" y="546" text-anchor="middle" font-size="8.6" fill="#64748b">旁路（Day 9）：WAITING_FOR_FSM / WAITING_FOR_REMOTE_KVS 处于 WAITING 与 RUNNING 之间</text>
+  <text x="335" y="560" text-anchor="middle" font-size="8.6" fill="#64748b">注意：PREEMPTED 的请求不在 running 里，但仍占着 self.requests 字典（可查可 abort）</text>
+
+  <!-- bottom note left -->
+  <rect x="80" y="586" width="520" height="52" rx="6" fill="#eff6ff" stroke="#60a5fa"/>
+  <text x="340" y="606" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">事件时间戳的记账口径（stats.py:152-178）</text>
+  <text x="340" y="622" text-anchor="middle" font-size="8.6" fill="#1e3a8a">SCHEDULED 只记首次（"ignore preemptions"，:153）；抢占停顿被计入 prefill_time / decode_time</text>
+  <text x="340" y="634" text-anchor="middle" font-size="8.6" fill="#1e3a8a">→ 被抢占请求的 TTFT / TPOT 在指标上表现为「无解释的毛刺」——这就是观测特征</text>
+
+  <!-- ================= Right: P2 persistent batch ================= -->
+  <text x="660" y="82" font-size="13.5" font-weight="bold" fill="#0f172a">P2 · 持久批（InputBatch）与 block table 的两种更新语义</text>
+  <rect x="650" y="92" width="530" height="560" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- batch table step k -->
+  <text x="670" y="122" font-size="10.5" font-weight="bold" fill="#334155">Step k（抢占发生）：E 缺席本步调度</text>
+  <rect x="670" y="132" width="490" height="120" rx="6" fill="#ffffff" stroke="#e2e8f0"/>
+  <line x1="670" y1="158" x2="1160" y2="158" stroke="#e2e8f0"/>
+  <line x1="800" y1="132" x2="800" y2="252" stroke="#e2e8f0"/>
+  <line x1="1000" y1="132" x2="1000" y2="252" stroke="#e2e8f0"/>
+  <text x="735" y="150" text-anchor="middle" font-size="9" font-weight="bold" fill="#64748b">槽位</text>
+  <text x="900" y="150" text-anchor="middle" font-size="9" font-weight="bold" fill="#64748b">持久批成员</text>
+  <text x="1080" y="150" text-anchor="middle" font-size="9" font-weight="bold" fill="#64748b">本步 num_scheduled_tokens</text>
+  <text x="735" y="178" text-anchor="middle" font-size="9" fill="#0f172a">0</text><text x="900" y="178" text-anchor="middle" font-size="9" fill="#0f172a">A</text><text x="1080" y="178" text-anchor="middle" font-size="9" fill="#065f46">1 ✓</text>
+  <text x="735" y="200" text-anchor="middle" font-size="9" fill="#0f172a">1</text><text x="900" y="200" text-anchor="middle" font-size="9" fill="#0f172a">B</text><text x="1080" y="200" text-anchor="middle" font-size="9" fill="#065f46">1 ✓</text>
+  <text x="735" y="222" text-anchor="middle" font-size="9" fill="#0f172a">3</text><text x="900" y="222" text-anchor="middle" font-size="9" fill="#0f172a">E</text><text x="1080" y="222" text-anchor="middle" font-size="9" fill="#991b1b">缺席 → 摘批</text>
+  <text x="900" y="244" text-anchor="middle" font-size="8.6" fill="#991b1b">unscheduled_req_ids = cached − scheduled → input_batch.remove_request（:557-565）</text>
+
+  <!-- batch table step k+1 -->
+  <text x="670" y="284" font-size="10.5" font-weight="bold" fill="#065f46">Step k+1（复活）：E 以「重开」身份回来</text>
+  <rect x="670" y="294" width="490" height="120" rx="6" fill="#ffffff" stroke="#e2e8f0"/>
+  <line x1="670" y1="320" x2="1160" y2="320" stroke="#e2e8f0"/>
+  <line x1="800" y1="294" x2="800" y2="414" stroke="#e2e8f0"/>
+  <line x1="1000" y1="294" x2="1000" y2="414" stroke="#e2e8f0"/>
+  <text x="735" y="312" text-anchor="middle" font-size="9" font-weight="bold" fill="#64748b">槽位</text>
+  <text x="900" y="312" text-anchor="middle" font-size="9" font-weight="bold" fill="#64748b">持久批成员</text>
+  <text x="1080" y="312" text-anchor="middle" font-size="9" font-weight="bold" fill="#64748b">block table 更新方式</text>
+  <text x="735" y="340" text-anchor="middle" font-size="9" fill="#0f172a">0</text><text x="900" y="340" text-anchor="middle" font-size="9" fill="#0f172a">A</text><text x="1080" y="340" text-anchor="middle" font-size="9" fill="#1e3a8a">追加 append（:640-645）</text>
+  <text x="735" y="362" text-anchor="middle" font-size="9" fill="#0f172a">1</text><text x="900" y="362" text-anchor="middle" font-size="9" fill="#0f172a">B</text><text x="1080" y="362" text-anchor="middle" font-size="9" fill="#1e3a8a">追加 append</text>
+  <text x="735" y="384" text-anchor="middle" font-size="9" fill="#0f172a">4</text><text x="900" y="384" text-anchor="middle" font-size="9" fill="#065f46">E（resumed）</text><text x="1080" y="384" text-anchor="middle" font-size="9" fill="#991b1b">替换 replace（:646-650）</text>
+  <text x="900" y="406" text-anchor="middle" font-size="8.6" fill="#475569">resumed_from_preemption=True（output.py:95-98）→ req_state.block_ids = new_block_ids（整表替换）</text>
+
+  <!-- why replace -->
+  <rect x="670" y="432" width="490" height="88" rx="6" fill="#fef2f2" stroke="#ef4444"/>
+  <text x="915" y="454" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#991b1b">为什么 resumed 必须整表替换？</text>
+  <text x="915" y="472" text-anchor="middle" font-size="8.8" fill="#7c2d12">E 的旧 block 在 Step k 已被 free（可能已被别的请求占用 / 已被驱逐）</text>
+  <text x="915" y="486" text-anchor="middle" font-size="8.8" fill="#7c2d12">若沿用追加语义，P2 的 block table 会指向已易主的块 → KV 写坏别的请求</text>
+  <text x="915" y="500" text-anchor="middle" font-size="8.8" fill="#7c2d12">替换 = 与 P1 账本强制对齐：resume 时的 block_ids 是唯一真相（缓存命中块 + 新分配块）</text>
+  <text x="915" y="514" text-anchor="middle" font-size="8.8" fill="#7c2d12">CachedRequestState（token ids 等）不删重建 → 摘批只动持久批，不动缓存状态（:552-565 注释）</text>
+
+  <!-- client view -->
+  <rect x="670" y="538" width="490" height="90" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="915" y="560" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">客户端视角与采样连续性</text>
+  <text x="915" y="578" text-anchor="middle" font-size="8.8" fill="#047857">已输出的 token 不重发不丢失；恢复后把 prompt + output 全量作为输入重算（KV 确定性重建）</text>
+  <text x="915" y="592" text-anchor="middle" font-size="8.8" fill="#047857">随后采样「下一个」token —— 客户端只感到一段长 ITL（缓存命中 ≈ 1 个 block 的重算 + 排队）</text>
+  <text x="915" y="606" text-anchor="middle" font-size="8.8" fill="#047857">极端场景（缓存全未命中）：4K 上下文 @H100 ≈ 131ms 停顿、@A100 ≈ 471ms（§3.3 手算）</text>
+
+  <!-- bottom -->
+  <text x="620" y="686" text-anchor="middle" font-size="9.5" fill="#64748b">一句话：P1 用「status + computed=0 + 队首」三件套完成回滚，P2 用「摘批 + 整表替换」保持批与账本一致 —— 两侧协议的粘合剂是 SchedulerOutput（resumed_from_preemption）</text>
+</svg>

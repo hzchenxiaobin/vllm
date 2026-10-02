@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 640" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar11c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="640" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">budget（max_num_batched_tokens）怎么设：《chunked prefill 的收益与代价》一页决策图</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：定性权衡曲线（低 = 好） · 右：收益 / 代价清单 —— 即今日产出物的底稿</text>
+
+  <!-- ================= 左：权衡曲线 ================= -->
+  <rect x="50" y="64" width="580" height="440" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <line x1="120" y1="460" x2="600" y2="460" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ar11c)"/>
+  <line x1="120" y1="460" x2="120" y2="86" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ar11c)"/>
+  <text x="360" y="484" text-anchor="middle" font-size="9.5" fill="#475569">max_num_batched_tokens（B，对数示意）</text>
+  <text x="106" y="80" text-anchor="end" font-size="9" fill="#475569">定性</text>
+  <text x="106" y="462" text-anchor="end" font-size="8.5" fill="#475569">好</text>
+
+  <line x1="160" y1="460" x2="160" y2="455" stroke="#94a3b8"/><text x="160" y="472" text-anchor="middle" font-size="8" fill="#64748b">256</text>
+  <line x1="240" y1="460" x2="240" y2="455" stroke="#94a3b8"/><text x="240" y="472" text-anchor="middle" font-size="8" fill="#64748b">1K</text>
+  <line x1="300" y1="460" x2="300" y2="455" stroke="#94a3b8"/><text x="300" y="472" text-anchor="middle" font-size="8" fill="#64748b">2K</text>
+  <line x1="360" y1="460" x2="360" y2="455" stroke="#94a3b8"/><text x="360" y="472" text-anchor="middle" font-size="8" fill="#64748b">4K</text>
+  <line x1="420" y1="460" x2="420" y2="455" stroke="#94a3b8"/><text x="420" y="472" text-anchor="middle" font-size="8" fill="#64748b">8K</text>
+  <line x1="480" y1="460" x2="480" y2="455" stroke="#94a3b8"/><text x="480" y="472" text-anchor="middle" font-size="8" fill="#64748b">16K</text>
+  <line x1="555" y1="460" x2="555" y2="455" stroke="#94a3b8"/><text x="555" y="472" text-anchor="middle" font-size="8" fill="#64748b">≥ L（典型 prompt）</text>
+
+  <rect x="282" y="90" width="160" height="370" fill="#10b981" opacity="0.08"/>
+  <text x="362" y="106" text-anchor="middle" font-size="8.6" font-weight="bold" fill="#065f46">SLO 反推的合理区间</text>
+  <text x="362" y="118" text-anchor="middle" font-size="8" fill="#065f46">B ≈ (ITL_SLO − T_fixed) / ρ</text>
+
+  <polyline points="160,430 240,404 300,384 360,360 420,332 480,300 555,160" fill="none" stroke="#ef4444" stroke-width="2.4"/>
+  <text x="200" y="398" font-size="8.8" font-weight="bold" fill="#991b1b">decode ITL p99 ≈ ρ·B + T_fixed</text>
+  <text x="552" y="140" text-anchor="end" font-size="8.4" font-weight="bold" fill="#991b1b">B ≥ L：chunked 失效</text>
+  <text x="552" y="152" text-anchor="end" font-size="8.4" fill="#991b1b">单步巨型 prefill 回归（≈ ρ·L）</text>
+
+  <polyline points="160,150 240,196 300,218 360,234 420,244 480,250 555,254" fill="none" stroke="#2563eb" stroke-width="2.4"/>
+  <text x="196" y="144" font-size="8.8" font-weight="bold" fill="#1e3a8a">长请求 TTFT</text>
+  <text x="200" y="170" font-size="8" fill="#1e3a8a">≈ ρ·L + (k−1)·T_fixed</text>
+  <text x="182" y="418" font-size="8" fill="#7c2d12">B 太小：k ↑ → 固定开销主导</text>
+  <text x="182" y="430" font-size="8" fill="#7c2d12">TTFT / 吞吐双双恶化</text>
+
+  <text x="340" y="498" text-anchor="middle" font-size="8.4" fill="#64748b">扫参法（实验 3）：固定负载，B ∈ {512, 2048, 8192, 32768}，</text>
+  <text x="340" y="510" text-anchor="middle" font-size="8.4" fill="#64748b">看「ITL p99」与「长请求 TTFT」的交点 —— 两条曲线都要压在 SLO 下的 B 就是答案</text>
+
+  <!-- ================= 右：收益 / 代价清单 ================= -->
+  <rect x="650" y="64" width="560" height="168" rx="6" fill="#f0fdf4" stroke="#6ee7b7"/>
+  <text x="664" y="86" font-size="11" font-weight="bold" fill="#065f46">收益（谁受益、为什么）</text>
+  <text x="664" y="106" font-size="8.4" fill="#0f172a">① 在飞 decode 的 ITL 有界：≈ ρ·B + T_fixed，不随 prompt 长度变化（本系列实验约 8× p99 改善）</text>
+  <text x="664" y="124" font-size="8.4" fill="#0f172a">② decode 搭车（piggybacking）：混排步里 decode 的 GEMM 边际成本 ≈ 0，无 prefill-only 空转段</text>
+  <text x="664" y="142" font-size="8.4" fill="#0f172a">③ admission 的 KV 门槛从「整段 prompt」降到「一个 chunk」→ 与 running 的 KV 需求错峰，</text>
+  <text x="676" y="154" font-size="8.4" fill="#0f172a">整批抢占的触发面下降（Day 12 伏笔）</text>
+  <text x="664" y="172" font-size="8.4" fill="#0f172a">④ prefill 总时长 ≈ 不变（FLOPs 守恒）—— 上述收益近乎免费，这是它成为 V1 默认的根本原因</text>
+  <text x="664" y="192" font-size="8" fill="#64748b">口径提醒：直接受益者是「已在 running 的 decode」的 ITL；waiting 请求的 TTFT 变化不大，</text>
+  <text x="664" y="203" font-size="8" fill="#64748b">真正的 TTFT 救援是 P/D 分离（Day 29）—— 别把收益记错账</text>
+
+  <rect x="650" y="244" width="560" height="218" rx="6" fill="#fffbeb" stroke="#fcd34d"/>
+  <text x="664" y="266" font-size="11" font-weight="bold" fill="#78350f">代价（谁买单、什么条件下恶化）</text>
+  <text x="664" y="286" font-size="8.4" fill="#0f172a">① 被切请求自身 TTFT ↑：ΔTTFT ≈ (k−1)·T_fixed + 混排等待；B 越小、并发 decode 越多越明显</text>
+  <text x="664" y="304" font-size="8.4" fill="#0f172a">② 每步固定开销 ×k + 小 chunk 的 GEMM M 变小 → 纯 prefill 吞吐略降；</text>
+  <text x="676" y="316" font-size="8.4" fill="#0f172a">A100 上调大 budget 实测反降吞吐（PR #17885）→ budget 是硬件相关的经验值</text>
+  <text x="664" y="334" font-size="8.4" fill="#0f172a">③ 混排步 ≠ 均匀 decode 批 → 不能整图 CUDA Graph 回放（gpu_model_runner.py:1051 的 uniform 检测），</text>
+  <text x="676" y="346" font-size="8.4" fill="#0f172a">这些步里 decode 的 launch 开销回归（Day 18；piecewise CG 缓解）</text>
+  <text x="664" y="364" font-size="8.4" fill="#0f172a">④ 中间 chunk 照常采样但被丢弃（少量废算，:1099 "for simplicity"）；prompt logprobs 受限（源码 TODO）</text>
+  <text x="664" y="382" font-size="8.4" fill="#0f172a">⑤ chunk 进行中，晚到请求暂时排队（先到先得预算）；长 prompt 洪峰下用</text>
+  <text x="676" y="394" font-size="8.4" fill="#0f172a">long_prefill_token_threshold / max_num_partial_prefills 缓解（config docstring 明示此动机）</text>
+  <text x="664" y="418" font-size="8" fill="#64748b">失效模式一句话：B ≥ 典型 prompt 长度 → chunked 退化（收益清零、代价仍在）；</text>
+  <text x="664" y="429" font-size="8" fill="#64748b">B 极小（如 256）→ ITL 极平滑但 k 巨大，TTFT 爆炸、吞吐崩（README 11.5 自检题）</text>
+
+  <rect x="650" y="474" width="560" height="62" rx="6" fill="#eef2ff" stroke="#818cf8"/>
+  <text x="664" y="494" font-size="9" font-weight="bold" fill="#1e3a8a">默认值速查（v0.11.0 源码 arg_utils._set_default_args）</text>
+  <text x="664" y="510" font-size="8.4" fill="#0f172a">vllm serve：H100/MI300x → 8192 · A100/小显存 → 2048 · LLM 离线类：16384 / 8192</text>
+  <text x="664" y="526" font-size="8.4" fill="#0f172a">显式关闭（--no-enable-chunked-prefill）时强制 budget ≥ max_model_len = 回到巨型单步模式</text>
+
+  <text x="620" y="572" text-anchor="middle" font-size="9.5" fill="#64748b">一页总结的用法：左图定「调哪个方向」，右表定「怎么向面试官讲 trade-off」——每个条目都能落到源码行号或实验数据</text>
+</svg>

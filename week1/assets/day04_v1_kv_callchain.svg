@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 700" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="700" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">vLLM V1 源码视角：KV 管理调用链 + block 生命周期</text>
+  <text x="620" y="48" text-anchor="middle" font-size="12.5" fill="#64748b">源码坐标以 v0.8 ~ v0.10 主线为准（细节随版本演进，Day 15/16 逐行精读）· 左：一次 allocate_slots 的完整路径 · 右：一块的一生</text>
+
+  <!-- ================= 左：调用链 ================= -->
+  <!-- 顶部入口 -->
+  <rect x="40" y="66" width="700" height="52" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="390" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">Scheduler.schedule()　vllm/v1/core/scheduler.py</text>
+  <text x="390" y="106" text-anchor="middle" font-size="10.5" fill="#475569">waiting → running；每步问一次 KV 管理器「这些 token 放得下吗」</text>
+
+  <line x1="390" y1="118" x2="390" y2="136" stroke="#475569" stroke-width="2" marker-end="url(#ar3)"/>
+
+  <!-- KVCacheManager -->
+  <rect x="40" y="138" width="700" height="56" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="390" y="160" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">KVCacheManager.allocate_slots(req, num_new_tokens)　vllm/v1/core/kv_cache_manager.py</text>
+  <text x="390" y="180" text-anchor="middle" font-size="10.5" fill="#475569">req_to_blocks: dict[req → list[KVCacheBlock]]（CPU 侧 block table）· 返回 None = 放不下 → 抢占</text>
+
+  <line x1="180" y1="194" x2="180" y2="214" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+  <line x1="600" y1="194" x2="600" y2="214" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <!-- 四个分支 -->
+  <rect x="40" y="216" width="340" height="88" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="56" y="238" font-size="11.5" font-weight="bold" fill="#14532d">① 前缀命中（APC，默认开）</text>
+  <text x="56" y="256" font-size="10.3" fill="#047857">get_computed_blocks()：沿块哈希链</text>
+  <text x="56" y="272" font-size="10.3" fill="#047857">hash_request_tokens → hash_block_tokens</text>
+  <text x="56" y="288" font-size="10.3" fill="#047857">（父哈希 + token_ids + extra_hash）查</text>
+  <text x="56" y="304" font-size="10.3" fill="#047857">BlockPool.cached_blocks → 复用整块</text>
+
+  <rect x="400" y="216" width="340" height="88" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="416" y="238" font-size="11.5" font-weight="bold" fill="#14532d">② 取空闲块（free 队列）</text>
+  <text x="416" y="256" font-size="10.3" fill="#047857">BlockPool.get_free_blocks()　←</text>
+  <text x="416" y="272" font-size="10.3" fill="#047857">FreeKVCacheBlockQueue（双向链表，</text>
+  <text x="416" y="288" font-size="10.3" fill="#047857">O(1) 取/还；不够时 try_cache_evict</text>
+  <text x="416" y="304" font-size="10.3" fill="#047857">按 LRU 驱逐 cached 块腾位置）</text>
+
+  <rect x="40" y="316" width="340" height="88" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="56" y="338" font-size="11.5" font-weight="bold" fill="#9a3412">③ COW：尾块共享且要写入</text>
+  <text x="56" y="356" font-size="10.3" fill="#9a3412">尾块 ref_cnt &gt; 1（并行采样/共享前缀）</text>
+  <text x="56" y="372" font-size="10.3" fill="#9a3412">→ 新块 + 拷贝旧块内容（16 tok × L 层</text>
+  <text x="56" y="388" font-size="10.3" fill="#9a3412">≈ 2.25 MiB @Qwen3-8B，µs 级），</text>
+  <text x="56" y="404" font-size="10.3" fill="#9a3412">旧块 ref−1，之后各写各的</text>
+
+  <rect x="400" y="316" width="340" height="88" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="416" y="338" font-size="11.5" font-weight="bold" fill="#991b1b">④ 池满 → 抢占（recompute）</text>
+  <text x="416" y="356" font-size="10.3" fill="#991b1b">allocate_slots 返回 None → 调度器把</text>
+  <text x="416" y="372" font-size="10.3" fill="#991b1b">（通常最新的）请求逐个逐出 running：</text>
+  <text x="416" y="388" font-size="10.3" fill="#991b1b">kv_cache_manager.free() 释放全部块，</text>
+  <text x="416" y="404" font-size="10.3" fill="#991b1b">回 waiting 重算（V1 无 swap 路径）</text>
+
+  <line x1="390" y1="404" x2="390" y2="428" stroke="#475569" stroke-width="2" marker-end="url(#ar3)"/>
+  <text x="404" y="422" font-size="10" fill="#64748b">分配成功 → GPU 侧准备元数据</text>
+
+  <!-- GPU 侧 -->
+  <rect x="40" y="430" width="700" height="196" rx="8" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+  <text x="56" y="452" font-size="12" font-weight="bold" fill="#0f172a">GPU 侧（每步执行前，GPUModelRunner　vllm/v1/worker/gpu_model_runner.py）</text>
+
+  <rect x="56" y="462" width="668" height="44" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="390" y="480" text-anchor="middle" font-size="11" fill="#334155">启动期：initialize_kv_cache / _allocate_kv_cache —— 按层把剩余显存切成物理块池</text>
+  <text x="390" y="497" text-anchor="middle" font-size="10.3" fill="#64748b">（vllm/v1/kv_cache_interface.py：KVCacheConfig / KVCacheTensor，块数由 profile_run 后的余量决定）</text>
+
+  <rect x="56" y="514" width="324" height="50" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="218" y="533" text-anchor="middle" font-size="11" fill="#334155">InputBatch.block_table：int32 张量</text>
+  <text x="218" y="550" text-anchor="middle" font-size="10.3" fill="#64748b">[max_num_seqs, max_blocks_per_seq]（+CPU 副本）</text>
+  <text x="218" y="562" text-anchor="middle" font-size="10.3" fill="#64748b">vllm/v1/worker/input_batch.py</text>
+
+  <rect x="398" y="514" width="326" height="50" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="561" y="533" text-anchor="middle" font-size="11" fill="#334155">slot_mapping = block_id × 16 + 块内偏移</text>
+  <text x="561" y="550" text-anchor="middle" font-size="10.3" fill="#64748b">本步新 token 的 K/V 写入物理槽位</text>
+  <text x="561" y="562" text-anchor="middle" font-size="10.3" fill="#64748b">（追加写 = 原位写，零拷贝）</text>
+
+  <rect x="56" y="572" width="668" height="44" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="390" y="590" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">Attention 后端：FlashAttention / FlashInfer / Triton（vllm/v1/attention/backends/）</text>
+  <text x="390" y="607" text-anchor="middle" font-size="10.3" fill="#475569">paged KV gather：按 block_table 逐块读 K/V，page_size = block_size；块内连续 → coalescing 友好</text>
+
+  <!-- ================= 右：block 生命周期 ================= -->
+  <rect x="790" y="66" width="422" height="560" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="1001" y="92" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a">一块（KVCacheBlock）的一生</text>
+  <text x="1001" y="110" text-anchor="middle" font-size="10.5" fill="#64748b">字段：block_id · ref_cnt · block_hash · token_ids · prev/next_free_block</text>
+
+  <!-- 状态：FREE -->
+  <rect x="830" y="130" width="160" height="52" rx="26" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+  <text x="910" y="152" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569">FREE</text>
+  <text x="910" y="169" text-anchor="middle" font-size="10" fill="#64748b">在 free 队列里排队</text>
+
+  <line x1="910" y1="182" x2="910" y2="206" stroke="#16a34a" stroke-width="2" marker-end="url(#arG)"/>
+  <text x="922" y="198" font-size="10" fill="#16a34a">allocate_slots 取出（ref=1）</text>
+
+  <!-- 状态：ALLOCATED -->
+  <rect x="830" y="208" width="160" height="52" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="910" y="230" text-anchor="middle" font-size="12" font-weight="bold" fill="#14532d">ALLOCATED</text>
+  <text x="910" y="247" text-anchor="middle" font-size="10" fill="#166534">挂在某序列的表尾，逐 token 填</text>
+
+  <line x1="910" y1="260" x2="910" y2="284" stroke="#16a34a" stroke-width="2" marker-end="url(#arG)"/>
+  <text x="922" y="276" font-size="10" fill="#16a34a">填满 16 tok + 计算块哈希</text>
+
+  <!-- 状态：CACHED -->
+  <rect x="830" y="286" width="160" height="62" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="910" y="308" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">CACHED</text>
+  <text x="910" y="325" text-anchor="middle" font-size="10" fill="#1e40af">hash 注册进 cached_blocks</text>
+  <text x="910" y="340" text-anchor="middle" font-size="10" fill="#1e40af">请求结束后仍可被命中（APC）</text>
+
+  <!-- evict 箭头：CACHED → FREE -->
+  <path d="M 990 317 C 1150 317 1150 156 990 156" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arG)"/>
+  <text x="1156" y="230" font-size="10.3" fill="#991b1b" transform="rotate(90 1156 230)">池紧 → try_cache_evict（LRU）</text>
+
+  <!-- free 箭头：ALLOCATED → FREE -->
+  <path d="M 830 234 C 770 234 770 156 830 156" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#ar3)"/>
+  <text x="778" y="188" font-size="10" fill="#475569" text-anchor="end">序列结束/被抢占</text>
+  <text x="778" y="201" font-size="10" fill="#475569" text-anchor="end">free()（ref→0 才回收）</text>
+
+  <!-- 共享/COW -->
+  <rect x="830" y="380" width="342" height="118" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="1001" y="402" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#9a3412">共享与 COW（ref_cnt 视角）</text>
+  <text x="846" y="424" font-size="10.5" fill="#9a3412">· fork（并行采样 n 路）：块 ref 1 → n，零拷贝</text>
+  <text x="846" y="442" font-size="10.5" fill="#9a3412">· 前缀命中（APC）：复用 cached 块，ref +1</text>
+  <text x="846" y="460" font-size="10.5" fill="#9a3412">· 追加写共享尾块：COW 新块，旧块 ref −1</text>
+  <text x="846" y="478" font-size="10.5" fill="#9a3412">· 序列结束：逐块 ref −1，归零才回 free 队列</text>
+  <text x="846" y="496" font-size="10.5" fill="#9a3412">→ 「能被多少序列引用」与「内容是否可变」解耦</text>
+
+  <!-- 论文↔V1 -->
+  <rect x="830" y="514" width="342" height="96" rx="10" fill="#f0fdf4" stroke="#059669" stroke-width="1.2"/>
+  <text x="1001" y="536" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#065f46">论文机制 → V1 落点的十年稳定性</text>
+  <text x="846" y="558" font-size="10.5" fill="#047857">等大块 + free 队列 + block table：分毫未变</text>
+  <text x="846" y="576" font-size="10.5" fill="#047857">换掉的：自研 kernel → FA3/FlashInfer/Triton</text>
+  <text x="846" y="594" font-size="10.5" fill="#047857">升级的：跨请求 APC（哈希链）默认开启</text>
+
+  <!-- 底部 -->
+  <rect x="40" y="640" width="1172" height="44" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="626" y="659" text-anchor="middle" font-size="10.8" fill="#334155">一句话：论文的「三层结构 + 引用计数 + COW」在 V1 中原样存活，只是 kernel 执行者换成原生支持 paged KV 的注意力后端、共享机制升级为默认开启的哈希前缀缓存</text>
+  <text x="626" y="676" text-anchor="middle" font-size="10.8" fill="#334155">后续坐标：抢占细节 Day 12 · KVCacheManager 逐行 Day 15 · APC 实验 Day 16 · attention 后端 Day 17 · NPU 侧实现 vllm-ascend（W6 项目 A）</text>
+</svg>

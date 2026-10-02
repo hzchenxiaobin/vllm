@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 780" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar12a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar12r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/></marker>
+    <marker id="ar12g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="780" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">V1 preemption 全景：KV 失守 → 祭出最新者 → waiting 队首复活</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">FCFS 场景 · running = [A(最老), B, C, D, E(最新)] · 源码坐标：vllm/v1/core/sched/scheduler.py（v0.11.0） · 前提：prefix caching 默认开启（V1）</text>
+
+  <!-- ================= Panel 0: 触发前的状态 ================= -->
+  <text x="70" y="80" font-size="13.5" font-weight="bold" fill="#0f172a">0 · 触发前：池将满，A 正在 decode</text>
+  <rect x="60" y="90" width="1120" height="96" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- KV pool bar -->
+  <text x="80" y="112" font-size="10" font-weight="bold" fill="#475569">KV block 池（block_size=16）：</text>
+  <rect x="240" y="102" width="130" height="16" fill="#0f172a"/><text x="305" y="114" text-anchor="middle" font-size="8.5" fill="#f1f5f9">A 的块</text>
+  <rect x="372" y="102" width="110" height="16" fill="#334155"/><text x="427" y="114" text-anchor="middle" font-size="8.5" fill="#f1f5f9">B</text>
+  <rect x="484" y="102" width="110" height="16" fill="#334155"/><text x="539" y="114" text-anchor="middle" font-size="8.5" fill="#f1f5f9">C</text>
+  <rect x="596" y="102" width="110" height="16" fill="#334155"/><text x="651" y="114" text-anchor="middle" font-size="8.5" fill="#f1f5f9">D</text>
+  <rect x="708" y="102" width="150" height="16" fill="#475569"/><text x="783" y="114" text-anchor="middle" font-size="8.5" fill="#f1f5f9">E（最新入场）</text>
+  <rect x="860" y="102" width="130" height="16" fill="#0d9488"/><text x="925" y="114" text-anchor="middle" font-size="8.5" fill="#f0fdfa">cached（ref_cnt=0，可驱逐）</text>
+  <rect x="992" y="102" width="26" height="16" fill="#cbd5e1"/><text x="1035" y="114" font-size="8.5" fill="#64748b">free=0</text>
+
+  <!-- running queue -->
+  <text x="80" y="150" font-size="10" font-weight="bold" fill="#475569">running 队列（时间序，老→新）：</text>
+  <rect x="240" y="138" width="60" height="18" rx="4" fill="#dbeafe" stroke="#60a5fa"/><text x="270" y="151" text-anchor="middle" font-size="9" fill="#1e3a8a">A 老</text>
+  <rect x="310" y="138" width="44" height="18" rx="4" fill="#f1f5f9" stroke="#94a3b8"/><text x="332" y="151" text-anchor="middle" font-size="9" fill="#475569">B</text>
+  <rect x="364" y="138" width="44" height="18" rx="4" fill="#f1f5f9" stroke="#94a3b8"/><text x="386" y="151" text-anchor="middle" font-size="9" fill="#475569">C</text>
+  <rect x="418" y="138" width="44" height="18" rx="4" fill="#f1f5f9" stroke="#94a3b8"/><text x="440" y="151" text-anchor="middle" font-size="9" fill="#475569">D</text>
+  <rect x="472" y="138" width="60" height="18" rx="4" fill="#fee2e2" stroke="#ef4444"/><text x="502" y="151" text-anchor="middle" font-size="9" fill="#991b1b">E 最新</text>
+  <text x="560" y="151" font-size="9" fill="#64748b">← victim 从这一端选出（running.pop()，:271）</text>
+  <text x="80" y="176" font-size="8.5" fill="#64748b">注意：「free」含 ref_cnt=0 的可驱逐 cached 块（BlockPool.get_num_free_blocks = free 队列长度）；v0.11.0 无 watermark，耗尽即失败</text>
+
+  <!-- ================= Panel 1: Step k 触发 ================= -->
+  <text x="70" y="216" font-size="13.5" font-weight="bold" fill="#991b1b">1 · Step k：A 的 decode 需要 +1 block → allocate_slots 返回 None（:259）</text>
+  <rect x="60" y="226" width="1120" height="200" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- decision -->
+  <rect x="80" y="244" width="300" height="74" rx="6" fill="#fef2f2" stroke="#ef4444"/>
+  <text x="230" y="266" text-anchor="middle" font-size="10" font-weight="bold" fill="#991b1b">kv_cache_manager.allocate_slots(A, 1)</text>
+  <text x="230" y="284" text-anchor="middle" font-size="9" fill="#7c2d12">num_blocks_to_allocate(1) &gt; get_num_free_blocks()(0)</text>
+  <text x="230" y="300" text-anchor="middle" font-size="9" fill="#7c2d12">→ 返回 None（kv_cache_manager.py:271-273）</text>
+  <line x1="380" y1="281" x2="418" y2="281" stroke="#ef4444" stroke-width="1.6" marker-end="url(#ar12r)"/>
+
+  <!-- victim -->
+  <rect x="424" y="244" width="330" height="74" rx="6" fill="#fff7ed" stroke="#f59e0b"/>
+  <text x="589" y="264" text-anchor="middle" font-size="10" font-weight="bold" fill="#9a3412">选 victim：抢占「最低优先级 = 最新者」</text>
+  <text x="589" y="281" text-anchor="middle" font-size="9" fill="#7c2d12">FCFS：preempted_req = self.running.pop()（:271）→ E</text>
+  <text x="589" y="297" text-anchor="middle" font-size="9" fill="#7c2d12">PRIORITY：max(running, key=(priority, arrival_time))（:263）</text>
+  <text x="589" y="311" text-anchor="middle" font-size="8.5" fill="#92400e">语义：牺牲最新者 = 保护已投入计算最多的老请求（沉没成本）</text>
+  <line x1="754" y1="281" x2="792" y2="281" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ar12r)"/>
+
+  <!-- six-step reset -->
+  <rect x="798" y="244" width="362" height="74" rx="6" fill="#fef2f2" stroke="#ef4444"/>
+  <text x="979" y="262" text-anchor="middle" font-size="10" font-weight="bold" fill="#991b1b">对 E 的六步复位（:273-281）</text>
+  <text x="979" y="278" text-anchor="middle" font-size="8.6" fill="#7c2d12">free(E) 块进 free 队尾（hash 保留 → 缓存候选） · encoder cache 同步 free</text>
+  <text x="979" y="292" text-anchor="middle" font-size="8.6" fill="#7c2d12">status = PREEMPTED · num_computed_tokens = 0 · output_token_ids 保留</text>
+  <text x="979" y="306" text-anchor="middle" font-size="8.6" fill="#7c2d12">waiting.prepend_request(E)（队首！）· 记 PREEMPTED 事件</text>
+
+  <!-- retry A -->
+  <line x1="979" y1="318" x2="979" y2="336" stroke="#475569" stroke-width="1.2" marker-end="url(#ar12a)"/>
+  <rect x="80" y="342" width="500" height="40" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="330" y="359" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">A 重试 allocate_slots → 成功（E 的块已归还）→ A 正常 decode</text>
+  <text x="330" y="374" text-anchor="middle" font-size="8.5" fill="#047857">while True 循环可连续祭出多个 victim，直到成功或抢到自己（:283-292）</text>
+
+  <rect x="600" y="342" width="560" height="40" rx="6" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="880" y="359" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#334155">同一步：waiting 队列被整体跳过（if not preempted_reqs:，:335）</text>
+  <text x="880" y="374" text-anchor="middle" font-size="8.5" fill="#475569">归还的块只留给幸存的 running——先把在飞的伺候完，再收新请求</text>
+
+  <text x="80" y="404" font-size="8.5" fill="#64748b">客户端视角：E 的流式输出原地暂停（不失败、不重发）；本次停顿 ≈ 重算时长（见下方 Step k+1 与 §3.1 公式）</text>
+
+  <!-- ================= Panel 2: Step k+1 resume ================= -->
+  <text x="70" y="452" font-size="13.5" font-weight="bold" fill="#065f46">2 · Step k+1：E 从 waiting 队首复活（前提 free−hit ≥ 新块需求；饱和负载下可能要等幸存者让路，§2.6）</text>
+  <rect x="60" y="462" width="1120" height="186" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- waiting head -->
+  <rect x="80" y="480" width="330" height="70" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="245" y="500" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">E 在 waiting 队首（prepend 的意义：优先恢复、防饥饿）</text>
+  <text x="245" y="516" text-anchor="middle" font-size="9" fill="#047857">get_computed_blocks(E)（:380-384，computed==0 才查）</text>
+  <text x="245" y="530" text-anchor="middle" font-size="9" fill="#047857">→ 命中自己刚被 free 的块（hash 未清，LRU 未及驱逐）</text>
+  <text x="245" y="544" text-anchor="middle" font-size="8.5" fill="#047857">hit ≈ 全上下文的完整块 → 真正要重算的 ≈ 尾部 1 个 block</text>
+  <line x1="410" y1="515" x2="448" y2="515" stroke="#059669" stroke-width="1.6" marker-end="url(#ar12g)"/>
+
+  <!-- recompute ledger -->
+  <rect x="454" y="480" width="330" height="70" rx="6" fill="#eff6ff" stroke="#60a5fa"/>
+  <text x="619" y="500" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">重算的账本语义</text>
+  <text x="619" y="516" text-anchor="middle" font-size="9" fill="#1e3a8a">num_new_tokens = num_tokens − computed（:423）</text>
+  <text x="619" y="530" text-anchor="middle" font-size="8.6" fill="#1e3a8a">num_tokens = prompt + 已生成 output（:420-422 注释原文：</text>
+  <text x="619" y="542" text-anchor="middle" font-size="8.6" fill="#1e3a8a">"resumed requests, which have output tokens"）</text>
+  <line x1="784" y1="515" x2="822" y2="515" stroke="#475569" stroke-width="1.2" marker-end="url(#ar12a)"/>
+
+  <!-- P2 view -->
+  <rect x="828" y="480" width="332" height="70" rx="6" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="994" y="500" text-anchor="middle" font-size="10" font-weight="bold" fill="#334155">P2/ModelRunner 侧（gpu_model_runner.py）</text>
+  <text x="994" y="516" text-anchor="middle" font-size="8.6" fill="#475569">Step k：E 不在 num_scheduled_tokens → 从持久批摘除（:557-565）</text>
+  <text x="994" y="530" text-anchor="middle" font-size="8.6" fill="#475569">Step k+1：resumed_from_preemption=True（output.py:98）</text>
+  <text x="994" y="544" text-anchor="middle" font-size="8.6" fill="#475569">→ block_ids 整表替换而非追加（:646-650）</text>
+
+  <!-- thrash warning -->
+  <rect x="80" y="566" width="1080" height="64" rx="6" fill="#fffbeb" stroke="#fcd34d"/>
+  <text x="620" y="586" text-anchor="middle" font-size="10" font-weight="bold" fill="#78350f">注意：E 复活后 appended 到 running 尾部 → 又是「最新者」→ 池再耗尽时下一个 victim 还是 E（bounce / thrashing 风险，§2.6）</text>
+  <text x="620" y="604" text-anchor="middle" font-size="9" fill="#78350f">缓解链：E 的恢复近乎免费（缓存自命中）+ 老请求逐个完成释放块 → 有进展、无活锁；但若 E 的块被驱逐（缓存未命中）→ 每轮全量重算 → 吞吐崩塌</text>
+  <text x="620" y="620" text-anchor="middle" font-size="9" fill="#78350f">waiting 队首若永远放不下（上下文 &gt; 全池）→ :481 break 阻塞整个 waiting（head-of-line，§2.6）</text>
+
+  <!-- ================= Bottom strip ================= -->
+  <rect x="60" y="666" width="1120" height="92" rx="6" fill="#f0fdf4" stroke="#10b981"/>
+  <text x="620" y="690" text-anchor="middle" font-size="11" font-weight="bold" fill="#065f46">preemption = 乐观并发控制（OCC）的回滚：admission 不预留、乐观放行 → KV 失守时回滚最新者 → prefix caching 让回滚成本趋近 0</text>
+  <text x="620" y="710" text-anchor="middle" font-size="9.5" fill="#047857">为什么不保守预留 prompt+max_tokens 的 KV？PagedAttention 的浪费分析（Day 4）：预留制的内部碎片浪费 60-80% —— 抢占是「高利用率」的代价与保险</text>
+  <text x="620" y="730" text-anchor="middle" font-size="9.5" fill="#047857">观测锚点：vllm:num_preemptions（counter）持续增长 + gpu_cache_usage_perc ≈ 1.0 + ITL 长毛刺 = KV 超配（§2.7-2.8 调参表）</text>
+  <text x="620" y="748" text-anchor="middle" font-size="9" fill="#64748b">Qwen3-8B 量化背景：KV/token = 2×36 层×8 KV 头×128 维×2B = 144 KiB → H100 80G（util 0.9）≈ 37 万 token ≈ 16K 上下文 22 路（§3.2 手算）</text>
+</svg>

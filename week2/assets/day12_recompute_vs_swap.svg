@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar12e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar12f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/></marker>
+    <marker id="ar12h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="720" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">recompute vs swap：恢复成本手算 与 V1 的取舍 + 频繁抢占的诊断-调参树</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">Qwen3-8B（KV = 144 KiB/token）· 恢复 4096-token 上下文 · H100（ρ≈32µs/token，PCIe Gen4 x16 ≈ 25GB/s）· A100 数字见注（ρ≈115µs）</text>
+
+  <!-- ================= Left: cost bars ================= -->
+  <text x="70" y="82" font-size="13.5" font-weight="bold" fill="#0f172a">① 恢复一个被抢占请求（ctx=4K）要多久？</text>
+  <rect x="60" y="92" width="560" height="270" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- axis -->
+  <line x1="240" y1="110" x2="240" y2="322" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="70" y="118" font-size="9" fill="#64748b">swap 换入（H100 参考机）</text>
+  <rect x="240" y="104" width="26" height="20" fill="#60a5fa"/>
+  <text x="278" y="118" font-size="9.5" fill="#1e3a8a">≈ 24 ms（576 MiB ÷ 25GB/s；块粒度小拷贝再 ×1.2~1.5）</text>
+  <text x="70" y="140" font-size="8" fill="#64748b">（V0 还要付换出：抢占时再搬一次 → 全程 ≈ 2×）</text>
+
+  <text x="70" y="176" font-size="9" fill="#64748b">recompute · 无缓存命中</text>
+  <rect x="240" y="162" width="141" height="20" fill="#ef4444"/>
+  <text x="392" y="176" font-size="9.5" fill="#991b1b">≈ 131 ms（2·8e9·4096 ÷ 500 TFLOPS）</text>
+  <text x="70" y="198" font-size="8" fill="#64748b">（A100 ≈ 471 ms：÷ 140 TFLOPS → ρ×L）</text>
+
+  <text x="70" y="234" font-size="9" fill="#64748b">recompute · prefix 命中（V1 默认路径）</text>
+  <rect x="240" y="220" width="4" height="20" fill="#10b981"/>
+  <text x="254" y="234" font-size="9.5" fill="#065f46">≈ 0.5~2 ms（只重算尾部 ≤1 个 block = 16 token；命中自己刚 free 的块）</text>
+  <text x="70" y="256" font-size="8" fill="#64748b">（A100 同量级：16 token × 115µs ≈ 1.8ms）</text>
+
+  <!-- formula box -->
+  <rect x="80" y="274" width="520" height="72" rx="6" fill="#fffbeb" stroke="#fcd34d"/>
+  <text x="340" y="296" text-anchor="middle" font-size="10" font-weight="bold" fill="#78350f">T_recover ≈ ρ · (ctx − hit_tokens) + 排队等待；swap ≈ 2 · ctx · KV_bytes ÷ PCIe_BW</text>
+  <text x="340" y="314" text-anchor="middle" font-size="9" fill="#78350f">hit_tokens = 命中的完整块数 × block_size（get_computed_blocks，max_cache_hit = num_tokens−1，:174-179）</text>
+  <text x="340" y="330" text-anchor="middle" font-size="9" fill="#78350f">结论：prefix caching 把 recompute 从「百 ms 级」压到「ms 级」—— 这是 V1 敢砍 swap 的前提</text>
+
+  <!-- ================= Middle: why drop swap ================= -->
+  <text x="70" y="394" font-size="13.5" font-weight="bold" fill="#0f172a">② V1 为什么只留 recompute（Day 8 表：V0 可选 → V1 仅 recompute）</text>
+  <rect x="60" y="404" width="560" height="130" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="80" y="428" font-size="9.5" fill="#0f172a">1. prefix caching 默认开（V1）：victim 的块 free 后 hash 保留 → 复活大概率自命中 → recompute ≈ 免费</text>
+  <text x="80" y="448" font-size="9.5" fill="#0f172a">2. swap 的账并不便宜：换入+换出 2×PCIe，且与正常 KV 写、权重加载抢带宽；块粒度小拷贝效率低</text>
+  <text x="80" y="468" font-size="9.5" fill="#0f172a">3. 状态机复杂度：V0 swap 要 CPU 池管理 + 异步拷贝 + 双池记账；recompute 复用 prefill 路径，≈ 零新代码</text>
+  <text x="80" y="488" font-size="9.5" fill="#0f172a">4. swap 仍需 CPU RAM（--swap-space 默认 4GiB/卡，V1 里该参数服务于 CPU offloading 连接器而非抢占）</text>
+  <text x="80" y="514" font-size="8.8" fill="#64748b">V0 对照（历史坐标）：preemption_mode ∈ {recompute, swap}，默认 recompute；分配侧还有 1% watermark 预留 ——</text>
+  <text x="80" y="527" font-size="8.8" fill="#64748b">V1 把 watermark 也删了：精确到「free（含可驱逐）&lt; 需要」才失败，抢占就是安全阀（config/scheduler.py 已无相关配置）</text>
+
+  <!-- ================= Right: diagnosis tree ================= -->
+  <text x="660" y="82" font-size="13.5" font-weight="bold" fill="#0f172a">③ 「系统在频繁抢占吗？怎么调？」诊断-调参树</text>
+  <rect x="650" y="92" width="530" height="560" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- signals -->
+  <rect x="670" y="110" width="490" height="66" rx="6" fill="#fef2f2" stroke="#ef4444"/>
+  <text x="915" y="130" text-anchor="middle" font-size="10" font-weight="bold" fill="#991b1b">信号层（/metrics + 周期日志）</text>
+  <text x="915" y="147" text-anchor="middle" font-size="8.6" fill="#7c2d12">vllm:num_preemptions 斜率 &gt; 0（counter，loggers.py:277） · gpu_cache_usage_perc 钉在 ~1.0</text>
+  <text x="915" y="161" text-anchor="middle" font-size="8.6" fill="#7c2d12">ITL 出现秒级长毛刺（部分请求流暂停） · prefix hit rate 同步下滑 · Running 数锯齿震荡</text>
+
+  <line x1="915" y1="176" x2="915" y2="196" stroke="#475569" stroke-width="1.4" marker-end="url(#ar12e)"/>
+  <text x="924" y="190" font-size="8.5" fill="#64748b">分流</text>
+
+  <!-- branch 1 -->
+  <rect x="670" y="200" width="238" height="128" rx="6" fill="#fff7ed" stroke="#f59e0b"/>
+  <text x="789" y="220" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#9a3412">KV 超配（usage≈1.0 主导）</text>
+  <text x="789" y="238" text-anchor="middle" font-size="8.6" fill="#7c2d12">--max-num-seqs ↓（首选 admission 闸）</text>
+  <text x="789" y="252" text-anchor="middle" font-size="8.6" fill="#7c2d12">--max-model-len ↓（按业务真实上限）</text>
+  <text x="789" y="266" text-anchor="middle" font-size="8.6" fill="#7c2d12">--gpu-memory-utilization ↑（多留 KV）</text>
+  <text x="789" y="280" text-anchor="middle" font-size="8.6" fill="#7c2d12">--kv-cache-dtype fp8（KV 减半，Day 23）</text>
+  <text x="789" y="294" text-anchor="middle" font-size="8.6" fill="#7c2d12">权重量化 W8A8 / 加卡 TP（Day 32）</text>
+  <text x="789" y="312" text-anchor="middle" font-size="8.2" fill="#92400e">容量手算先行：并发上限 ≈ KV tokens ÷ 平均上下文</text>
+  <text x="789" y="323" text-anchor="middle" font-size="8.2" fill="#92400e">（H100 80G·Qwen3-8B ≈ 22 路 @16K，§3.2）</text>
+
+  <!-- branch 2 -->
+  <rect x="922" y="200" width="238" height="128" rx="6" fill="#eff6ff" stroke="#60a5fa"/>
+  <text x="1041" y="220" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">并发超配（queue time 也高）</text>
+  <text x="1041" y="238" text-anchor="middle" font-size="8.6" fill="#1e3a8a">waiting 长 + TTFT 涨 + 抢占并发出现</text>
+  <text x="1041" y="252" text-anchor="middle" font-size="8.6" fill="#1e3a8a">同上收敛 max_num_seqs；</text>
+  <text x="1041" y="266" text-anchor="middle" font-size="8.6" fill="#1e3a8a">前置限流：网关按 KV 足记做</text>
+  <text x="1041" y="280" text-anchor="middle" font-size="8.6" fill="#1e3a8a">并发闸 / 排队（goodput 视角，Day 5）</text>
+  <text x="1041" y="298" text-anchor="middle" font-size="8.2" fill="#475569">客户端超时/重试风暴会放大</text>
+  <text x="1041" y="310" text-anchor="middle" font-size="8.2" fill="#475569">抢占 → 设 max_tokens 上限</text>
+
+  <!-- branch 3 -->
+  <rect x="670" y="344" width="490" height="74" rx="6" fill="#f0fdf4" stroke="#10b981"/>
+  <text x="915" y="366" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">反例：无抢占但 TTFT 高 → 不是 KV 问题，是 prefill 拥塞</text>
+  <text x="915" y="383" text-anchor="middle" font-size="8.6" fill="#047857">budget / 排队策略 / P-D 分离（Day 11 §3.3、Day 29）—— 先分类再调参，别把 budget 当抢占旋钮</text>
+  <text x="915" y="403" text-anchor="middle" font-size="8.6" fill="#047857">max_num_batched_tokens 管单步时长（ITL 上界），与 KV 容量正交</text>
+
+  <!-- thrashing box -->
+  <rect x="670" y="436" width="490" height="118" rx="6" fill="#fef2f2" stroke="#ef4444"/>
+  <text x="915" y="458" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#991b1b">thrashing（反复抢占）识别与破解</text>
+  <text x="915" y="476" text-anchor="middle" font-size="8.6" fill="#7c2d12">形态 A 让路型：free−hit=0，victim 等幸存者走完（缓存被吃：hit 274→264）</text>
+  <text x="915" y="492" text-anchor="middle" font-size="8.6" fill="#7c2d12">形态 B 震荡型：靠驱逐他人缓存快速复活 → 又是最新者 → 再被祭（bounce）</text>
+  <text x="915" y="508" text-anchor="middle" font-size="8.6" fill="#7c2d12">底线检查：单请求上下文 &gt; 全池 → 队首永远放不下 → :481 break 阻塞整个 waiting（HOL）</text>
+  <text x="915" y="524" text-anchor="middle" font-size="8.6" fill="#7c2d12">破法：容量手算重配 admission（max_num_seqs ↓ 到手算值以内）→ 让 preemption 归零</text>
+  <text x="915" y="542" text-anchor="middle" font-size="8.6" fill="#7c2d12">进阶：限制 output 长度 / 前缀路由（Day 34）/ P-D 分离给 prefill 独立算力（Day 29）</text>
+
+  <!-- bottom strip -->
+  <rect x="60" y="556" width="560" height="96" rx="6" fill="#f0fdf4" stroke="#10b981"/>
+  <text x="340" y="580" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">根因框架（面试收尾句）</text>
+  <text x="340" y="600" text-anchor="middle" font-size="9" fill="#047857">preemption 不是稳态机制，是 admission control 失灵的信号</text>
+  <text x="340" y="616" text-anchor="middle" font-size="9" fill="#047857">vLLM 乐观放行（不预留 KV）换高利用率，抢占是过载时的回滚保险</text>
+  <text x="340" y="632" text-anchor="middle" font-size="9" fill="#047857">运维目标：稳态 num_preemptions 斜率 = 0；过载时可恢复（复活近免费）而非雪崩</text>
+  <text x="340" y="646" text-anchor="middle" font-size="8.5" fill="#64748b">容量手算 → admission 配置 → 指标验证：Day 13 把这棵树跑成实测数据</text>
+
+  <text x="620" y="690" text-anchor="middle" font-size="9.5" fill="#64748b">数字口径：Qwen3-8B KV/token = 2×36×8×128×2B = 144 KiB · ρ(H100)≈32µs、(A100)≈115µs（Day 11 台账）· 量级示意，以实测为准</text>
+</svg>

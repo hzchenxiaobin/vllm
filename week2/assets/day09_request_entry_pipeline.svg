@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 860" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="860" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">请求入口链路：从一个 curl 到 Scheduler 的 waiting 队列（v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">Day 8 地图的第一次"局部放大"：P0 六站 + 一次跨进程 + P1 三站 · 右侧灰条标注每一站之后的数据形态</text>
+
+  <!-- ============ P0 泳道背景 ============ -->
+  <rect x="40" y="62" width="700" height="560" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="60" y="86" font-size="13" font-weight="bold" fill="#1e3a8a">P0 · API Server 进程（AsyncLLM 门面之内）</text>
+
+  <!-- ============ ZMQ 边界 ============ -->
+  <rect x="756" y="62" width="70" height="560" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-dasharray="5 3"/>
+  <text x="791" y="86" font-size="10.5" font-weight="bold" fill="#c2410c" transform="rotate(0)">ZMQ</text>
+  <text x="791" y="100" font-size="8.5" fill="#c2410c">unix socket</text>
+  <text x="791" y="112" font-size="8.5" fill="#c2410c">msgspec/msgpack</text>
+
+  <!-- ============ P1 泳道背景 ============ -->
+  <rect x="842" y="62" width="358" height="560" rx="10" fill="#fffbeb" stroke="#fde68a"/>
+  <text x="862" y="86" font-size="13" font-weight="bold" fill="#92400e">P1 · EngineCore 进程</text>
+
+  <!-- ============ 数据形态灰条 ============ -->
+  <rect x="756" y="640" width="70" height="0" fill="none"/>
+
+  <!-- ============ Client ============ -->
+  <rect x="60" y="100" width="640" height="34" rx="5" fill="#0f172a"/>
+  <text x="380" y="115" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#f1f5f9">⓪ 客户端：curl POST /v1/chat/completions　（JSON body：messages / temperature / max_tokens …）</text>
+  <text x="380" y="128" text-anchor="middle" font-size="8.5" fill="#94a3b8">uvicorn + FastAPI 解析（P0 事件循环）· request_id 在 serving 层生成："chatcmpl-" + 随机串</text>
+  <line x1="380" y1="134" x2="380" y2="148" stroke="#475569" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+  <!-- ============ ① serving 层 ============ -->
+  <rect x="60" y="150" width="640" height="56" rx="5" fill="#dbeafe" stroke="#93c5fd"/>
+  <text x="72" y="168" font-size="10.5" font-weight="bold" fill="#1e3a8a">① 路由与 serving 层：OpenAIServingChat.create_chat_completion（serving_chat.py:163）</text>
+  <text x="72" y="183" font-size="9" fill="#475569">→ _preprocess_chat（serving_engine.py:736）：Jinja chat template 渲染 + tokenize（encode_async，线程池执行）</text>
+  <text x="72" y="197" font-size="9" fill="#475569">→ request.to_sampling_params：默认 max_tokens 兜底（get_max_tokens）· completion 路径则为 create_completion（:82）</text>
+  <line x1="380" y1="206" x2="380" y2="220" stroke="#475569" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+  <!-- ============ ② AsyncLLM.add_request ============ -->
+  <rect x="60" y="222" width="640" height="56" rx="5" fill="#dbeafe" stroke="#93c5fd"/>
+  <text x="72" y="240" font-size="10.5" font-weight="bold" fill="#1e3a8a">② AsyncLLM.generate（async_llm.py:323）→ add_request（:261）</text>
+  <text x="72" y="255" font-size="9" fill="#475569">→ 创建 RequestOutputCollector（该请求的输出队列，SSE 从这里拉）· truncate_prompt_tokens → tokenization_kwargs</text>
+  <text x="72" y="269" font-size="9" fill="#475569">→ n&gt;1 时：ParentRequest 扇出 n 个子请求（child id = "i_父id"，共享 token ids，仅 clone params）</text>
+  <line x1="380" y1="278" x2="380" y2="292" stroke="#475569" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+  <!-- ============ ③ Processor ============ -->
+  <rect x="60" y="294" width="640" height="74" rx="5" fill="#bfdbfe" stroke="#60a5fa"/>
+  <text x="72" y="312" font-size="10.5" font-weight="bold" fill="#1e3a8a">③ Processor.process_inputs（processor.py:326）—— 校验 + 兜底 + 构造 DTO</text>
+  <text x="72" y="327" font-size="9" fill="#475569">校验：lora / logprobs / logit_bias / allowed_token_ids / best_of / 结构化输出 grammar · vocab 越界 · prompt_len &gt; max_model_len 拦截</text>
+  <text x="72" y="341" font-size="9" fill="#475569">tokenize：文本 prompt 才做（InputPreprocessor._tokenize_prompt）；chat 路径传入的是 token ids → 只截断不重切</text>
+  <text x="72" y="355" font-size="9" fill="#475569">兜底：params.clone() · max_tokens=None → max_model_len − seq_len · update_from_generation_config(eos) · update_from_tokenizer(stop ids)</text>
+  <line x1="380" y1="368" x2="380" y2="382" stroke="#475569" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+  <!-- ============ ④ OutputProcessor 注册 ============ -->
+  <rect x="60" y="384" width="640" height="50" rx="5" fill="#dbeafe" stroke="#93c5fd"/>
+  <text x="72" y="402" font-size="10.5" font-weight="bold" fill="#1e3a8a">④ 先注册输出路由：OutputProcessor.add_request（output_processor.py:356）</text>
+  <text x="72" y="417" font-size="9" fill="#475569">request_states[request_id] = RequestState（内含 IncrementalDetokenizer）—— 必须在发送之前注册，否则输出无家可归</text>
+  <text x="72" y="429" font-size="8.5" fill="#64748b">顺序细节：重复 request_id 在这里直接抛 ValueError（"already running"）</text>
+  <line x1="380" y1="434" x2="380" y2="448" stroke="#475569" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+  <!-- ============ ⑤ ZMQ 发送 ============ -->
+  <rect x="60" y="450" width="640" height="56" rx="5" fill="#dbeafe" stroke="#93c5fd"/>
+  <text x="72" y="468" font-size="10.5" font-weight="bold" fill="#1e3a8a">⑤ 再跨进程发送：AsyncMPClient.add_request_async（core_client.py:903）</text>
+  <text x="72" y="483" font-size="9" fill="#475569">填 client_index → MsgpackEncoder.encode(EngineCoreRequest) → input_socket.send_multipart(ADD 帧, copy=False)</text>
+  <text x="72" y="497" font-size="9" fill="#475569">EngineCoreRequestType.ADD = b'\x00'（v1/engine/__init__.py:177）· 发送后 _ensure_output_queue_task()</text>
+
+  <!-- ZMQ 跨界箭头 -->
+  <line x1="704" y1="478" x2="838" y2="478" stroke="#ea580c" stroke-width="2" stroke-dasharray="6 3" marker-end="url(#arO)"/>
+  <text x="771" y="466" text-anchor="middle" font-size="8.6" font-weight="bold" fill="#c2410c">⑥ 跨进程边界</text>
+  <text x="771" y="494" text-anchor="middle" font-size="8" fill="#c2410c">~KB 级</text>
+  <text x="771" y="505" text-anchor="middle" font-size="8" fill="#c2410c">几十 µs</text>
+
+  <!-- ============ P1 ⑦ IO 线程 ============ -->
+  <rect x="862" y="150" width="318" height="118" rx="5" fill="#fef3c7" stroke="#fbbf24"/>
+  <text x="874" y="168" font-size="10.5" font-weight="bold" fill="#92400e">⑦ process_input_sockets IO 线程（core.py:817）</text>
+  <text x="874" y="183" font-size="8.8" fill="#475569">poller.poll() → recv_multipart →</text>
+  <text x="874" y="196" font-size="8.8" fill="#475569">MsgpackDecoder(EngineCoreRequest).decode（:873）</text>
+  <text x="874" y="209" font-size="8.8" fill="#475569">→ preprocess_add_request（:426）：</text>
+  <text x="874" y="222" font-size="8.8" fill="#475569">　· Request.from_engine_core_request（request.py:125）</text>
+  <text x="874" y="235" font-size="8.8" fill="#475569">　· 顺手预计算 prompt 全部满块 block hash</text>
+  <text x="874" y="248" font-size="8.8" fill="#475569">　· 结构化输出：grammar_init 异步编译 FSM</text>
+  <text x="874" y="261" font-size="8.8" fill="#475569">→ input_queue.put_nowait（:880）</text>
+  <line x1="1021" y1="268" x2="1021" y2="284" stroke="#475569" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+  <!-- ============ P1 ⑧ busy loop ============ -->
+  <rect x="862" y="286" width="318" height="96" rx="5" fill="#fef3c7" stroke="#fbbf24"/>
+  <text x="874" y="304" font-size="10.5" font-weight="bold" fill="#92400e">⑧ busy loop 分发（run_busy_loop）</text>
+  <text x="874" y="319" font-size="8.8" fill="#475569">input_queue.get()（空闲时阻塞在此，debug 日志</text>
+  <text x="874" y="332" font-size="8.8" fill="#475569">"EngineCore waiting for work." :737）</text>
+  <text x="874" y="345" font-size="8.8" fill="#475569">→ _handle_client_request（:763）按类型分发：</text>
+  <text x="874" y="358" font-size="8.8" fill="#475569">　ADD → EngineCore.add_request（:217）</text>
+  <text x="874" y="371" font-size="8.8" fill="#475569">　· request_id 必须是 str（:224）</text>
+  <line x1="1021" y1="382" x2="1021" y2="398" stroke="#475569" stroke-width="1.4" marker-end="url(#ar3)"/>
+
+  <!-- ============ P1 ⑨ Scheduler ============ -->
+  <rect x="862" y="400" width="318" height="96" rx="5" fill="#fde68a" stroke="#f59e0b"/>
+  <text x="874" y="418" font-size="10.5" font-weight="bold" fill="#92400e">⑨ Scheduler.add_request（scheduler.py:1097）</text>
+  <text x="874" y="433" font-size="8.8" fill="#475569">① waiting.add_request(req)</text>
+  <text x="874" y="446" font-size="8.8" fill="#475569">　FCFS=deque.append O(1) / priority=heappush O(log n)</text>
+  <text x="874" y="459" font-size="8.8" fill="#475569">② requests[request_id] = req（生命周期字典）</text>
+  <text x="874" y="472" font-size="8.8" fill="#475569">③ record_event(QUEUED, time.monotonic())（log_stats 时）</text>
+  <text x="874" y="485" font-size="8.8" fill="#64748b">　→ 请求正式"进队"，TTFT 的排队段从这里开始计时</text>
+
+  <!-- ============ waiting 队列 ============ -->
+  <rect x="862" y="510" width="318" height="88" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="874" y="528" font-size="10" font-weight="bold" fill="#0f172a">waiting 队列（FCFSRequestQueue : deque）</text>
+  <rect x="874" y="538" width="86" height="26" rx="3" fill="#fca5a5"/><text x="917" y="555" text-anchor="middle" font-size="8.6" fill="#7f1d1d">req C（队首）</text>
+  <rect x="966" y="538" width="86" height="26" rx="3" fill="#fdba74"/><text x="1009" y="555" text-anchor="middle" font-size="8.6" fill="#7c2d12">req B</text>
+  <rect x="1058" y="538" width="86" height="26" rx="3" fill="#fde68a"/><text x="1101" y="555" text-anchor="middle" font-size="8.6" fill="#713f12">req A（队尾）</text>
+  <text x="874" y="582" font-size="8.8" fill="#64748b">Day 10：schedule() 从队首取，过 token budget / KV / max_num_seqs 三道闸 → RUNNING</text>
+
+  <!-- ============ 数据形态条 ============ -->
+  <rect x="40" y="634" width="1160" height="34" rx="5" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="60" y="655" font-size="9.2" font-weight="bold" fill="#0f172a">数据形态变化：</text>
+  <text x="150" y="655" font-size="9.2" fill="#475569">JSON body →①渲染后的文本+token ids（chat 在 serving 层就 tokenize）→③EngineCoreRequest（msgspec Struct）→⑥msgpack 字节流 →⑦Request 对象（含预计算 block hash）→⑨waiting 队列元素</text>
+
+  <!-- ============ 底部三张卡 ============ -->
+  <rect x="40" y="684" width="383" height="104" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="52" y="704" font-size="10" font-weight="bold" fill="#0f172a">为什么是这个顺序（两个易错点）</text>
+  <text x="52" y="722" font-size="8.8" fill="#475569">· ④ 先注册路由再 ⑤ 发送：输出的到达可能快于</text>
+  <text x="52" y="735" font-size="8.8" fill="#475569">　 add_request_async 返回，先注册才不会丢输出</text>
+  <text x="52" y="752" font-size="8.8" fill="#475569">· tokenize 位置分叉：/chat 在 serving 层（模板渲染</text>
+  <text x="52" y="765" font-size="8.8" fill="#475569">　需要 tokenizer）；/completions 文本在 Processor ——</text>
+  <text x="52" y="778" font-size="8.8" fill="#475569">　两条路都在 P0，"tokenize 在前端"的结论不变</text>
+
+  <rect x="443" y="684" width="374" height="104" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="455" y="704" font-size="10" font-weight="bold" fill="#0f172a">入口链路的 CPU 账（每请求）</text>
+  <text x="455" y="722" font-size="8.8" fill="#475569">· tokenize：O(L_text)，8K prompt 数 ms、128K 上百 ms 级</text>
+  <text x="455" y="735" font-size="8.8" fill="#475569">· 校验+clone：O(L) 常数因子小；hash 预计算 O(L/block)</text>
+  <text x="455" y="752" font-size="8.8" fill="#475569">· msgpack 编解码：~KB 级 → 两侧各几十 µs</text>
+  <text x="455" y="765" font-size="8.8" fill="#475569">· 队列插入：FCFS O(1) / 优先级 O(log n)</text>
+  <text x="455" y="782" font-size="8.6" fill="#64748b">入口成本 ∝ prompt 长度，与生成长度无关（增量传输）</text>
+
+  <rect x="837" y="684" width="363" height="104" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="849" y="704" font-size="10" font-weight="bold" fill="#0f172a">怎么亲眼看到（今天实验）</text>
+  <text x="849" y="722" font-size="8.8" fill="#475569">· --enable-log-requests：P0 打 "Added request chatcmpl-…"</text>
+  <text x="849" y="735" font-size="8.8" fill="#475569">· --log-level debug：P1 打 waiting for work / loop active</text>
+  <text x="849" y="752" font-size="8.8" fill="#475569">· 周期 stats 行：Running / Waiting / KV usage</text>
+  <text x="849" y="765" font-size="8.8" fill="#475569">· py-spy dump 两进程：入口瞬间的栈各在哪一站</text>
+  <text x="849" y="782" font-size="8.6" fill="#64748b">这套"跟踪一个请求"的基建贯穿本周每天（Day 10-13 复用）</text>
+
+  <rect x="40" y="804" width="1160" height="42" rx="6" fill="#fefce8" stroke="#eab308"/>
+  <text x="620" y="822" text-anchor="middle" font-size="10" font-weight="bold" fill="#854d0e">一句话结论：入口链路 = "P0 把异构输入规整成 token ids 并双注册（输出路由 + 引擎请求），P1 把 DTO 变成带账本的 Request 放进 waiting"——之后的一切调度决策都只消费这个 Request</text>
+  <text x="620" y="838" text-anchor="middle" font-size="9" fill="#a16207">跨进程只传一次、传的是 token ids（Day 8 §2.4 的设计在入口处的落地）；Request.num_computed_tokens 从 0 开始记账（Day 10-12 的主角）</text>
+</svg>

@@ -1,0 +1,92 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "**/*.md"[90m 27 matches[0m
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week3/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week3/assets/ 2>/dev/null
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  6704 Oct  2 02:43 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 07:35 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  2 08:15 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     3 Oct  2 08:05 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 03:09 week1
+drwxr-xr-x  3 root root  4096 Oct  2 06:00 week2
+drwxr-xr-x  3 root root  4096 Oct  2 08:05 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+total 320
+drwxr-xr-x  3 root root  4096 Oct  2 08:05 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+drwxr-xr-x  2 root root  4096 Oct  2 08:00 assets
+-rw-r--r--  1 root root 60544 Oct  2 06:24 day15_kv_cache_manager_block_pool.md
+-rw-r--r--  1 root root 74001 Oct  2 07:10 day17_attention_backend_abstraction.md
+-rw-r--r--  1 root root 65820 Oct  2 07:36 day18_cuda_graph.md
+-rw-r--r--  1 root root 61646 Oct  2 08:05 day19_async_scheduling.md
+-rw-r--r--  1 root root 37509 Oct  1 23:15 README.md
+day15_capacity_handcalc_lru.svg
+day15_request_kv_lifecycle.svg
+day15_three_layer_architecture.svg
+day17_backend_abstraction_layers.svg
+day17_forward_dataflow.svg
+day17_paged_gather.svg
+day18_capture_replay_lifecycle.svg
+day18_full_vs_piecewise.svg
+day18_launch_bound_timeline.svg
+day19_async_dataflow.svg
+day19_placeholder_ledger.svg
+day19_sync_vs_async_timeline.svg
+[0m
+[0m→ [0mRead week3/day15_kv_cache_manager_block_pool.md[90m [limit=150][0m
+Let me look at the existing tutorials to match format and depth, especially the most relevant ones (Day 15 KV Cache Manager, Day 19).
+[0m→ [0mRead week3/day19_async_scheduling.md[90m [limit=120][0m
+[0m→ [0mRead week3/day15_kv_cache_manager_block_pool.md[90m [limit=289, offset=380][0m
+现有教程深度很高。让我继续阅读 Day 15 的实验部分（其中提到“仿真器是项目 B 的第一块积木”）和文件尾部结构，以及 week3/README.md 中关于 Day 20 的规划。
+[0m✱ [0mGrep "Day 20|day20|mini 引擎|项目 B"[90m in week3/README.md · 14 matches[0m
+[0m→ [0mRead week3/README.md[90m [limit=180, offset=440][0m
+[0m✱ [0mGrep "^## |^### "[90m in week3/day19_async_scheduling.md · 100 matches[0m
+[0m
+[0m$ [0mcat /mnt/workspace/aiinfra/vllm/.tutorial_progress; echo "---"; git -C /mnt/workspace/aiinfra/vllm log --oneline -5; echo "---"; pip show vllm 2>/dev/null | head -3; ls /mnt/workspace/aiinfra/vllm/week3/assets/
+19
+---
+6684e08 Switch Pages to VitePress-style build system (weeks/day pages + Actions deploy)
+b8c699d Fix Pages: use README.html links, drop readme-index plugin
+9032ff6 Add GitHub Pages index with navigation
+eceab39 Initial commit: vLLM 推理系统优化八周学习笔记
+---
+day15_capacity_handcalc_lru.svg
+day15_request_kv_lifecycle.svg
+day15_three_layer_architecture.svg
+day17_backend_abstraction_layers.svg
+day17_forward_dataflow.svg
+day17_paged_gather.svg
+day18_capture_replay_lifecycle.svg
+day18_full_vs_piecewise.svg
+day18_launch_bound_timeline.svg
+day19_async_dataflow.svg
+day19_placeholder_ledger.svg
+day19_sync_vs_async_timeline.svg
+[0m
+[0m✱ [0mGrep "^## |^### "[90m in week3/day15_kv_cache_manager_block_pool.md · 100 matches[0m
+[0m→ [0mRead week3/README.md[90m [limit=80, offset=166][0m
+Now let me read the week3 README Day 16 section (prefix caching/COW content, needed for the mini engine's prefix part), one SVG for style reference, and the tail of Day 19.
+[0m→ [0mRead week3/assets/day15_request_kv_lifecycle.svg
+[0m→ [0mRead week3/day19_async_scheduling.md[90m [offset=280][0m
+[0m→ [0mRead week3/day17_attention_backend_abstraction.md[90m [limit=120, offset=500][0m

@@ -1,0 +1,252 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "**/day*.md"[90m 11 matches[0m
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week2/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week2/assets/ 2>/dev/null
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  6704 Oct  2 02:43 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 00:52 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  2 05:24 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     3 Oct  2 05:14 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 03:09 week1
+drwxr-xr-x  3 root root  4096 Oct  2 04:57 week2
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+total 288
+drwxr-xr-x  3 root root  4096 Oct  2 04:57 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+drwxr-xr-x  2 root root  4096 Oct  2 04:53 assets
+-rw-r--r--  1 root root 53073 Oct  2 02:40 day08_v1_architecture_overview.md
+-rw-r--r--  1 root root 61350 Oct  2 03:01 day09_request_entry_pipeline.md
+-rw-r--r--  1 root root 61124 Oct  2 04:08 day11_chunked_prefill.md
+-rw-r--r--  1 root root 69085 Oct  2 05:14 day12_preemption.md
+-rw-r--r--  1 root root 34602 Oct  1 23:18 README.md
+day08_startup_sequence.svg
+day08_step_ipc_timeline.svg
+day08_v1_process_architecture.svg
+day09_request_entry_pipeline.svg
+day09_request_object_anatomy.svg
+day09_ttft_decomposition.svg
+day11_budget_tradeoff.svg
+day11_chunked_prefill_timeline.svg
+day11_unified_scheduling_ledger.svg
+day12_preemption_flow.svg
+day12_preemption_state_machine.svg
+day12_recompute_vs_swap.svg
+[0m
+[0m→ [0mRead week2/day12_preemption.md
+[0m→ [0mRead week2/day12_preemption.md[90m [offset=646][0m
+[0m→ [0mRead week2/day11_chunked_prefill.md[90m [limit=150][0m
+[0m
+[0m$ [0mgrep -n "Day 13" /mnt/workspace/aiinfra/vllm/week2/README.md | head -20
+28:建议把 vllm 以 editable 方式安装（`pip install -e .`），Day 13 要在 `schedule()` 里临时加打印。
+430:## Day 13：动手验证调度行为
+574:| `vllm/v1/metrics.py` | Prometheus 指标定义 | 配合 Day 13 |
+620:| Day 13 | [ ] | |
+[0m
+[0m→ [0mRead week2/README.md[90m [offset=420, limit=120][0m
+[0m→ [0mRead week2/README.md[90m [limit=120][0m
+[0m→ [0mRead week2/day11_chunked_prefill.md[90m [limit=240, offset=150][0m
+[0m→ [0mRead week2/day11_chunked_prefill.md[90m [offset=560][0m
+[0m→ [0mRead week2/assets/day12_preemption_flow.svg[90m [limit=80][0m
+[0m→ [0mRead week2/day11_chunked_prefill.md[90m [limit=125, offset=435][0m
+[0m
+[0m$ [0mgrep -n "EngineCoreEventType\|record_event\|queued_ts\|scheduled_ts\|first_token_ts" /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md | head -30; echo ---; grep -n "日志跟踪\|VLOG\|log_request\|RequestStats\|add_request" /mnt/workspace/aiinfra/vllm/week2/day09_request_entry_pipeline.md | head -20
+46:| **`EngineCoreEventType`** | QUEUED / SCHEDULED / PREEMPTED 三种带单调时间戳的事件 | 知道它如何换算成 queue time（图 3） |
+195:        request.record_event(EngineCoreEventType.QUEUED) # ③ 打时间戳
+236:3. **事件时间戳是测量的基础设施**：`RequestStats`（`v1/metrics/stats.py:67-69`）的 `queued_ts / scheduled_ts / first_token_ts` 全部来自 `EngineCoreEvent`（QUEUED/SCHEDULED）与输出时间戳；OTel tracing 的 `queue_time / prefill_time` span 属性（`output_processor.py::do_tracing`）就是它们的差值。**今天在 ⑨ 打下的那个 QUEUED 时间戳，是整个排队可观测性的起点。**
+593:> 骨架：① `Scheduler.add_request` 打 QUEUED 事件（`time.monotonic()`），首次进 running 打 SCHEDULED，事件随最后一条 `EngineCoreOutput` 回 P0；② P0 的 `RequestStats` 换算 `queue_time = scheduled_ts − queued_ts`、`prefill_time = first_token_ts − scheduled_ts`（OTel tracing 的 span 属性同源）；③ 聚合面：`/metrics` 的 TTFT 直方图 + `--log-stats` 的 Running/Waiting 行看拥塞。**收尾**：注意事件时间戳是 P1 单调钟，只做差值不做跨进程对表；抢占时只记首次 SCHEDULED。
+---
+4:> **今日位置**：昨天（Day 8）立好了 V1 的三层地图（P0 前端 / P1 EngineCore / P2 Worker）并数清了进程，今天走**第一条完整路径**：`POST /v1/chat/completions` → serving 层 → `AsyncLLM` → `Processor`（tokenize 与校验）→ `EngineCoreRequest` 跨进程 → `EngineCore`/`Scheduler.add_request` 落进 waiting 队列。入口链路是"每来一个请求都要付一次的固定成本"，它决定 TTFT 的下限成分，也是本周剩余五天（Day 10-13 调度器 + Day 14 复盘）的**请求视角起点**
+7:> **背景衔接**：你在昇腾上写过 Host 侧任务下发——`aclmdlExecute` 之前要把输入 tensor 准备好、校验 shape、再进任务队列等 stream 调度。vLLM 的入口链路是同一命题的软件版：**serving 层 = 协议适配**（把 OpenAI JSON 变成模型能吃的 token ids），**Processor = 入参规整与兜底**（校验 + 默认值，相当于驱动层的参数合法性检查），**Scheduler.add_request = 入队即记账**（QUEUED 事件就是队列系统的时间戳起点）。区别在于：这套逻辑全部运行在用户态 Python 里、每个请求都要走一遍，所以它的成本模型（§3）值得手算
+10:> **版本口径**：源码坐标按 **v0.11.0 tag** 逐行核对（2026-10 复核）；main 分支正在拆分 `processor.py`（input 预处理独立化）、API 入口迁往 `entrypoints/launchers/`——**坐标对不上先查版本**。本周实验"打日志跟踪一个请求"从今天建好，Day 10-13 每天复用
+18:- [ ] **默写入口链路的九站**：`create_chat_completion` → `_preprocess_chat`（chat template + tokenize）→ `AsyncLLM.add_request` → `Processor.process_inputs` → `OutputProcessor.add_request`（注册）→ `AsyncMPClient.add_request_async`（跨进程）→ `process_input_sockets`（解码）→ `EngineCore.add_request` → `Scheduler.add_request`——每站能报出**文件名与职责一句话**
+22:- [ ] 讲清**注册与发送的顺序**（先 `OutputProcessor.add_request` 再跨进程发送）以及 **QUEUED/SCHEDULED 事件**如何支撑 queue time 的测量（TTFT 分解的落地）
+23:- [ ] 建好**"日志跟踪一个请求"的实验基建**（`--enable-log-requests` + debug 日志 + py-spy + token 对账）——本周每天都会用
+35:| **`AsyncLLM.add_request`** | 前端门面的入口方法（`v1/engine/async_llm.py`） | 背下三步曲：collector → `process_inputs` → 双注册 |
+40:| **`AsyncMPClient`** | 前端侧 ZMQ 客户端（`v1/engine/core_client.py`） | 走读 `add_request_async` → `send_multipart` |
+41:| **`process_input_sockets`** | P1 的输入 IO 线程（`core.py`）：poll + 解码 + 入队 | 知道 decode 之后、入队之前还做了 `preprocess_add_request` |
+43:| **`Scheduler.add_request`** | 请求正式进队：`waiting` + `requests` 字典 + QUEUED 事件（`v1/core/sched/scheduler.py`） | 背下三行动作；区分 FCFS/priority 两种队列实现 |
+74:> 客户端 POST 进来（⓪），serving 层校验并预处理（①：chat template 渲染 + tokenize + 默认参数兜底），`AsyncLLM.add_request` 创建该请求的输出队列（②），`Processor.process_inputs` 做最终校验、构造 `EngineCoreRequest`（③），**先**在 `OutputProcessor` 注册输出路由（④），**再**通过 ZMQ 把 DTO 发给 EngineCore（⑤⑥）。P1 的 IO 线程解码并构造 `Request` 对象（⑦，顺手预计算 block hash），busy loop 分发到 `EngineCore.add_request`（⑧），最终 `Scheduler.add_request` 把它放进 waiting 队列并打下 QUEUED 时间戳（⑨）——请求从此进入调度系统的管辖。
+79:2. **为什么"先注册、后发送"？** 输出的到达可能快于 `add_request_async` 的返回（send 是异步的、引擎 step 可能立刻带回首 token）；先注册才能保证输出有家可归（§2.4）。
+101:### 2.4 第 ②~④ 站：`AsyncLLM.add_request` 三步曲与"双注册"
+103:`AsyncLLM.generate`（`async_llm.py:323`）是 serving 层拿到的生成器入口，它自己只做三件小事：首次调用时启动常驻 `output_handler` 协程（Day 8 §4.1）、处理 truncate 参数、然后调 `add_request` 并把队列里的 `RequestOutput` 逐个 yield 出去（SSE 的数据源）。真正的人口是 `add_request`（`async_llm.py:261`）：
+106:add_request(request_id, prompt, params, ...)
+110:  ├─ ③ n == 1 → _add_request(req, prompt_str, None, 0, queue)
+116:`_add_request`（`async_llm.py:303`）只有两行核心，但**顺序是考点**：
+119:self.output_processor.add_request(request, prompt_str, ...)  # ① 先注册输出路由
+120:await self.engine_core.add_request_async(request)            # ② 再发给引擎
+123:为什么顺序不能反：`add_request_async` 里 `send_multipart` 是异步投递，P1 可能在极短时间内就通过上行通道送回首 token（尤其 prompt 全部 prefix cache 命中时，prefill 几乎为零）。如果输出先到而路由未注册，`output_handler` 在 `request_states` 里查不到这个 id，输出就被丢弃了。**"消费者先就位，再触发生产"**——这是所有异步系统接入新消费者的通用时序纪律（你在高并发服务里注册回调 before subscribe，是同一个道理）。
+[0m
+现在让我检查一下第 9 天关于事件系统的详细信息以及第 6 天关于基准测试环境的分类账，以确保前后连贯：
+[0m$ [0mgrep -n "vllm bench serve\|request-rate\|percentile-metrics\|ShareGPT\|sharegpt\|H100\|A100\|台账" /mnt/workspace/aiinfra/vllm/week1/day06_env_setup_first_bench.md | head -30
+4:> **今日位置**：Day 1~4 攒了一堆"应该"——AI = 2M/P、KV 144 KiB/token、44 路并发、η > 96%、×4 吞吐；Day 5 给了"怎么量化"——TTFT/TPOT/ITL/E2E/throughput/goodput 的指标卡与两个恒等式。今天把两者全部落地：把 vLLM（最新版）真正跑起来，用 ShareGPT 负载做**第一次系统级压测**，扫出**属于你自己的第一张性能曲线**（并发 vs TTFT p99 / TPOT p99）。之后 50 天的所有源码阅读与优化实验，都以今天这张图和这份环境台账为基线
+8:> **实验环境**：1 × H100/A100 80GB（建议租用）；只有 24 GB 消费卡（4090）见 §5 实验 0 的降级方案
+10:> **版本口径**：本篇 CLI 参数与源码坐标按 **v0.10 ~ v0.11 主线**核对（2026-10）；vLLM 迭代快，参数默认值与模块路径随版本演进（如 V1 的 `processor.py` 在 main 上正被重构为 `input_processor.py`），**一切以你机器上 `vllm serve --help` 与 `vllm bench serve --help` 的输出为准**——对不上的地方先怀疑版本，再怀疑理解
+18:- [ ] **独立部署**最新版 vLLM 并启动 Qwen3-8B 服务：装环境、下模型、下 ShareGPT 数据集、选对启动参数，并能解释每个参数为什么这么设
+20:- [ ] 讲清 **`vllm bench serve` 的完整链路**（CLI → 数据集采样 → aiohttp 流式发送 → `calculate_metrics`），并知道 TTFT/TPOT 是**客户端口径**、与服务端 `/metrics` 差在哪
+21:- [ ] 区分**闭环（`--max-concurrency`）与开环（`--request-rate` 泊松）**两种压测范式各自能回答什么问题
+23:- [ ] 交付：**第一张性能曲线**（并发 vs TTFT p99 / TPOT p99，外加吞吐子图）+ 环境台账 + 预测-实测对照表
+33:| **`vllm bench serve`** | 官方在线服务压测 CLI（旧教程里的 `benchmarks/benchmark_serving.py` 已被整合取代） | 能说出内部三步：采样→发送→统计 |
+34:| **ShareGPT 数据集** | 真实多轮对话；第 1 轮做 prompt、第 2 轮的 token 数做该请求的 max_tokens | 知道长度分布长尾、跨清洗版本差异大 |
+36:| **开环压测** | `--request-rate λ` 按泊松到达，服务器过载也不减速 | 知道容量上限/队列爆炸只有开环能暴露 |
+61:Day 4 结尾说"44.8 → 182 路的差距正是 PagedAttention 的 payoff"——这是**纸面推断**。今天要让它变成**测量事实**：真实负载（ShareGPT 长尾分布）+ 真实引擎（V1 默认配置）下，TTFT/TPOT 随并发到底怎么走、拐点在哪、离理论下界多远。
+87:**闭环（closed-loop）**：客户端维持恰好 C 个在途请求——`--request-rate inf`（默认，全部请求即刻发起）+ `--max-concurrency C`（客户端信号量，多的请求**在客户端排队、不计入 TTFT**，新版本单列为 `client_queue_time` 指标）。稳态下在途数恒为 C，服务**永远不会过载**。它回答的问题是：*"给定 C 个并发用户，服务质量（TTFT/TPOT 的分布）如何？"*——这正是 README 给今天的任务："观察 TTFT/TPOT 随并发的变化"。
+89:**开环（open-loop）**：`--request-rate λ` 按泊松过程（`--burstiness` 调形状）合成到达时刻，**不管服务器跟不跟得上**。λ 超过服务能力时 waiting 队列无界增长、TTFT 发散——**容量上限与过载行为只有开环能暴露**（生产容量规划、goodput 曲线都用它）。
+109:对照上图，`vllm bench serve` 的秒表全部按在**客户端**：
+144:2. **长尾 prompt**：TTFT p99 由最长的 prompt 主导——ShareGPT 的 p99 prompt 可能是平均值的 5~10 倍 FLOPs，这个长尾**不随 C 变**，但会被混跑放大；
+162:| GPU | H100 SXM 80GB：3.35 TB/s、989 TFLOPS | Day 2 锚点 |
+168:**数据集统计待定**：ShareGPT 的 prompt/output 都是长尾分布，且跨清洗版本差异大——**先跑 C=1 探针（§5 实验 2 第一步）拿实测均值**：$\bar{P}$（平均 prompt 长度）、$\bar{O}$（平均输出长度），然后 $\bar{s} \approx \bar{P} + \bar{O}/2$。下文用示例值 $\bar{P}=500$、$\bar{O}=200$、$\bar{s}=600$ 演算，**请代入你的实测值**。
+216:KV 池 54.1 GB 能装 $\approx 54.1\text{GB} / (\bar{L} \times 144\text{KiB})$ 路。默认负载（$\bar{L} \approx 700$）下 ≈ **524 路** → 今天扫到 256 都不会撞墙。但把输出拉长（实验 4b：`--sharegpt-output-len 1024` → $\bar{L} \approx 1524$）后容量降到 ≈ **241 路 < 256** → KV 超配 → 调度器**抢占**（逐出请求、释放块、回 waiting 重算，Day 12）→ TTFT/TPOT p99 出现尖刺。这是**有意设计的越界实验**：用今天的工具亲手触发一次 Day 4 §2.5 讲的机制。
+222:### 4.1 `vllm bench serve`：从 CLI 到 aiohttp
+225:vllm bench serve（终端 CLI）
+229:         │    ShareGPTDataset.sample()
+239:**ShareGPTDataset 的采样逻辑**（`vllm/benchmarks/datasets/datasets.py`，节选）：
+250:即：**输出长度是数据集自带的**（真实对话的下一轮），长尾且不可控——这正是我们要的真实负载；想固定输出长度用 `--sharegpt-output-len` 覆盖。
+252:> **历史注**：老教程/老博客里常见的 `python benchmarks/benchmark_serving.py` 已被整合为 CLI 子命令（实现搬进 `vllm/benchmarks/` 包）；根目录同名脚本在仓库里仍可见但已非推荐入口。**认准 `vllm bench serve`**——README 的 Day 6 用的也是它。
+259:| `--dataset-name sharegpt` + `--dataset-path` | 数据集 | ShareGPT JSON 路径 |
+262:| `--request-rate` | 到达率（默认 `inf` 一次全发） | 默认（闭环）；实验 4 用有限值 |
+263:| `--percentile-metrics` / `--metric-percentiles` | 报哪些指标 / 哪些分位 | `ttft,tpot,itl` / `50,99` |
+296:| attention backend / CUDA graph capture 行 | —（版本相关） | 记进台账即可；`-O0` 或 `--enforce-eager` 可跳过编译换启动速度，但**会伤 TPOT**（Day 18） |
+324:### 实验 0：环境搭建与台账（0.5h）
+327:# 硬件：1×H100/A100 80GB（建议）；Python 3.10~3.12；驱动满足 CUDA 12.x
+[0m
+[0m$ [0mgrep -n "vllm bench serve" /mnt/workspace/aiinfra/vllm/week1/day06_env_setup_first_bench.md | head; echo ---; sed -n '330,420p' /mnt/workspace/aiinfra/vllm/week1/day06_env_setup_first_bench.md
+10:> **版本口径**：本篇 CLI 参数与源码坐标按 **v0.10 ~ v0.11 主线**核对（2026-10）；vLLM 迭代快，参数默认值与模块路径随版本演进（如 V1 的 `processor.py` 在 main 上正被重构为 `input_processor.py`），**一切以你机器上 `vllm serve --help` 与 `vllm bench serve --help` 的输出为准**——对不上的地方先怀疑版本，再怀疑理解
+20:- [ ] 讲清 **`vllm bench serve` 的完整链路**（CLI → 数据集采样 → aiohttp 流式发送 → `calculate_metrics`），并知道 TTFT/TPOT 是**客户端口径**、与服务端 `/metrics` 差在哪
+33:| **`vllm bench serve`** | 官方在线服务压测 CLI（旧教程里的 `benchmarks/benchmark_serving.py` 已被整合取代） | 能说出内部三步：采样→发送→统计 |
+109:对照上图，`vllm bench serve` 的秒表全部按在**客户端**：
+222:### 4.1 `vllm bench serve`：从 CLI 到 aiohttp
+225:vllm bench serve（终端 CLI）
+252:> **历史注**：老教程/老博客里常见的 `python benchmarks/benchmark_serving.py` 已被整合为 CLI 子命令（实现搬进 `vllm/benchmarks/` 包）；根目录同名脚本在仓库里仍可见但已非推荐入口。**认准 `vllm bench serve`**——README 的 Day 6 用的也是它。
+379:vllm bench serve \
+396:vllm bench serve --model Qwen/Qwen3-8B --base-url http://localhost:8000 \
+402:  vllm bench serve \
+---
+vllm --version                                             # 台账第 1 行
+python -c "import torch; print(torch.cuda.get_device_name(0), torch.version.cuda)"
+
+# 数据集（~200 MB 量级；国内网络可先 export HF_ENDPOINT=https://hf-mirror.com）
+mkdir -p ~/bench && cd ~/bench
+wget https://huggingface.co/datasets/anon8231489123/ShareGPT_Vicuna_unfiltered/resolve/main/ShareGPT_V3_Vicuna_unfiltered_cleaned_split.json
+```
+
+模型首次启动时自动从 HF 下载 `Qwen/Qwen3-8B`（BF16 权重 ≈ 16.4 GB）；国内可 `export VLLM_USE_MODELSCOPE=1` 走 ModelScope。
+
+> **降级方案（24 GB 消费卡）**：Qwen3-8B BF16 塞不下健康余量——换官方 `Qwen/Qwen3-8B-FP8`（权重 ≈ 8.6 GB，KV 池能到 ~10 GB）或 `Qwen/Qwen3-4B`，并加 `--max-model-len 4096`。注意 FP8 权重会把 §3 的账本分母砍半（16.4→8.6 GB），预测表要相应重算——**账本跟着部署走，这正是练习**。
+
+**环境台账**（今天产出物之一，从此每个实验都记）：vLLM 版本 / torch 与 CUDA / GPU 型号与驱动 / 模型与 dtype / 启动参数全文 / 数据集文件与大小 / 日期。
+
+### 实验 1：启动服务，对账启动日志（0.5h）
+
+```bash
+vllm serve Qwen/Qwen3-8B \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.9 \
+  --seed 0 \
+  2>&1 | tee server.log
+```
+
+参数解释（台账里各写一句"为什么"）：`--max-model-len 8192` 对齐 Day 2 题 3 的手算口径；`--gpu-memory-utilization 0.9`（新版本默认已提到 0.92，显式写出避免歧义）；prefix caching / chunked prefill 用 V1 默认（APC 默认开，其影响见"坑 1"）。
+
+等待就绪（首次含权重下载 + CUDA graph capture，几十秒到几分钟）：
+
+```bash
+curl -s http://localhost:8000/v1/models | head -4      # 就绪探测
+```
+
+**肉眼预览一次流式输出**（对 Day 1 的"decode 每 step 吐一个 token"建立体感）：
+
+```bash
+curl -sN http://localhost:8000/v1/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"Qwen/Qwen3-8B","prompt":"San Francisco is a","max_tokens":48,"stream":true}' \
+  | while read -r line; do echo "$(date +%S.%N) ${line:0:50}"; done
+```
+
+相邻 chunk 的时间差 ≈ 单请求 TPOT（毫秒级、均匀节奏）；随后对照 §4.3 的三行启动日志完成对账。**对不上账不要进入实验 2**——基线错了后面全错。
+
+### 实验 2：并发扫描（主体，1h）
+
+**第一步：C=1 探针**——先拿数据集真实统计，回填 §3 的 $\bar{P}, \bar{O}$：
+
+```bash
+mkdir -p results/day06
+vllm bench serve \
+  --model Qwen/Qwen3-8B --tokenizer Qwen/Qwen3-8B \
+  --base-url http://localhost:8000 \
+  --dataset-name sharegpt \
+  --dataset-path ~/bench/ShareGPT_V3_Vicuna_unfiltered_cleaned_split.json \
+  --num-prompts 100 --max-concurrency 1 --seed 999 --temperature 0 \
+  --percentile-metrics ttft,tpot,itl --metric-percentiles 50,99 \
+  --save-result --result-dir results/day06 --result-filename c1_probe.json \
+  --metadata concurrency=1
+```
+
+从 `c1_probe.json` 读 `total_input / completed` = $\bar{P}$、`total_output / completed` = $\bar{O}$，代回 §3.2/3.3 重算预测表（也可加 `--plot-dataset-stats` 让工具直接画长度分布图）。探针 seed 用 999、与后面九档（seed = C）错开——**同一批 prompt 刚跑完就在 KV 缓存里，重放会命中 prefix caching**（详见下方"常见坑"第 1 条）。
+
+**第二步：预热 + 九档扫描**：
+
+```bash
+# 预热（不落盘）：编译缓存/连接池/首个 CUDA graph 路径全部热起来
+vllm bench serve --model Qwen/Qwen3-8B --base-url http://localhost:8000 \
+  --dataset-name sharegpt --dataset-path ~/bench/ShareGPT_V3_Vicuna_unfiltered_cleaned_split.json \
+  --num-prompts 16 --max-concurrency 4 --seed 0 --temperature 0
+
+# 正式扫描：每档独立 seed（坑 1：防 prefix caching 命中同一批 prompt）
+for C in 1 2 4 8 16 32 64 128 256; do
+  vllm bench serve \
+    --model Qwen/Qwen3-8B --tokenizer Qwen/Qwen3-8B \
+    --base-url http://localhost:8000 \
+    --dataset-name sharegpt \
+    --dataset-path ~/bench/ShareGPT_V3_Vicuna_unfiltered_cleaned_split.json \
+    --num-prompts 200 --max-concurrency $C --seed $C --temperature 0 \
+    --percentile-metrics ttft,tpot,itl --metric-percentiles 50,99 \
+    --save-result --save-detailed \
+    --result-dir results/day06 --result-filename c${C}.json \
+    --metadata concurrency=$C 2>&1 | tee results/day06/c${C}.log
+done
+```
+
+时长预估：C=1 一档 ≈ 200 × E2E ≈ 5~8 分钟（嫌慢可减到 100）；大 C 档位几分钟内完成；全程约 30~50 分钟。**扫描时开另一个终端盯服务端日志的 `Running / Waiting / GPU KV cache usage`**。
+
+控制台报告示例（**数值为量级示意，格式随版本微调**；真实数字以你的运行为准）：
+
+```text
+================ Serving Benchmark Result ================
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/build/ 2>/dev/null | head; python -c "import vllm, os; print(vllm.__version__, os.path.dirname(vllm.__file__))" 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/.opencode 2>/dev/null
+common.py
+home.py
+__init__.py
+__pycache__
+weeks.py
+agents
+commands
+node_modules
+opencode.json
+package.json
+package-lock.json
+plugins
+skills
+[0m

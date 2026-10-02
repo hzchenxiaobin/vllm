@@ -1,0 +1,1438 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "**/day*.md"[90m 12 matches[0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/ && ls /mnt/workspace/aiinfra/vllm/week3 2>/dev/null || echo "week3 not exists"
+build
+build.py
+generate_tutorials.sh
+logs
+prompt.md
+public
+README.md
+static
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+陈斌斌简历.md
+README.md
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/week3/ && ls /mnt/workspace/aiinfra/vllm/week2/
+README.md
+assets
+day08_v1_architecture_overview.md
+day09_request_entry_pipeline.md
+day11_chunked_prefill.md
+day12_preemption.md
+day14_request_state_machine_review.md
+README.md
+[0m
+[0m$ [0mfind / -maxdepth 6 -name "kv_cache_manager.py" -path "*v1*" 2>/dev/null | head -5
+(no output)
+[0m
+[0m→ [0mRead week2/day12_preemption.md[90m [limit=120][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/week3/assets/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week2/assets/ 2>/dev/null; pip show vllm 2>/dev/null | head -3; python -c "import vllm; print(vllm.__file__, vllm.__version__)" 2>/dev/null
+day08_startup_sequence.svg
+day08_step_ipc_timeline.svg
+day08_v1_process_architecture.svg
+day09_request_entry_pipeline.svg
+day09_request_object_anatomy.svg
+day09_ttft_decomposition.svg
+day11_budget_tradeoff.svg
+day11_chunked_prefill_timeline.svg
+day11_unified_scheduling_ledger.svg
+day12_preemption_flow.svg
+day12_preemption_state_machine.svg
+day12_recompute_vs_swap.svg
+day14_request_state_machine.svg
+day14_ten_requests_six_kv_timeline.svg
+day14_week2_one_graph_flow.svg
+[0m
+[0m$ [0mfind /mnt/workspace/aiinfra/vllm/build /mnt/workspace/aiinfra/vllm/static /mnt/workspace/aiinfra/vllm/public -maxdepth 3 -type d 2>/dev/null | head -30; find / -maxdepth 4 -type d -name "vllm" 2>/dev/null | grep -v proc | head
+/mnt/workspace/aiinfra/vllm/build
+/mnt/workspace/aiinfra/vllm/build/__pycache__
+/mnt/workspace/aiinfra/vllm/static
+/mnt/workspace/aiinfra/vllm/static/js
+/mnt/workspace/aiinfra/vllm/static/css
+/mnt/workspace/aiinfra/vllm/public
+/mnt/workspace/aiinfra/vllm/public/week7
+/mnt/workspace/aiinfra/vllm/public/week2
+/mnt/workspace/aiinfra/vllm/public/week6
+/mnt/workspace/aiinfra/vllm/public/week8
+/mnt/workspace/aiinfra/vllm/public/week5
+/mnt/workspace/aiinfra/vllm/public/js
+/mnt/workspace/aiinfra/vllm/public/css
+/mnt/workspace/aiinfra/vllm/public/week3
+/mnt/workspace/aiinfra/vllm/public/week4
+/mnt/workspace/aiinfra/vllm/public/week1
+/mnt/workspace/aiinfra/vllm/public/week1/assets
+/mnt/workspace/aiinfra/vllm
+[0m
+[0m→ [0mRead week2/day14_request_state_machine_review.md[90m [limit=100][0m
+[0m
+[0m$ [0mwhich python python3 pip pip3 2>/dev/null; python3 -c "import vllm; print(vllm.__file__, vllm.__version__)" 2>&1 | head -2; ls /usr/lib/python3*/site-packages 2>/dev/null | head; pip3 list 2>/dev/null | grep -i vllm
+/usr/local/bin/python
+/opt/buildtools/Python-3.11.4/bin/python3
+/opt/buildtools/Python-3.11.4/bin/pip
+/opt/buildtools/Python-3.11.4/bin/pip3
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/week1/ /mnt/workspace/aiinfra/vllm/week2/; cat /mnt/workspace/aiinfra/vllm/week3/README.md 2>/dev/null | head -80
+/mnt/workspace/aiinfra/vllm/week1/:
+assets
+day01_transformer_inference.md
+day02_memory_latency_hand_calc.md
+day03_roofline_model.md
+day04_paged_attention_paper.md
+day05_serving_metrics.md
+day06_env_setup_first_bench.md
+day07_first_principles_review.md
+README.md
+
+/mnt/workspace/aiinfra/vllm/week2/:
+assets
+day08_v1_architecture_overview.md
+day09_request_entry_pipeline.md
+day11_chunked_prefill.md
+day12_preemption.md
+day14_request_state_machine_review.md
+README.md
+# 第 3 周：vLLM V1 源码精读（下）——KV 管理与执行（扩展版）
+
+> 本文档是根目录《八周按天打卡计划》第 3 周（Day 15-21）的逐天扩展。
+> **本周目标**：吃透 KV cache 管理与模型执行层，开始同步动手写 mini 引擎（项目 B）。
+> **前置依赖**（W1/W2 产出，开始前自检）：
+> - 能手算任意模型的 KV cache 显存与并发上限（W1 Day 2）
+> - 讲得清 Scheduler 的 waiting/running 队列、token budget、chunked prefill（W2 Day 10-11）
+> - 有一个能跑的 vLLM 服务环境 + `vllm bench serve` 压测脚本（W1 Day 6）
+>
+> **版本纪律**：全程以 vLLM V1 架构为准（V0 已删除，不要读旧代码/旧博客）。vLLM 迭代快，本文提到的类名/文件位置以你 `pip install` 的版本为准——**每周开始时先 `git log --oneline -5`（或看 PyPI 版本号）记录你的基线版本**，类名若有出入，以"职责"对齐而不是死抠名字。
+> **本周期望投入**：每天 2-4 小时；Day 20/21 可能需要 4 小时以上（写代码）。
+
+---
+
+## 0. 本周知识地图
+
+先建立全局视图，再逐天下钻。
+
+### 0.1 一个 decode step 的完整数据流（本周各天的位置）
+
+```
+请求到达（W2 已学）
+    │
+    ▼
+Scheduler.schedule()                          ── W2 已学
+    │  决定本步调度哪些请求、每个请求多少 token
+    ▼
+KVCacheManager.allocate_slots()               ── Day 15/16（本周核心①）
+    │  prefix 命中检查 → 分配新 block → 更新 block table
+    ▼
+SchedulerOutput（block table 增量、token ids、位置信息）
+    │
+    ▼
+GPUModelRunner.execute_model()                ── Day 17/18/19（本周核心②）
+    │  ├─ 构建 AttentionMetadata（slot_mapping / block_table / seq_lens）
+    │  ├─ Attention 后端写 KV + 算 attention（Day 17）
+    │  └─ CUDA Graph replay / torch.compile（Day 18）
+    ▼
+采样 → 输出 → 下一轮调度与执行重叠             ── Day 19
+```
+
+### 0.2 源码目录速查表（读代码前打印贴墙上）
+
+| 路径 | 内容 | 对应天 |
+|---|---|---|
+| `vllm/v1/core/kv_cache_manager.py` | KVCacheManager：请求视角的 KV 分配入口 | D15/16 |
+| `vllm/v1/core/kv_cache_utils.py` | `KVCacheBlock`、`FreeBlockQueue`、hash 工具、KV cache 布局工具 | D15/16 |
+| `vllm/v1/core/block_pool.py` | `BlockPool`：物理块池 + prefix caching 索引 | D15/16 |
+| `vllm/v1/core/scheduler.py`（新版在 `v1/core/sched/`） | 调度器，调用 KVCacheManager 的上游 | 复习 |
+| `vllm/attention/layer.py` | `Attention` 层：模型代码看到的统一接口 | D17 |
+| `vllm/attention/registry.py` | 后端注册表（enum → builder） | D17 |
+| `vllm/attention/backends/flash_attn.py` 等 | 各后端 Impl + MetadataBuilder | D17 |
+| `vllm/platforms/interface.py` + `cuda.py` | 平台声明支持哪些后端、如何选择 | D17 |
+| `vllm/v1/worker/gpu_model_runner.py` | 执行层核心：input 构建、CUDA Graph、采样 | D17/18/19 |
+| `vllm/v1/worker/gpu_worker.py` | Worker：显存 profiling、KV cache 初始化 | D15 |
+| `vllm/v1/engine/core.py` | EngineCore 主循环（async scheduling 在此体现） | D19 |
+
+**读源码技巧**（贯穿本周）：不要从第一行读到最后一行。每个文件先看 `class` 定义和公开方法签名，猜职责 → 再挑 1-2 个方法读实现验证猜想。配合 debug：`python -m pdb`/`breakpoint()` 打在目标函数，跑一次单请求生成，观察调用栈与实参。
+
+---
+
+## Day 15：KV Cache Manager（一）——block pool 与物理内存管理
+
+### 目标
+
+讲清三个问题：① KV cache 的物理内存是怎么组织的；② 一个请求怎么拿到 block、怎么归还；③ 系统怎么知道"还剩多少 KV 显存"。
+
+### 核心概念：三层数据结构
+
+KV cache 管理本质是**操作系统虚拟内存分页**的翻版，先建立这张对照表（面试可直接用）：
+
+| OS 虚拟内存 | vLLM V1 | 数据结构 |
+|---|---|---|
+| 物理页帧 | KV block（固定 token 数） | `KVCacheBlock`（`block_id` 唯一） |
+| 页表 | block table（每请求 → block id 列表） | `KVCacheBlocks`（request_id → blocks） |
+| 空闲页链表 | free block 队列 | `FreeBlockQueue`（双向链表） |
+| 页帧分配器 | block 池 | `BlockPool` |
+| 缺页/换出 | preemption、prefix 驱逐 | 调度器 + `FreeBlockQueue` 头部 |
+| 页共享 + COW | prefix caching + copy-on-write | `ref_cnt` + hash 链（Day 16） |
+[0m
+[0m$ [0msed -n '80,220p' /mnt/workspace/aiinfra/vllm/week3/README.md
+三层职责划分：
+
+1. **`KVCacheManager`**（请求视角）：对外只暴露 `allocate_slots / free / get_computed_blocks` 这类语义接口；内部持有 `BlockPool` 和每请求的 block table。
+2. **`BlockPool`**（全局物理视角）：管理所有 `KVCacheBlock`；prefix caching 开启时同时维护 `cached_block: dict[BlockHash, KVCacheBlock]` 索引（Day 16 细讲）。
+3. **`FreeBlockQueue`**（可分配序）：双向链表。**关键洞察：这个队列同时就是驱逐优先级队列**——空闲块从头部被取走，被释放的块回到尾部，所以"最老的空闲块"最先被复用，天然 LRU。
+
+### 关键数据结构与伪代码
+
+`KVCacheBlock`（`kv_cache_utils.py`）的字段值得逐个理解：
+
+```python
+class KVCacheBlock:
+    block_id: int
+    ref_cnt: int              # 被多少请求引用（prefix 共享的来源）
+    block_hash: Optional[BlockHash]  # None = 私有块；非 None = 缓存的可共享块
+    token_ids: list[int]      # 该块存的 token（hash 校验/驱逐后复用判断用）
+    prev_block / next_block   # FreeBlockQueue 的链表指针
+```
+
+`KVCacheManager.allocate_slots()` 的主干逻辑（读源码时对照）：
+
+```python
+def allocate_slots(request, num_tokens):
+    # 1. 已有 block 中还能装多少（本请求自己最后一个未满块）
+    num_new_tokens = num_tokens - num_cached_tokens_in_last_block
+    # 2. 计算需要几个新块（向上取整）
+    num_new_blocks = ceil(num_new_tokens / block_size)
+    # 3. 不够则抛出 NoFreeBlocksError → 上游 Scheduler 触发 preemption（W2 Day 12）
+    # 4. 从 BlockPool 取块，登记到该请求的 block table
+    # 5. prefix caching 开启时：对新满块计算 hash 并入库（Day 16）
+```
+
+一个请求的 KV 生命周期：
+
+```
+prefill:   allocate_slots(prompt_len)        → 一次性拿 prompt 所需块
+decode:    allocate_slots(1)（每步）          → 大多数步复用已有块，块满时才 +1
+结束/抢占:  free(request)                     → ref_cnt-1，归零则回 FreeBlockQueue 尾部
+```
+
+### 物理内存：KV cache tensor 长什么样
+
+- 每个 KV cache tensor 形如 `[num_blocks, block_size, num_kv_heads, head_dim]`（K 和 V 各一，或拼在 head 维），**dtype = `kv_cache_dtype`**（默认跟随模型，可设 fp8——W4 Day 23 专题）。
+- 布局有两种流派：所有层共享一个大池（block-major，`[num_blocks, ...]`，每层用同 block_id 的不同偏移）vs 每层独立 tensor（layer-major）。vLLM 有工具函数按模型结构（是否 hybrid/sliding window）自动选择，还会把"同组 attention 层"打包成 `KVCacheGroup`。
+- **读代码任务**：在 `gpu_model_runner.py` 里找 `initialize_kv_cache` / kv cache tensor 创建处，画出你的版本最终创建的 tensor 形状。
+
+**容量怎么定**：启动时 Worker 做一次 profile run（模拟 `max_num_batched_tokens` 的满载 forward），得到"扣除权重/激活/临时 buffer 后的可用显存"，再算 `num_gpu_blocks = 可用显存 / 每 block 字节数`。启动日志里直接打印了这个数——**拿日志数字和你 W1 Day 2 的手算对一遍**。
+
+### 手算验证（今天必做）
+
+Qwen3-8B（36 层，GQA 8 个 KV head，head_dim=128，BF16 权重 + BF16 KV，`block_size=16`）部署在 H100 80G：
+
+- 每 token KV 显存 = `2 × 36 × 8 × 128 × 2B = 147456B ≈ 144KB`
+- 每 block 显存 = 144KB × 16 = **2.25MB**
+- 权重约 16GB，系统预留 + 激活后按 ~55GB 可用算：`55GB / 2.25MB ≈ 24500 blocks ≈ 39 万 token`
+- 即：并发 100 个请求、平均 4K 上下文时 KV 占用约 40 万 token——刚好在临界点，会触发 preemption 的量级。
+
+对照你实际启动日志的 `# GPU blocks` 验证。算错的常见原因：GQA 用了 `num_attention_heads` 而不是 `num_key_value_heads`（W1 Day 2 提过的坑）。
+
+### 源码走读路线（建议 2 小时）
+
+1. `kv_cache_utils.py`：`KVCacheBlock` → `FreeBlockQueue`（重点看 `pop_head/push_tail` 维护链表的细节）
+2. `block_pool.py`：`allocate_block / free_block`，重点验证：**`free` 一个 `block_hash != None` 的块时，它是否真的从 `cached_block` 里删除？**（答案决定 Day 16 的驱逐语义）
+3. `kv_cache_manager.py`：`allocate_slots` 全流程 + `free` / `update`（chunked prefill 的块追加走这里）
+4. 断点实验：单请求跑起来，在 `allocate_slots` 打断点，看实参 `num_tokens` 与分配到的 block 数。
+
+### 验证点（读代码时自问，答不出说明没读懂）
+
+1. `ref_cnt > 0` 的块会出现在 `FreeBlockQueue` 里吗？什么情况下会？
+2. preemption 时（W2 Day 12），被抢占请求的块是被 `free` 了还是被保留了？和 recompute 模式怎么配合？
+3. `block_size` 默认多少？它同时是哪几样东西的单位？（提示：分配粒度、hash 粒度、**attention 算子 gather 的 tile 粒度**——Day 17 呼应）
+
+### 与昇腾经验的连接
+
+- block table = **间接寻址表**，和你做 tiling 时用偏移表管理多级 buffer（L1/L0A/L0B）是同构问题：都以"小表 + 大池"换取分配灵活性。
+- KV cache 布局（哪个维度连续）直接决定 paged attention 算子搬运是否合并成大 burst——这在 NPU 上等价于 `block_size × head_dim × dtype` 是否构成高效 DMA 粒度（你对齐 32B/64B 的经验直接适用）。
+
+### 产出
+
+- [ ] 笔记《KV cache 三层数据结构图》（对照 OS 分页表）
+- [ ] 手算 Qwen3-8B 的 block 数 vs 启动日志对照
+- [ ] 3 个验证点的答案
+
+---
+
+## Day 16：KV Cache Manager（二）——prefix caching
+
+### 目标
+
+讲清：① 前缀复用怎么判定（hash 链）；② 共享块怎么不被写坏（COW + 引用计数）；③ 缓存什么时候被驱逐（LRU 藏在哪）；④ 做实验拿到第一组 hit rate 数据。
+
+### hash 链机制：为什么 hash 必须包含父块 hash
+
+每个**满块**的 hash 计算为：
+
+```
+block_hash = hash(parent_block_hash, tuple(token_ids_of_this_block), extra_keys)
+```
+
+- `parent_block_hash` 参与运算 → hash 天然编码了"从根到这里的完整路径"。两个请求命中同一 block，意味着**之前的整条前缀链都相同**，可以整段复用。
+- `extra_keys` 至少包含：多租户 `cache_salt`（防跨租户缓存泄漏，W5 Day 34 伏笔）、LoRA id（不同 adapter 的 KV 不能混）、多模态输入的 hash。
+- **只有满块才缓存**：未满块内容还在变，hash 语义不稳定。请求结束后其最后一个未满块会被补算 hash 入库（读代码验证你版本的行为：找 `cache_partial_blocks` / 请求 finish 路径）。
+
+命中路径（`get_computed_blocks`）：给定请求的 token ids，从头开始逐块算 hash 查 `cached_block`，沿链走到底。命中块 `ref_cnt += 1`，直接挂到该请求的 block table，**这些 token 不用重算 prefill** → TTFT 大幅下降。
+
+### COW：共享的最后一块被写入时
+
+场景：请求 A 和 B 共享系统提示词（共享块 ref_cnt=2）。B 开始生成，新 token 要写入共享链的最后一个块，而 A 还在用 → 不能直接写。
+
+处理：`BlockPool.fork(last_block)`——B 分配一个新块继承 token_ids 与 hash 语义，原块留给 A（ref_cnt-1）。这就是 copy-on-write 的"写时复制"。
+
+**读代码验证点（重要，别背错）**：fork 之后，**物理 KV 数据的拷贝发生在哪一层、什么时机**？是 CPU 侧立刻下发一次 device-to-device 拷贝，还是靠"新块本就未写过 KV、直接往里写"来避免拷贝？在 `block_pool.py` 的 fork 相关代码 + `gpu_model_runner.py` 里找证据。面试被追问 COW 时，能答出"拷贝（或不拷贝）的准确时机"是区分度。
+
+### 驱逐：没有独立 evictor，驱逐 = 分配
+
+这是 vLLM 设计里最优雅的一点：**prefix caching 的 LRU 驱逐不发生在"内存不够"的回调里，而是发生在正常分配路径上**。
+
+- 请求结束 → 块归还（ref_cnt=0）→ 块**留在 `cached_block` 索引里**，同时进 `FreeBlockQueue` 尾部 → "evictable"状态
+- 新请求分配 → 从 `FreeBlockQueue` 头部取块 → 取到的若是带 hash 的缓存块，从 `cached_block` 删除 → 最老前缀被"驱逐"
+- 结论：**`FreeBlockQueue` 的顺序 = 驱逐优先级顺序**（Day 15 埋的伏笔在此回收）
+
+### 实验：构造高重复前缀负载
+
+```bash
+# 1. 正常启动（V1 默认开启 prefix caching；老版本显式加 --enable-prefix-caching）
+vllm serve Qwen/Qwen3-8B
+
+# 2. 压测：固定长系统提示词（如 2-4K token 的文档摘要），变化用户问题
+#    用你 W1 Day 6 的脚本改造：system prompt 相同、user 内容不同
+# 3. 观察指标（/metrics）：
+#    vllm:prefix_cache_hits / vllm:prefix_cache_queries   → hit rate
+#    TTFT p50/p99 对比"无重复前缀"基线
+```
+
+预期：hit rate 接近 `共享前缀长度 / 总 prompt 长度`，TTFT 显著下降且与命中长度近似线性。
+
+实验陷阱：
+- 共享前缀长度最好 ≥ 数个 block_size（如 ≥256 token），否则命中收益被块粒度截断；
+- 多次压测间前一轮已把前缀"焐热"，注意区分冷/热启动（先打一轮 warmup 再采集）；
+- 想验证 salt：请求 header 加 `cache_salt` 不同值，hit rate 应归零。
+[0m
+week3/README.md 已有 Day 15 的扩展计划。现在获取 vLLM v0.11.0 源码以核对源码坐标（与已有 day12 的版本口径一致）。
+[0m$ [0mcd /tmp/opencode && (git clone --depth 1 --branch v0.11.0 https://github.com/vllm-project/vllm.git vllm-src 2>&1 | tail -2) || echo "CLONE FAILED"
+Turn off this advice by setting config variable advice.detachedHead to false
+[0m
+[0m$ [0mls /tmp/opencode/vllm-src/vllm/v1/core/ && wc -l /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_manager.py /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py /tmp/opencode/vllm-src/vllm/v1/core/block_pool.py /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_coordinator.py
+block_pool.py
+encoder_cache_manager.py
+__init__.py
+kv_cache_coordinator.py
+kv_cache_manager.py
+kv_cache_utils.py
+sched
+single_type_kv_cache_manager.py
+   399 /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_manager.py
+  1291 /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py
+   416 /tmp/opencode/vllm-src/vllm/v1/core/block_pool.py
+   440 /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_coordinator.py
+  2546 total
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_manager.py
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/block_pool.py
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py[90m [limit=400][0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_coordinator.py
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/single_type_kv_cache_manager.py
+[0m
+[0m$ [0mgrep -n "def get_kv_cache_config\|def _get_kv_cache_config\|available_kv_cache_memory\|num_blocks\|kv_cache_tensors\|profile_run\|determine_available_memory" /tmp/opencode/vllm-src/vllm/v1/worker/gpu_worker.py | head -30; echo ---; grep -n "class KVCacheConfig\|class KVCacheGroupSpec\|class KVCacheTensor\|class FullAttentionSpec\|block_size" /tmp/opencode/vllm-src/vllm/v1/kv_cache_interface.py | head -40
+222:    def determine_available_memory(self) -> int:
+238:            self.model_runner.profile_run()
+263:            self.model_runner.profile_run()
+279:        self.available_kv_cache_memory_bytes = self.requested_memory \
+299:                    GiB(self.available_kv_cache_memory_bytes))
+302:        return int(self.available_kv_cache_memory_bytes)
+391:                f"{GiB(self.available_kv_cache_memory_bytes)} GiB.")
+---
+26:    block_size: int
+31:        The size of a page with `block_size` tokens in bytes.
+65:        return 2 * self.block_size * self.num_kv_heads * self.head_size \
+70:class FullAttentionSpec(AttentionSpec):
+91:        return cdiv(max_model_len, self.block_size) * self.page_size_bytes
+121:            block_size=specs[0].block_size,
+151:            return self.block_size * 656
+152:        return self.block_size * self.num_kv_heads * self.head_size \
+165:            block_size=specs[0].block_size,
+189:        return cdiv(num_tokens, self.block_size) * self.page_size_bytes
+214:        return (cdiv(num_tokens, self.block_size) + 1) * self.page_size_bytes
+261:        return cdiv(max_encoder_len, self.block_size) * self.page_size_bytes
+291:        block_sizes = set(spec.block_size for spec in kv_cache_specs.values())
+292:        if len(block_sizes) > 1:
+332:            block_size = next(iter(kv_cache_specs.values())).block_size
+333:            return cls(block_size=block_size, kv_cache_specs=kv_cache_specs)
+339:class KVCacheTensor:
+348:class KVCacheGroupSpec:
+360:class KVCacheConfig:
+[0m
+[0m$ [0mgrep -n "block_size\|hash_block_tokens\|_hash_block_tokens\|block_hashes" /tmp/opencode/vllm-src/vllm/v1/request.py | head -30
+118:        self.block_hashes: list[BlockHash] = []
+123:            self.block_hashes = self.get_hash_new_full_blocks()
+162:            self.block_hashes.extend(self.get_hash_new_full_blocks())
+[0m
+[0m$ [0mgrep -n "get_hash_new_full_blocks\|def hash_block_tokens\|_gen_kv\n\|hash_block" /tmp/opencode/vllm-src/vllm/v1/request.py; sed -n '95,200p' /tmp/opencode/vllm-src/vllm/v1/request.py
+119:        self.get_hash_new_full_blocks: Optional[Callable[
+122:            self.get_hash_new_full_blocks = partial(block_hasher, self)
+123:            self.block_hashes = self.get_hash_new_full_blocks()
+161:        if self.get_hash_new_full_blocks is not None:
+162:            self.block_hashes.extend(self.get_hash_new_full_blocks())
+        self.num_computed_tokens = 0
+        self.cache_salt: Optional[str] = cache_salt
+
+        # Multi-modal related
+        self.mm_features = mm_features or []
+        self.num_encoder_inputs = len(self.mm_features)
+        self.has_encoder_inputs = self.num_encoder_inputs > 0
+
+        # Read-only views
+        # Prevent directly appending to these lists since
+        # they should also be updated simultaneously.
+        self.output_token_ids = ConstantList(self._output_token_ids)
+        self.all_token_ids = ConstantList(self._all_token_ids)
+        # trace_headers
+        self.trace_headers = trace_headers
+        # State
+        # The number of tokens with prefix cache hits.
+        self.num_cached_tokens = -1
+
+        # The number of NaNs in logits. A value greater than 0
+        # indicates that the output is corrupted
+        self.num_nans_in_logits = 0
+
+        self.block_hashes: list[BlockHash] = []
+        self.get_hash_new_full_blocks: Optional[Callable[
+            [], list[BlockHash]]] = None
+        if block_hasher is not None:
+            self.get_hash_new_full_blocks = partial(block_hasher, self)
+            self.block_hashes = self.get_hash_new_full_blocks()
+
+    @classmethod
+    def from_engine_core_request(
+        cls, request: EngineCoreRequest,
+        block_hasher: Optional[Callable[["Request"], list["BlockHash"]]]
+    ) -> "Request":
+        return cls(
+            request_id=request.request_id,
+            client_index=request.client_index,
+            prompt_token_ids=request.prompt_token_ids,
+            prompt_embeds=request.prompt_embeds,
+            mm_features=request.mm_features,
+            sampling_params=request.sampling_params,
+            pooling_params=request.pooling_params,
+            eos_token_id=request.eos_token_id,
+            arrival_time=request.arrival_time,
+            lora_request=request.lora_request,
+            structured_output_request=StructuredOutputRequest(
+                sampling_params=request.sampling_params) \
+                    if request.sampling_params else None,
+            cache_salt=request.cache_salt,
+            priority=request.priority,
+            trace_headers=request.trace_headers,
+            block_hasher=block_hasher,
+        )
+
+    def append_output_token_ids(
+        self,
+        token_ids: Union[int, list[int]],
+    ) -> None:
+        if isinstance(token_ids, int):
+            self._output_token_ids.append(token_ids)
+            self._all_token_ids.append(token_ids)
+        else:
+            self._output_token_ids.extend(token_ids)
+            self._all_token_ids.extend(token_ids)
+
+        if self.get_hash_new_full_blocks is not None:
+            self.block_hashes.extend(self.get_hash_new_full_blocks())
+
+    @property
+    def is_output_corrupted(self) -> bool:
+        return self.num_nans_in_logits > 0
+
+    @property
+    def num_tokens(self) -> int:
+        return len(self._all_token_ids)
+
+    @property
+    def num_tokens_with_spec(self) -> int:
+        return len(self._all_token_ids) + len(self.spec_token_ids)
+
+    @property
+    def num_output_tokens(self) -> int:
+        return len(self._output_token_ids)
+
+    def is_finished(self) -> bool:
+        return RequestStatus.is_finished(self.status)
+
+    def get_finished_reason(self) -> Union[FinishReason, None]:
+        return RequestStatus.get_finished_reason(self.status)
+
+    def get_num_encoder_tokens(self, input_id: int) -> int:
+        assert input_id < len(self.mm_features)
+        num_tokens = self.mm_features[input_id].mm_position.length
+        return num_tokens
+
+    def record_event(
+        self,
+        event_type: EngineCoreEventType,
+        timestamp: Optional[float] = None,
+    ) -> None:
+        self.events.append(EngineCoreEvent.new_event(event_type, timestamp))
+
+    def take_events(self) -> Optional[list[EngineCoreEvent]]:
+        if not self.events:
+            return None
+[0m
+[0m$ [0msed -n '200,310p' /tmp/opencode/vllm-src/vllm/v1/worker/gpu_worker.py
+# Construct the model runner
+        self.model_runner: GPUModelRunner = GPUModelRunner(
+            self.vllm_config, self.device)
+
+        if self.rank == 0:
+            # If usage stat is enabled, collect relevant info.
+            report_usage_stats(self.vllm_config)
+
+    # FIXME(youkaichao & ywang96): Use TorchDispatchMode instead of memory pool
+    # to hijack tensor allocation.
+    def load_model(self) -> None:
+        eep_scale_up = os.environ.get("VLLM_ELASTIC_EP_SCALE_UP_LAUNCH") == "1"
+        with self._maybe_get_memory_pool_context(tag="weights"):
+            self.model_runner.load_model(eep_scale_up=eep_scale_up)
+
+    def update_config(self, overrides: dict[str, Any]) -> None:
+        self.model_runner.update_config(overrides)
+
+    def reload_weights(self) -> None:
+        self.model_runner.reload_weights()
+
+    @torch.inference_mode()
+    def determine_available_memory(self) -> int:
+        """Profiles the peak memory usage of the model to determine how much
+        memory can be used for KV cache without OOMs.
+
+        The engine will first conduct a profiling of the existing memory usage.
+        Then, it calculates the free memory that can be used for KV cache in
+        bytes.
+
+        Tip:
+            You may limit the usage of GPU memory
+            by adjusting the `gpu_memory_utilization` parameter.
+        """
+        GiB = lambda b: b / GiB_bytes
+        if kv_cache_memory_bytes := self.cache_config.kv_cache_memory_bytes:
+            # still need a profile run which compiles the model for
+            # max_num_batched_tokens
+            self.model_runner.profile_run()
+
+            msg = (
+                f"Initial free memory {GiB(self.init_snapshot.free_memory)} "
+                f"GiB, reserved {GiB(kv_cache_memory_bytes):.2f}GiB memory for "
+                "KV Cache as specified by kv_cache_memory_bytes config and "
+                "skipped memory profiling. This does does not respect the "
+                "gpu_memory_utilization config. Only use kv_cache_memory_bytes "
+                "config when you want manual control of KV cache memory "
+                "size. If OOM'ed, check the difference of initial free "
+                "memory between the current run and the previous run "
+                "where kv_cache_memory_bytes is suggested and update it "
+                "correspondingly.")
+            logger.info(msg)
+            return kv_cache_memory_bytes
+
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+
+        # Execute a forward pass with dummy inputs to profile the memory usage
+        # of the model.
+        with memory_profiling(
+                self.init_snapshot,
+                weights_memory=int(self.model_runner.model_memory_usage),
+        ) as profile_result:
+            self.model_runner.profile_run()
+
+        self.non_torch_memory = profile_result.non_torch_increase
+        self.peak_activation_memory = profile_result.torch_peak_increase
+
+        free_gpu_memory = profile_result.after_profile.free_memory
+        # NOTE(woosuk): Here we assume that the other processes using the same
+        # GPU did not change their memory usage during the profiling.
+        assert self.init_snapshot.free_memory > free_gpu_memory, (
+            "Error in memory profiling. "
+            f"Initial free memory {GiB(self.init_snapshot.free_memory)} GiB, "
+            f"current free memory {GiB(free_gpu_memory)} GiB. "
+            "This happens when other processes sharing the same container "
+            "release GPU memory while vLLM is profiling during initialization. "
+            "To fix this, ensure consistent GPU memory allocation or "
+            "isolate vLLM in its own container.")
+        self.available_kv_cache_memory_bytes = self.requested_memory \
+            - profile_result.non_kv_cache_memory
+
+        unrequested_memory = self.init_snapshot.free_memory \
+            - self.requested_memory
+        logger.debug(
+            "Initial free memory: %.2f GiB; "
+            "Requested memory: %.2f (util), %.2f GiB",
+            GiB(self.init_snapshot.free_memory),
+            self.cache_config.gpu_memory_utilization,
+            GiB(self.requested_memory),
+        )
+        logger.debug(
+            "Free memory after profiling: %.2f GiB (total), "
+            "%.2f GiB (within requested)",
+            GiB(free_gpu_memory),
+            GiB(free_gpu_memory - unrequested_memory),
+        )
+        logger.debug(profile_result)
+        logger.info("Available KV cache memory: %.2f GiB",
+                    GiB(self.available_kv_cache_memory_bytes))
+        gc.collect()
+
+        return int(self.available_kv_cache_memory_bytes)
+
+    def get_kv_cache_spec(self) -> dict[str, KVCacheSpec]:
+        return self.model_runner.get_kv_cache_spec()
+
+    def initialize_from_config(self, kv_cache_config: KVCacheConfig) -> None:
+        """Allocate GPU KV cache with the specified kv_cache_config."""
+
+        if self.vllm_config.model_config.enable_sleep_mode:
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/kv_cache_interface.py[90m [limit=120, offset=280][0m
+[0m
+[0m$ [0mgrep -n "def generate_block_hash\|def hash_block_tokens\|def block_hasher\|def create_kv_cache_group\|def unify_kv_cache_specs\|class BlockHasher\|def create_block_hasher" /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py
+517:def generate_block_hash_extra_keys(
+547:def hash_block_tokens(
+726:def create_kv_cache_group_specs(
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py[90m [limit=180, offset=500][0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py[90m [limit=180, offset=680][0m
+[0m
+[0m$ [0mgrep -n "block_size" /tmp/opencode/vllm-src/vllm/platforms/cuda.py | head; grep -rn "def get_default_block_size\|block_size" /tmp/opencode/vllm-src/vllm/platforms/interface.py | head
+126:        if cache_config and cache_config.block_size is None:
+127:            cache_config.block_size = 16
+137:            # required block_size.
+164:                and cache_config.block_size != 64:
+165:                cache_config.block_size = 64
+169:            if use_cutlass_mla and cache_config.block_size != 128:
+170:                cache_config.block_size = 128
+174:            if use_flashinfer_mla and cache_config.block_size not in [32, 64]:
+175:                cache_config.block_size = 64
+181:            if use_sparse and cache_config.block_size != 64:
+196:                             block_size: int, use_v1: bool, use_mla: bool,
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py[90m [limit=180, offset=860][0m
+[0m
+[0m$ [0mgrep -n "initialize_kv_cache\|def _allocate_kv_cache\|torch.zeros\|kv_cache_raw\|torch.empty" /tmp/opencode/vllm-src/vllm/v1/worker/gpu_model_runner.py | head -20
+266:        # Initialize in initialize_kv_cache
+303:        # `initialize_kv_cache` based on the kv cache config. However, as in
+308:        # in `initialize_kv_cache` if the block_sizes here is different from
+412:            self.kv_sharing_fast_prefill_logits_indices = torch.zeros(
+438:        self.sampled_token_ids_pinned_cpu = torch.empty(
+1164:                blk_table_tensor = torch.zeros(
+1169:                slot_mapping = torch.zeros(
+2605:            num_local_physical_experts = torch.empty(1,
+3245:            bonus_token_ids = torch.zeros(num_reqs,
+3277:        dummy_token_ids = torch.zeros((num_reqs, req_num_tokens),
+3758:    def _allocate_kv_cache_tensors(
+3770:        kv_cache_raw_tensors: dict[str, torch.Tensor] = {}
+3772:            tensor = torch.zeros(kv_cache_tensor.size,
+3776:                kv_cache_raw_tensors[layer_name] = tensor
+3784:        assert layer_names == set(kv_cache_raw_tensors.keys(
+3786:        return kv_cache_raw_tensors
+3800:        kv_cache_raw_tensors: dict[str, torch.Tensor],
+3807:            kv_cache_raw_tensors: The KV cache buffer of each layer, with
+3821:                raw_tensor = kv_cache_raw_tensors[layer_name]
+3854:                    kv_caches[layer_name] = kv_cache_raw_tensors[
+[0m
+[0m$ [0mgrep -n "KVCacheManager\|kv_cache_manager\|get_computed_blocks\|allocate_slots\|\.free(" /tmp/opencode/vllm-src/vllm/v1/core/scheduler.py | head -40
+grep: /tmp/opencode/vllm-src/vllm/v1/core/scheduler.py: No such file or directory
+[0m
+[0m$ [0mls /tmp/opencode/vllm-src/vllm/v1/core/sched/; grep -n "kv_cache_manager\." /tmp/opencode/vllm-src/vllm/v1/core/sched/scheduler.py | head -40
+async_scheduler.py
+__init__.py
+interface.py
+output.py
+request_queue.py
+scheduler.py
+utils.py
+255:                new_blocks = self.kv_cache_manager.allocate_slots(
+273:                    self.kv_cache_manager.free(preempted_req)
+383:                        self.kv_cache_manager.get_computed_blocks(
+407:                        self.kv_cache_manager.create_empty_block_list())
+471:                new_blocks = self.kv_cache_manager.allocate_slots(
+522:                    self.kv_cache_manager.get_blocks(request.request_id))
+561:                self.kv_cache_manager.get_num_common_prefix_blocks(
+610:        events = self.kv_cache_manager.take_events()
+1164:        self.kv_cache_manager.free(request)
+1174:        return self.kv_cache_manager.reset_prefix_cache()
+1183:        prefix_cache_stats = self.kv_cache_manager.make_prefix_cache_stats()
+1187:                              kv_cache_usage=self.kv_cache_manager.usage,
+1234:        (block_ids, ) = self.kv_cache_manager.get_block_ids(request.request_id)
+1254:        (block_ids, ) = self.kv_cache_manager.get_block_ids(request.request_id)
+1261:        self.kv_cache_manager.cache_blocks(request, num_computed_tokens)
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/worker/gpu_model_runner.py[90m [limit=110, offset=3758][0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/sched/scheduler.py[90m [limit=130, offset=240][0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/sched/scheduler.py[90m [limit=175, offset=370][0m
+[0m
+[0m$ [0mgrep -rn "KVCacheManager(" /tmp/opencode/vllm-src/vllm/v1/ | grep -v test; grep -n "class Scheduler" /tmp/opencode/vllm-src/vllm/v1/core/sched/scheduler.py | head -3; sed -n '100,200p' /tmp/opencode/vllm-src/vllm/v1/core/sched/scheduler.py
+/tmp/opencode/vllm-src/vllm/v1/core/sched/scheduler.py:168:        self.kv_cache_manager = KVCacheManager(
+/tmp/opencode/vllm-src/vllm/v1/core/single_type_kv_cache_manager.py:17:class SingleTypeKVCacheManager(ABC):
+43:class Scheduler(SchedulerInterface):
+        num_gpu_blocks = self.cache_config.num_gpu_blocks
+        assert num_gpu_blocks is not None and num_gpu_blocks > 0
+
+        self.block_size = self.cache_config.block_size
+
+        self.dcp_world_size = \
+            vllm_config.parallel_config.decode_context_parallel_size
+        # Note(hc): The scheduler’s block_size must be multiplied
+        # by dcp_world_size, since block hashes are computed on the
+        # original full token sequence at a granularity of
+        # original_block_size × dcp_world_size.
+        if self.dcp_world_size > 1:
+            self.block_size *= self.dcp_world_size
+
+        # req_id -> Request
+        self.requests: dict[str, Request] = {}
+        # Scheduling policy
+        if self.scheduler_config.policy == "priority":
+            self.policy = SchedulingPolicy.PRIORITY
+        elif self.scheduler_config.policy == "fcfs":
+            self.policy = SchedulingPolicy.FCFS
+        else:
+            raise ValueError(
+                f"Unknown scheduling policy: {self.scheduler_config.policy}")
+        # Priority queues for requests.
+        self.waiting = create_request_queue(self.policy)
+        self.running: list[Request] = []
+
+        # The request IDs that are finished in between the previous and the
+        # current steps. This is used to notify the workers about the finished
+        # requests so that they can free the cached states for those requests.
+        # This is flushed at the end of each scheduling step.
+        self.finished_req_ids: set[str] = set()
+
+        # KV Connector: requests in process of async KV loading or recving
+        self.finished_recving_kv_req_ids: set[str] = set()
+
+        # Encoder-related.
+        # Calculate encoder cache size if applicable
+        # NOTE: For now we use the same budget for both compute and space.
+        # This can be changed when we make encoder cache for embedding caching
+        # across requests.
+        encoder_compute_budget, encoder_cache_size = compute_encoder_budget(
+            model_config=vllm_config.model_config,
+            scheduler_config=vllm_config.scheduler_config,
+            mm_registry=mm_registry,
+        )
+
+        # NOTE(woosuk): Here, "encoder" includes the vision encoder (and
+        # projector if needed) for MM models as well as encoder-decoder
+        # transformers.
+        self.max_num_encoder_input_tokens = encoder_compute_budget
+        # NOTE: For the models without encoder (e.g., text-only models),
+        # the encoder cache will not be initialized because cache size is 0
+        # for these models.
+        self.encoder_cache_manager = EncoderCacheManager(
+            cache_size=encoder_cache_size)
+
+        speculative_config = vllm_config.speculative_config
+        self.use_eagle = False
+        self.num_spec_tokens = self.num_lookahead_tokens = 0
+        if speculative_config:
+            self.num_spec_tokens = speculative_config.num_speculative_tokens
+            if speculative_config.use_eagle():
+                self.use_eagle = True
+                self.num_lookahead_tokens = self.num_spec_tokens
+
+        # Create the KV cache manager.
+        self.kv_cache_manager = KVCacheManager(
+            kv_cache_config=kv_cache_config,
+            max_model_len=self.max_model_len,
+            enable_caching=self.cache_config.enable_prefix_caching,
+            use_eagle=self.use_eagle,
+            log_stats=self.log_stats,
+            enable_kv_cache_events=self.enable_kv_cache_events,
+            dcp_world_size=self.dcp_world_size,
+        )
+        self.use_pp = self.parallel_config.pipeline_parallel_size > 1
+
+    def schedule(self) -> SchedulerOutput:
+        # NOTE(woosuk) on the scheduling algorithm:
+        # There's no "decoding phase" nor "prefill phase" in the scheduler.
+        # Each request just has the num_computed_tokens and
+        # num_tokens_with_spec. num_tokens_with_spec =
+        # len(prompt_token_ids) + len(output_token_ids) + len(spec_token_ids).
+        # At each step, the scheduler tries to assign tokens to the requests
+        # so that each request's num_computed_tokens can catch up its
+        # num_tokens_with_spec. This is general enough to cover
+        # chunked prefills, prefix caching, speculative decoding,
+        # and the "jump decoding" optimization in the future.
+
+        scheduled_new_reqs: list[Request] = []
+        scheduled_resumed_reqs: list[Request] = []
+        scheduled_running_reqs: list[Request] = []
+        preempted_reqs: list[Request] = []
+
+        req_to_new_blocks: dict[str, KVCacheBlocks] = {}
+        num_scheduled_tokens: dict[str, int] = {}
+        token_budget = self.max_num_scheduled_tokens
+        # Encoder-related.
+        scheduled_encoder_inputs: dict[str, list[int]] = {}
+[0m
+[0m$ [0msed -n '1155,1270p' /tmp/opencode/vllm-src/vllm/v1/core/sched/scheduler.py
+self.finished_req_ids_dict[request.client_index].add(request_id)
+
+        if not delay_free_blocks:
+            self._free_blocks(request)
+
+        return kv_xfer_params
+
+    def _free_blocks(self, request: Request):
+        assert request.is_finished()
+        self.kv_cache_manager.free(request)
+        del self.requests[request.request_id]
+
+    def get_num_unfinished_requests(self) -> int:
+        return len(self.waiting) + len(self.running)
+
+    def has_finished_requests(self) -> bool:
+        return len(self.finished_req_ids) > 0
+
+    def reset_prefix_cache(self) -> bool:
+        return self.kv_cache_manager.reset_prefix_cache()
+
+    def make_stats(
+        self,
+        spec_decoding_stats: Optional[SpecDecodingStats] = None,
+        kv_connector_stats: Optional[KVConnectorStats] = None,
+    ) -> Optional[SchedulerStats]:
+        if not self.log_stats:
+            return None
+        prefix_cache_stats = self.kv_cache_manager.make_prefix_cache_stats()
+        assert prefix_cache_stats is not None
+        return SchedulerStats(num_running_reqs=len(self.running),
+                              num_waiting_reqs=len(self.waiting),
+                              kv_cache_usage=self.kv_cache_manager.usage,
+                              prefix_cache_stats=prefix_cache_stats,
+                              spec_decoding_stats=spec_decoding_stats,
+                              num_corrupted_reqs=sum(req.is_output_corrupted
+                                                     for req in self.running),
+                              kv_connector_stats=kv_connector_stats.data
+                              if kv_connector_stats else None)
+
+    def make_spec_decoding_stats(
+        self,
+        spec_decoding_stats: Optional[SpecDecodingStats],
+        num_draft_tokens: int,
+        num_accepted_tokens: int,
+    ) -> Optional[SpecDecodingStats]:
+        if not self.log_stats:
+            return None
+        if spec_decoding_stats is None:
+            spec_decoding_stats = SpecDecodingStats.new(self.num_spec_tokens)
+        spec_decoding_stats.observe_draft(
+            num_draft_tokens=num_draft_tokens,
+            num_accepted_tokens=num_accepted_tokens)
+        return spec_decoding_stats
+
+    def shutdown(self) -> None:
+        if self.kv_event_publisher:
+            self.kv_event_publisher.shutdown()
+        if self.connector is not None:
+            self.connector.shutdown()
+
+    ########################################################################
+    # KV Connector Related Methods
+    ########################################################################
+
+    def get_kv_connector(self) -> Optional[KVConnectorBase_V1]:
+        return self.connector
+
+    def _connector_finished(
+            self, request: Request) -> tuple[bool, Optional[dict[str, Any]]]:
+        """
+        Invoke the KV connector request_finished() method if applicable.
+
+        Returns optional kv transfer parameters to be included with the
+        request outputs.
+        """
+        if self.connector is None:
+            return False, None
+
+        (block_ids, ) = self.kv_cache_manager.get_block_ids(request.request_id)
+        return self.connector.request_finished(request, block_ids)
+
+    def _update_waiting_for_remote_kv(self, request: Request) -> bool:
+        """
+        KV Connector: check if the request_id is finished_recving.
+
+        The finished_recving_kv_req_ids list is populated
+        on the previous steps()'s update_from_output based
+        on the worker side connector.
+
+        When the kv transfer is ready, we cache the blocks
+        and the request state will be moved back to WAITING from
+        WAITING_FOR_REMOTE_KV.
+        """
+        assert self.connector is not None
+        if request.request_id not in self.finished_recving_kv_req_ids:
+            return False
+
+        # Now that the blocks are ready, actually cache them.
+        (block_ids, ) = self.kv_cache_manager.get_block_ids(request.request_id)
+        num_computed_tokens = len(block_ids) * self.block_size
+        # Handle the case where num request tokens less than one block.
+        num_computed_tokens = min(num_computed_tokens, request.num_tokens)
+        if num_computed_tokens == request.num_tokens:
+            num_computed_tokens -= 1
+        # This will cache the blocks iff caching is enabled.
+        self.kv_cache_manager.cache_blocks(request, num_computed_tokens)
+
+        # Update the request state for scheduling.
+        request.num_computed_tokens = num_computed_tokens
+
+        # Return that we are ready.
+        self.finished_recving_kv_req_ids.remove(request.request_id)
+        return True
+
+    def _update_from_kv_xfer_finished(self,
+[0m
+[0m$ [0mgrep -n "initialize_kv_cache\|determine_available_memory\|get_kv_cache_spec\|_get_kv_cache_config\|KVCacheConfig" /tmp/opencode/vllm-src/vllm/v1/engine/core.py | head; grep -rn "def get_kv_cache_config" /tmp/opencode/vllm-src/vllm/v1/ | head
+47:from vllm.v1.kv_cache_interface import KVCacheConfig
+92:            self._initialize_kv_caches(vllm_config)
+169:    def _initialize_kv_caches(
+170:            self, vllm_config: VllmConfig) -> tuple[int, int, KVCacheConfig]:
+174:        kv_cache_specs = self.model_executor.get_kv_cache_specs()
+190:                    self.model_executor.determine_available_memory())
+1118:            # use it in _initialize_kv_caches() rather than profiling.
+/tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py:1004:def get_kv_cache_config_from_groups(vllm_config: VllmConfig,
+/tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py:1211:def get_kv_cache_configs(vllm_config: VllmConfig,
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/engine/core.py[90m [limit=70, offset=169][0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py[90m [limit=85, offset=1205][0m
+[0m
+[0m$ [0mgrep -rn "GPU blocks\|# CPU blocks\|GPU KV cache size" /tmp/opencode/vllm-src/vllm/v1/worker/gpu_worker.py /tmp/opencode/vllm-src/vllm/v1/executor/ 2>/dev/null | head; sed -n '1150,1180p' /tmp/opencode/vllm-src/vllm/v1/worker/gpu_model_runner.py
+self.num_accepted_tokens.np[num_reqs:].fill(1)
+            self.num_accepted_tokens.copy_to_gpu()
+
+        # Prepare the attention metadata for each KV cache group and make layers
+        # in the same group share the same metadata.
+        for kv_cache_group_id, kv_cache_group_spec in enumerate(
+                self.kv_cache_config.kv_cache_groups):
+            encoder_seq_lens = self._get_encoder_seq_lens(
+                scheduler_output, kv_cache_group_spec.kv_cache_spec, num_reqs)
+
+            if isinstance(kv_cache_group_spec.kv_cache_spec,
+                          EncoderOnlyAttentionSpec):
+                # Encoder-only layers do not have KV cache, so we need to
+                # create a dummy block table and slot mapping for them.
+                blk_table_tensor = torch.zeros(
+                    (num_reqs, 1),
+                    dtype=torch.int32,
+                    device=self.device,
+                )
+                slot_mapping = torch.zeros(
+                    (total_num_scheduled_tokens, ),
+                    dtype=torch.int64,
+                    device=self.device,
+                )
+                num_common_prefix_blocks = 0
+            else:
+                blk_table = self.input_batch.block_table[kv_cache_group_id]
+                blk_table_tensor = blk_table.get_device_tensor(num_reqs)
+                slot_mapping = blk_table.slot_mapping.gpu[:
+                                                          total_num_scheduled_tokens]
+[0m
+[0m$ [0mgrep -rn "GPU blocks" /tmp/opencode/vllm-src/vllm/v1/ | head -5; grep -n "class BlockTable" /tmp/opencode/vllm-src/vllm/v1/worker/block_table.py 2>/dev/null; ls /tmp/opencode/vllm-src/vllm/v1/worker/
+16:class BlockTable:
+block_table.py
+cpu_model_runner.py
+cpu_worker.py
+gpu_input_batch.py
+gpu_model_runner.py
+gpu_ubatch_wrapper.py
+gpu_worker.py
+__init__.py
+kv_connector_model_runner_mixin.py
+lora_model_runner_mixin.py
+tpu_input_batch.py
+tpu_model_runner.py
+tpu_worker.py
+ubatching.py
+ubatch_splitting.py
+ubatch_utils.py
+utils.py
+worker_base.py
+xpu_model_runner.py
+xpu_worker.py
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/worker/block_table.py
+[0m
+[0m$ [0mgrep -rn "GPU blocks\|gpu_blocks" /tmp/opencode/vllm-src/vllm/v1/engine/core.py /tmp/opencode/vllm-src/vllm/executor/ 2>/dev/null | head; grep -rn "GPU blocks" /tmp/opencode/vllm-src/vllm/ | grep -v test | head -5
+/tmp/opencode/vllm-src/vllm/v1/engine/core.py:91:        num_gpu_blocks, num_cpu_blocks, kv_cache_config = \
+/tmp/opencode/vllm-src/vllm/v1/engine/core.py:94:        vllm_config.cache_config.num_gpu_blocks = num_gpu_blocks
+/tmp/opencode/vllm-src/vllm/v1/engine/core.py:97:                            args=(num_gpu_blocks, num_cpu_blocks))
+/tmp/opencode/vllm-src/vllm/v1/engine/core.py:203:        num_gpu_blocks = scheduler_kv_cache_config.num_blocks
+/tmp/opencode/vllm-src/vllm/v1/engine/core.py:212:        return num_gpu_blocks, num_cpu_blocks, scheduler_kv_cache_config
+/tmp/opencode/vllm-src/vllm/v1/engine/core.py:613:            num_gpu_blocks = vllm_config.cache_config.num_gpu_blocks
+/tmp/opencode/vllm-src/vllm/v1/engine/core.py:623:                    "num_gpu_blocks": num_gpu_blocks,
+/tmp/opencode/vllm-src/vllm/executor/executor_base.py:101:        Returns a tuple `(num_gpu_blocks, num_cpu_blocks)`, where
+/tmp/opencode/vllm-src/vllm/executor/executor_base.py:102:        `num_gpu_blocks` are blocks that are "active" on the device and can be
+/tmp/opencode/vllm-src/vllm/executor/executor_base.py:112:    def initialize_cache(self, num_gpu_blocks: int, num_cpu_blocks) -> None:
+/tmp/opencode/vllm-src/vllm/config/cache.py:65:    """Number of GPU blocks to use. This overrides the profiled `num_gpu_blocks`
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/kv_cache_interface.py[90m [limit=75, offset=18][0m
+[0m
+[0m$ [0mgrep -rn "enable_prefix_caching" /tmp/opencode/vllm-src/vllm/config/cache.py | head -5; grep -n "def check_prefix_caching" /tmp/opencode/vllm-src/vllm/config/cache.py
+70:    enable_prefix_caching: Optional[bool] = None
+189:        if not self.enable_prefix_caching:
+197:        if (self.enable_prefix_caching and self.prefix_caching_hash_algo
+[0m
+[0m→ [0mRead week2/day11_chunked_prefill.md[90m [limit=80][0m
+[0m→ [0mRead week2/assets/day12_recompute_vs_swap.svg[90m [limit=60][0m
+[0m
+[0m$ [0mgrep -n "^## \|^### " /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md | head -60; echo ====; grep -n "^## \|^### " /mnt/workspace/aiinfra/vllm/week2/day14_request_state_machine_review.md | head -40
+14:## 0. 今日学习目标
+29:## 1. 核心概念速览
+54:## 2. 原理深入讲解
+56:### 2.1 回顾与今日地图
+72:### 2.2 触发条件：`allocate_slots` 什么时候返回 None（图 1 顶部）
+94:### 2.3 处理流程：六步复位与 victim 选择（图 1 中部）
+132:### 2.4 恢复路径：从队首复活到 block table 整表替换（图 1 底部、图 2）
+159:### 2.5 recompute vs swap：V1 为什么砍掉 swap（图 3 左/中）
+182:### 2.6 thrashing：被祭者的两种走向，什么时候反复抢占（图 3 右下）
+196:### 2.7 观测：抢占如何流到指标（图 3 右上）
+216:### 2.8 调参：旋钮表与根因框架
+233:## 3. 性能模型：今日的数学
+235:### 3.1 抢占的代价公式
+245:### 3.2 容量-并发上限手算（判断"会不会抢占"的第一步）
+266:### 3.3 recompute vs swap 定量对比（图 3 左）
+278:### 3.4 练手对账题（答案见 §8）
+286:## 4. 关键代码走读（v0.11.0 逐行核对版）
+290:### 4.1 running 循环的抢占分支（scheduler.py:254-300）
+333:### 4.2 waiting 循环的恢复分支（scheduler.py:335, 380-384, 420-437, 471-526）
+367:### 4.3 SchedulerOutput 与 P2 侧（output.py + gpu_model_runner.py）
+400:### 4.4 终判与指标（scheduler.py + stats.py + loggers.py）
+434:### 4.5 调用链速查表（今日总账）
+457:## 5. 动手实验（约 60~90 分钟）
+461:### 实验 0（必做，10 min）：容量手算对账
+475:### 实验 1（必做，30 min；无 GPU 可做）：preemption 仿真器——"10 个请求、KV 只够 7 个"
+611:### 实验 2（GPU，20 min）：挤爆 KV——看指标四件套（Day 13 实验 13.2 的缩小版）
+629:### 实验 3（GPU，20 min）：调参对照——把 admission 收到容量以内
+641:### 实验 4（可选，15 min）：给抢占分支加探针
+653:### 实验 5（产出，15 min）：写 preemption 诊断-调参卡（§9 模板）
+655:### 常见坑（方法论清单）
+670:## 6. 面试高频问题（含答题骨架）
+702:## 7. 今日总结
+715:## 8. 今日自测题（先自己做，再展开答案）
+761:## 9. 今日产出物：preemption 诊断-调参卡
+766:## 触发判定（一行）
+770:## 处理六步（scheduler.py:271-281）
+774:## 观测四件套
+778:## 调参（按手算并发上限 = KV tokens ÷ 平均上下文）
+784:## 手算台账（我的机器）
+789:## 实测（实验 2/3 数据）
+795:## 一句话
+808:## 10. 明日预告（Day 13 · 动手验证调度行为）
+====
+14:## 0. 今日学习目标
+27:## 1. 核心概念速览（本周概念的最终收拢表）
+52:## 2. 原理深入讲解：把六天拼成一台状态机
+54:### 2.1 本周地图：六天各贡献了哪一块
+68:### 2.2 主图与读法（图 1）
+76:### 2.3 逐态精讲：四个必考细节
+95:### 2.4 三视角对齐表（复盘日的增量）
+111:### 2.5 本周一图流（图 2，README 14.3 的产出）
+119:### 2.6 与 Week 1 的闭环：每条边对应哪条公式
+133:## 3. 自测推演：10 个请求、KV 只够 6 个（图 3）
+137:### 3.1 推演前的三行手算（30 秒，不许跳过）
+145:### 3.2 主线推演（先自己推，再对表）
+178:### 3.3 抢占变体：把 output 从 512 改成 600
+189:### 3.4 指标联动（推演检查点④的完整答案）
+200:### 3.5 修复推演（这道题的"然后呢"——面试官一定追问）
+209:### 3.6 仿真器对账（先填预测列，再跑）
+227:## 4. 关键代码走读：状态机的转移函数在哪里
+231:### 4.1 状态定义（`vllm/v1/request.py:205-217`）
+249:### 4.2 转移函数的三个现场（全在 `vllm/v1/core/sched/scheduler.py`）
+288:### 4.3 终判与两进程分裂（`update_from_output` + P0 `OutputProcessor`）
+309:### 4.4 调用链速查表（本周总账 · 状态机版）
+327:## 5. 动手实验（约 90 分钟：复盘日的实验 = 输出）
+329:### 实验 0（必做，15 min）：闭卷画状态机
+341:### 实验 1（必做，15 min）：口头推演并录音
+353:### 实验 2（必做，20 min；无 GPU 可做）：仿真器对账
+499:### 实验 3（可选，GPU，20 min）：把推演搬进真实引擎（缩小版）
+522:### 实验 4（产出，20 min）：速查卡定稿 + 一图流手绘
+526:### 常见坑（方法论清单）
+541:## 6. 面试高频问题（复盘综合级）
+573:## 7. 今日总结（第 2 周总结）
+585:## 8. 今日自测题（十道周复盘题，先做再展开答案）
+659:## 9. 今日产出物
+664:## step 三段式
+668:## 两个旋钮（正交！）
+673:## 调度优先级
+677:## chunked prefill
+681:## 抢占五要素
+688:## 三进程
+692:## 状态机一句话
+697:## 我的台账
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/core/kv_cache_utils.py[90m [limit=170, offset=1039][0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/kv_cache_interface.py[90m [limit=85, offset=93][0m
+[0m
+[0m$ [0mgrep -n "block_table\|BlockTable" /tmp/opencode/vllm-src/vllm/v1/worker/gpu_input_batch.py | head -30; grep -n "_update_inputs\|append_row\|add_row\|full_block_nums\|block_ids" /tmp/opencode/vllm-src/vllm/v1/worker/gpu_input_batch.py | head -30
+25:from vllm.v1.worker.block_table import MultiGroupBlockTable
+139:        self.block_table = MultiGroupBlockTable(
+350:        self.block_table.add_row(request.block_ids, req_index)
+542:        self.block_table.swap_row(i1, i2)
+643:            self.block_table.move_row(last_req_index, empty_index)
+38:    block_ids: tuple[list[int], ...]
+350:        self.block_table.add_row(request.block_ids, req_index)
+[0m
+[0m$ [0mgrep -n "block_table.append_row\|append_row\|FullBlockInfo\|new_blocks\|full_block" /tmp/opencode/vllm-src/vllm/v1/worker/gpu_model_runner.py | head -20; grep -rn "class FullBlockInfo" /tmp/opencode/vllm-src/vllm/v1/ | head -3
+664:                self.input_batch.block_table.append_row(
+[0m
+[0m→ [0mRead /tmp/opencode/vllm-src/vllm/v1/worker/gpu_model_runner.py[90m [limit=80, offset=600][0m
+[0m
+[0m$ [0mgrep -n "class SchedulerOutput\|class CachedRequestData\|new_block_ids\|block_ids\|num_computed_tokens" /tmp/opencode/vllm-src/vllm/v1/core/sched/output.py | head -20; sed -n '85,110p' /tmp/opencode/vllm-src/vllm/v1/core/sched/output.py
+34:    block_ids: tuple[list[int], ...]
+35:    num_computed_tokens: int
+43:        block_ids: tuple[list[int], ...],
+51:            block_ids=block_ids,
+52:            num_computed_tokens=request.num_computed_tokens,
+65:                f"block_ids={self.block_ids},"
+66:                f"num_computed_tokens={self.num_computed_tokens},"
+83:                f"block_ids={self.block_ids},"
+84:                f"num_computed_tokens={self.num_computed_tokens},"
+92:class CachedRequestData:
+95:    # If resumed_from_preemption is False, new_block_ids will be appended to
+96:    # the request's block IDs. If True, new_block_ids will be used as the
+102:    new_block_ids: list[Optional[tuple[list[int], ...]]]
+103:    num_computed_tokens: list[int]
+115:            new_block_ids=[],
+116:            num_computed_tokens=[],
+122:class SchedulerOutput:
+                f"lora_request={self.lora_request},"
+                f"prompt_embeds_shape={prompt_embeds_shape}"
+                ")")
+
+
+@bc_linter_include
+@dataclass
+class CachedRequestData:
+
+    req_ids: list[str]
+    # If resumed_from_preemption is False, new_block_ids will be appended to
+    # the request's block IDs. If True, new_block_ids will be used as the
+    # request's block IDs instead of appending to the existing block IDs.
+    resumed_from_preemption: list[bool]
+    # NOTE(woosuk): new_token_ids is only used for pipeline parallelism.
+    # When PP is not used, new_token_ids will be empty.
+    new_token_ids: list[list[int]]
+    new_block_ids: list[Optional[tuple[list[int], ...]]]
+    num_computed_tokens: list[int]
+
+    @property
+    def num_reqs(self) -> int:
+        return len(self.req_ids)
+
+    @classmethod
+    def make_empty(cls) -> CachedRequestData:
+[0m
+[0m# [0mTodos
+[•] 生成 SVG 1：三层数据结构架构图
+[ ] 生成 SVG 2：请求 KV 生命周期（allocate/append/free + 双账本）
+[ ] 生成 SVG 3：容量手算 + free 队列 LRU 驱逐序
+[ ] 撰写 week3/day15_kv_cache_manager_block_pool.md（含实验仿真器代码）
+[ ] 校验：SVG 语法、内链、与 day12/14 衔接、README Day15 要求全覆盖
+[0m
+源码核对完毕（vLLM v0.11.0 tag，与已有 day12/day14 的版本口径一致）。现在规划并生成交付物。
+[0m← [0mWrite week3/assets/day15_three_layer_architecture.svg
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] 生成 SVG 1：三层数据结构架构图
+[•] 生成 SVG 2：请求 KV 生命周期（allocate/append/free + 双账本）
+[ ] 生成 SVG 3：容量手算 + free 队列 LRU 驱逐序
+[ ] 撰写 week3/day15_kv_cache_manager_block_pool.md（含实验仿真器代码）
+[ ] 校验：SVG 语法、内链、与 day12/14 衔接、README Day15 要求全覆盖
+[0m
+[0m← [0mWrite week3/assets/day15_request_kv_lifecycle.svg
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] 生成 SVG 1：三层数据结构架构图
+[✓] 生成 SVG 2：请求 KV 生命周期（allocate/append/free + 双账本）
+[•] 生成 SVG 3：容量手算 + free 队列 LRU 驱逐序
+[ ] 撰写 week3/day15_kv_cache_manager_block_pool.md（含实验仿真器代码）
+[ ] 校验：SVG 语法、内链、与 day12/14 衔接、README Day15 要求全覆盖
+[0m
+[0m← [0mWrite week3/assets/day15_capacity_handcalc_lru.svg
+Wrote file successfully.
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week3/assets && for f in day15_*.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('$f OK')"; done
+day15_capacity_handcalc_lru.svg OK
+day15_request_kv_lifecycle.svg OK
+day15_three_layer_architecture.svg OK
+[0m
+[0m# [0mTodos
+[✓] 生成 SVG 1：三层数据结构架构图
+[✓] 生成 SVG 2：请求 KV 生命周期（allocate/append/free + 双账本）
+[✓] 生成 SVG 3：容量手算 + free 队列 LRU 驱逐序
+[•] 撰写 week3/day15_kv_cache_manager_block_pool.md（含实验仿真器代码）
+[ ] 校验：SVG 语法、内链、与 day12/14 衔接、README Day15 要求全覆盖
+[0m
+[0m← [0mWrite week3/day15_kv_cache_manager_block_pool.md
+Wrote file successfully.
+[0m
+文件已写入。现在修正实验代码中的两处细节（仿真器 touch 演示的输出注释、实验 2 的探针脚本），并核对一处 `--num-gpu-blocks-override` 的启动校验约束。
+[0m← [0mEdit week3/day15_kv_cache_manager_block_pool.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
++++ /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+@@ -516,15 +516,16 @@
+ pool.free_req(list(reversed(A)))                            # ★ A 结束：B4 先进队
+ print("A free 后:", [b.id for b in pool.free])              # [8, 9, 4, 3, 2, 1, 0] ← 尾块在前
+ print("不变式①:", all(b.ref == 0 for b in pool.free))       # True
+ print("hash 仍保留:", [b.hash for b in pool.free[-5:]])     # 驱逐前 hash 不清
+-C = pool.alloc(6)                                          # 分配顺手驱逐 B4、B3、B4...
+-print("C 拿到:", [b.id for b in C], "B4/B3 的 hash 被清:",
++C = pool.alloc(6)                                          # 分配顺手驱逐 B4、B3、B2、B1
++print("C 拿到:", [b.id for b in C], " B4/B3 的 hash 被清:",
+       [b.hash for b in pool.blocks if b.id in (4, 3)])      # [None, None] ← reset_hash 现场
+-D_hit = [pool.blocks[i] for i in (0, 1)]                   # 模拟另一请求命中 A 的前两块
+-pool.touch(D_hit)
+-print("touch 后:", [b.id for b in pool.free], "ref:",
+-      [b.ref for b in D_hit])                              # 0/1 出队且 ref=1
++pool.free_req(list(reversed(B)))                           # B 也结束 → free=[0, 7, 6, 5]
++D_hit = [pool.blocks[0]]                                  # 模拟另一请求命中 A 的链头块
++pool.touch(D_hit)                                         # 命中块出队 + ref_cnt+=1
++print("touch 后 free:", [b.id for b in pool.free],
++      " D_hit 的 ref:", [b.ref for b in D_hit])            # [] 出队 / [1] 入账
+ ```
+ 
+ 跑完后回答三个问题（写进笔记）：① 驱逐顺序为什么是 B4→B3→…（而不是 B0 先）？对 prefix 链意味着什么？② 如果 `free_req` 不逆序，第二个复用 A 前缀的请求会发生什么？（提示：命中块被逐）③ `touch` 在真实代码里发生在 `allocate_slots` 第⑤步、`popleft_n` 之前——顺序反了会怎样？
+ 
+
+[0m
+[0m← [0mEdit week3/day15_kv_cache_manager_block_pool.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
++++ /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+@@ -523,9 +523,9 @@
+ pool.free_req(list(reversed(B)))                           # B 也结束 → free=[0, 7, 6, 5]
+ D_hit = [pool.blocks[0]]                                  # 模拟另一请求命中 A 的链头块
+ pool.touch(D_hit)                                         # 命中块出队 + ref_cnt+=1
+ print("touch 后 free:", [b.id for b in pool.free],
+-      " D_hit 的 ref:", [b.ref for b in D_hit])            # [] 出队 / [1] 入账
++      " D_hit 的 ref:", [b.ref for b in D_hit])            # [7, 6, 5] / [1] ← B0 出队入账
+ ```
+ 
+ 跑完后回答三个问题（写进笔记）：① 驱逐顺序为什么是 B4→B3→…（而不是 B0 先）？对 prefix 链意味着什么？② 如果 `free_req` 不逆序，第二个复用 A 前缀的请求会发生什么？（提示：命中块被逐）③ `touch` 在真实代码里发生在 `allocate_slots` 第⑤步、`popleft_n` 之前——顺序反了会怎样？
+ 
+
+[0m
+Now修正实验 2 的探针脚本与实验 3 的启动校验约束：
+[0m← [0mEdit week3/day15_kv_cache_manager_block_pool.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
++++ /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+@@ -528,33 +528,42 @@
+ ```
+ 
+ 跑完后回答三个问题（写进笔记）：① 驱逐顺序为什么是 B4→B3→…（而不是 B0 先）？对 prefix 链意味着什么？② 如果 `free_req` 不逆序，第二个复用 A 前缀的请求会发生什么？（提示：命中块被逐）③ `touch` 在真实代码里发生在 `allocate_slots` 第⑤步、`popleft_n` 之前——顺序反了会怎样？
+ 
+-### 实验 2（GPU，可选，20 min）：断点看 allocate_slots 实参
++### 实验 2（GPU，可选，20 min）：monkey-patch 看 allocate_slots 实参
+ 
+-```bash
+-# 用离线模式最小化噪音；断点打在 kv_cache_manager.py:271
+-python - <<'EOF'
+-import breakpoint as bp  # 或直接用下述脚本
++不打断点、不改源码——在进程内给 `allocate_slots` 套一层探针（测完即弃，不改仓库代码）：
++
++```python
++# day15_probe.py
+ from vllm import LLM, SamplingParams
++from vllm.v1.core.kv_cache_manager import KVCacheManager
++
++_orig = KVCacheManager.allocate_slots
++def traced(self, request, num_new_tokens, *a, **kw):
++    ret = _orig(self, request, num_new_tokens, *a, **kw)
++    print(f"[alloc] {request.request_id[:8]} new={num_new_tokens:>5} "
++          f"computed={request.num_computed_tokens:>5} -> "
++          f"{'None' if ret is None else sum(len(g) for g in ret.blocks)} blk")
++    return ret
++KVCacheManager.allocate_slots = traced
++
+ llm = LLM(model="Qwen/Qwen3-8B", gpu_memory_utilization=0.9)
+-out = llm.generate(["你好，" * 200] , SamplingParams(max_tokens=8))
+-EOF
+-# 替代法（不进 pdb）：给 allocate_slots 加一行 print 再 pip install -e
+-#   logger.info("alloc %s: new=%d computed=%d -> %s",
+-#               request.request_id[:8], num_new_tokens,
+-#               num_new_computed_tokens, "OK" if ... )
++llm.generate(["今天天气" * 100], SamplingParams(max_tokens=48))
+ ```
+ 
+-观察点：① 入场一次 `num_new_tokens=321`（你的 prompt）；② 之后每步 `num_new_tokens=1` 且返回空列表（O(1) 路径）；③ 每逢 16 的倍数返回 1 块。**只加探针、不改逻辑，测完还原**（贡献代码的纪律）。
++观察点：① 入场一次 `new=321`（你的 prompt）拿到 21 块；② 之后每步 `new=1` 且新增 0 块（O(1) 路径）；③ 每逢 16 的倍数（第 336/352…个 token）新增 1 块——与图 2 上的台阶曲线逐点对上。
+ 
+ ### 实验 3（GPU，可选，20 min）：强制小池，看 usage 与驱逐
+ 
++注意启动校验：`check_enough_kv_cache_memory`（kv_cache_utils.py:678）要求池至少装下一个 `max_model_len` 的请求，所以 override 小池必须同时调小 `--max-model-len`：
++
+ ```bash
+ vllm serve Qwen/Qwen3-8B --gpu-memory-utilization 0.9 \
+-    --num-gpu-blocks-override 600 &     # ≈ 9600 token ≈ 1.4 路满长请求
+-# 压测：4 路 4K 上下文长输出，观察 /metrics：
+-#   vllm:gpu_cache_usage_perc 逼近 1.0 → preemption 计数上涨（Day 12 的现象在 Day 15 的池上复现）
++    --num-gpu-blocks-override 600 --max-model-len 8192 &   # ≈ 9,600 token 容量
++# 压测：4 路 4K 上下文长输出（每路满长需 256 块，4 路 = 1024 块 > 600）：
++#   vllm bench serve ... 观察 /metrics：
++#   vllm:gpu_cache_usage_perc 逼近 1.0 → preemption 计数上涨（Day 12 现象在 Day 15 的池上复现）
+ #   vllm:prefix_cache_queries/hits —— free 后 hash 保留带来的"自命中"（Day 16 的预演）
+ ```
+ 
+ 对照源码解释你看到的每条曲线：usage = `1 − num_free/(num_blocks−1)`（block_pool.py:393-404）；hit rate 上涨的证据正是池不变式②。
+
+[0m
+[0m← [0mEdit week3/day15_kv_cache_manager_block_pool.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
++++ /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+@@ -550,9 +550,9 @@
+ llm = LLM(model="Qwen/Qwen3-8B", gpu_memory_utilization=0.9)
+ llm.generate(["今天天气" * 100], SamplingParams(max_tokens=48))
+ ```
+ 
+-观察点：① 入场一次 `new=321`（你的 prompt）拿到 21 块；② 之后每步 `new=1` 且新增 0 块（O(1) 路径）；③ 每逢 16 的倍数（第 336/352…个 token）新增 1 块——与图 2 上的台阶曲线逐点对上。
++观察点：① 入场一次大 `new=`（prompt 全长，本例 tokenizer 后约 300+）一次拿到 `cdiv(·,16)` 块；② 之后每步 `new=1` 且新增 0 块（O(1) 路径）；③ 每逢 16 的倍数（第 336/352…个 token）新增 1 块——与图 2 上的台阶曲线逐点对上。
+ 
+ ### 实验 3（GPU，可选，20 min）：强制小池，看 usage 与驱逐
+ 
+ 注意启动校验：`check_enough_kv_cache_memory`（kv_cache_utils.py:678）要求池至少装下一个 `max_model_len` 的请求，所以 override 小池必须同时调小 `--max-model-len`：
+
+[0m
+[0m# [0mTodos
+[✓] 生成 SVG 1：三层数据结构架构图
+[✓] 生成 SVG 2：请求 KV 生命周期（allocate/append/free + 双账本）
+[✓] 生成 SVG 3：容量手算 + free 队列 LRU 驱逐序
+[✓] 撰写 week3/day15_kv_cache_manager_block_pool.md（含实验仿真器代码）
+[•] 校验：SVG 语法、内链、与 day12/14 衔接、README Day15 要求全覆盖
+[0m
+最终校验：仿真器代码可运行、内部引用一致、文件清单完整。
+[0m$ [0mcd /tmp/opencode && sed -n '/^# day15_sim.py/,/pool.touch/p' /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md | grep -v '^```' | grep -v '^# day15' > d15sim.py && python3 d15sim.py
+free 队: [8, 9]
+A free 后: [8, 9, 4, 3, 2, 1, 0]
+不变式①: True
+hash 仍保留: ['h4', 'h3', 'h2', 'h1', 'h0']
+C 拿到: [8, 9, 4, 3, 2, 1]  B4/B3 的 hash 被清: [None, None]
+[0m
+[0m$ [0mcd /tmp/opencode && sed -n '/^# day15_sim.py/,/D_hit 的 ref/p' /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md | grep -v '^```' | grep -v '^# day15' > d15sim.py && python3 d15sim.py; rm -f d15sim.py
+free 队: [8, 9]
+A free 后: [8, 9, 4, 3, 2, 1, 0]
+不变式①: True
+hash 仍保留: ['h4', 'h3', 'h2', 'h1', 'h0']
+C 拿到: [8, 9, 4, 3, 2, 1]  B4/B3 的 hash 被清: [None, None]
+touch 后 free: [7, 6, 5]  D_hit 的 ref: [1]
+[0m
+[0m$ [0mgrep -n "assets/day15" /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md; ls -la /mnt/workspace/aiinfra/vllm/week3/assets/day15_* /mnt/workspace/aiinfra/vllm/week3/day15_*.md; wc -l /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+9:> **配套材料**：`week3/README.md` Day 15 节；三张 SVG：`assets/day15_three_layer_architecture.svg`（今日主图：三层架构 + OS 对照 + P2 侧）、`assets/day15_request_kv_lifecycle.svg`（allocate→append→free 生命周期 + 双账本 + 逆序归还）、`assets/day15_capacity_handcalc_lru.svg`（容量瀑布 + 复杂度账单 + block_size 三重身份——产出物公式卡的底稿）
+77:![KV Cache 三层架构](assets/day15_three_layer_architecture.svg)
+-rw-r--r-- 1 root root  9627 Oct  2 06:19 /mnt/workspace/aiinfra/vllm/week3/assets/day15_capacity_handcalc_lru.svg
+-rw-r--r-- 1 root root 13320 Oct  2 06:18 /mnt/workspace/aiinfra/vllm/week3/assets/day15_request_kv_lifecycle.svg
+-rw-r--r-- 1 root root 13994 Oct  2 06:17 /mnt/workspace/aiinfra/vllm/week3/assets/day15_three_layer_architecture.svg
+-rw-r--r-- 1 root root 60388 Oct  2 06:24 /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+665 /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+[0m
+补上图 2/图 3 的正式嵌入（当前仅在标题中提及）：
+[0m← [0mEdit week3/day15_kv_cache_manager_block_pool.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
++++ /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+@@ -179,8 +179,10 @@
+ `null_block`（:157-158）：启动时 `popleft` 摘走 block_id=0，标 `is_null=True`，永不参与分配/缓存。两个用途：① sliding window / chunked local attention 的请求里，"滑出窗口、不再需要"的块位置用 null 占位（`remove_skipped_blocks`，single_type:375-391/486-519——这就是 `allocate_slots` 第一步为什么是它）；② encoder-only 层的 dummy 表。`get_usage`（:393-404）分母 `num_gpu_blocks - 1` 就是在扣它。
+ 
+ ### 2.5 逻辑层：block table 的两份副本与 slot_mapping（图 2 中）
+ 
++![一个请求的 KV 生命周期](assets/day15_request_kv_lifecycle.svg)
++
+ "block table"这个词在第 2 周出现过多次，今天把它拆成**两份副本、三个写入时机**：
+ 
+ | | P1 副本（对象账本） | P2 副本（张量账本） |
+ |---|---|---|
+
+[0m
+[0m← [0mEdit week3/day15_kv_cache_manager_block_pool.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
++++ /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+@@ -333,8 +333,10 @@
+ ## 3. 性能模型与复杂度：今日的数学
+ 
+ ### 3.1 容量手算：Qwen3-8B @ H100 80G（图 3 左，实验 0 的底稿）
+ 
++![容量手算瀑布与复杂度账单](assets/day15_capacity_handcalc_lru.svg)
++
+ 沿用 Day 2/6/12 的台账（Qwen3-8B：36 层、GQA 8 KV head、head_dim=128、BF16 权重、BF16 KV、`block_size=16`、`--gpu-memory-utilization 0.9`）：
+ 
+ | 步骤 | 计算 | 结果 |
+ |---|---|---|
+
+[0m
+[0m$ [0mgrep -n '!\[' /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md; grep -c 'day1[1245]' /mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md; ls /mnt/workspace/aiinfra/vllm/week3/
+77:![KV Cache 三层架构](assets/day15_three_layer_architecture.svg)
+183:![一个请求的 KV 生命周期](assets/day15_request_kv_lifecycle.svg)
+337:![容量手算瀑布与复杂度账单](assets/day15_capacity_handcalc_lru.svg)
+8
+assets
+day15_kv_cache_manager_block_pool.md
+README.md
+[0m
+[0m# [0mTodos
+[✓] 生成 SVG 1：三层数据结构架构图
+[✓] 生成 SVG 2：请求 KV 生命周期（allocate/append/free + 双账本）
+[✓] 生成 SVG 3：容量手算 + free 队列 LRU 驱逐序
+[✓] 撰写 week3/day15_kv_cache_manager_block_pool.md（含实验仿真器代码）
+[✓] 校验：SVG 语法、内链、与 day12/14 衔接、README Day15 要求全覆盖
+[0m
+Day 15 教程已完成并写入。
+
+**文件路径**
+- 教程：`week3/day15_kv_cache_manager_block_pool.md`（665 行）
+- SVG × 3（均已内嵌引用、XML 校验通过）：`week3/assets/day15_three_layer_architecture.svg`、`day15_request_kv_lifecycle.svg`、`day15_capacity_handcalc_lru.svg`
+
+**主要内容**（严格对应 README Day 15「KV Cache Manager（一）」）
+- **三层数据结构**：Manager 门面 → Coordinator（NoPrefixCache/Unitary/Hybrid 工厂）→ SingleTypeManager + BlockPool，附 OS 分页对照表；两条池不变式（在队 ⇔ ref_cnt=0；free 不清 hash，驱逐=分配）
+- **allocate/append/free 路径**：`allocate_slots` 九步走读（含 docstring 布局图与 `:271-273` 判定行）、decode O(1) 空路径与每 16 步 +1 块、逆序归还的 LRU 驱逐序；block table 双账本（P1 `req_to_blocks` / P2 int32 tensor）与 `slot_mapping` 公式
+- **源码坐标全部按 v0.11.0 tag 逐行核对**（临时 clone 于 /tmp/opencode，供 Day 16-19 复用），并标注了与 README 速查表的三处类名差异（版本纪律）
+- **手算与复杂度**：Qwen3-8B @ H100 容量瀑布（≈24.1k 块/38.6 万 token/16K 23 路，与 Day 12 同源对账）、P1 CPU 复杂度账单、block_size 三重身份
+- **实验**：日志对账（无 GPU）、mini BlockPool 仿真器（已实际运行验证输出）、monkey-patch 探针、`--num-gpu-blocks-override` 小池实验
+- 面试 9 题、自测 6 题（含答案）、产出物三件（含 README 三个验证点答案）、Day 16 预告
+
+内容主动衔接 Day 2/4/9/11/12/14（兑现 Day 12 的三处伏笔），并为 Day 16/17/19/20 埋线。

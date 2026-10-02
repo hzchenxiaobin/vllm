@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 950" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/></marker>
+    <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="950" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">vLLM V1 进程架构总览：P0 前端 / P1 EngineCore / P2 Worker（单机视角）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">源码坐标按 v0.10~v0.11 主线核对 · 单卡部署 = P0 + P1 两个进程 · TP ≥ 2 时 MultiprocExecutor 为每张卡拉起一个 Worker 进程 · uniproc 时 Worker 直接在 P1 内</text>
+
+  <!-- ================= P0 前端进程 ================= -->
+  <rect x="40" y="62" width="1160" height="196" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="56" y="84" font-size="12.5" font-weight="bold" fill="#1e3a8a">进程 P0 · API Server（前端）：HTTP / tokenize / 输出处理</text>
+  <text x="470" y="84" font-size="9.5" fill="#64748b">vllm/entrypoints/openai/api_server.py（main 分支迁往 entrypoints/launchers/）</text>
+
+  <rect x="56" y="96" width="252" height="148" rx="6" fill="#ffffff" stroke="#93c5fd" stroke-width="1.2"/>
+  <text x="68" y="116" font-size="11" font-weight="bold" fill="#1e3a8a">FastAPI + Uvicorn</text>
+  <text x="68" y="136" font-size="9.5" fill="#475569">POST /v1/chat/completions</text>
+  <text x="68" y="152" font-size="9.5" fill="#475569">POST /v1/completions</text>
+  <text x="68" y="168" font-size="9.5" fill="#475569">GET /metrics · /health（Day 5/6）</text>
+  <text x="68" y="188" font-size="9.5" fill="#475569">ServingChat / ServingCompletion</text>
+  <text x="68" y="204" font-size="9" fill="#94a3b8">entrypoints/openai/serving_chat.py</text>
+  <text x="68" y="220" font-size="9" fill="#94a3b8">SSE 流式逐 chunk 推给客户端</text>
+
+  <line x1="308" y1="170" x2="330" y2="170" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="332" y="96" width="420" height="148" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="344" y="116" font-size="11" font-weight="bold" fill="#1e3a8a">AsyncLLM — vllm/v1/engine/async_llm.py</text>
+  <rect x="344" y="126" width="192" height="48" rx="4" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="352" y="142" font-size="9.5" font-weight="bold" fill="#1e3a8a">Processor</text>
+  <text x="352" y="156" font-size="8.5" fill="#475569">v1/engine/processor.py</text>
+  <text x="352" y="169" font-size="8.5" fill="#475569">tokenize → EngineCoreRequest</text>
+  <rect x="548" y="126" width="192" height="48" rx="4" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="556" y="142" font-size="9.5" font-weight="bold" fill="#1e3a8a">OutputProcessor</text>
+  <text x="556" y="156" font-size="8.5" fill="#475569">＋IncrementalDetokenizer</text>
+  <text x="556" y="169" font-size="8.5" fill="#475569">增量反 tokenize · stop string</text>
+  <rect x="344" y="182" width="396" height="52" rx="4" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="352" y="198" font-size="9.5" font-weight="bold" fill="#1e3a8a">StatLoggerManager（v1/engine/metrics.py）→ /metrics：Day 5 的指标生产者</text>
+  <text x="352" y="214" font-size="8.5" fill="#475569">generate()：process_inputs（本进程 tokenize）→ 注册输出队列 → add_request_async</text>
+  <text x="352" y="228" font-size="8.5" fill="#475569">常驻 output_handler 协程：收输出 → 分块 process_outputs → stop-string 命中则回发 abort</text>
+
+  <line x1="752" y1="170" x2="774" y2="170" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="776" y="96" width="408" height="148" rx="6" fill="#e0e7ff" stroke="#4f46e5" stroke-width="1.5"/>
+  <text x="788" y="116" font-size="11" font-weight="bold" fill="#312e81">EngineCoreClient — vllm/v1/engine/core_client.py</text>
+  <text x="788" y="138" font-size="9.5" fill="#475569">AsyncMPClient（默认）：ZMQ ipc:// + msgspec(msgpack)</text>
+  <text x="788" y="156" font-size="9.5" fill="#475569">InprocClient：同进程直调（VLLM_ENABLE_V1_MULTIPROCESSING=0）</text>
+  <text x="788" y="174" font-size="9.5" fill="#475569">SyncEngineCoreClient：离线 LLM() 使用（v1/engine/llm_engine.py）</text>
+  <text x="788" y="192" font-size="9.5" fill="#475569">DP 大于 1 时：DPLBAsyncMPClient（DP 负载均衡，Week 5）</text>
+  <text x="788" y="214" font-size="8.5" fill="#94a3b8">make_async_mp_client() 负责拉起 EngineCore 独立进程并完成</text>
+  <text x="788" y="228" font-size="8.5" fill="#94a3b8">ZMQ 握手（CoreEngineProcManager，v1/engine/utils.py）</text>
+
+  <!-- ================= IPC 通道 1 ================= -->
+  <line x1="430" y1="258" x2="430" y2="326" stroke="#2563eb" stroke-width="2.4" marker-end="url(#arB)"/>
+  <text x="442" y="284" font-size="10" font-weight="bold" fill="#1d4ed8">① 下行：EngineCoreRequest（msgspec.Struct）</text>
+  <text x="442" y="300" font-size="9" fill="#64748b">prompt_token_ids · sampling_params · lora · mm · priority</text>
+  <text x="442" y="314" font-size="9" fill="#64748b">请求粒度消息：ADD / ABORT / UTILITY（EngineCoreRequestType）</text>
+
+  <line x1="830" y1="326" x2="830" y2="258" stroke="#16a34a" stroke-width="2.4" marker-end="url(#arG)"/>
+  <text x="842" y="284" font-size="10" font-weight="bold" fill="#15803d">①' 上行：EngineCoreOutputs（每个 step 一条）</text>
+  <text x="842" y="300" font-size="9" fill="#64748b">new_token_ids · finish_reason · scheduler_stats（/metrics 数据源）</text>
+  <text x="842" y="314" font-size="9" fill="#64748b">采样 token 只在这里才离开 GPU → 跨进程 → 前端 detokenize</text>
+
+  <rect x="520" y="272" width="200" height="34" rx="6" fill="#f1f5f9" stroke="#475569" stroke-dasharray="4 3"/>
+  <text x="620" y="286" text-anchor="middle" font-size="10" font-weight="bold" fill="#0f172a">ZMQ（zmq.asyncio）</text>
+  <text x="620" y="300" text-anchor="middle" font-size="9" fill="#475569">unix domain socket + msgpack</text>
+
+  <!-- ================= P1 EngineCore 进程 ================= -->
+  <rect x="40" y="330" width="1160" height="250" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="56" y="352" font-size="12.5" font-weight="bold" fill="#92400e">进程 P1 · EngineCore：调度心脏 — vllm/v1/engine/core.py（进程标题 VLLM::EngineCore）</text>
+  <text x="700" y="352" font-size="9.5" fill="#a16207">崩溃隔离：引擎异常只死 P1，前端存活并可报错（EngineDeadError）</text>
+
+  <rect x="56" y="364" width="300" height="200" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.3"/>
+  <text x="68" y="384" font-size="11" font-weight="bold" fill="#92400e">EngineCore.run_busy_loop()</text>
+  <text x="68" y="404" font-size="9.2" font-family="Menlo, Consolas, monospace" fill="#475569">while True:</text>
+  <text x="68" y="419" font-size="9.2" font-family="Menlo, Consolas, monospace" fill="#475569">  _process_input_queue()</text>
+  <text x="68" y="432" font-size="8.4" fill="#94a3b8">阻塞等新输入：ADD / ABORT / UTILITY</text>
+  <text x="68" y="448" font-size="9.2" font-family="Menlo, Consolas, monospace" fill="#475569">  _process_engine_step()</text>
+  <text x="68" y="465" font-size="9.2" font-weight="bold" fill="#92400e">step() 三段（本周主角）：</text>
+  <text x="68" y="481" font-size="9.2" font-family="Menlo, Consolas, monospace" fill="#475569">  schedule()       → SchedulerOutput</text>
+  <text x="68" y="496" font-size="9.2" font-family="Menlo, Consolas, monospace" fill="#475569">  execute_model()  → ModelRunnerOutput</text>
+  <text x="68" y="511" font-size="9.2" font-family="Menlo, Consolas, monospace" fill="#475569">  update_from_output()</text>
+  <text x="68" y="530" font-size="9" fill="#475569">空闲时挂起在队列上，不烧 CPU；</text>
+  <text x="68" y="545" font-size="9" fill="#475569">输出 put_nowait 进 output_queue</text>
+
+  <rect x="380" y="364" width="360" height="200" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.3"/>
+  <text x="392" y="384" font-size="11" font-weight="bold" fill="#854d0e">Scheduler — v1/core/sched/scheduler.py（Day 10-12）</text>
+  <text x="392" y="404" font-size="9.2" font-family="Menlo, Consolas, monospace" fill="#475569">waiting: deque[Request]  # FCFS</text>
+  <text x="392" y="419" font-size="9.2" font-family="Menlo, Consolas, monospace" fill="#475569">running: list[Request]</text>
+  <text x="392" y="436" font-size="9" fill="#475569">token budget：max_num_batched_tokens=8192</text>
+  <text x="392" y="451" font-size="9" fill="#475569">序列上限：max_num_seqs=1024（V1 默认）</text>
+  <rect x="392" y="462" width="336" height="56" rx="4" fill="#ffffff" stroke="#eab308"/>
+  <text x="400" y="478" font-size="9.5" font-weight="bold" fill="#854d0e">KVCacheManager + BlockPool — v1/core/kv_cache_manager.py</text>
+  <text x="400" y="493" font-size="8.5" fill="#64748b">allocate_slots / free · free_block_queue · cached_blocks（APC 默认开）</text>
+  <text x="400" y="507" font-size="8.5" fill="#64748b">Day 4 的源码坐标 · Day 15-16 精读</text>
+  <text x="392" y="534" font-size="9" fill="#475569">StructuredOutputManager：guided decoding</text>
+  <text x="392" y="549" font-size="9" fill="#475569">的 grammar 位掩码（xgrammar）</text>
+
+  <rect x="764" y="364" width="420" height="200" rx="6" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="776" y="384" font-size="11" font-weight="bold" fill="#9a3412">Executor — v1/executor/abstract.py::get_class()</text>
+  <text x="776" y="406" font-size="9.5" fill="#475569">uniproc：单卡默认——Worker 对象就在 P1 进程内（无新进程）</text>
+  <text x="776" y="424" font-size="9.5" fill="#475569">multiproc：单机多卡默认——每 rank 一个 WorkerProc 进程</text>
+  <text x="776" y="442" font-size="9.5" fill="#475569">ray：多节点 · external_launcher：torchrun 拉起</text>
+  <text x="776" y="460" font-size="9.5" fill="#475569">类名字符串：硬件插件自定义 executor（vllm-ascend 等）</text>
+  <rect x="776" y="474" width="396" height="76" rx="4" fill="#ffffff" stroke="#fdba74"/>
+  <text x="784" y="492" font-size="9.5" font-weight="bold" fill="#9a3412">MultiprocExecutor（TP ≥ 2）</text>
+  <text x="784" y="508" font-size="8.8" fill="#64748b">控制面：rpc_broadcast_mq（共享内存）一份消息广播所有 rank</text>
+  <text x="784" y="522" font-size="8.8" fill="#64748b">数据面：各 rank 执行后经 worker_response_mq 应答，executor</text>
+  <text x="784" y="536" font-size="8.8" fill="#64748b">只取 rank 0 的 ModelRunnerOutput（结果留在 GPU 侧张量）</text>
+
+  <!-- ================= IPC 通道 2 ================= -->
+  <line x1="430" y1="580" x2="430" y2="652" stroke="#ea580c" stroke-width="2.4" marker-end="url(#arO)"/>
+  <text x="442" y="606" font-size="10" font-weight="bold" fill="#c2410c">② 下行：rpc_broadcast_mq（共享内存广播）</text>
+  <text x="442" y="622" font-size="9" fill="#64748b">SchedulerOutput 同时发给所有 rank（同一份，零拷贝共享内存）</text>
+
+  <line x1="830" y1="652" x2="830" y2="580" stroke="#16a34a" stroke-width="2.4" marker-end="url(#arG)"/>
+  <text x="842" y="606" font-size="10" font-weight="bold" fill="#15803d">②' 上行：worker_response_mq → 汇聚到 rank 0</text>
+  <text x="842" y="622" font-size="9" fill="#64748b">其余 rank 只回 ready 标志；大输出另有 shm 旁路（设计文档）</text>
+
+  <rect x="470" y="616" width="280" height="30" rx="6" fill="#f1f5f9" stroke="#475569" stroke-dasharray="4 3"/>
+  <text x="610" y="630" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#0f172a">仅 TP/PP ≥ 2（MultiprocExecutor）时存在</text>
+  <text x="610" y="642" text-anchor="middle" font-size="8.5" fill="#475569">uniproc 时为 P1 内直接方法调用</text>
+
+  <!-- ================= P2 Worker 进程 ================= -->
+  <rect x="40" y="656" width="1160" height="180" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="56" y="678" font-size="12.5" font-weight="bold" fill="#14532d">进程 P2..Pn · Worker（每 GPU 一个）：执行体 — vllm/v1/worker/（进程标题 VLLM::Worker_TPr）</text>
+  <text x="730" y="678" font-size="9.5" fill="#166534">TP 时 rank 0 为 driver worker；每 rank 各自 init_device / load_model / init_kv_cache</text>
+
+  <rect x="56" y="690" width="280" height="132" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1.2"/>
+  <text x="68" y="710" font-size="11" font-weight="bold" fill="#14532d">Worker — vllm/v1/worker/gpu_worker.py</text>
+  <text x="68" y="730" font-size="9.3" fill="#475569">init_device()：绑定 GPU · 显存预算检查</text>
+  <text x="68" y="746" font-size="9.3" fill="#475569">load_model()：加载权重（Qwen3-8B ≈ 16.4 GB）</text>
+  <text x="68" y="762" font-size="9.3" fill="#475569">determine_available_memory()：dummy 前向</text>
+  <text x="68" y="778" font-size="9.3" fill="#475569">　profiling 算 KV 池可用显存</text>
+  <text x="68" y="794" font-size="9.3" fill="#475569">initialize_kv_cache()：切池 · 绑定 attn 层</text>
+  <text x="68" y="812" font-size="8.5" fill="#94a3b8">启动三件事 = 图 2 的时序骨架</text>
+
+  <line x1="336" y1="756" x2="354" y2="756" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="356" y="690" width="480" height="132" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/>
+  <text x="368" y="710" font-size="11" font-weight="bold" fill="#14532d">GPUModelRunner — v1/worker/gpu_model_runner.py（Day 17/18）</text>
+  <text x="368" y="730" font-size="9.3" fill="#475569">InputBatch（gpu_input_batch.py）：常驻 buffer——token_ids / block table /</text>
+  <text x="368" y="746" font-size="9.3" fill="#475569">采样参数；每步只做增删请求的原地 diff，不重建 batch</text>
+  <text x="368" y="762" font-size="9.3" fill="#475569">execute_model()：_update_requests → 组输入 → CG replay / eager → sample</text>
+  <rect x="368" y="772" width="456" height="40" rx="4" fill="#ffffff" stroke="#4ade80"/>
+  <text x="376" y="788" font-size="9.3" font-weight="bold" fill="#14532d">Attention Backend — v1/attention/backends/</text>
+  <text x="376" y="804" font-size="8.8" fill="#64748b">FlashAttention · FlashInfer · Triton（page_size = block_size，Day 17）</text>
+
+  <line x1="836" y1="756" x2="854" y2="756" stroke="#475569" stroke-width="1.6" marker-end="url(#ar3)"/>
+
+  <rect x="856" y="690" width="328" height="132" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.2"/>
+  <text x="872" y="712" font-size="12" font-weight="bold" fill="#f1f5f9">GPU（H100 80 GB）</text>
+  <text x="872" y="733" font-size="9.3" fill="#cbd5e1">权重 ≈ 16.4 GB（Day 2 四件套①）</text>
+  <text x="872" y="750" font-size="9.3" fill="#cbd5e1">KV 池 ≈ 54 GB / 366K tokens（Day 6 对账）</text>
+  <text x="872" y="767" font-size="9.3" fill="#cbd5e1">CUDA Graph buffers（decode 桶，Day 18）</text>
+  <text x="872" y="784" font-size="9.3" fill="#cbd5e1">TP ≥ 2：NCCL all-reduce</text>
+  <text x="872" y="800" font-size="8.5" fill="#94a3b8">（跨 Worker 进程的通信，Day 32/33）</text>
+
+  <!-- ================= 底部备注 ================= -->
+  <rect x="40" y="848" width="373" height="86" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="52" y="868" font-size="10" font-weight="bold" fill="#0f172a">进程数公式（arch_overview.md）</text>
+  <text x="52" y="886" font-size="9.3" fill="#475569">N = A(API) + DP(EngineCore) + DP×PP×TP(Worker)</text>
+  <text x="52" y="901" font-size="9.3" fill="#475569">　+ 1 个 DP coordinator（仅 DP 大于 1）</text>
+  <text x="52" y="918" font-size="9.3" fill="#475569">单卡 = 2 进程；单机 -tp 4 = 6 进程（1+1+4）</text>
+
+  <rect x="433" y="848" width="374" height="86" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="445" y="868" font-size="10" font-weight="bold" fill="#0f172a">架构图 = 归因图（Day 5/6 的落地）</text>
+  <text x="445" y="886" font-size="9.3" fill="#475569">TTFT = P0 tokenize + 排队 + prefill + 输出路径</text>
+  <text x="445" y="901" font-size="9.3" fill="#475569">TPOT = step（sched+GPU+update）+ IPC + P0 输出处理</text>
+  <text x="445" y="918" font-size="9.3" fill="#475569">客户端口径与服务端 /metrics 的差值 = 图中 P0 段</text>
+
+  <rect x="827" y="848" width="373" height="86" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="839" y="868" font-size="10" font-weight="bold" fill="#0f172a">演进风向（main，需持续核对）</text>
+  <text x="839" y="886" font-size="9.3" fill="#475569">processor.py 拆分（input 处理）· API server 多进程化</text>
+  <text x="839" y="901" font-size="9.3" fill="#475569">（--api-server-count）· Model Runner V2 重构执行核</text>
+  <text x="839" y="918" font-size="9.3" fill="#475569">——P0/P1/P2 的拓扑分工至今不变</text>
+</svg>

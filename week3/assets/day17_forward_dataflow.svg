@@ -1,0 +1,200 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 900" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar27a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar27b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"/></marker>
+    <marker id="ar27c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+    <marker id="ar27d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="900" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">一次 attention forward 的全链路：metadata 流水线 + 写 KV / 读 KV 双路（v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">上：每 step 一次的公共构建（CommonAttentionMetadata） · 中：每层写侧 scatter（slot_mapping） · 下：读侧 gather（block_table 统一调用）</text>
+
+  <!-- ================= Top: metadata pipeline ================= -->
+  <text x="60" y="76" font-size="13.5" font-weight="bold" fill="#0f172a">① metadata 流水线（每 step 一次，所有层共享）</text>
+
+  <rect x="40" y="88" width="180" height="72" rx="8" fill="#f0fdf4" stroke="#34d399" stroke-width="1.4"/>
+  <text x="130" y="108" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#064e3b">SchedulerOutput</text>
+  <text x="130" y="124" text-anchor="middle" font-size="8.6" fill="#065f46">num_scheduled_tokens</text>
+  <text x="130" y="137" text-anchor="middle" font-size="8.6" fill="#065f46">num_common_prefix_blocks</text>
+  <text x="130" y="150" text-anchor="middle" font-size="8.2" fill="#047857">output.py:149 · P1 → P2</text>
+
+  <line x1="220" y1="124" x2="244" y2="124" stroke="#475569" stroke-width="1.6" marker-end="url(#ar27a)"/>
+
+  <rect x="246" y="88" width="286" height="72" rx="8" fill="#eef2ff" stroke="#818cf8" stroke-width="1.4"/>
+  <text x="389" y="108" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1e1b4b">_prepare_inputs（gpu_model_runner.py:923）</text>
+  <text x="389" y="124" text-anchor="middle" font-size="8.6" fill="#312e81">query_start_loc = cumsum(sched)（:1039，例 [0,4,5,261]）</text>
+  <text x="389" y="137" text-anchor="middle" font-size="8.6" fill="#312e81">seq_lens = 已算 + 本步新增（:1060）· 尾部 padding 非递减</text>
+  <text x="389" y="150" text-anchor="middle" font-size="8.6" fill="#312e81">compute_slot_mapping + commit（:1032，Day 15 公式）</text>
+
+  <line x1="532" y1="124" x2="556" y2="124" stroke="#475569" stroke-width="1.6" marker-end="url(#ar27a)"/>
+
+  <rect x="558" y="88" width="240" height="72" rx="8" fill="#fdf2f8" stroke="#f472b6" stroke-width="1.4"/>
+  <text x="678" y="108" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#831843">CommonAttentionMetadata（:1189）</text>
+  <text x="678" y="124" text-anchor="middle" font-size="8.6" fill="#9d174d">query_start_loc / seq_lens（CPU+GPU 双份）</text>
+  <text x="678" y="137" text-anchor="middle" font-size="8.6" fill="#9d174d">block_table_tensor · slot_mapping（-1 padding）</text>
+  <text x="678" y="150" text-anchor="middle" font-size="8.2" fill="#be185d">utils.py:44-85 · 各后端共享的公共层</text>
+
+  <line x1="798" y1="124" x2="822" y2="124" stroke="#475569" stroke-width="1.6" marker-end="url(#ar27a)"/>
+
+  <rect x="824" y="88" width="188" height="72" rx="8" fill="#faf5ff" stroke="#a78bfa" stroke-width="1.4"/>
+  <text x="918" y="108" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#4c1d95">builder.build（:1216-1257）</text>
+  <text x="918" y="124" text-anchor="middle" font-size="8.6" fill="#5b21b6">每 AttentionGroup 一次</text>
+  <text x="918" y="137" text-anchor="middle" font-size="8.6" fill="#5b21b6">common_prefix_len 来自</text>
+  <text x="918" y="150" text-anchor="middle" font-size="8.2" fill="#7c3aed">ref_cnt == num_running（D15/16）</text>
+
+  <line x1="1012" y1="124" x2="1036" y2="124" stroke="#475569" stroke-width="1.6" marker-end="url(#ar27a)"/>
+
+  <rect x="1038" y="88" width="162" height="72" rx="8" fill="#fefce8" stroke="#facc15" stroke-width="1.4"/>
+  <text x="1119" y="108" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#713f12">set_forward_context</text>
+  <text x="1119" y="124" text-anchor="middle" font-size="8.6" fill="#854d0e">attn_metadata[layer_name] = m</text>
+  <text x="1119" y="137" text-anchor="middle" font-size="8.6" fill="#854d0e">（:2287 → forward_context）</text>
+  <text x="1119" y="150" text-anchor="middle" font-size="8.2" fill="#a16207">每 step 注入、每层查表</text>
+
+  <!-- stage label -->
+  <text x="60" y="186" font-size="10" fill="#64748b">例：3 请求分别调度 4 / 1 / 256 token（chunked prefill 混排 decode，Day 11）→ query_start_loc = [0, 4, 5, 261]，num_actual_tokens = 261</text>
+
+  <!-- ================= Middle: per-layer forward + write path ================= -->
+  <text x="60" y="216" font-size="13.5" font-weight="bold" fill="#0f172a">② 每层每 step：Attention.forward → impl.forward 六步（flash_attn.py:422-576）</text>
+
+  <!-- six steps as horizontal strip -->
+  <rect x="40" y="228" width="1160" height="64" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="52" y="240" width="168" height="42" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="136" y="256" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">① encoder 层分叉（:474）</text>
+  <text x="136" y="269" text-anchor="middle" font-size="8.2" fill="#475569">不碰 KV cache，直接 varlen</text>
+  <text x="136" y="279" text-anchor="middle" font-size="8.2" fill="#475569">profile run（metadata=None）早退</text>
+
+  <rect x="230" y="240" width="168" height="42" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="314" y="256" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">② unbind 拆 K/V（:484）</text>
+  <text x="314" y="269" text-anchor="middle" font-size="8.2" fill="#475569">FA 布局 (2,N,B,H,D)：</text>
+  <text x="314" y="279" text-anchor="middle" font-size="8.2" fill="#475569">key_cache, value_cache = unbind(0)</text>
+
+  <rect x="408" y="240" width="188" height="42" rx="6" fill="#fff1f2" stroke="#f87171" stroke-width="1.4"/>
+  <text x="502" y="256" text-anchor="middle" font-size="9" font-weight="bold" fill="#7f1d1d">③ 写 KV：reshape_and_cache（:498）★</text>
+  <text x="502" y="269" text-anchor="middle" font-size="8.2" fill="#7c2d12">按 slot_mapping scatter 新 k/v</text>
+  <text x="502" y="279" text-anchor="middle" font-size="8.2" fill="#7c2d12">kv_sharing 层跳过 · FP8 隐式 cast</text>
+
+  <rect x="606" y="240" width="150" height="42" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="681" y="256" text-anchor="middle" font-size="9" font-weight="bold" fill="#0f172a">④ FP8 view（:509）</text>
+  <text x="681" y="269" text-anchor="middle" font-size="8.2" fill="#475569">字节级 view 成 e4m3</text>
+  <text x="681" y="279" text-anchor="middle" font-size="8.2" fill="#475569">kernel 内按 descale 反缩放</text>
+
+  <rect x="766" y="240" width="220" height="42" rx="6" fill="#f0fdf4" stroke="#34d399" stroke-width="1.4"/>
+  <text x="876" y="256" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">⑤ 统一调用 flash_attn_varlen_func（:526）★</text>
+  <text x="876" y="269" text-anchor="middle" font-size="8.2" fill="#065f46">k=key_cache, v=value_cache + block_table</text>
+  <text x="876" y="279" text-anchor="middle" font-size="8.2" fill="#065f46">一次吃下 prefill + decode 混合 batch</text>
+
+  <rect x="996" y="240" width="192" height="42" rx="6" fill="#fffbeb" stroke="#fbbf24"/>
+  <text x="1092" y="256" text-anchor="middle" font-size="9" font-weight="bold" fill="#92400e">⑥ cascade 分支（:551，§2.8）</text>
+  <text x="1092" y="269" text-anchor="middle" font-size="8.2" fill="#a16207">use_cascade=True 时：前缀读一次</text>
+  <text x="1092" y="279" text-anchor="middle" font-size="8.2" fill="#a16207">+ suffix 各自算 + merge_attn_states</text>
+
+  <!-- write path detail -->
+  <text x="60" y="318" font-size="12.5" font-weight="bold" fill="#7f1d1d">写侧（scatter）：slot_mapping —— 逐 token 预计算的地址数组</text>
+  <rect x="40" y="330" width="560" height="196" rx="8" fill="#fff1f2" stroke="#f87171" stroke-width="1.2"/>
+
+  <rect x="56" y="344" width="180" height="56" rx="6" fill="#ffffff" stroke="#f87171"/>
+  <text x="146" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">本 step 新算的 k / v</text>
+  <text x="146" y="376" text-anchor="middle" font-size="8.4" fill="#7c2d12">[num_tokens, H_kv, d]</text>
+  <text x="146" y="389" text-anchor="middle" font-size="8.4" fill="#7c2d12">模型 QKV 投影输出（含 padding）</text>
+
+  <line x1="236" y1="372" x2="260" y2="372" stroke="#dc2626" stroke-width="1.6" marker-end="url(#ar27c)"/>
+  <text x="248" y="364" font-size="8.4" fill="#b91c1c" text-anchor="middle">slot[i]</text>
+
+  <rect x="262" y="344" width="150" height="56" rx="6" fill="#ffffff" stroke="#f87171"/>
+  <text x="337" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">slot_mapping</text>
+  <text x="337" y="376" text-anchor="middle" font-size="8.4" fill="#7c2d12">int64 [num_tokens]</text>
+  <text x="337" y="389" text-anchor="middle" font-size="8.4" fill="#7c2d12">-1 = padding（跳过）</text>
+
+  <line x1="412" y1="372" x2="436" y2="372" stroke="#dc2626" stroke-width="1.6" marker-end="url(#ar27c)"/>
+
+  <rect x="438" y="344" width="146" height="56" rx="6" fill="#ffffff" stroke="#f87171"/>
+  <text x="511" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">物理 KV 池</text>
+  <text x="511" y="376" text-anchor="middle" font-size="8.4" fill="#7c2d12">[num_blocks, B, H_kv, d] × K/V</text>
+  <text x="511" y="389" text-anchor="middle" font-size="8.4" fill="#7c2d12">非连续 scatter 写入</text>
+
+  <!-- kernel snippet -->
+  <rect x="56" y="412" width="528" height="102" rx="6" fill="#ffffff" stroke="#fca5a5"/>
+  <text x="66" y="428" font-size="8.8" font-weight="bold" fill="#7f1d1d">triton_reshape_and_cache_flash.py:33-49（CUDA 版同逻辑，flash_attn.py:498）</text>
+  <text x="66" y="443" font-size="8.8" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">slot_idx = load(slot_mapping + token_idx);  if slot_idx &lt; 0: return</text>
+  <text x="66" y="458" font-size="8.8" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">block_idx = slot_idx // block_size   ← ★ 写侧查表（Day 15 公式第 1 次）</text>
+  <text x="66" y="473" font-size="8.8" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">tgt = block_idx * block_stride + (slot_idx % block_size) * page_stride</text>
+  <text x="66" y="488" font-size="8.8" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">store(key_cache + tgt, key_tile)   # FP8 时 /scale 隐式 cast</text>
+  <text x="66" y="506" font-size="8.2" fill="#7c2d12">token 数由 slot_mapping 的长度决定 → padding 安全（flash_attn.py:493-497 注释原文）</text>
+
+  <!-- ================= Bottom right: read path ================= -->
+  <text x="636" y="318" font-size="12.5" font-weight="bold" fill="#065f46">读侧（gather）：block_table —— kernel 内逐 tile 现查</text>
+  <rect x="620" y="330" width="580" height="196" rx="8" fill="#f0fdf4" stroke="#34d399" stroke-width="1.2"/>
+
+  <rect x="636" y="344" width="160" height="56" rx="6" fill="#ffffff" stroke="#34d399"/>
+  <text x="716" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">query + block_table</text>
+  <text x="716" y="376" text-anchor="middle" font-size="8.4" fill="#047857">int32 [num_reqs, max_blks]</text>
+  <text x="716" y="389" text-anchor="middle" font-size="8.4" fill="#047857">+ seq_lens + query_start_loc</text>
+
+  <line x1="796" y1="372" x2="820" y2="372" stroke="#059669" stroke-width="1.6" marker-end="url(#ar27d)"/>
+
+  <rect x="822" y="344" width="180" height="56" rx="6" fill="#ffffff" stroke="#34d399"/>
+  <text x="912" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">flash_attn_varlen_func</text>
+  <text x="912" y="376" text-anchor="middle" font-size="8.4" fill="#047857">k/v = key_cache/value_cache</text>
+  <text x="912" y="389" text-anchor="middle" font-size="8.4" fill="#047857">（读的是整个 paged 池！）</text>
+
+  <line x1="1002" y1="372" x2="1026" y2="372" stroke="#059669" stroke-width="1.6" marker-end="url(#ar27d)"/>
+
+  <rect x="1028" y="344" width="156" height="56" rx="6" fill="#ffffff" stroke="#34d399"/>
+  <text x="1106" y="362" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#065f46">output</text>
+  <text x="1106" y="376" text-anchor="middle" font-size="8.4" fill="#047857">[num_tokens, H_q·d]</text>
+  <text x="1106" y="389" text-anchor="middle" font-size="8.4" fill="#047857">预分配（CG 友好）</text>
+
+  <!-- four params table -->
+  <rect x="636" y="412" width="288" height="102" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="780" y="428" text-anchor="middle" font-size="8.8" font-weight="bold" fill="#065f46">四参数表达一切（§2.6 考点）</text>
+  <text x="646" y="443" font-size="8.4" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">cu_seqlens_q → 切 query 段（[0,4,5,261]）</text>
+  <text x="646" y="458" font-size="8.4" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">seqused_k    → 每请求读多长历史</text>
+  <text x="646" y="473" font-size="8.4" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">block_table  → 历史块的物理地址</text>
+  <text x="646" y="488" font-size="8.4" fill="#1f2937" font-family="Consolas, 'Courier New', monospace">causal       → 段内因果、对历史全可见</text>
+  <text x="646" y="506" font-size="8" fill="#047857">⇒ prefill / decode / 前缀历史 / 混合 batch 统一为一种调用</text>
+
+  <!-- scenario table -->
+  <rect x="938" y="412" width="246" height="102" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="1061" y="428" text-anchor="middle" font-size="8.8" font-weight="bold" fill="#065f46">同一次调用的四种场景</text>
+  <text x="948" y="444" font-size="8.4" fill="#334155">纯 prefill：q=[0,P] · k=P（自己刚写的）</text>
+  <text x="948" y="459" font-size="8.4" fill="#334155">chunk 第2块/命中：q=C · k=P+C（查表读历史）</text>
+  <text x="948" y="474" font-size="8.4" fill="#334155">decode：每请求 q=1 · k=P+1（paged）</text>
+  <text x="948" y="489" font-size="8.4" fill="#334155">混合 batch（常态）：[0,4,5,261] 一把全吃</text>
+  <text x="948" y="506" font-size="8" fill="#047857">FlashInfer 反例：仍拆 prefill/decode 两个 wrapper（需 reorder）</text>
+
+  <!-- ================= footer: symmetry ================= -->
+  <rect x="40" y="544" width="1160" height="56" rx="8" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.2"/>
+  <text x="620" y="566" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#4c1d95">两表一公式：slot = 块号 × B + 块内偏移（block_table.py:107-113）</text>
+  <text x="620" y="586" text-anchor="middle" font-size="10" fill="#5b21b6">写侧：CPU 逐 token 预计算 slot_mapping 数组（每 step 一次） ←→ 读侧：kernel 内逐 tile 现查 block_table（每次访存）—— 同一公式、同源于 P1 的 block_ids（Day 15 双账本）</text>
+
+  <!-- cascade mini-diagram -->
+  <text x="60" y="632" font-size="12.5" font-weight="bold" fill="#92400e">cascade attention（use_cascade 分支，flash_attn.py:705-795）</text>
+  <rect x="40" y="644" width="1160" height="108" rx="8" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.2"/>
+
+  <rect x="60" y="660" width="200" height="76" rx="6" fill="#ffffff" stroke="#fbbf24"/>
+  <text x="160" y="678" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#92400e">公共前缀（batch=1）</text>
+  <text x="160" y="692" text-anchor="middle" font-size="8.4" fill="#a16207">block_table[:1] 只读一遍</text>
+  <text x="160" y="705" text-anchor="middle" font-size="8.4" fill="#a16207">所有请求的 query 一起算</text>
+  <text x="160" y="721" text-anchor="middle" font-size="8.2" fill="#b45309">prefix_output + prefix_lse</text>
+
+  <rect x="300" y="660" width="200" height="76" rx="6" fill="#ffffff" stroke="#fbbf24"/>
+  <text x="400" y="678" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#92400e">各自 suffix（per-request）</text>
+  <text x="400" y="692" text-anchor="middle" font-size="8.4" fill="#a16207">block_table[:, num_common_kv_blocks:]</text>
+  <text x="400" y="705" text-anchor="middle" font-size="8.4" fill="#a16207">causal 逐请求算</text>
+  <text x="400" y="721" text-anchor="middle" font-size="8.2" fill="#b45309">suffix_output + suffix_lse</text>
+
+  <line x1="270" y1="698" x2="530" y2="698" stroke="#d97706" stroke-width="1.6" marker-end="url(#ar27a)"/>
+  <text x="400" y="692" text-anchor="middle" font-size="8.2" fill="#92400e">merge_attn_states（:794）按 LSE 代数合并</text>
+
+  <rect x="540" y="660" width="640" height="76" rx="6" fill="#ffffff" stroke="#fbbf24"/>
+  <text x="860" y="678" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#92400e">触发与收益（use_cascade_attention :636-702 的启发式 + §3.2 模型）</text>
+  <text x="860" y="694" text-anchor="middle" font-size="8.6" fill="#a16207">触发：公共前缀 ≥256 token 且 ≥8 请求 且无 alibi/sw/local；公共前缀由 ref_cnt == num_running 判定（kv_cache_manager.py:332）</text>
+  <text x="860" y="708" text-anchor="middle" font-size="8.6" fill="#a16207">访存：N·(L+S) → L + N·S（客服场景 L=4K,S=50,N=32 → KV 读取降到 4.3%）；prefix caching 省 TTFT，cascade 省 TPOT</text>
+  <text x="860" y="722" text-anchor="middle" font-size="8.4" fill="#b45309">负收益：FlashDecoding 已铺满 SM 时 cascade 的 CTA 数更多（:685-702 性能模型）—— 带宽省了、wave 变多反而慢</text>
+
+  <!-- footer -->
+  <rect x="40" y="768" width="1160" height="40" rx="6" fill="#f0fdf4" stroke="#34d399"/>
+  <text x="620" y="784" text-anchor="middle" font-size="9.5" fill="#065f46">P1 每步产出：block_ids 增量（Day 15）→ P2 两张表 → 写侧 scatter + 读侧 gather，KV 数据永不搬移</text>
+  <text x="620" y="799" text-anchor="middle" font-size="9.5" fill="#065f46">slot_mapping 的 -1 padding 与 FA3 scheduler_metadata（:262-269）是 Day 18「静态形状捕获」的两处预演</text>
+</svg>

@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 820" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar15d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar15e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+    <marker id="ar15f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="820" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">一个请求的 KV 生命周期：allocate → append → free（prompt=300, 生成 45, block_size=16）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">上图：调度器视角的块数曲线（allocate_slots 的实参与返回） · 中图：P1/P2 双账本同步 · 下图：free 的逆序归还与驱逐序</text>
+
+  <!-- ================= Top: block count timeline ================= -->
+  <rect x="40" y="60" width="1160" height="240" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="60" y="84" font-size="13" font-weight="bold" fill="#0f172a">① 每步调用与块数演化（num_computed_tokens → 需要块数 cdiv(·,16) → 本步新增块）</text>
+
+  <!-- axis -->
+  <line x1="90" y1="240" x2="1190" y2="240" stroke="#94a3b8" stroke-width="1.2"/>
+  <line x1="90" y1="90" x2="90" y2="240" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="82" y="244" text-anchor="end" font-size="9" fill="#64748b">0 块</text>
+  <text x="82" y="160" text-anchor="end" font-size="9" fill="#64748b">10</text>
+  <text x="82" y="94" text-anchor="end" font-size="9" fill="#64748b">20 块</text>
+  <line x1="90" y1="156" x2="1190" y2="156" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 3"/>
+
+  <!-- stair steps: step 0 admission (300 tok -> 19 blocks), then +1 block every 16 tokens -->
+  <path d="M 90 240 L 110 240 L 110 101 L 190 101 L 190 94.3 L 420 94.3 L 420 101 L 650 101 L 650 94.3 L 880 94.3 L 880 101 L 1130 101 L 1130 240"
+        fill="none" stroke="#2563eb" stroke-width="2.2"/>
+  <text x="150" y="118" font-size="9" fill="#1e40af">step 0 · 入场</text>
+  <text x="150" y="131" font-size="8.6" fill="#1e40af">allocate_slots(300)</text>
+  <text x="150" y="144" font-size="8.6" fill="#1e40af">cdiv(300,16)=19 块一次拿齐</text>
+
+  <rect x="196" y="86" width="12" height="12" fill="#ef4444" opacity="0"/>
+  <text x="300" y="84" font-size="9" fill="#b91c1c">decode 段：allocate_slots(1)，每步 O(1) 走「不需要新块」分支（num_new_blocks = 19−19 = 0）</text>
+  <line x1="420" y1="94.3" x2="420" y2="240" stroke="#fca5a5" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="650" y1="94.3" x2="650" y2="240" stroke="#fca5a5" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="880" y1="94.3" x2="880" y2="240" stroke="#fca5a5" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="428" y="256" font-size="8.4" fill="#b91c1c">第 320 token（20×16）→ 20 块，+1</text>
+  <text x="658" y="256" font-size="8.4" fill="#b91c1c">第 336 token → 21 块，+1</text>
+  <text x="888" y="256" font-size="8.4" fill="#b91c1c">第 352 token → 22 块，+1</text>
+  <text x="1136" y="228" font-size="9" fill="#166534">终态 345 token</text>
+  <text x="1136" y="240" font-size="9" fill="#166534">= 22 块（尾块 9/16）</text>
+
+  <!-- x labels -->
+  <text x="110" y="278" font-size="9" fill="#64748b" text-anchor="middle">step 0</text>
+  <text x="300" y="278" font-size="9" fill="#64748b" text-anchor="middle">step 1~15（复用尾块）</text>
+  <text x="535" y="278" font-size="9" fill="#64748b" text-anchor="middle">step 16（块满 +1）</text>
+  <text x="900" y="278" font-size="9" fill="#64748b" text-anchor="middle">……每 16 步一次 +1……</text>
+  <text x="1130" y="278" font-size="9" fill="#64748b" text-anchor="middle">finish</text>
+  <text x="620" y="294" text-anchor="middle" font-size="9" fill="#475569">规则：需要块数 = cdiv(num_computed+num_new, 16)；新增块 = 需要块数 − 已有块（single_type_kv_cache_manager.py:124-125）</text>
+
+  <!-- ================= Middle: dual ledger ================= -->
+  <rect x="40" y="316" width="1160" height="230" rx="8" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="60" y="340" font-size="13" font-weight="bold" fill="#064e3b">② block table 有两份副本：P1 对象账本（req_to_blocks）与 P2 张量账本（BlockTable），靠 block_ids 增量同步</text>
+
+  <!-- P1 ledger -->
+  <rect x="60" y="356" width="480" height="170" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="80" y="378" font-size="11" font-weight="bold" fill="#166534">P1：SingleTypeKVCacheManager.req_to_blocks[req_id]</text>
+  <text x="80" y="394" font-size="9" fill="#15803d">list[KVCacheBlock]（对象引用，含 ref_cnt / block_hash 元数据）</text>
+  <!-- blocks as squares -->
+  <g font-size="8.4" fill="#065f46">
+    <rect x="80" y="406" width="38" height="26" fill="#dcfce7" stroke="#4ade80"/><text x="99" y="423" text-anchor="middle">B7</text>
+    <rect x="118" y="406" width="38" height="26" fill="#dcfce7" stroke="#4ade80"/><text x="137" y="423" text-anchor="middle">B12</text>
+    <rect x="156" y="406" width="38" height="26" fill="#dcfce7" stroke="#4ade80"/><text x="175" y="423" text-anchor="middle">B3</text>
+    <rect x="194" y="406" width="38" height="26" fill="#dcfce7" stroke="#4ade80"/><text x="213" y="423" text-anchor="middle">B44</text>
+    <rect x="232" y="406" width="38" height="26" fill="#fef9c3" stroke="#fde047"/><text x="251" y="423" text-anchor="middle">B51</text>
+    <text x="278" y="423">←尾块（未满，9/16 token，无 hash）</text>
+  </g>
+  <text x="80" y="452" font-size="9" fill="#15803d">append 语义：allocate_new_blocks 里 req_blocks.extend(new_blocks)（:130）</text>
+  <text x="80" y="468" font-size="9" fill="#15803d">free 语义：req_to_blocks.pop(req_id) + 逆序归还（:163-170）</text>
+  <text x="80" y="484" font-size="9" fill="#15803d">P1 只认对象，从不摸 GPU 显存——分配/释放是纯元数据操作，O(1)~O(块数)</text>
+  <text x="80" y="504" font-size="9.4" font-weight="bold" fill="#166534">谁在什么时候读它：schedule() 每 step（get_blocks :521 传增量）、free、make_stats(usage)</text>
+
+  <!-- arrow between -->
+  <line x1="540" y1="430" x2="700" y2="430" stroke="#475569" stroke-width="2" marker-end="url(#ar15d)"/>
+  <text x="620" y="412" text-anchor="middle" font-size="9" fill="#475569">SchedulerOutput</text>
+  <text x="620" y="424" text-anchor="middle" font-size="8.6" fill="#475569">new_block_ids（int）</text>
+  <text x="620" y="448" text-anchor="middle" font-size="8.4" fill="#64748b">ZMQ / 共享内存跨进程</text>
+
+  <!-- P2 ledger -->
+  <rect x="700" y="356" width="480" height="170" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="720" y="378" font-size="11" font-weight="bold" fill="#166534">P2：InputBatch.block_table（block_table.py:16）</text>
+  <text x="720" y="394" font-size="9" fill="#15803d">int32 持久 buffer [max_num_reqs, max_blocks_per_req]，CPU(pinned) + GPU 双缓存</text>
+  <!-- tensor grid -->
+  <g font-size="8.4">
+    <rect x="720" y="406" width="46" height="26" fill="#dcfce7" stroke="#4ade80"/><text x="743" y="423" text-anchor="middle" fill="#065f46">7</text>
+    <rect x="766" y="406" width="46" height="26" fill="#dcfce7" stroke="#4ade80"/><text x="789" y="423" text-anchor="middle" fill="#065f46">12</text>
+    <rect x="812" y="406" width="46" height="26" fill="#dcfce7" stroke="#4ade80"/><text x="835" y="423" text-anchor="middle" fill="#065f46">3</text>
+    <rect x="858" y="406" width="46" height="26" fill="#dcfce7" stroke="#4ade80"/><text x="881" y="423" text-anchor="middle" fill="#065f46">44</text>
+    <rect x="904" y="406" width="46" height="26" fill="#fef9c3" stroke="#fde047"/><text x="927" y="423" text-anchor="middle" fill="#713f12">51</text>
+    <rect x="950" y="406" width="46" height="26" fill="#f1f5f9" stroke="#cbd5e1"/><text x="973" y="423" text-anchor="middle" fill="#94a3b8">0</text>
+    <rect x="996" y="406" width="46" height="26" fill="#f1f5f9" stroke="#cbd5e1"/><text x="1019" y="423" text-anchor="middle" fill="#94a3b8">0</text>
+    <text x="1050" y="423" fill="#64748b">← 未用列补 0</text>
+  </g>
+  <text x="720" y="452" font-size="9" fill="#15803d">新入场：add_row(全量 block_ids)（gpu_input_batch.py:350） · 每步增量：append_row(:664)</text>
+  <text x="720" y="468" font-size="9" fill="#15803d">复活：resumed_from_preemption → 整表替换（gpu_model_runner.py:646-650，Day 12 已见）</text>
+  <text x="720" y="484" font-size="9" fill="#15803d">commit：copy_to_gpu 后交给 AttentionMetadataBuilder → paged attention kernel（Day 17）</text>
+  <text x="720" y="504" font-size="9.4" font-weight="bold" fill="#166534">slot_mapping：写 KV 时 slot = block_table[row, pos÷16] × 16 + pos mod 16（:107-113）</text>
+
+  <!-- ================= Bottom: free order & eviction ================= -->
+  <rect x="40" y="562" width="1160" height="230" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+  <text x="60" y="586" font-size="13" font-weight="bold" fill="#7f1d1d">③ free 的逆序归还：同一个请求的块，尾块先进 free 队列 → 驱逐时尾块先被逐（保住更短的公共前缀）</text>
+
+  <!-- before free -->
+  <text x="60" y="612" font-size="10" font-weight="bold" fill="#991b1b">free 前（请求持有 B0..B4，假设是一条链）</text>
+  <g font-size="8.4" fill="#065f46">
+    <rect x="60" y="622" width="52" height="24" fill="#dcfce7" stroke="#4ade80"/><text x="86" y="638" text-anchor="middle">B0 链头</text>
+    <rect x="112" y="622" width="52" height="24" fill="#dcfce7" stroke="#4ade80"/><text x="138" y="638" text-anchor="middle">B1</text>
+    <rect x="164" y="622" width="52" height="24" fill="#dcfce7" stroke="#4ade80"/><text x="190" y="638" text-anchor="middle">B2</text>
+    <rect x="216" y="622" width="52" height="24" fill="#dcfce7" stroke="#4ade80"/><text x="242" y="638" text-anchor="middle">B3</text>
+    <rect x="268" y="622" width="52" height="24" fill="#dcfce7" stroke="#4ade80"/><text x="294" y="638" text-anchor="middle">B4 尾</text>
+  </g>
+
+  <!-- reversed -->
+  <line x1="330" y1="634" x2="420" y2="634" stroke="#dc2626" stroke-width="1.8" marker-end="url(#ar15e)"/>
+  <text x="375" y="626" text-anchor="middle" font-size="8.6" fill="#b91c1c">reversed(req_blocks)</text>
+  <text x="375" y="648" text-anchor="middle" font-size="8.2" fill="#b91c1c">single_type:168</text>
+
+  <!-- free queue -->
+  <text x="430" y="612" font-size="10" font-weight="bold" fill="#991b1b">free_block_queue（队头 ← 分配/驱逐端 · 队尾 ← 归还端）</text>
+  <g font-size="8.4">
+    <rect x="430" y="622" width="44" height="24" fill="#e2e8f0" stroke="#94a3b8"/><text x="452" y="638" text-anchor="middle" fill="#334155">旧空闲</text>
+    <rect x="474" y="622" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="496" y="638" text-anchor="middle" fill="#7f1d1d">B4</text>
+    <rect x="518" y="622" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="540" y="638" text-anchor="middle" fill="#7f1d1d">B3</text>
+    <rect x="562" y="622" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="584" y="638" text-anchor="middle" fill="#7f1d1d">B2</text>
+    <rect x="606" y="622" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="628" y="638" text-anchor="middle" fill="#7f1d1d">B1</text>
+    <rect x="650" y="622" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="672" y="638" text-anchor="middle" fill="#7f1d1d">B0</text>
+    <text x="706" y="638" fill="#b91c1c">★ 逆序 append_n → B4 离队头最近</text>
+  </g>
+  <text x="430" y="666" font-size="9" fill="#7f1d1d">队列不变式：进队 ⇔ ref_cnt 归 0；hash 不清（block_hash 保留）→ 这些块仍是「可驱逐的缓存候选」（Day 12 的"free"三重含义）</text>
+
+  <!-- eviction -->
+  <line x1="452" y1="680" x2="452" y2="700" stroke="#dc2626" stroke-width="1.8" marker-end="url(#ar15e)"/>
+  <text x="470" y="694" font-size="9" fill="#b91c1c">下次分配 popleft_n（get_new_blocks :272）先取到 B4 → _maybe_evict_cached_block 从 hash 索引摘除 → 此时才 reset_hash</text>
+  <text x="470" y="710" font-size="9" fill="#b91c1c">若另一请求命中 B0..B2 前缀（touch :322）：O(1) 从队中摘出 + ref_cnt+=1 —— 被逐的永远是最久没人碰的链尾</text>
+
+  <rect x="60" y="726" width="1120" height="50" rx="6" fill="#ffffff" stroke="#fca5a5"/>
+  <text x="620" y="746" text-anchor="middle" font-size="10" font-weight="bold" fill="#7f1d1d">FreeKVCacheBlockQueue 的顺序 = 驱逐优先级（docstring :225-232 原文口径）</text>
+  <text x="620" y="764" text-anchor="middle" font-size="9" fill="#7f1d1d">① LRU：最久未用的块在队头；② 同链：最后访问时间相同时，hash 更长的链尾块在前 —— 两条规则合成「没有独立 evictor，驱逐 = 分配」</text>
+</svg>

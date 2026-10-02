@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 760" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar15g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="760" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">容量手算瀑布（Qwen3-8B @ H100 80G）与并发上限 · 复杂度账单</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：从 80 GiB 到「能装多少 token / 几路 16K」的六步推导（对应启动日志三行） · 右：每步 CPU 复杂度与免费驱逐的代价</text>
+
+  <!-- ================= Left: waterfall ================= -->
+  <text x="60" y="80" font-size="13.5" font-weight="bold" fill="#0f172a">① 显存瀑布：num_blocks 是怎么算出来的</text>
+  <rect x="40" y="90" width="640" height="470" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- total -->
+  <rect x="70" y="106" width="580" height="26" fill="#bfdbfe" stroke="#60a5fa"/>
+  <text x="80" y="123" font-size="10" font-weight="bold" fill="#1e3a8a">HBM 总量 80.0 GiB</text>
+  <text x="640" y="123" font-size="9" text-anchor="end" fill="#1e3a8a">（gpu_memory_utilization = 0.9）</text>
+
+  <rect x="70" y="132" width="522" height="26" fill="#93c5fd" stroke="#3b82f6"/>
+  <text x="80" y="149" font-size="10" font-weight="bold" fill="#1e3a8a">预算 72.0 GiB = 80 × 0.9</text>
+
+  <rect x="70" y="158" width="380" height="26" fill="#fde68a" stroke="#f59e0b"/>
+  <text x="80" y="175" font-size="10" font-weight="bold" fill="#78350f">− 权重 BF16 ≈ 16.4 GiB（8.2B 参数 × 2B）</text>
+
+  <rect x="70" y="184" width="342" height="26" fill="#fdba74" stroke="#fb923c"/>
+  <text x="80" y="201" font-size="10" font-weight="bold" fill="#7c2d12">− profile 峰值 ≈ 2.6 GiB（激活 + 非 torch 开销，随 max_num_batched_tokens ↑）</text>
+  <text x="422" y="201" font-size="8.6" fill="#7c2d12">← gpu_worker.py:221-302 determine_available_memory</text>
+
+  <rect x="70" y="210" width="310" height="26" fill="#86efac" stroke="#22c55e"/>
+  <text x="80" y="227" font-size="10" font-weight="bold" fill="#14532d">= available ≈ 53.0 GiB</text>
+  <text x="388" y="227" font-size="8.6" fill="#14532d">日志行「Available KV cache memory: 53.00 GiB」</text>
+
+  <!-- conversions -->
+  <line x1="225" y1="240" x2="225" y2="258" stroke="#475569" stroke-width="1.4" marker-end="url(#ar15g)"/>
+  <rect x="70" y="260" width="580" height="120" rx="6" fill="#ffffff" stroke="#a7f3d0"/>
+  <text x="90" y="282" font-size="10.5" font-weight="bold" fill="#065f46">÷ page_size ÷ num_layers（kv_cache_utils.py:824 get_num_blocks）</text>
+  <text x="90" y="302" font-size="9.5" fill="#065f46">page_size（每层每块字节）= 2 × block_size 16 × kv_heads 8 × head_dim 128 × dtype 2B = 65,536 B = 64 KiB</text>
+  <text x="90" y="320" font-size="9.5" fill="#065f46">num_layers = 36（GQA：8 是 num_key_value_heads，不是 32 个 query head —— W1 Day 2 的坑）</text>
+  <text x="90" y="338" font-size="9.5" fill="#065f46">每块全层字节 = 64 KiB × 36 = 2.25 MiB；每 token 全层 = 2.25 MiB ÷ 16 = 144 KiB（Day 2 公式）</text>
+  <text x="90" y="360" font-size="11" font-weight="bold" fill="#047857">num_blocks = 53.0 GiB ÷ 2.25 MiB ≈ 24,100 块 ≈ 38.6 万 token（日志「GPU KV cache size: 385,600 tokens」）</text>
+
+  <!-- concurrency -->
+  <rect x="70" y="394" width="580" height="146" rx="6" fill="#ecfdf5" stroke="#6ee7b7"/>
+  <text x="90" y="416" font-size="10.5" font-weight="bold" fill="#065f46">并发上限（两个口径，面试要分清）</text>
+  <text x="90" y="436" font-size="9.5" fill="#065f46">① 满上下文口径（启动日志「Maximum concurrency for 40,960 tokens per request」）：</text>
+  <text x="90" y="452" font-size="9.5" fill="#065f46">    38.6 万 token ÷ 40,960 ≈ 9.4 路（每路占满 max_model_len）</text>
+  <text x="90" y="470" font-size="9.5" fill="#065f46">② 实际负载口径（容量规划用）：并发 ≈ 总 token ÷ 平均(prompt+output) 上下文</text>
+  <text x="90" y="486" font-size="9.5" fill="#065f46">    16K 上下文 → ≈ 23 路（Day 12 手算 22 路同源）；4K 上下文 → ≈ 94 路</text>
+  <text x="90" y="510" font-size="9" fill="#047857">对账实验：启动日志的三行数字 vs 本页手算 → 误差 &gt; 10% 通常是 available 估错（激活峰随 budget 变）</text>
+  <text x="90" y="528" font-size="9" fill="#047857">调度侧强制校验：至少装下一个 max_model_len 请求（check_enough_kv_cache_memory :678，否则启动报错）</text>
+
+  <!-- ================= Right: complexity & cost ================= -->
+  <text x="700" y="80" font-size="13.5" font-weight="bold" fill="#0f172a">② 复杂度账单：为什么这样设计（全在 P1 CPU 上）</text>
+  <rect x="680" y="90" width="520" height="270" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <line x1="680" y1="114" x2="1200" y2="114" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="694" y="106" font-size="9.5" font-weight="bold" fill="#334155">操作</text>
+  <text x="900" y="106" font-size="9.5" font-weight="bold" fill="#334155">复杂度</text>
+  <text x="1030" y="106" font-size="9.5" font-weight="bold" fill="#334155">实现要点</text>
+  <g font-size="9" fill="#0f172a">
+    <text x="694" y="130">popleft / append</text><text x="900" y="130">O(1)</text><text x="1030" y="130">假头假尾哨兵，免判空（:254-266）</text>
+    <text x="694" y="150">remove(block)（touch 摘队）</text><text x="900" y="150">O(1)</text><text x="1030" y="150">双向链表直接缝合 —— 用 deque 则 O(n)</text>
+    <text x="694" y="170">popleft_n(n)（批量分配）</text><text x="900" y="170">O(n)</text><text x="1030" y="170">一次遍历，n = 新块数</text>
+    <text x="694" y="190">get_num_free_blocks</text><text x="900" y="190">O(1)</text><text x="1030" y="190">计数器，不遍历链表（:391）</text>
+    <text x="694" y="210">allocate_slots（decode 无新块）</text><text x="900" y="210">≈O(1)</text><text x="1030" y="210">cdiv+比较，不碰链表 —— 每 step × 每 running</text>
+    <text x="694" y="230">allocate_slots（prefill/满块）</text><text x="900" y="230">O(新块)</text><text x="1030" y="230">+ 驱逐检查逐块进行（_maybe_evict）</text>
+    <text x="694" y="250">free(request)</text><text x="900" y="250">O(块数)</text><text x="1030" y="250">逆序遍历 + append_n</text>
+    <text x="694" y="270">get_computed_blocks</text><text x="900" y="270">O(命中块)</text><text x="1030" y="270">沿 hash 链走，断链即停（Day 16）</text>
+  </g>
+  <text x="694" y="296" font-size="9" fill="#475569">全部是纯 Python 对象操作（P1 进程）；24k 块 × 100 路 decode 的稳态：每 step ≈ 100 次 O(1) allocate + 少量 +1</text>
+  <text x="694" y="312" font-size="9" fill="#475569">→ 单 step 调度 CPU 微秒级，但**加起来**是 step 时间的固定税 → Day 19 async scheduling 的动机之一</text>
+  <text x="694" y="334" font-size="9" fill="#b45309">对照昇腾：等价于你在 Host 侧维护的 tiling 偏移表 / 任务描述符队列 —— 分配逻辑永远在 AI CPU 上，不在 Vector/Core 上</text>
+
+  <!-- ================= Right bottom: token-level tradeoff ================= -->
+  <text x="700" y="390" font-size="13.5" font-weight="bold" fill="#0f172a">③ block_size 的三重身份（16 为什么是默认值）</text>
+  <rect x="680" y="400" width="520" height="160" rx="8" fill="#fffbeb" stroke="#fcd34d"/>
+  <g font-size="9.5" fill="#78350f">
+    <text x="700" y="424">身份一 · 分配粒度：碎片 = 平均每请求 block_size/2 token（16 → 每路浪费 8 token ≈ 1.1 MiB）</text>
+    <text x="700" y="442">    调小（8）：碎片减半，但 block table 行数×2（int32 显存+PCIe 流量翻倍）、管理开销×2</text>
+    <text x="700" y="462">身份二 · 缓存粒度：prefix 命中按整块计（Day 16）——共享前缀 &lt; 16 token 的尾差全浪费</text>
+    <text x="700" y="482">身份三 · 算子粒度：paged attention 的 gather tile 按 block 对齐（Day 17）——block 内 head_dim 连续才好合并访存</text>
+    <text x="700" y="504">    16 × 128 head_dim × 2B = 4 KiB / K 块 —— 恰好落在 L2 line 与 DMA burst 的甜点区（对照你的 32B/64B 对齐经验）</text>
+    <text x="700" y="526">平台可改：CUDA 默认 16（platforms/cuda.py:126）；MLA 后端强制 32/64/128 —— 换后端 = 换 block_size</text>
+  </g>
+  <text x="700" y="552" font-size="9" fill="#92400e">面试一句话：block_size 是「碎片率 / 表大小 / 缓存粒度 / gather 效率」四方拉扯的甜点值，不是拍脑袋常数</text>
+
+  <!-- footer -->
+  <rect x="40" y="580" width="1160" height="60" rx="6" fill="#f0f9ff" stroke="#7dd3fc"/>
+  <text x="620" y="604" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#0c4a6e">今日公式卡（白板四件套之二的原材料）</text>
+  <text x="620" y="624" text-anchor="middle" font-size="9.5" fill="#0c4a6e">page_size = 2·B·H_kv·d·dtype_b  ·  blocks = avail ÷ page ÷ L  ·  tokens = blocks × B  ·  并发 ≈ tokens ÷ avg_ctx  ·  碎片 ≈ Σ_req B/2 token</text>
+  <text x="620" y="740" text-anchor="middle" font-size="9" fill="#94a3b8">vLLM v0.11.0 · 坐标与本仓 day12/day14 同口径 · 手算数字与启动日志对账（实验 0）</text>
+</svg>

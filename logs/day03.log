@@ -3,19 +3,22 @@
 [0m
 [0m→ [0mRead prompt.md
 [0m→ [0mRead README.md
-[0m✱ [0mGlob "week1/**/*.md"[90m 3 matches[0m
 [0m
-[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ 2>/dev/null; ls -la /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null
-total 104
-drwxr-xr-x 15 root root  4096 Oct  2 00:09 .
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week1/assets/ 2>/dev/null
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
 drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
 drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
--rwxr-xr-x  1 root root  5083 Oct  1 23:58 generate_tutorials.sh
-drwxr-xr-x  8 root root  4096 Oct  2 00:09 .git
--rw-r--r--  1 root root    39 Oct  1 23:52 .gitignore
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  4983 Oct  2 00:38 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 00:12 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
 drwxr-xr-x  2 root root  4096 Oct  1 23:48 logs
 drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
 -rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
 -rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
 drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
 -rw-r--r--  1 root root     2 Oct  2 00:10 .tutorial_progress
@@ -30,42 +33,80 @@ drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
 -rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
 total 128
 drwxr-xr-x  3 root root  4096 Oct  2 00:09 .
-drwxr-xr-x 15 root root  4096 Oct  2 00:09 ..
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
 drwxr-xr-x  2 root root  4096 Oct  2 00:06 assets
 -rw-r--r--  1 root root 39365 Oct  1 23:43 day01_transformer_inference.md
 -rw-r--r--  1 root root 38026 Oct  2 00:09 day02_memory_latency_hand_calc.md
 -rw-r--r--  1 root root 33208 Oct  1 23:13 README.md
+day01_decode_iteration_tensor_flow.svg
+day01_kv_cache_lifecycle.svg
+day01_prefill_vs_decode.svg
+day02_decode_latency_lb.svg
+day02_kv_formula_anatomy.svg
+day02_memory_budget.svg
 [0m
+Day 1 和 Day 2 的内容已经存在。让我先阅读一下它们的内容，以便进行衔接并保持教程风格一致。
 [0m→ [0mRead week1/day01_transformer_inference.md
 [0m→ [0mRead week1/day02_memory_latency_hand_calc.md
-[0m
-[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/week1/assets/
-total 96
-drwxr-xr-x 2 root root  4096 Oct  2 00:06 .
-drwxr-xr-x 3 root root  4096 Oct  2 00:09 ..
--rw-r--r-- 1 root root 13816 Oct  1 23:41 day01_decode_iteration_tensor_flow.svg
--rw-r--r-- 1 root root 24686 Oct  1 23:40 day01_kv_cache_lifecycle.svg
--rw-r--r-- 1 root root 10905 Oct  1 23:39 day01_prefill_vs_decode.svg
--rw-r--r-- 1 root root  9610 Oct  2 00:09 day02_decode_latency_lb.svg
--rw-r--r-- 1 root root 11706 Oct  2 00:05 day02_kv_formula_anatomy.svg
--rw-r--r-- 1 root root  7833 Oct  2 00:06 day02_memory_budget.svg
-[0m
 [0m→ [0mRead week1/assets/day02_decode_latency_lb.svg
+我先检查一下现有的 SVG 风格以及 week1 中的 README，以确保一致性。
+[0m→ [0mRead week1/README.md[90m [limit=120][0m
+[0m→ [0mRead week1/README.md[90m [limit=200, offset=121][0m
 [0m
-[0m$ [0mgrep -n "Day 3" /mnt/workspace/aiinfra/vllm/week1/README.md | head -5
-14:├── 一个模型：Roofline（算力 vs 带宽的分界）                 ← Day 3
-26:| 笔记《从昇腾 bound 建模到 GPU Roofline 的映射表》 | Day 3 | [ ] |
-190:- 反证计算侧只占多少：每 token FLOPs=2N=141.2 GFLOP，H100 FP8 算力 1979 TFLOPS → 若 compute bound 只需 71 µs，与 21 ms 差 **297 倍**（正好 = ridge point 591 ÷ AI 2，与 Day 3 Roofline 互验）
-210:**进阶思考**（可与 Day 3 互验）：B 很大时每序列 KV 读取 `ctx·KV/BW` 与每序列计算时间 `2N/峰值算力` 谁大？H100 FP8 + ctx=4096 时：200 µs vs 71 µs → 永远访存 bound；ctx≈1500 时两者打平；**只有短上下文 + 超大 batch 才可能翻转为 compute bound**。
-226:# Day 3：Roofline 模型（GPU 版）
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/public 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/build 2>/dev/null | head; cat /mnt/workspace/aiinfra/vllm/build.py 2>/dev/null | head -30
+css
+index.html
+js
+plan.html
+prompt.html
+week1
+week2
+week3
+week4
+week5
+week6
+week7
+week8
+common.py
+home.py
+__init__.py
+__pycache__
+weeks.py
+#!/usr/bin/env python3
+"""
+Build the website for GitHub Pages.
+
+Generates public/ (deployment root):
+  - Shared css/js (copied from static/)
+  - Landing page index.html (built by build.home)
+  - Plan page plan.html + prompt page prompt.html (built by build.weeks)
+  - week1~weekN overview + day pages (built by build.weeks)
+"""
+
+import shutil
+from pathlib import Path
+
+from build.common import (
+    WEEK_DIR_PATTERN,
+    copy_static_assets,
+    discover_week_dirs,
+)
+from build.home import build_home
+from build.weeks import (
+    build_plan_page,
+    build_prompt_page,
+    build_week,
+)
+
+
+def main() -> None:
+    repo_root = Path(__file__).parent
+    public_dir = repo_root / "public"
 [0m
-[0m→ [0mRead week1/README.md[90m [limit=80, offset=1][0m
-[0m→ [0mRead week1/README.md[90m [limit=130, offset=226][0m
+我先检查一下简历中提及的 Ascend 经验术语（Day 1/2 中引用的内容），以及另一张 SVG 以参考样式。
 [0m→ [0mRead 陈斌斌简历.md
 [0m
-[0m$ [0mcat /mnt/workspace/aiinfra/vllm/.tutorial_progress; echo ---; head -50 /mnt/workspace/aiinfra/vllm/generate_tutorials.sh
-2
----
+[0m$ [0mhead -60 /mnt/workspace/aiinfra/vllm/generate_tutorials.sh; grep -rn "day03" /mnt/workspace/aiinfra/vllm/build/ 2>/dev/null | head
 #!/usr/bin/env bash
 #
 # generate_tutorials.sh — 按天调用 cannbot 生成 vLLM 推理系统教程（Day 1 ~ Day 56）
@@ -75,12 +116,12 @@ drwxr-xr-x 3 root root  4096 Oct  2 00:09 ..
 #   - 默认单线程：前一天生成完成（产出 dayNN_*.md）后才发送下一天；
 #     需要加速时可用 JOBS=2 等开启并发；
 #   - 支持断点续跑：已生成的 Day 自动跳过；
-#   - 失败自动重试，多次失败后停止派发新任务并保留现场。
+#   - 不重试：某天失败则记录并继续生成下一天，失败的 Day 在结束时汇总，
+#     重新运行本脚本即可补跑。
 #
 # 用法：
 #   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
 #   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
-#   MAX_RETRIES=5 ./generate_tutorials.sh
 #   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
 #
 set -u
@@ -90,7 +131,6 @@ cd "$WORKDIR"
 
 START_DAY="${START_DAY:-1}"
 END_DAY="${END_DAY:-56}"
-MAX_RETRIES="${MAX_RETRIES:-3}"
 JOBS="${JOBS:-1}"
 LOG_DIR="$WORKDIR/logs"
 PROGRESS_FILE="$WORKDIR/.tutorial_progress"
@@ -116,4 +156,257 @@ day_done() {
 }
 
 # 找出该 Day 产出文件的存放目录：按周组织（week1..week8），目录不存在则用根目录
+day_dir() {
+  local day="$1"
+  local week=$(( (day - 1) / 7 + 1 ))
+  if [[ -d "$WORKDIR/week${week}" ]]; then
+    echo "week${week}"
+  else
+    echo "."
+  fi
+
+}
 [0m
+[0m# [0mTodos
+[•] Create 3 SVG assets in week1/assets/ (roofline chart, ncu decision tree, Ascend-GPU mapping)
+[ ] Write and verify the no-GPU lab script (roofline hand-calc verifier) to get real expected output
+[ ] Write week1/day03_roofline_model.md following prompt.md structure, linking Day 1/2 and previewing Day 4
+[ ] Verify all files written, SVG well-formed, internal links correct
+[0m
+现在我已经掌握了完整上下文。第 3 天的主题是 **Roofline 模型（GPU 版）**，实验是使用 `ncu` 查看 SM/DRAM 繁忙程度，交付物是一份 Ascend→GPU 边界建模映射表。Day 1 和 Day 2 已经存在，并带有明确的“明日预告”指向今天。让我来制定工作计划。
+正在编写 SVG 1 —— 主 Roofline 图表（对数-对数坐标，A100/H100 屋顶线 + LLM kernel 落点）：
+[0m← [0mWrite week1/assets/day03_roofline_chart.svg
+Wrote file successfully.
+[0m
+正在修复标题中的拼写错误（峰价→峰值），然后编写 SVG 2 —— ncu 判断决策树：
+[0m← [0mEdit week1/assets/day03_roofline_chart.svg
+Index: /mnt/workspace/aiinfra/vllm/week1/assets/day03_roofline_chart.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week1/assets/day03_roofline_chart.svg
++++ /mnt/workspace/aiinfra/vllm/week1/assets/day03_roofline_chart.svg
+@@ -3,9 +3,9 @@
+   <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+ </defs>
+ 
+ <rect x="0" y="0" width="1240" height="660" fill="#ffffff"/>
+-<text x="620" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">GPU Roofline：可达性能 = min( 峰值算力 , AI × 峰价带宽 )</text>
++<text x="620" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">GPU Roofline：可达性能 = min( 峰值算力 , AI × 峰值带宽 )</text>
+ <text x="620" y="50" text-anchor="middle" font-size="12.5" fill="#64748b">BF16 口径 · A100 vs H100 SXM · 标出 LLM 推理核心 kernel 的落点（对数-对数坐标）——Day 1 的「AI = 2M/P」与 Day 2 的「两条下界」在这张图上合流</text>
+ 
+ <!-- ===== 主绘图区 ===== -->
+ <rect x="90" y="68" width="925" height="500" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+
+[0m
+[0m← [0mWrite week1/assets/day03_ncu_decision_tree.svg
+Wrote file successfully.
+[0m
+现在是 SVG 3 —— Ascend 与 GPU 的映射图（今日交付物的核心可视化）：
+[0m← [0mWrite week1/assets/day03_ascend_gpu_mapping.svg
+Wrote file successfully.
+[0m
+SVG 已完成。现在让我来编写并验证 no-GPU 实验室脚本，从而在教程中嵌入真实的预期输出：
+[0m← [0mWrite /tmp/opencode/day03_lab_roofline.py
+Wrote file successfully.
+[0m
+[0m$ [0mpython3 /tmp/opencode/day03_lab_roofline.py
+== ① ridge point = F_peak ÷ BW（FLOP/Byte，平台的身份证）==
+A100 80GB SXM    BF16    153
+H100 80GB SXM    BF16    295    FP8    591
+H200 SXM         BF16    206    FP8    412
+RTX 4090         BF16    163
+B200 (约)         BF16    281    FP8    562
+
+== ② 核心 kernel 的 AI 与 H100 上的判定 ==
+decode GEMV   M=1, K=N=4096  AI=    1.0  memory  bound  T≥  10.02µs  (T_mem=10.02, T_calc=0.03)
+decode attn   B=1, ctx=4096（每头） AI=    1.0  memory  bound  T≥   0.63µs  (T_mem=0.63, T_calc=0.00)
+decode attn   B=64（每头）       AI=   64.0  memory  bound  T≥   0.63µs  (T_mem=0.63, T_calc=0.14)
+decode GEMM   B=64, FP8      AI=  128.0  memory  bound  T≥   5.01µs  (T_mem=5.01, T_calc=1.09)
+prefill GEMM  4096³（全流量口径）   AI= 1365.3  compute bound  T≥   0.14ms  (T_mem=0.03, T_calc=0.14)
+prefill attn  s=4096 causal（每头） AI= 1365.3  compute bound  T≥   4.34µs  (T_mem=0.94, T_calc=4.34)
+
+== ③ 与 Day 2 互验：Llama-3-70B FP8 @ H100，decode B=1，ctx=4096（整步口径）==
+必读字节 = 70.2 GB，FLOPs = 141.2 GFLOP
+整步 AI = 2.01 FLOP/B vs FP8 ridge = 591 → 差 294×
+T_mem = 20.9 ms（Day 2 手算 21 ms ✓）  T_calc = 71 µs（差 294×）
+
+== ④ decode 的渐近 AI（Qwen3-8B BF16）：整步 AI 的 KV 上界 = 2N/(ctx·KV_tok) ==
+ctx=512    AI_上限 = 2N/(ctx·KV_tok) =  217.2 FLOP/B
+ctx=1024   AI_上限 = 2N/(ctx·KV_tok) =  108.6 FLOP/B
+ctx=2048   AI_上限 = 2N/(ctx·KV_tok) =   54.3 FLOP/B
+ctx=4096   AI_上限 = 2N/(ctx·KV_tok) =   27.2 FLOP/B
+ctx=8192   AI_上限 = 2N/(ctx·KV_tok) =   13.6 FLOP/B
+ctx=32768  AI_上限 = 2N/(ctx·KV_tok) =    3.4 FLOP/B
+A100(BF16): 翻成 compute bound 需要 ctx ≤ 2N/(ridge·KV_tok) = 727 token（且 B→∞）
+H100(BF16): 翻成 compute bound 需要 ctx ≤ 2N/(ridge·KV_tok) = 377 token（且 B→∞）
+[0m
+脚本已验证 —— 所有数字与第二天进行了交叉核对（21 ms ✓，294× ✓）。让我验证一下 SVG 是否为格式良好的 XML，然后编写主教程：
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week1/assets && for f in day03_*.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('$f OK')"; done
+day03_ascend_gpu_mapping.svg OK
+day03_ncu_decision_tree.svg OK
+day03_roofline_chart.svg OK
+[0m
+[0m# [0mTodos
+[✓] Create 3 SVG assets in week1/assets/ (roofline chart, ncu decision tree, Ascend-GPU mapping)
+[✓] Write and verify the no-GPU lab script (roofline hand-calc verifier) to get real expected output
+[•] Write week1/day03_roofline_model.md following prompt.md structure, linking Day 1/2 and previewing Day 4
+[ ] Verify all files written, SVG well-formed, internal links correct
+[0m
+现在开始撰写主教程文件：
+[0m← [0mWrite week1/day03_roofline_model.md
+Wrote file successfully.
+[0m
+[0m← [0mEdit week1/day03_roofline_model.md
+Index: /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
++++ /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
+@@ -289,10 +289,8 @@
+ ### 3.4 从昇腾 bound 建模到 GPU Roofline 的映射表（本周核心产出）
+ 
+ ![昇腾达芬奇架构 ↔ NVIDIA SM 逐层映射](assets/day03_ascend_gpu_mapping.svg)
+ 
+-![从昇腾 bound 建模到 GPU Roofline 的映射表](assets/day03_ascend_gpu_mapping.svg)
+-
+ | 维度 | 昇腾（达芬奇架构） | NVIDIA GPU | 同一性 / 差异 |
+ |---|---|---|---|
+ | 计算单元 | Cube（每拍 16×16×16 MAC）/ Vector / Scalar，MIX 配比调优 | Tensor Core（HMMA / BF16 / FP8 MMA）/ CUDA Core | 峰值 FLOPS 的口径来源 |
+ | 存储层级 | HBM → L2 → L1 → L0A/L0B/L0C（+UB） | HBM → L2 → SMEM/L1 → Register | **同一分层思想**：离算力越近越小越快 |
+
+[0m
+Fixing two defects I noticed: a duplicated SVG reference in §3.4 and a malformed `</summary>` tag in self-test Q5:
+[0m← [0mEdit week1/day03_roofline_model.md
+Index: /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
++++ /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
+@@ -646,9 +646,9 @@
+ </details>
+ 
+ **Q5**：Qwen3-8B BF16 在 H100 上，decode 想翻成 compute bound 需要什么条件？实际负载能达到吗？
+ 
+-<details><summary>参考答案</span></summary>
++<details><summary>参考答案</summary>
+ 
+ 整步 AI 的上界（B→∞）= 2N/(ctx·KV_tok) ≈ 16.4e9/(ctx × 147456)；令其 ≥ ridge 295 → **ctx ≤ ~377 token 且 batch 趋于无穷**。实际负载的上下文远超 377、batch 受 KV 显存与 TPOT SLO 限制，不可能达到——所以 decode 在 H100 上**永远 memory bound**；A100（ridge 153）的窗口放宽到 ~727 token，同样达不到。推论：优化 decode 只能围绕"减字节 + 摊销 + 换带宽资源"做文章。
+ </details>
+ 
+
+[0m
+最终确认 —— 文件已存在，SVG 引用已解析，details 标签已平衡，章节已完成，且未修改任何现有文件：
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm && ls -la week1/day03* week1/assets/day03* && echo "---- SVG refs in MD ----" && grep -o 'assets/[a-z0-9_]*\.svg' week1/day03_roofline_model.md | sort -u | while read r; do [ -f "week1/$r" ] && echo "OK  $r" || echo "MISSING  $r"; done && echo "---- details tag balance ----" && grep -c '<details>' week1/day03_roofline_model.md && grep -c '</details>' week1/day03_roofline_model.md && echo "---- section headers ----" && grep -E '^## ' week1/day03_roofline_model.md && echo "---- git status ----" && git status --short
+-rw-r--r-- 1 root root  9766 Oct  2 00:48 week1/assets/day03_ascend_gpu_mapping.svg
+-rw-r--r-- 1 root root 10789 Oct  2 00:48 week1/assets/day03_ncu_decision_tree.svg
+-rw-r--r-- 1 root root 11356 Oct  2 00:47 week1/assets/day03_roofline_chart.svg
+-rw-r--r-- 1 root root 50941 Oct  2 00:52 week1/day03_roofline_model.md
+---- SVG refs in MD ----
+OK  assets/day03_ascend_gpu_mapping.svg
+OK  assets/day03_ncu_decision_tree.svg
+OK  assets/day03_roofline_chart.svg
+---- details tag balance ----
+5
+5
+---- section headers ----
+## 0. 今日学习目标
+## 1. 核心概念速览
+## 2. 原理深入讲解
+## 3. 数学推导：Roofline 形式化 + 三道手算题 + 昇腾映射（今日核心产出）
+## 4. 关键代码与 vLLM V1 的实际联系：Roofline 思维在 V1 里的五个落点
+## 5. 动手实验（约 60~90 分钟）
+## 6. 面试高频问题（含答题骨架）
+## 7. 今日总结
+## 8. 今日自测题（先自己做，再展开答案）
+## 9. 今日产出物
+## 0. 常数表：5 个平台的 ridge（BF16/FP8）+ 锚点数字
+## 1. 推导：T = max(T_mem, T_calc) → P = min(F, AI×BW) → ridge → log-log 折线
+## 2. 三种 AI 口径（权重 / 全流量 / 整步）与各 kernel 落点表
+## 3. 三道手算题：prefill GEMM 139µs / 70B FP8 复盘 294× / decode 翻转条件 ctx≤377
+## 4. 映射表：计算单元/存储层级/搬运引擎/分块/bound 判定/L2 优化/流水/指标/工具（9 行）
+## 5. 差异叙事：L1 全载驻留 vs SMEM 小 → batch 摊销 + 量化 + 融合（vLLM 三主轴）
+## 6. ncu 判读表 + 三类误判卡片
+## 7. 实验数据与结论
+## 10. 明日预告（Day 4）
+---- git status ----
+ M generate_tutorials.sh
+ M logs/day03.log
+ M logs/nohup.out
+ M logs/run.log
+?? week1/assets/day03_ascend_gpu_mapping.svg
+?? week1/assets/day03_ncu_decision_tree.svg
+?? week1/assets/day03_roofline_chart.svg
+?? week1/day03_roofline_model.md
+[0m
+One minor inconsistency: the embedded script's ③ print omits the "差 294×" suffix shown in the expected output. Aligning them:
+[0m← [0mEdit week1/day03_roofline_model.md
+Index: /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
++++ /mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md
+@@ -413,9 +413,9 @@
+ flops = 2 * N
+ print(f"必读字节 = {byts / GB:.1f} GB，FLOPs = {flops / GB:.1f} GFLOP")
+ print(f"整步 AI = {flops / byts:.2f} FLOP/B vs FP8 ridge = {F8 / BW:.0f} → 差 {F8 / BW / (flops / byts):.0f}×")
+ print(f"T_mem = {byts / (BW * TB) / MS:.1f} ms（Day 2 手算 21 ms ✓）  "
+-      f"T_calc = {flops / (F8 * TF) / US:.0f} µs")
++      f"T_calc = {flops / (F8 * TF) / US:.0f} µs（差 {(byts / (BW * TB)) / (flops / (F8 * TF)):.0f}×）")
+ 
+ print("\n== ④ decode 的渐近 AI（Qwen3-8B BF16）：整步 AI 的 KV 上界 = 2N/(ctx·KV_tok) ==")
+ N8, KV8 = 8.2e9, 2 * 36 * 8 * 128 * 2
+ for ctx in (512, 1024, 2048, 4096, 8192, 32768):
+
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import re
+md = open('/mnt/workspace/aiinfra/vllm/week1/day03_roofline_model.md').read()
+# extract the experiment-1 python code block and run it to confirm expected output matches
+blocks = re.findall(r'```python\n(# day03_lab_roofline.*?)```', md, re.S)
+assert blocks, "script block not found"
+exec(blocks[0])
+EOF
+== ① ridge point = F_peak ÷ BW（FLOP/Byte，平台的身份证）==
+A100 80GB SXM    BF16    153
+H100 80GB SXM    BF16    295    FP8    591
+H200 SXM         BF16    206    FP8    412
+RTX 4090         BF16    163
+B200 (约)         BF16    281    FP8    562
+
+== ② 核心 kernel 的 AI 与 H100 上的判定 ==
+decode GEMV   M=1, K=N=4096  AI=    1.0  memory  bound  T≥  10.02µs  (T_mem=10.02, T_calc=0.03)
+decode attn   B=1, ctx=4096（每头） AI=    1.0  memory  bound  T≥   0.63µs  (T_mem=0.63, T_calc=0.00)
+decode attn   B=64（每头）       AI=   64.0  memory  bound  T≥   0.63µs  (T_mem=0.63, T_calc=0.14)
+decode GEMM   B=64, FP8      AI=  128.0  memory  bound  T≥   5.01µs  (T_mem=5.01, T_calc=1.09)
+prefill GEMM  4096³（全流量口径）   AI= 1365.3  compute bound  T≥   0.14ms  (T_mem=0.03, T_calc=0.14)
+prefill attn  s=4096 causal（每头） AI= 1365.3  compute bound  T≥   4.34µs  (T_mem=0.94, T_calc=4.34)
+
+== ③ 与 Day 2 互验：Llama-3-70B FP8 @ H100，decode B=1，ctx=4096（整步口径）==
+必读字节 = 70.2 GB，FLOPs = 141.2 GFLOP
+整步 AI = 2.01 FLOP/B vs FP8 ridge = 591 → 差 294×
+T_mem = 20.9 ms（Day 2 手算 21 ms ✓）  T_calc = 71 µs（差 294×）
+
+== ④ decode 的渐近 AI（Qwen3-8B BF16）：整步 AI 的 KV 上界 = 2N/(ctx·KV_tok) ==
+ctx=512    AI_上限 = 2N/(ctx·KV_tok) =  217.2 FLOP/B
+ctx=1024   AI_上限 = 2N/(ctx·KV_tok) =  108.6 FLOP/B
+ctx=2048   AI_上限 = 2N/(ctx·KV_tok) =   54.3 FLOP/B
+ctx=4096   AI_上限 = 2N/(ctx·KV_tok) =   27.2 FLOP/B
+ctx=8192   AI_上限 = 2N/(ctx·KV_tok) =   13.6 FLOP/B
+ctx=32768  AI_上限 = 2N/(ctx·KV_tok) =    3.4 FLOP/B
+A100(BF16): 翻成 compute bound 需要 ctx ≤ 2N/(ridge·KV_tok) = 727 token（且 B→∞）
+H100(BF16): 翻成 compute bound 需要 ctx ≤ 2N/(ridge·KV_tok) = 377 token（且 B→∞）
+[0m
+[0m# [0mTodos
+[✓] Create 3 SVG assets in week1/assets/ (roofline chart, ncu decision tree, Ascend-GPU mapping)
+[✓] Write and verify the no-GPU lab script (roofline hand-calc verifier) to get real expected output
+[✓] Write week1/day03_roofline_model.md following prompt.md structure, linking Day 1/2 and previewing Day 4
+[✓] Verify all files written, SVG well-formed, internal links correct
+[0m
+Day 3 教程已完成并验证写入。
+
+**文件路径**（4 个新文件，未改动任何已有文件）：
+
+| 文件 | 内容 |
+|---|---|
+| `week1/day03_roofline_model.md` | 主教程，严格对应 README Day 3「Roofline 模型（GPU 版）」 |
+| `week1/assets/day03_roofline_chart.svg` | 双对数 Roofline 主图：A100/H100 屋顶线 + ridge 虚线 + LLM kernel 落点 |
+| `week1/assets/day03_ncu_decision_tree.svg` | SM/DRAM busy 判读决策树 + 三类误判 + 速查表 |
+| `week1/assets/day03_ascend_gpu_mapping.svg` | 昇腾达芬奇 ↔ NVIDIA SM 逐层映射（产出物核心可视化） |
+
+**主要内容**：① 完整推导 Roofline（Day 2 两条下界 → min 形式 → ridge → log-log），含时间比恒等式 ridge/AI；② 三种 AI 口径（权重/全流量/整步）与核心 kernel 落点表；③ 三道手算题：prefill GEMM 139µs、70B FP8 与 Day 2 互验（294×）、decode 翻转条件推导（Qwen3-8B 在 H100 上 ctx ≤ 377 token 才可能 compute bound）；④ 《昇腾 bound 建模 → GPU Roofline 映射表》（CalRebalanceBlock ↔ ridge、L1 全载驻留 vs SMEM batch 摊销）；⑤ ncu 实操四案例（含 L2 命中假象复现）与 vLLM V1 五个落点（`--target-processes all` 的多进程坑）；⑥ 6 道面试题 + 5 道自测 + 产出物骨架。实验 1 脚本已实际运行，预期输出与教程逐行一致；结尾衔接 Day 4（PagedAttention）。

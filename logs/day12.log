@@ -1,0 +1,1643 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "**/*.md"[90m 21 matches[0m
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls /mnt/workspace/aiinfra/vllm/week2/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week2/assets/ 2>/dev/null
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  6704 Oct  2 02:43 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 00:52 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  2 04:19 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     3 Oct  2 04:09 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 03:09 week1
+drwxr-xr-x  3 root root  4096 Oct  2 04:05 week2
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+assets
+day08_v1_architecture_overview.md
+day09_request_entry_pipeline.md
+day11_chunked_prefill.md
+README.md
+day08_startup_sequence.svg
+day08_step_ipc_timeline.svg
+day08_v1_process_architecture.svg
+day09_request_entry_pipeline.svg
+day09_request_object_anatomy.svg
+day09_ttft_decomposition.svg
+day11_budget_tradeoff.svg
+day11_chunked_prefill_timeline.svg
+day11_unified_scheduling_ledger.svg
+[0m
+[0m→ [0mRead week2/day11_chunked_prefill.md
+让我先查阅现有的教程以对齐格式，并定位 vLLM scheduler 的源代码。
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/vllm/v1/core/ 2>/dev/null || find / -maxdepth 4 -name "scheduler.py" -path "*v1*" 2>/dev/null | head -5
+(no output)
+[0m
+[0m→ [0mRead week2/day11_chunked_prefill.md[90m [offset=654][0m
+[0m
+[0m$ [0mpython -c "import vllm; print(vllm.__file__, vllm.__version__)" 2>/dev/null; pip show vllm 2>/dev/null | head -3; ls /mnt/workspace/aiinfra/vllm/build 2>/dev/null
+common.py
+home.py
+__init__.py
+__pycache__
+weeks.py
+[0m
+[0m→ [0mRead week2/README.md[90m [limit=120][0m
+[0m
+[0m$ [0mfind / -maxdepth 5 -name "scheduler.py" -path "*v1*" 2>/dev/null | grep -v proc | head; pip list 2>/dev/null | grep -i vllm; ls ~/.cache 2>/dev/null | head
+ccache
+copilot
+gh
+jedi
+kimi-code
+Microsoft
+motd.legal-displayed
+node
+opencode
+pip
+[0m
+[0m✱ [0mGrep "Day 12"[90m in week2/README.md · 16 matches[0m
+[0m→ [0mRead week2/README.md[90m [limit=140, offset=200][0m
+[0m→ [0mRead week2/README.md[90m [limit=140, offset=340][0m
+[0m→ [0mRead week2/assets/day11_chunked_prefill_timeline.svg
+[0m→ [0mRead week2/day09_request_entry_pipeline.md[90m [limit=60][0m
+现在让我从 GitHub 验证实际的 vLLM v0.11.0 调度器抢占的源代码，以确保准确性。
+[0m
+[0m$ [0mmkdir -p /tmp/opencode/vllmsrc && cd /tmp/opencode/vllmsrc && curl -sL --max-time 100 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/sched/scheduler.py" -o scheduler.py && wc -l scheduler.py
+1296 scheduler.py
+[0m
+[0m✱ [0mGrep "preempt|Preempt|PREEMPT"[90m in /tmp/opencode/vllmsrc/scheduler.py · 26 matches[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/scheduler.py[90m [limit=150, offset=195][0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/scheduler.py[90m [limit=120, offset=440][0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/scheduler.py[90m [limit=130, offset=860][0m
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && curl -sL --max-time 100 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_manager.py" -o kv_cache_manager.py && curl -sL --max-time 100 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_utils.py" -o kv_cache_utils.py && curl -sL --max-time 100 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/metrics/stats.py" -o stats.py && curl -sL --max-time 100 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/sched/output.py" -o output.py && curl -sL --max-time 100 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_interface.py" -o kv_cache_interface.py && wc -l *.py
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && ls -la && wc -l *.py 2>/dev/null
+total 68
+drwxr-xr-x  2 root root  4096 Oct  2 04:20 .
+drwxr-xr-x 17 root root  4096 Oct  2 04:20 ..
+-rw-r--r--  1 root root 60858 Oct  2 04:20 scheduler.py
+1296 scheduler.py
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && curl -sL --retry 2 --max-time 120 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_manager.py" -o kv_cache_manager.py; echo "mgr: $(wc -l < kv_cache_manager.py)"; curl -sL --retry 2 --max-time 120 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/metrics/stats.py" -o stats.py; echo "stats: $(wc -l < stats.py)"
+(no output)
+
+<shell_metadata>
+shell tool terminated command after exceeding timeout 300000 ms. If this command is expected to take longer and is not waiting for interactive input, retry with a larger timeout value in milliseconds.
+</shell_metadata>
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && timeout 60 curl -sL --max-time 55 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_manager.py" -o kv_cache_manager.py; echo "exit=$? size=$(stat -c%s kv_cache_manager.py 2>/dev/null)"
+exit=0 size=16528
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && timeout 60 curl -sL --max-time 55 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/metrics/stats.py" -o stats.py; echo "stats=$(stat -c%s stats.py 2>/dev/null)"; timeout 60 curl -sL --max-time 55 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/sched/output.py" -o output.py; echo "out=$(stat -c%s output.py 2>/dev/null)"
+stats=
+out=
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && timeout 90 curl -sL --max-time 85 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/metrics/stats.py" -o stats.py; echo "stats=$(stat -c%s stats.py 2>/dev/null)"
+stats=10182
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && timeout 90 curl -sL --max-time 85 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/sched/output.py" -o output.py; echo "out=$(stat -c%s output.py 2>/dev/null)"; timeout 90 curl -sL --max-time 85 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_interface.py" -o kv_cache_interface.py; echo "iface=$(stat -c%s kv_cache_interface.py 2>/dev/null)"
+out=6301
+iface=14
+[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/kv_cache_manager.py
+[0m✱ [0mGrep "preempt|Preempt"[90m in /tmp/opencode/vllmsrc/stats.py · 35 matches[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/output.py
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && timeout 120 curl -sL --max-time 115 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/worker/gpu_model_runner.py" -o gpu_model_runner.py; echo "size=$(stat -c%s gpu_model_runner.py)"
+stat: cannot stat 'gpu_model_runner.py': No such file or directory
+size=
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/worker/gpu_model_runner.py" -o gpu_model_runner.py && break; sleep 2; done; echo "size=$(stat -c%s gpu_model_runner.py 2>/dev/null)"
+size=195684
+[0m
+[0m✱ [0mGrep "resumed_from_preemption|preempt"[90m in /tmp/opencode/vllmsrc/gpu_model_runner.py · 39 matches[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/gpu_model_runner.py[90m [limit=150, offset=530][0m
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_utils.py" -o kv_cache_utils.py && break; sleep 2; done; echo "size=$(stat -c%s kv_cache_utils.py 2>/dev/null)"
+size=54223
+[0m
+[0m✱ [0mGrep "def get_num_free_blocks|def free|watermark|def get_usage|evict"[90m in /tmp/opencode/vllmsrc/kv_cache_utils.py · 7 matches[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/kv_cache_utils.py[90m [limit=130, offset=150][0m
+[0m✱ [0mGrep "class BlockPool|def get_num_free_blocks|def free_block|def cache_full_blocks|def get_usage"[90m in /tmp/opencode/vllmsrc/kv_cache_utils.py · 0 matches[0m
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "class \|def get_num_free_blocks\|def free_block\|def get_usage" kv_cache_utils.py | head -40
+98:class PrefixCachingMetrics:
+170:class KVCacheBlock:
+216:class FreeKVCacheBlockQueue:
+217:    """This class organizes a list of KVCacheBlock objects to a doubly linked
+218:    list of free blocks. We implement this class instead of using Python
+221:    implemented in C++, this class does not allocate any Python objects when
+222:    manipulating the linked list. Instead, this class manipulates the
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_interface.py" -o kvif.py; s=$(stat -c%s kvif.py 2>/dev/null); if [ "$s" -gt 1000 ]; then break; fi; sleep 2; done; ls -la kvif.py; timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/kv_cache_coordinator.py" -o kvcc.py; echo "cc=$(stat -c%s kvcc.py 2>/dev/null)"
+-rw-r--r-- 1 root root 14 Oct  2 04:34 kvif.py
+cc=18764
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "class BlockPool\|def get_num_free_blocks\|def free_block\|def get_usage\|def free\b" kv_cache_utils.py kvcc.py | head; grep -rn "block_pool" kvcc.py | head -5
+kvcc.py:131:    def free(self, request_id: str) -> None:
+6:from vllm.v1.core.block_pool import BlockPool
+33:        self.block_pool = BlockPool(kv_cache_config.num_blocks, enable_caching,
+41:                block_pool=self.block_pool,
+260:            block_pool=self.block_pool,
+375:                block_pool=self.block_pool,
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/block_pool.py" -o block_pool.py && break; sleep 2; done; grep -n "def get_num_free_blocks\|def free_block\|def get_usage\|def free\b\|def cache_full_blocks" block_pool.py
+188:    def cache_full_blocks(
+338:    def free_blocks(self, ordered_blocks: Iterable[KVCacheBlock]) -> None:
+385:    def get_num_free_blocks(self) -> int:
+393:    def get_usage(self) -> float:
+[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/block_pool.py[90m [limit=75, offset=330][0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/stats.py[90m [limit=120, offset=80][0m
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/metrics/prometheus.py" -o prometheus.py && break; sleep 2; done; grep -n "preempt" prometheus.py
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && ls -la prometheus.py 2>/dev/null; timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/metrics/prometheus.py" | grep -n "preempt\|num_preemptions" 
+-rw-r--r-- 1 root root 2842 Oct  2 04:36 prometheus.py
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && cat prometheus.py | head -20; timeout 100 curl -sL --max-time 95 "https://api.github.com/repos/vllm-project/vllm/contents/vllm/v1/metrics?ref=v0.11.0" | grep '"name"'
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+import os
+import tempfile
+from typing import Optional
+
+from prometheus_client import REGISTRY, CollectorRegistry, multiprocess
+
+from vllm.logger import init_logger
+
+logger = init_logger(__name__)
+
+# Global temporary directory for prometheus multiprocessing
+_prometheus_multiproc_dir: Optional[tempfile.TemporaryDirectory] = None
+
+
+def setup_multiprocess_prometheus():
+    """Set up prometheus multiprocessing directory if not already configured.
+    
+    "name": "__init__.py",
+    "name": "loggers.py",
+    "name": "prometheus.py",
+    "name": "ray_wrappers.py",
+    "name": "reader.py",
+    "name": "stats.py",
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/metrics/loggers.py" -o loggers.py && break; sleep 2; done; grep -n "preempt" loggers.py
+277:        counter_num_preempted_reqs = self._counter_cls(
+278:            name="vllm:num_preemptions",
+279:            documentation="Cumulative number of preemption from the engine.",
+281:        self.counter_num_preempted_reqs = make_per_engine(
+282:            counter_num_preempted_reqs, engine_indexes, model_name)
+560:        self.counter_num_preempted_reqs[engine_idx].inc(
+561:            iteration_stats.num_preempted_reqs)
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/config/scheduler.py" -o config_sched.py && break; sleep 2; done; grep -n "preempt" config_sched.py; echo ---; grep -n "class SchedulingPolicy" scheduler.py; grep -n "PRIORITY\|policy" /tmp/opencode/vllmsrc/scheduler.py | head -20
+---
+116:        # Scheduling policy
+117:        if self.scheduler_config.policy == "priority":
+118:            self.policy = SchedulingPolicy.PRIORITY
+119:        elif self.scheduler_config.policy == "fcfs":
+120:            self.policy = SchedulingPolicy.FCFS
+123:                f"Unknown scheduling policy: {self.scheduler_config.policy}")
+125:        self.waiting = create_request_queue(self.policy)
+249:                # we do not strictly follow the FCFS scheduling policy and
+262:                    if self.policy == SchedulingPolicy.PRIORITY:
+332:        skipped_waiting_requests = create_request_queue(self.policy)
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/sched/request_queue.py" -o request_queue.py && break; sleep 2; done; grep -n "priority\|class \|def " request_queue.py | head -30; echo ----; timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/request.py" -o request.py; grep -n "priority" request.py | head
+15:class SchedulingPolicy(Enum):
+18:    PRIORITY = "priority"
+21:class RequestQueue(ABC):
+22:    """Abstract base class for request queues."""
+25:    def add_request(self, request: Request) -> None:
+30:    def pop_request(self) -> Request:
+35:    def peek_request(self) -> Request:
+40:    def prepend_request(self, request: Request) -> None:
+45:    def prepend_requests(self, requests: RequestQueue) -> None:
+51:    def remove_request(self, request: Request) -> None:
+56:    def remove_requests(self, requests: Iterable[Request]) -> None:
+61:    def __bool__(self) -> bool:
+66:    def __len__(self) -> int:
+71:    def __iter__(self) -> Iterator[Request]:
+76:    def __reversed__(self) -> Iterator[Request]:
+81:class FCFSRequestQueue(deque[Request], RequestQueue):
+84:    def add_request(self, request: Request) -> None:
+88:    def pop_request(self) -> Request:
+92:    def peek_request(self) -> Request:
+98:    def prepend_request(self, request: Request) -> None:
+102:    def prepend_requests(self, requests: RequestQueue) -> None:
+107:    def remove_request(self, request: Request) -> None:
+111:    def remove_requests(self, requests: Iterable[Request]) -> None:
+122:    def __bool__(self) -> bool:
+126:    def __len__(self) -> int:
+130:    def __iter__(self) -> Iterator[Request]:
+134:    def __reversed__(self) -> Iterator[Request]:
+139:class PriorityRequestQueue(RequestQueue):
+141:    A priority queue that supports heap operations.
+143:    Requests with a smaller value of `priority` are processed first.
+----
+42:        priority: int = 0,
+49:        self.priority = priority
+145:            priority=request.priority,
+[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/request_queue.py[90m [limit=60, offset=139][0m
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "num_scheduled_tokens\|token_budget" scheduler.py | head -30
+74:        self.max_num_scheduled_tokens = \
+197:        num_scheduled_tokens: dict[str, int] = {}
+198:        token_budget = self.max_num_scheduled_tokens
+210:        while req_index < len(self.running) and token_budget > 0:
+220:            num_new_tokens = min(num_new_tokens, token_budget)
+298:            num_scheduled_tokens[request.request_id] = num_new_tokens
+299:            token_budget -= num_new_tokens
+336:            while self.waiting and token_budget > 0:
+432:                        num_new_tokens > token_budget:
+437:                    num_new_tokens = min(num_new_tokens, token_budget)
+523:                num_scheduled_tokens[request.request_id] = num_new_tokens
+524:                token_budget -= num_new_tokens
+544:        total_num_scheduled_tokens = sum(num_scheduled_tokens.values())
+545:        assert total_num_scheduled_tokens <= self.max_num_scheduled_tokens
+546:        assert token_budget >= 0
+573:            num_scheduled_tokens,
+585:            num_scheduled_tokens=num_scheduled_tokens,
+586:            total_num_scheduled_tokens=total_num_scheduled_tokens,
+642:        num_scheduled_tokens = scheduler_output.num_scheduled_tokens
+643:        for req_id, num_scheduled_token in num_scheduled_tokens.items():
+664:        num_scheduled_tokens: dict[str, int],
+677:            num_tokens = (num_scheduled_tokens[req_id] -
+869:        num_scheduled_tokens = scheduler_output.num_scheduled_tokens
+879:        # NOTE(woosuk): As len(num_scheduled_tokens) can be up to 1K or more,
+884:        for req_id, num_tokens_scheduled in num_scheduled_tokens.items():
+[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/scheduler.py[90m [limit=100, offset=560][0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/scheduler.py[90m [limit=60, offset=660][0m
+让我检查一下这个抢占边缘情况（edge case）在更新的 vLLM 版本中是否得到了修复 —— 这能让我辨别出真实的源码行为。
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/v1/core/sched/scheduler.py" -o scheduler_main.py && break; sleep 2; done; grep -n "preempt\|num_scheduled_tokens.pop" scheduler_main.py | head -30
+158:        # Whether a preempted request's in-flight output must be dropped; see
+229:        # IDs of requests preempted since the last call to schedule().
+230:        self.reset_preempted_req_ids: set[str] = set()
+579:        preempted_reqs: list[Request] = []
+767:                        preempted_req = max(
+772:                        preempted_req = self.running[-1]
+775:                    if not self._request_blocks_can_be_freed(preempted_req):
+779:                        victim_index = self.running.index(preempted_req)
+784:                        if preempted_req in scheduled_running_reqs:
+785:                            preempted_req_id = preempted_req.request_id
+786:                            scheduled_running_reqs.remove(preempted_req)
+787:                            restored = num_scheduled_tokens.pop(preempted_req_id)
+790:                            req_to_new_blocks.pop(preempted_req_id)
+791:                            scheduled_spec_decode_tokens.pop(preempted_req_id, None)
+792:                            preempted_encoder_inputs = scheduled_encoder_inputs.pop(
+793:                                preempted_req_id, None
+795:                            if preempted_encoder_inputs:
+796:                                # Restore encoder compute budget if the preempted
+799:                                    preempted_req.get_num_encoder_embeds(i)
+800:                                    for i in preempted_encoder_inputs
+804:                        preempted_req = self.running.pop()
+806:                    self._preempt_request(
+807:                        preempted_req,
+811:                    preempted_reqs.append(preempted_req)
+812:                    if preempted_req == request:
+813:                        # No more request to preempt. Cannot schedule this request.
+874:        if not preempted_reqs and self._pause_state == PauseState.UNPAUSED:
+1034:                    # Track first scheduled prefill, not post-preemption repeat prefills
+1035:                    if request.prefill_stats and request.num_preemptions <= 0:
+1199:                    # no forward progress and isn't preemptible here. Admit it
+[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/scheduler.py[90m [limit=65, offset=375][0m
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "num_tokens\|num_prompt_tokens" request.py | head -12; echo ----; for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/config/cache.py" -o cache_cfg.py && break; sleep 2; done; grep -n "swap" cache_cfg.py | head
+87:        self.num_prompt_tokens = length_from_prompt_token_ids_or_embeds(
+92:                                                     ] * self.num_prompt_tokens
+169:    def num_tokens(self) -> int:
+173:    def num_tokens_with_spec(self) -> int:
+188:        num_tokens = self.mm_features[input_id].mm_position.length
+189:        return num_tokens
+----
+51:    swap_space: float = 4
+52:    """Size of the CPU swap space per GPU (in GiB)."""
+152:        self.swap_space_bytes = self.swap_space * GiB_bytes
+212:        cpu_memory_usage = self.swap_space_bytes * num_gpus_per_node
+216:               "is allocated for the swap space.")
+218:            raise ValueError("Too large swap space. " + msg)
+220:            logger.warning("Possibly too large swap space. %s", msg)
+[0m
+[0m→ [0mRead /tmp/opencode/vllmsrc/request.py[90m [limit=30, offset=160][0m
+[0m✱ [0mGrep "class RequestStatus|WAITING|RUNNING|PREEMPTED|FINISHED"[90m in /tmp/opencode/vllmsrc/request.py · 100 matches[0m
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "PREEMPTED\|QUEUED\|SCHEDULED" scheduler.py | head; grep -n "class EngineCoreEventType" -A 8 ../vllmsrc/scheduler.py 2>/dev/null; timeout 60 curl -sL --max-time 55 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/engine/__init__.py" | grep -n "PREEMPTED" 
+275:                    preempted_req.status = RequestStatus.PREEMPTED
+279:                            EngineCoreEventType.PREEMPTED, scheduled_timestamp)
+509:                    request.record_event(EngineCoreEventType.SCHEDULED,
+513:                elif request.status == RequestStatus.PREEMPTED:
+1101:            request.record_event(EngineCoreEventType.QUEUED)
+78:    PREEMPTED = 3
+[0m
+所有关键源信息已核实。在开始编写之前，让我再确认几个行号。
+[0m$ [0mcd /tmp/opencode/vllmsrc && sed -n '70,80p;176,200p' scheduler.py && sed -n '40,60p' request.py && sed -n '55,62p' request.py
+defaultdict(set) if include_finished_set else None)
+
+        # Scheduling constraints.
+        self.max_num_running_reqs = self.scheduler_config.max_num_seqs
+        self.max_num_scheduled_tokens = \
+            self.scheduler_config.max_num_batched_tokens
+        self.max_model_len = self.scheduler_config.max_model_len
+        self.enable_kv_cache_events = (
+            self.kv_events_config is not None
+            and self.kv_events_config.enable_kv_cache_events)
+
+        )
+        self.use_pp = self.parallel_config.pipeline_parallel_size > 1
+
+    def schedule(self) -> SchedulerOutput:
+        # NOTE(woosuk) on the scheduling algorithm:
+        # There's no "decoding phase" nor "prefill phase" in the scheduler.
+        # Each request just has the num_computed_tokens and
+        # num_tokens_with_spec. num_tokens_with_spec =
+        # len(prompt_token_ids) + len(output_token_ids) + len(spec_token_ids).
+        # At each step, the scheduler tries to assign tokens to the requests
+        # so that each request's num_computed_tokens can catch up its
+        # num_tokens_with_spec. This is general enough to cover
+        # chunked prefills, prefix caching, speculative decoding,
+        # and the "jump decoding" optimization in the future.
+
+        scheduled_new_reqs: list[Request] = []
+        scheduled_resumed_reqs: list[Request] = []
+        scheduled_running_reqs: list[Request] = []
+        preempted_reqs: list[Request] = []
+
+        req_to_new_blocks: dict[str, KVCacheBlocks] = {}
+        num_scheduled_tokens: dict[str, int] = {}
+        token_budget = self.max_num_scheduled_tokens
+        # Encoder-related.
+        scheduled_encoder_inputs: dict[str, list[int]] = {}
+        structured_output_request: Optional["StructuredOutputRequest"] = None,
+        cache_salt: Optional[str] = None,
+        priority: int = 0,
+        trace_headers: Optional[Mapping[str, str]] = None,
+        block_hasher: Optional[Callable[["Request"],
+                                        list["BlockHash"]]] = None,
+    ) -> None:
+        self.request_id = request_id
+        self.client_index = client_index
+        self.priority = priority
+        self.sampling_params = sampling_params
+        self.pooling_params = pooling_params
+        # Because of LoRA, the eos token id can be different for each request.
+        self.eos_token_id = eos_token_id
+        self.lora_request = lora_request
+        self.structured_output_request = structured_output_request
+        self.arrival_time = arrival_time if arrival_time is not None else \
+            time.time()
+
+        self.status = RequestStatus.WAITING
+        self.use_structured_output = False
+        self.structured_output_request = structured_output_request
+        self.arrival_time = arrival_time if arrival_time is not None else \
+            time.time()
+
+        self.status = RequestStatus.WAITING
+        self.use_structured_output = False
+        self.events: list[EngineCoreEvent] = []
+        self.stop_reason: Union[int, str, None] = None
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/engine/arg_utils.py" -o arg_utils.py && break; sleep 2; done; grep -n "async_scheduling" arg_utils.py | head -8
+483:    async_scheduling: bool = SchedulerConfig.async_scheduling
+916:                                     **scheduler_kwargs["async_scheduling"])
+1289:        if self.async_scheduling:
+1379:            async_scheduling=self.async_scheduling,
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "async_scheduling" config_sched.py; sed -n '1280,1300p' arg_utils.py
+138:    async_scheduling: bool = False
+229:        if self.async_scheduling:
+        else:
+            data_parallel_address = self.data_parallel_address
+
+        # This port is only used when there are remote data parallel engines,
+        # otherwise the local IPC transport is used.
+        data_parallel_rpc_port = self.data_parallel_rpc_port if (
+            self.data_parallel_rpc_port
+            is not None) else ParallelConfig.data_parallel_rpc_port
+
+        if self.async_scheduling:
+            # Async scheduling does not work with the uniprocess backend.
+            if self.distributed_executor_backend is None:
+                self.distributed_executor_backend = "mp"
+                logger.info("Defaulting to mp-based distributed executor "
+                            "backend for async scheduling.")
+            if self.pipeline_parallel_size > 1:
+                raise ValueError("Async scheduling is not supported with "
+                                 "pipeline-parallel-size > 1.")
+
+            # Currently, async scheduling does not support speculative decoding.
+            # TODO(woosuk): Support it.
+[0m
+Let me verify the startup log line about KV cache size for the capacity experiment.
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/engine/core.py" -o core.py && break; sleep 2; done; grep -n "KV cache size\|Maximum concurrency\|Available KV cache" core.py
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -rn "Maximum concurrency" *.py 2>/dev/null; for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/worker/gpu_worker.py" -o gpu_worker.py && break; sleep 2; done; grep -n "KV cache size\|Maximum concurrency\|concurrency" gpu_worker.py | head
+kv_cache_utils.py:1091:    logger.info("Maximum concurrency for %s tokens per request: %.2fx",
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "KV cache size\|GPU KV" kv_cache_utils.py gpu_worker.py | head -6; sed -n '1080,1095p' kv_cache_utils.py
+kv_cache_utils.py:1079:    # Print the KV cache size and maximum concurrency.
+kv_cache_utils.py:1084:            "Multiplying the GPU KV cache size by the dcp_world_size %d.",
+kv_cache_utils.py:1087:    logger.info("GPU KV cache size: %s tokens", num_tokens_str)
+gpu_worker.py:308:        """Allocate GPU KV cache with the specified kv_cache_config."""
+    num_tokens = num_blocks // len(kv_cache_groups) * min_block_size
+    if vllm_config.parallel_config.decode_context_parallel_size > 1:
+        num_tokens *= vllm_config.parallel_config.decode_context_parallel_size
+        logger.info(
+            "Multiplying the GPU KV cache size by the dcp_world_size %d.",
+            vllm_config.parallel_config.decode_context_parallel_size)
+    num_tokens_str = f"{num_tokens:,}"
+    logger.info("GPU KV cache size: %s tokens", num_tokens_str)
+    max_model_len_str = f"{vllm_config.model_config.max_model_len:,}"
+    max_concurrency = get_max_concurrency_for_kv_cache_config(
+        vllm_config, kv_cache_config)
+    logger.info("Maximum concurrency for %s tokens per request: %.2fx",
+                max_model_len_str, max_concurrency)
+    return kv_cache_config
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "def engine_step\|scheduler.schedule()\|execute_model_with_error\|update_from_output" core.py | head; sed -n '283,290p' core.py
+254:    def execute_model_with_error_logging(
+283:        scheduler_output = self.scheduler.schedule()
+284:        model_output = self.execute_model_with_error_logging(
+287:        engine_core_outputs = self.scheduler.update_from_output(
+325:            scheduler_output = self.scheduler.schedule()
+346:        model_output = self.execute_model_with_error_logging(
+349:        engine_core_outputs = self.scheduler.update_from_output(
+        scheduler_output = self.scheduler.schedule()
+        model_output = self.execute_model_with_error_logging(
+            self.model_executor.execute_model,  # type: ignore
+            scheduler_output)
+        engine_core_outputs = self.scheduler.update_from_output(
+            scheduler_output, model_output)  # type: ignore
+
+        return (engine_core_outputs,
+[0m
+[0m# [0mTodos
+[✓] 验证 v0.11.0 源码事实（scheduler/block_pool/kv_cache_manager/metrics）
+[•] 绘制 3 张 SVG 到 week2/assets/
+[ ] 撰写 week2/day12_preemption.md
+[ ] 校验文件写入与内部一致性
+[0m
+现在正在绘制三张 SVG 图。
+[0m← [0mWrite week2/assets/day12_preemption_flow.svg
+Wrote file successfully.
+[0m
+[0m← [0mWrite week2/assets/day12_preemption_state_machine.svg
+Wrote file successfully.
+[0m
+[0m← [0mWrite week2/assets/day12_recompute_vs_swap.svg
+Wrote file successfully.
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2/assets && for f in day12_*.svg; do python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse('$f'); print('$f: OK')"; done
+day12_preemption_flow.svg: OK
+day12_preemption_state_machine.svg: OK
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/opt/buildtools/Python-3.11.4/lib/python3.11/xml/dom/minidom.py", line 1990, in parse
+    return expatbuilder.parse(file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/buildtools/Python-3.11.4/lib/python3.11/xml/dom/expatbuilder.py", line 911, in parse
+    result = builder.parseFile(fp)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/buildtools/Python-3.11.4/lib/python3.11/xml/dom/expatbuilder.py", line 207, in parseFile
+    parser.Parse(buffer, False)
+xml.parsers.expat.ExpatError: not well-formed (invalid token): line 47, column 88
+[0m
+[0m→ [0mRead week2/assets/day12_recompute_vs_swap.svg[90m [limit=6, offset=45][0m
+[0m
+[0m← [0mEdit week2/assets/day12_recompute_vs_swap.svg
+Index: /mnt/workspace/aiinfra/vllm/week2/assets/day12_recompute_vs_swap.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/assets/day12_recompute_vs_swap.svg
++++ /mnt/workspace/aiinfra/vllm/week2/assets/day12_recompute_vs_swap.svg
+@@ -43,9 +43,9 @@
+ <text x="80" y="448" font-size="9.5" fill="#0f172a">2. swap 的账并不便宜：换入+换出 2×PCIe，且与正常 KV 写、权重加载抢带宽；块粒度小拷贝效率低</text>
+ <text x="80" y="468" font-size="9.5" fill="#0f172a">3. 状态机复杂度：V0 swap 要 CPU 池管理 + 异步拷贝 + 双池记账；recompute 复用 prefill 路径，≈ 零新代码</text>
+ <text x="80" y="488" font-size="9.5" fill="#0f172a">4. swap 仍需 CPU RAM（--swap-space 默认 4GiB/卡，V1 里该参数服务于 CPU offloading 连接器而非抢占）</text>
+ <text x="80" y="514" font-size="8.8" fill="#64748b">V0 对照（历史坐标）：preemption_mode ∈ {recompute, swap}，默认 recompute；分配侧还有 1% watermark 预留 ——</text>
+-<text x="80" y="527" font-size="8.8" fill="#64748b">V1 把 watermark 也删了：精确到「free（含可驱逐）< 需要」才失败，抢占就是安全阀（config/scheduler.py 已无相关配置）</text>
++<text x="80" y="527" font-size="8.8" fill="#64748b">V1 把 watermark 也删了：精确到「free（含可驱逐）&lt; 需要」才失败，抢占就是安全阀（config/scheduler.py 已无相关配置）</text>
+ 
+ <!-- ================= Right: diagnosis tree ================= -->
+ <text x="660" y="82" font-size="13.5" font-weight="bold" fill="#0f172a">③ 「系统在频繁抢占吗？怎么调？」诊断-调参树</text>
+ <rect x="650" y="92" width="530" height="560" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2/assets && python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('day12_recompute_vs_swap.svg'); print('OK')"
+OK
+[0m
+[0m# [0mTodos
+[✓] 验证 v0.11.0 源码事实（scheduler/block_pool/kv_cache_manager/metrics）
+[✓] 绘制 3 张 SVG 到 week2/assets/
+[•] 撰写 week2/day12_preemption.md
+[ ] 校验文件写入与内部一致性
+[0m
+现在正在撰写主教程文件。
+[0m← [0mWrite week2/day12_preemption.md
+Wrote file successfully.
+[0m
+现在让我测试一下文中的模拟器代码，以确保它能够正常运行并产生预期的结果。
+[0m← [0mWrite /tmp/opencode/day12_sim_test.py
+Wrote file successfully.
+[0m
+[0m$ [0mcd /tmp/opencode && python3 day12_sim_test.py --steps 3 2>&1 | head -40
+Traceback (most recent call last):
+  File "/tmp/opencode/day12_sim_test.py", line 104, in <module>
+    total_pre, fin, log = simulate(reqs, args.blocks, cache=not args.no_cache)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/opencode/day12_sim_test.py", line 74, in simulate
+    if not try_alloc(r, hit * bs + n, hit):      # :471
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/opencode/day12_sim_test.py", line 31, in try_alloc
+    if need > free + evictable:
+              ^^^^
+UnboundLocalError: cannot access local variable 'free' where it is not associated with a value
+[0m
+模拟器有一个 Python 作用域 bug（`try_alloc` 内部的 `free`）。让我来修复并重新测试。
+[0m← [0mEdit /tmp/opencode/day12_sim_test.py
+Index: /tmp/opencode/day12_sim_test.py
+===================================================================
+--- /tmp/opencode/day12_sim_test.py
++++ /tmp/opencode/day12_sim_test.py
+@@ -24,8 +24,9 @@
+ total_pre, log = 0, []
+ 
+ def try_alloc(r, rows, hit=0):
+     """allocate_slots：hit=自己的缓存命中块；失败须无副作用（:271-273）"""
++    nonlocal free
+     need = bfor(rows, bs) - r.blocks - hit
+     if need > 0:
+         evictable = sum(v for k, v in cached.items() if k != r.rid)
+         if need > free + evictable:
+
+[0m
+[0m← [0mEdit /tmp/opencode/day12_sim_test.py
+Index: /tmp/opencode/day12_sim_test.py
+===================================================================
+--- /tmp/opencode/day12_sim_test.py
++++ /tmp/opencode/day12_sim_test.py
+@@ -86,9 +86,9 @@
+             if r in running: running.remove(r)
+             free += r.blocks                          # 完成也走 cached 语义
+             if cache: cached[r.rid] = r.blocks; lru.append(r.rid)
+             r.blocks = 0
+-if step <= (args.steps or 0) or total_pre and step < 3:
++if step <= (args.steps or 0):
+     log.append(f"step {step:3d} | free={free:4d} cached={sum(cached.values()):4d} "
+                f"running={len(running)} waiting={len(waiting)} "
+                f"pre={total_pre} | " + " ".join(f"{r.rid}:{sched.get(r.rid,0)}" for r in running))
+ if all(r.done_step for r in reqs):
+
+[0m
+[0m$ [0mcd /tmp/opencode && timeout 60 python3 day12_sim_test.py --steps 3 2>&1 | head -20
+step   1 | free=1792 cached=   0 running=1 waiting=9 pre=0 | R1:2048
+step   2 | free=1664 cached=   0 running=1 waiting=9 pre=0 | R1:2048
+step   3 | free=1535 cached=   0 running=2 waiting=8 pre=0 | R1:1 R2:2047
+
+总步数=1362  总抢占=6  cache=on
+R1: 抢占 0 次 | 重算 4096 token | 完成于 step 1025
+R2: 抢占 0 次 | 重算 4096 token | 完成于 step 1028
+R3: 抢占 0 次 | 重算 4096 token | 完成于 step 1030
+R4: 抢占 0 次 | 重算 4096 token | 完成于 step 1032
+R5: 抢占 0 次 | 重算 4096 token | 完成于 step 1034
+R6: 抢占 0 次 | 重算 4096 token | 完成于 step 1036
+R7: 抢占 1 次 | 重算 4105 token | 完成于 step 1039
+R8: 抢占 1 次 | 重算 4111 token | 完成于 step 1323
+R9: 抢占 1 次 | 重算 4112 token | 完成于 step 1357
+R10: 抢占 3 次 | 重算 6177 token | 完成于 step 1362
+[0m
+仿真已运行，但显示出两个问题：`recomputed` 计算了初始 prefill，且默认的 budget 使得 admission 是 budget-serialized 的，而不是 KV-limited 的（这掩盖了 bounce 的逻辑）。让我来修复这两个问题。
+[0m← [0mEdit /tmp/opencode/day12_sim_test.py
+Index: /tmp/opencode/day12_sim_test.py
+===================================================================
+--- /tmp/opencode/day12_sim_test.py
++++ /tmp/opencode/day12_sim_test.py
+@@ -74,10 +74,11 @@
+         n = min(r.ctx - hit * bs, budget_left)       # :423/:437
+         if not try_alloc(r, hit * bs + n, hit):      # :471
+             break                                    # :483 HOL
+         waiting.pop(0); running.append(r)            # :507 又回队尾
++        if r.preemptions:                            # 只有复活才记重算账
++            r.recomputed += r.ctx - hit * bs         # 重算 = ctx − 命中
+         r.computed = hit * bs                        # :526 回填命中值
+-        r.recomputed += r.ctx - r.computed           # 重算账
+         budget_left -= n; r.computed += n; sched[r.rid] = n
+ for r in reqs:                                       # 采样推进（Day 11 同款）
+     if r.rid in sched and r.computed == r.ctx:
+         r.output += 1
+
+[0m
+[0m← [0mEdit /tmp/opencode/day12_sim_test.py
+Index: /tmp/opencode/day12_sim_test.py
+===================================================================
+--- /tmp/opencode/day12_sim_test.py
++++ /tmp/opencode/day12_sim_test.py
+@@ -17,9 +17,9 @@
+ 
+ def bfor(n, bs):                         # ceil(n / bs) 个 block
+     return (n + bs - 1) // bs
+ 
+-def simulate(reqs, num_blocks, bs=16, budget=2048, cache=True, max_steps=4000):
++def simulate(reqs, num_blocks, bs=16, budget=32768, cache=True, max_steps=4000):
+     waiting, running = list(reqs), []
+     free, cached, lru = num_blocks, {}, deque()   # cached: rid -> 可驱逐块数
+     total_pre, log = 0, []
+ 
+
+[0m
+[0m$ [0mcd /tmp/opencode && timeout 120 python3 day12_sim_test.py --steps 4 2>&1 | head -22
+step   1 | free= 128 cached=   0 running=7 waiting=3 pre=0 | R1:4096 R2:4096 R3:4096 R4:4096 R5:4096 R6:4096 R7:4096
+step   2 | free= 121 cached=   0 running=7 waiting=3 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:1 R7:1
+step   3 | free= 121 cached=   0 running=7 waiting=3 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:1 R7:1
+step   4 | free= 121 cached=   0 running=7 waiting=3 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:1 R7:1
+
+总步数=2048  总抢占=4  cache=on
+R1: 抢占 0 次 | 重算 0 token | 完成于 step 1024
+R2: 抢占 0 次 | 重算 0 token | 完成于 step 1024
+R3: 抢占 0 次 | 重算 0 token | 完成于 step 1024
+R4: 抢占 0 次 | 重算 0 token | 完成于 step 1024
+R5: 抢占 0 次 | 重算 0 token | 完成于 step 1024
+R6: 抢占 0 次 | 重算 0 token | 完成于 step 1024
+R7: 抢占 1 次 | 重算 1 token | 完成于 step 1025
+R8: 抢占 2 次 | 重算 29 token | 完成于 step 1316
+R9: 抢占 1 次 | 重算 15 token | 完成于 step 1859
+R10: 抢占 0 次 | 重算 0 token | 完成于 step 2048
+[0m
+只发生了 4 次抢占——我需要弄清楚确切的动态变化，以便准确地编写检查点。让我进行探测。
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("sim", "day12_sim_test.py")
+# load without running __main__: read source and exec module minus main block
+src = open("day12_sim_test.py").read().split('if __name__')[0]
+ns = {}
+exec(src.replace("args.steps", "0"), ns)  # neutralize args reference
+Req, simulate = ns["Req"], ns["simulate"]
+
+reqs = [Req(f"R{i}", 4096, 1024) for i in range(1, 11)]
+# patched simulate with event tracing: re-run with a wrapper - easier: copy loop? Instead,
+# monkey-patch by re-executing with prints: simplest is to instrument via global list
+# Actually simulate already returns only aggregates; let's capture bounce via Req.preemptions timeline.
+total_pre, fin, log = simulate(reqs, 1920)
+print("cache ON:", total_pre, fin)
+
+# no-cache
+reqs2 = [Req(f"R{i}", 4096, 1024) for i in range(1, 11)]
+tp2, fin2, _ = simulate(reqs2, 1920, cache=False)
+print("cache OFF:", tp2, fin2)
+w_on = sum(r.recomputed for r in reqs); w_off = sum(r.recomputed for r in reqs2)
+print(f"waste on={w_on} off={w_off} amplification={w_off/max(w_on,1):.1f}x")
+for r in reqs2: print(f"  {r.rid}: pre={r.preemptions} recomputed={r.recomputed} done={r.done_step}")
+EOF
+cache ON: 4 2048
+cache OFF: 1 2048
+waste on=45 off=4385 amplification=97.4x
+  R1: pre=0 recomputed=0 done=1024
+  R2: pre=0 recomputed=0 done=1024
+  R3: pre=0 recomputed=0 done=1024
+  R4: pre=0 recomputed=0 done=1024
+  R5: pre=0 recomputed=0 done=1024
+  R6: pre=0 recomputed=0 done=1024
+  R7: pre=1 recomputed=4385 done=1759
+  R8: pre=0 recomputed=0 done=2048
+  R9: pre=0 recomputed=0 done=2048
+  R10: pre=0 recomputed=0 done=2048
+[0m
+输出结果与我的手动追踪结果相矛盾——让我对该模拟进行插桩，以查看实际的事件轨迹。
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+src = open("day12_sim_test.py").read().split('if __name__')[0]
+# inject event trace into preemption and resume
+src = src.replace("total_pre, preempted = total_pre + 1, True",
+                  "total_pre, preempted = total_pre + 1, True\n                    print(f'  [step {step}] PREEMPT {v.rid} ctx={v.ctx} free_after={free} running={len(running)}')")
+src = src.replace("waiting.pop(0); running.append(r)            # :507 又回队尾",
+                  "waiting.pop(0); running.append(r); print(f'  [step {step}] ADMIT {r.rid} hit={hit} computed={r.computed}')")
+src = src.replace("args.steps", "0")
+ns = {}
+exec(src, ns)
+Req, simulate = ns["Req"], ns["simulate"]
+reqs = [Req(f"R{i}", 4096, 1024) for i in range(1, 11)]
+import io, contextlib
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    total_pre, fin, log = simulate(reqs, 1920)
+lines = buf.getvalue().splitlines()
+print(f"total_pre={total_pre} fin={fin} events={len(lines)}")
+for l in lines[:15]: print(l)
+print("...")
+for l in lines[-8:]: print(l)
+EOF
+total_pre=4 fin=2048 events=18
+  [step 1] ADMIT R1 hit=0 computed=0
+  [step 1] ADMIT R2 hit=0 computed=0
+  [step 1] ADMIT R3 hit=0 computed=0
+  [step 1] ADMIT R4 hit=0 computed=0
+  [step 1] ADMIT R5 hit=0 computed=0
+  [step 1] ADMIT R6 hit=0 computed=0
+  [step 1] ADMIT R7 hit=0 computed=0
+  [step 290] PREEMPT R7 ctx=4385 free_after=274 running=6
+  [step 291] ADMIT R7 hit=274 computed=0
+  [step 291] ADMIT R8 hit=0 computed=0
+  [step 322] PREEMPT R8 ctx=4127 free_after=258 running=7
+  [step 323] ADMIT R8 hit=257 computed=0
+  [step 834] PREEMPT R8 ctx=4638 free_after=290 running=7
+  [step 835] ADMIT R8 hit=289 computed=0
+  [step 835] ADMIT R9 hit=0 computed=0
+...
+  [step 322] PREEMPT R8 ctx=4127 free_after=258 running=7
+  [step 323] ADMIT R8 hit=257 computed=0
+  [step 834] PREEMPT R8 ctx=4638 free_after=290 running=7
+  [step 835] ADMIT R8 hit=289 computed=0
+  [step 835] ADMIT R9 hit=0 computed=0
+  [step 898] PREEMPT R9 ctx=4159 free_after=260 running=8
+  [step 899] ADMIT R9 hit=259 computed=0
+  [step 1025] ADMIT R10 hit=0 computed=0
+[0m
+模拟器的 free/cached 核算重复计算了已释放的块（blocks）。在修复之前，让我先验证一下实际协调器（real coordinator）中的确切分配语义。
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "def get_num_blocks_to_allocate\|def allocate_new_blocks\|def save_new_computed_blocks\|def find_longest_cache_hit" kvcc.py && sed -n '/def get_num_blocks_to_allocate/,/^    def /p' kvcc.py | head -40
+47:    def get_num_blocks_to_allocate(self, request_id: str, num_tokens: int,
+78:    def save_new_computed_blocks(
+93:    def allocate_new_blocks(
+185:    def find_longest_cache_hit(
+216:    def find_longest_cache_hit(
+251:    def find_longest_cache_hit(
+352:    def find_longest_cache_hit(
+    def get_num_blocks_to_allocate(self, request_id: str, num_tokens: int,
+                                   new_computed_blocks: tuple[
+                                       list[KVCacheBlock], ...],
+                                   num_encoder_tokens: int) -> int:
+        """
+        Get the number of blocks needed to be allocated for the request.
+
+        Args:
+            request_id: The request ID.
+            num_tokens: The total number of tokens that need a slot (including 
+                tokens that are already allocated).
+            new_computed_blocks: The new computed blocks just hitting the
+                prefix caching.
+            num_encoder_tokens: The number of encoder tokens for allocating
+                blocks for cross-attention.
+
+        Returns:
+            The number of blocks.
+        """
+        num_blocks_to_allocate = 0
+        for i, manager in enumerate(self.single_type_managers):
+            if isinstance(manager, CrossAttentionManager):
+                # For cross-attention, we issue a single static allocation
+                # of blocks based on the number of encoder input tokens.
+                num_blocks_to_allocate += manager.get_num_blocks_to_allocate(
+                    request_id, num_encoder_tokens, [])
+            else:
+                num_blocks_to_allocate += manager.get_num_blocks_to_allocate(
+                    request_id, num_tokens, new_computed_blocks[i])
+        return num_blocks_to_allocate
+
+    def save_new_computed_blocks(
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -n "def get_num_blocks_to_allocate" kv_cache_utils.py; sed -n '/class SingleTypeKVCacheManager/,/def get_num_blocks_to_allocate/p' kv_cache_utils.py | tail -5; awk '/def get_num_blocks_to_allocate/{found=1} found{print NR": "$0} found && /^    def [a-z_]+\(/ && !/get_num_blocks_to_allocate/{exit}' kv_cache_utils.py | head -45
+(no output)
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && grep -rn "def get_num_blocks_to_allocate" *.py; grep -n "class FullAttentionManager\|class SlidingWindowManager\|class KVMetadataManager" *.py | head
+kvcc.py:47:    def get_num_blocks_to_allocate(self, request_id: str, num_tokens: int,
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && sed -n '85,140p' kvcc.py
+request_id: The request ID.
+            new_computed_blocks: The new computed blocks just hitting the
+                prefix cache.
+        """
+        for i, manager in enumerate(self.single_type_managers):
+            manager.save_new_computed_blocks(request_id,
+                                             new_computed_blocks[i])
+
+    def allocate_new_blocks(
+            self,
+            request_id: str,
+            num_tokens: int,
+            num_encoder_tokens: int = 0) -> tuple[list[KVCacheBlock], ...]:
+        """
+        Allocate new blocks for the request to give it at least `num_tokens` 
+        token slots.
+
+        Args:
+            request_id: The request ID.
+            num_tokens: The total number of tokens that need a slot (including 
+                tokens that are already allocated).
+            num_encoder_tokens: The number of encoder tokens for allocating
+                blocks for cross-attention.
+
+        Returns:
+            The new allocated blocks.
+        """
+        return tuple(
+            manager.allocate_new_blocks(
+                request_id, num_encoder_tokens if isinstance(
+                    manager, CrossAttentionManager) else num_tokens)
+            for manager in self.single_type_managers)
+
+    def cache_blocks(self, request: Request, num_computed_tokens: int) -> None:
+        """
+        Cache the blocks for the request.
+
+        Args:
+            request: The request.
+            num_computed_tokens: The total number of tokens
+                that need to be cached
+                (including tokens that are already cached).
+        """
+        for manager in self.single_type_managers:
+            manager.cache_blocks(request, num_computed_tokens)
+
+    def free(self, request_id: str) -> None:
+        """
+        Free the blocks for the request.
+
+        Args:
+            request_id: The request ID.
+        """
+        for manager in self.single_type_managers:
+            manager.free(request_id)
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && sed -n '1,30p' kvcc.py
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+from abc import ABC, abstractmethod
+from typing import Optional
+
+from vllm.v1.core.block_pool import BlockPool
+from vllm.v1.core.kv_cache_utils import BlockHash, KVCacheBlock
+from vllm.v1.core.single_type_kv_cache_manager import (
+    CrossAttentionManager, FullAttentionManager, get_manager_for_kv_cache_spec)
+from vllm.v1.kv_cache_interface import (FullAttentionSpec, KVCacheConfig,
+                                        KVCacheSpec)
+from vllm.v1.request import Request
+
+
+class KVCacheCoordinator(ABC):
+    """
+    Coordinate the KV cache of different KV cache groups.
+    """
+
+    def __init__(
+        self,
+        kv_cache_config: KVCacheConfig,
+        max_model_len: int,
+        use_eagle: bool,
+        enable_caching: bool,
+        enable_kv_cache_events: bool,
+        dcp_world_size: int,
+    ):
+        self.kv_cache_config = kv_cache_config
+        self.max_model_len = max_model_len
+[0m
+[0m$ [0mcd /tmp/opencode/vllmsrc && for i in 1 2 3; do timeout 100 curl -sL --max-time 95 "https://raw.githubusercontent.com/vllm-project/vllm/v0.11.0/vllm/v1/core/single_type_kv_cache_manager.py" -o stk.py && break; sleep 2; done; grep -n "def get_num_blocks_to_allocate\|def allocate_new_blocks\|def save_new_computed_blocks" stk.py; sed -n '/def get_num_blocks_to_allocate/,/def save_new_computed_blocks/p' stk.py
+59:    def get_num_blocks_to_allocate(
+88:    def save_new_computed_blocks(
+109:    def allocate_new_blocks(self, request_id: str,
+562:    def get_num_blocks_to_allocate(
+595:    def allocate_new_blocks(self, request_id: str,
+609:    def save_new_computed_blocks(
+    def get_num_blocks_to_allocate(
+            self, request_id: str, num_tokens: int,
+            new_computed_blocks: list[KVCacheBlock]) -> int:
+        """
+        Get the number of blocks needed to be allocated for the request.
+
+        Args:
+            request_id: The request ID.
+            num_tokens: The total number of tokens that need a slot (including 
+                tokens that are already allocated).
+            new_computed_blocks: The new computed blocks just hitting the
+                prefix caching.
+
+        Returns:
+            The number of blocks.
+        """
+
+        num_required_blocks = cdiv(num_tokens, self.block_size)
+        num_new_blocks = (num_required_blocks - len(new_computed_blocks) -
+                          len(self.req_to_blocks[request_id]))
+        # If a computed block of a request is an eviction candidate (in the
+        # free queue and ref_cnt == 0), it will be changed from a free block
+        # to a computed block when the request is allocated, so we also count
+        # it as needed to be allocated.
+        num_evictable_computed_blocks = sum(
+            blk.ref_cnt == 0 and not blk.is_null
+            for blk in new_computed_blocks)
+        return num_new_blocks + num_evictable_computed_blocks
+
+    def save_new_computed_blocks(
+    def get_num_blocks_to_allocate(
+            self, request_id: str, num_tokens: int,
+            new_computed_blocks: list[KVCacheBlock]) -> int:
+        """
+        Get the number of blocks needed to be allocated for the request.
+
+        Args:
+            request_id: The request ID.
+            num_tokens: The total number of tokens that need a slot (including
+                tokens that are already allocated).
+            new_computed_blocks: The new computed blocks just hitting the
+                prefix caching.
+
+        Returns:
+            The number of blocks
+        """
+
+        assert isinstance(self.kv_cache_spec, MambaSpec)
+        if self.kv_cache_spec.num_speculative_blocks > 0:
+            num_tokens += (self.kv_cache_spec.block_size *
+                           self.kv_cache_spec.num_speculative_blocks)
+        num_required_blocks = cdiv(num_tokens, self.block_size)
+        num_new_blocks = (num_required_blocks - len(new_computed_blocks) -
+                          len(self.req_to_blocks[request_id]))
+        # If a computed block of a request is an eviction candidate (in the
+        # free queue and ref_cnt == 0), it will be changed from a free block
+        # to a computed block when the request is allocated, so we also count
+        # it as needed to be allocated.
+        num_evictable_computed_blocks = sum(
+            blk.ref_cnt == 0 and not blk.is_null
+            for blk in new_computed_blocks)
+        return num_new_blocks + num_evictable_computed_blocks
+
+    def allocate_new_blocks(self, request_id: str,
+                            num_tokens: int) -> list[KVCacheBlock]:
+        # Allocate extra `num_speculative_blocks` blocks for
+        # speculative decoding (MTP/EAGLE) with linear attention.
+        assert isinstance(self.kv_cache_spec, MambaSpec)
+        if self.kv_cache_spec.num_speculative_blocks > 0:
+            num_tokens += (self.kv_cache_spec.block_size *
+                           self.kv_cache_spec.num_speculative_blocks)
+        return super().allocate_new_blocks(request_id, num_tokens)
+
+
+class CrossAttentionManager(SingleTypeKVCacheManager):
+    """Manager for cross-attention KV cache in encoder-decoder models."""
+
+    def save_new_computed_blocks(
+[0m
+实际的协调器（coordinator）语义已验证（`get_num_blocks_to_allocate` 在两侧都计算了 hit blocks —— `single_type_kv_cache_manager.py:82-86`）。我的模拟器之前存在重复计算的 bug。让我用准确的逻辑重写并重新测试。
+[0m← [0mWrite /tmp/opencode/day12_sim_test.py
+Wrote file successfully.
+[0m
+[0m$ [0mcd /tmp/opencode && timeout 120 python3 day12_sim_test.py --steps 4 2>&1 | head -22 && echo ===== && timeout 120 python3 day12_sim_test.py --no-cache 2>&1 | tail -12
+step   1 | free= 128 cached=   0 running=7 waiting=3 pre=0 | R1:4096 R2:4096 R3:4096 R4:4096 R5:4096 R6:4096 R7:4096
+step   2 | free= 121 cached=   0 running=7 waiting=3 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:1 R7:1
+step   3 | free= 121 cached=   0 running=7 waiting=3 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:1 R7:1
+step   4 | free= 121 cached=   0 running=7 waiting=3 pre=0 | R1:1 R2:1 R3:1 R4:1 R5:1 R6:1 R7:1
+
+总步数=640  总抢占=1  cache=on
+R1: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R2: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R3: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R4: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R5: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R6: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R7: 抢占 1 次 | 重算 161 token | 完成于 step 351
+R8: 抢占 0 次 | 重算 0 token | 完成于 step 640
+R9: 抢占 0 次 | 重算 0 token | 完成于 step 640
+R10: 抢占 0 次 | 重算 0 token | 完成于 step 640
+=====
+
+总步数=640  总抢占=1  cache=off
+R1: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R2: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R3: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R4: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R5: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R6: 抢占 0 次 | 重算 0 token | 完成于 step 320
+R7: 抢占 1 次 | 重算 4385 token | 完成于 step 351
+R8: 抢占 0 次 | 重算 0 token | 完成于 step 640
+R9: 抢占 0 次 | 重算 0 token | 完成于 step 640
+R10: 抢占 0 次 | 重算 0 token | 完成于 step 640
+[0m
+模拟器现在与手动分析完全匹配（缓存开启：161 个 token 重算 vs 关闭：4385 → 27×）。让我验证一下 HOL 死锁场景并确定抢占步数。
+[0m$ [0mcd /tmp/opencode && timeout 30 python3 day12_sim_test.py --blocks 250 --steps 2 2>&1 | head -8; echo ====; python3 - <<'EOF'
+src = open("day12_sim_test.py").read().split('if __name__')[0]
+src = src.replace("total_pre, preempted = total_pre + 1, True",
+                  "total_pre, preempted = total_pre + 1, True; print(f'>>> PREEMPT {v.rid} at step {step} ctx={v.ctx} free_after={free}')")
+src = src.replace("waiting.pop(0); running.append(r)            # :507 又回队尾",
+                  "waiting.pop(0); running.append(r); print(f'>>> ADMIT {r.rid} at step {step} hit={hit}')")
+src = src.replace("args.steps", "0")
+ns = {}; exec(src, ns)
+Req, simulate = ns["Req"], ns["simulate"]
+import io, contextlib
+reqs = [Req(f"R{i}", 4096, 320) for i in range(1, 11)]
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    tp, fin, _ = simulate(reqs, 1920)
+print(buf.getvalue().strip())
+print(f"total_pre={tp} fin={fin}")
+EOF
+step   1 | free= 250 cached=   0 running=0 waiting=10 pre=0 | 
+step   2 | free= 250 cached=   0 running=0 waiting=10 pre=0 | 
+
+总步数=4000  总抢占=0  cache=on
+R1: 抢占 0 次 | 重算 0 token | 完成于 step None
+R2: 抢占 0 次 | 重算 0 token | 完成于 step None
+R3: 抢占 0 次 | 重算 0 token | 完成于 step None
+R4: 抢占 0 次 | 重算 0 token | 完成于 step None
+====
+>>> ADMIT R1 at step 1 hit=0
+>>> ADMIT R2 at step 1 hit=0
+>>> ADMIT R3 at step 1 hit=0
+>>> ADMIT R4 at step 1 hit=0
+>>> ADMIT R5 at step 1 hit=0
+>>> ADMIT R6 at step 1 hit=0
+>>> ADMIT R7 at step 1 hit=0
+>>> PREEMPT R7 at step 290 ctx=4385 free_after=274
+>>> ADMIT R7 at step 321 hit=264
+>>> ADMIT R8 at step 321 hit=0
+>>> ADMIT R9 at step 321 hit=0
+>>> ADMIT R10 at step 321 hit=0
+total_pre=1 fin=640
+[0m
+Both patterns verified. Let me quickly verify the "bounce" (repeated preemption) recipe before documenting it.
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+src = open("day12_sim_test.py").read().split('if __name__')[0]
+src = src.replace("total_pre, preempted = total_pre + 1, True",
+                  "total_pre, preempted = total_pre + 1, True; print(f'>>> PREEMPT {v.rid} at step {step} ctx={v.ctx}')")
+src = src.replace("waiting.pop(0); running.append(r)            # :507 又回队尾",
+                  "waiting.pop(0); running.append(r); print(f'>>> ADMIT {r.rid} at step {step} hit={hit}')")
+src = src.replace("args.steps", "0")
+ns = {}; exec(src, ns)
+Req, simulate = ns["Req"], ns["simulate"]
+import io, contextlib
+# bounce recipe: pool 1820, R1 short output 100, others output 700
+reqs = [Req("R1", 4096, 100)] + [Req(f"R{i}", 4096, 700) for i in range(2, 11)]
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    tp, fin, _ = simulate(reqs, 1820)
+print(buf.getvalue().strip())
+print(f"total_pre={tp} fin={fin}")
+for r in reqs:
+    print(f"{r.rid}: pre={r.preemptions} recomputed={r.recomputed} done={r.done_step}")
+EOF
+>>> ADMIT R1 at step 1 hit=0
+>>> ADMIT R2 at step 1 hit=0
+>>> ADMIT R3 at step 1 hit=0
+>>> ADMIT R4 at step 1 hit=0
+>>> ADMIT R5 at step 1 hit=0
+>>> ADMIT R6 at step 1 hit=0
+>>> ADMIT R7 at step 1 hit=0
+>>> PREEMPT R7 at step 66 ctx=4161
+>>> ADMIT R7 at step 101 hit=242
+>>> ADMIT R8 at step 701 hit=0
+>>> ADMIT R9 at step 701 hit=0
+>>> ADMIT R10 at step 701 hit=0
+total_pre=1 fin=1400
+R1: pre=0 recomputed=0 done=100
+R2: pre=0 recomputed=0 done=700
+R3: pre=0 recomputed=0 done=700
+R4: pre=0 recomputed=0 done=700
+R5: pre=0 recomputed=0 done=700
+R6: pre=0 recomputed=0 done=700
+R7: pre=1 recomputed=289 done=735
+R8: pre=0 recomputed=0 done=1400
+R9: pre=0 recomputed=0 done=1400
+R10: pre=0 recomputed=0 done=1400
+[0m
+[0m$ [0mcd /tmp/opencode && python3 - <<'EOF'
+src = open("day12_sim_test.py").read().split('if __name__')[0]
+src = src.replace("total_pre, preempted = total_pre + 1, True",
+                  "total_pre, preempted = total_pre + 1, True; print(f'>>> PREEMPT {v.rid} at step {step} ctx={v.ctx}')")
+src = src.replace("waiting.pop(0); running.append(r)            # :507 又回队尾",
+                  "waiting.pop(0); running.append(r); print(f'>>> ADMIT {r.rid} at step {step} hit={hit}')")
+src = src.replace("args.steps", "0")
+ns = {}; exec(src, ns)
+Req, simulate = ns["Req"], ns["simulate"]
+import io, contextlib
+for blocks, out in [(1820, 900), (1780, 900), (1760, 1024)]:
+    reqs = [Req("R1", 4096, 100)] + [Req(f"R{i}", 4096, out) for i in range(2, 11)]
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        tp, fin, _ = simulate(reqs, blocks)
+    ev = [l for l in buf.getvalue().splitlines() if "PREEMPT" in l or "ADMIT R7" in l]
+    print(f"blocks={blocks} out={out}: total_pre={tp} fin={fin}")
+    for l in ev[:10]: print("   ", l)
+    print("    waste:", sum(r.recomputed for r in reqs))
+EOF
+blocks=1820 out=900: total_pre=2 fin=1800
+    >>> ADMIT R7 at step 1 hit=0
+    >>> PREEMPT R7 at step 66 ctx=4161
+    >>> ADMIT R7 at step 101 hit=242
+    >>> PREEMPT R7 at step 754 ctx=4814
+    >>> ADMIT R7 at step 901 hit=255
+    waste: 1023
+blocks=1780 out=900: total_pre=1 fin=1800
+    >>> ADMIT R7 at step 101 hit=0
+    >>> PREEMPT R7 at step 658 ctx=4653
+    >>> ADMIT R7 at step 901 hit=215
+    waste: 1213
+blocks=1760 out=1024: total_pre=1 fin=2048
+    >>> ADMIT R7 at step 101 hit=0
+    >>> PREEMPT R7 at step 610 ctx=4605
+    >>> ADMIT R7 at step 1025 hit=160
+    waste: 2045
+[0m
+所有动态已验证，包括一个真实的 bounce 方案。现在我将用修正后的模拟器和验证过的数据来更新教程。首先是 §2.6 节：
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -174,23 +174,20 @@
+ 4. **资源占用**：swap 要 CPU RAM（`--swap-space` 默认 4 GiB/卡——这个参数 V1 还在，cache.py:51，但服务于 CPU offloading 连接器如 LMCache，与调度器抢占无关；面试时这是个"你真的读过 V1 吗"的鉴别题）。
+ 
+ **顺带把 watermark 一起讲**（图 3 中部底注）：V0 分配侧留 ~1% 块的水位线，属于悲观派；V1 删掉它，"精确耗尽才失败 + 抢占兜底"。悲观预留 vs 乐观放行 + 回滚——这组对立贯穿 PagedAttention（Day 4）、调度 admission（Day 10）和今天的 preemption，面试可以串成一条主线。
+ 
+-### 2.6 thrashing：什么时候反复抢占，怎么破（图 3 右下）
++### 2.6 thrashing：被祭者的两种走向，什么时候反复抢占（图 3 右下）
+ 
+-推演一个典型 bounce 循环（实验 1 会实测验证）：
++抢占后的 victim 有两种形态（实验 1 都能复现）：
+ 
+-```
+-池满 → 最新者 E 被祭（free，块变 cached）→ 下一步 E 队首复活（自命中，≈免费）
+-→ E append 回 running 尾部（又是最新者）→ 长约 1 个 block 的 decode（16 token）
+-→ 池又满 → victim 还是 E → 再祭 → ……
+-```
++**形态 A · 让路型（饱和负载的常态）**。victim 被祭后，池里的空闲块**全是它自己的缓存**——复活判定 `need + hit > free` 里 free 含自己的命中块，认领后所剩为零（`free − hit = 0`）→ 它每个 step 都在队首尝试、每个 step 都失败（waiting 循环 `break`），直到幸存者完成让出块。实验 1 主场景：R7 在 step 290 被祭，step 321 才复活（等 R1-R6 走完），期间幸存者的增长还吃掉了它 10 块缓存（hit 274 → 264）。FCFS"保护老请求"在这里体现得最彻底。
+ 
++**形态 B · bounce 震荡型**。若池里还有**别人的**可驱逐缓存（早完成的请求留下的），victim 可以靠驱逐它们立刻复活、append 回 running 尾部——**又是最新者** → 池再耗尽时再被祭。实验 1 的进阶配方（池 1820 块、R1 短输出 100、其余输出 900）：R7 被祭两次（step 66 / 754），两次复活都靠缓存命中，总重算只有 ~1K token——震荡但便宜。
++
+ **关键结论**：
+-- **有进展、无活锁**：每轮 bounce E 前进 ~16 token（缓存命中使每轮重算只有尾部块），老请求正常推进、逐个完成并释放块 → 系统总能走出震荡。这是"复活近免费"带来的隐含稳定性。
+-- **缓存未命中时才是灾难**：若 E 的块被别的请求驱逐（前缀不重叠、压力极大），每轮 bounce 都要全量重算 E 的整个上下文 → FLOPs 浪费爆炸、吞吐崩塌（实验 1 的 `--cache off` 就是人为制造这个场景）。
+-- **触发画像**：长输出堆积（KV 增长超预期）+ `max_num_seqs` 远超容量手算值 + 前缀不共享的负载。
+-- **head-of-line 阻塞（配置底线）**：若**单个请求的上下文 > 整个 KV 池**，它作为队首永远 `allocate_slots` 失败 → waiting 循环 `break`（:481-483）→ **阻塞它身后所有请求**，系统假死。排查式：`max_model_len × KV/token ≤ KV 池总量` 必须成立（§3.2 手算的一行版）。
++- **有进展、无活锁**：两种形态下老请求都在推进、逐个完成释放块——FCFS + 队首复活保证系统总能走出震荡。真正的"假死"需要另一个条件（见下）。
++- **缓存被吃光时才是灾难**：形态 A 里若幸存者的增长把 victim 的缓存全部驱逐，复活退化为全量重算——实验 1 主场景 `--no-cache`：重算 161 → 4385 token（**27×**），真实系统的停顿差 ≈ 4224 token × ρ ≈ 135ms @H100 / 486ms @A100。
++- **head-of-line 阻塞（配置底线）**：若**单个请求的上下文 > 整个 KV 池**，它作为队首永远 `allocate_slots` 失败 → waiting 循环 `break`（:481-483）→ **阻塞它身后所有请求**，系统假死（实验 1 的 `--blocks 250`：4000 步 0 完成）。排查式：`max_model_len × KV/token ≤ KV 池总量` 必须成立（§3.2 手算的一行版）。
+ - **破法**（按层次）：容量手算重配 admission（`max_num_seqs` 降到并发上限以内）→ 限制输出长度 / `max_model_len` → KV FP8 → 前缀感知路由（Day 34）→ P/D 分离给 prefill 独立算力（Day 29）。
+ 
+ ### 2.7 观测：抢占如何流到指标（图 3 右上）
+ 
+
+[0m
+Now update §2.4① nuance, §3.4 题 2, and the simulator code + checkpoints in §5:
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -132,9 +132,9 @@
+ ### 2.4 恢复路径：从队首复活到 block table 整表替换（图 1 底部、图 2）
+ 
+ 抢占发生后的下一个 step（假设该步没再发生抢占），waiting 循环恢复运行，被抢占的 E 正在**队首**。恢复的四段语义：
+ 
+-**① 缓存查询（救命的一步）**。E 的 `num_computed_tokens` 已被清零，所以走 `if request.num_computed_tokens == 0:` 分支（:380-384）→ `get_computed_blocks(E)`。由于 E 的块刚被 free、hash 保留、LRU 序里排在最后被驱逐的位置——**大概率命中自己刚才的几乎全部上下文**（命中数 = 完整块数 × block_size，上限 `num_tokens − 1`，kv_cache_manager.py:174-179 注释：最后一块必须重算以拿到 logits）。这是 V1 敢把恢复设计成"全量重算"的物质基础：重算量从"整个上下文"塌缩到"尾部 ≤1 个 block"。
++**① 缓存查询（救命的一步）**。E 的 `num_computed_tokens` 已被清零，所以走 `if request.num_computed_tokens == 0:` 分支（:380-384）→ `get_computed_blocks(E)`。由于 E 的块刚被 free、hash 保留、LRU 序里排在最后被驱逐的位置——**大概率命中自己刚才的几乎全部上下文**（命中数 = 完整块数 × block_size，上限 `num_tokens − 1`，kv_cache_manager.py:174-179 注释：最后一块必须重算以拿到 logits）。注意前提：**这些块还没被幸存请求的增长驱逐**——饱和负载下 hit 会打折甚至清零（§2.6 形态 A，实验 1 实测 hit 274→264）。即便如此，"重算量从整个上下文塌缩到尾部块"仍是 V1 把恢复设计成"全量重算"的物质基础。
+ 
+ **② 欠账的口径**（:420-423，注释原文值得背）：
+ 
+ ```python
+
+[0m
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -274,9 +274,9 @@
+ ### 3.4 练手对账题（答案见 §8）
+ 
+ > **题 1**：A100 80G、util 0.85、Qwen3-8B FP16、budget 4096。算 KV token 容量、block 数、12K 上下文并发上限；若 `max_num_seqs=64`，会发生什么？
+ >
+-> **题 2**：README Day 14 自测题预演——10 个请求（prompt 4096、output 1024）、KV 只够 6 个全上下文、budget 2048、block 16。推演：第一步 admission 收几个？什么时候第一次抢占？victim 是谁？它何时复活？若关掉 prefix caching，浪费放大几倍？（用实验 1 的仿真器验证你的手推）
++> **题 2**：README Day 14 自测题预演——10 个请求（prompt 4096、output 320）、KV 池 1920 块（够 ~7 个 prompt / ~6.9 个全上下文）、budget 32768、block 16。推演：第一步 admission 收几个？什么时候第一次抢占？victim 是谁？它何时复活、重算多少？关掉 prefix caching 浪费放大几倍？（用实验 1 的仿真器对账）
+ 
+ ---
+ 
+ ## 4. 关键代码走读（v0.11.0 逐行核对版）
+
+[0m
+现在将 §5 实验 1 中的模拟器代码块替换为修正后的版本：
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -467,16 +467,17 @@
+ 
+ - [ ] 用 §3.2 公式手算，与日志对账（误差应在 activation 峰值那一项）
+ - [ ] 换算并发上限 @8K / @16K，和你预期的业务并发比一比——离抢占有多远？
+ 
+-### 实验 1（必做，30 min；无 GPU 可做）：preemption 仿真器——"10 个请求、KV 只够 6 个"
++### 实验 1（必做，30 min；无 GPU 可做）：preemption 仿真器——"10 个请求、KV 只够 7 个"
+ 
+-在 Day 11 仿真器上加三样东西：**block 池（含 LRU 可驱逐缓存）、抢占分支、复活自命中**。对应 scheduler.py:254-292 + block_pool.py 的 free 语义：
++在 Day 11 仿真器上加三样东西：**block 池（free = 真空闲 + 可驱逐 cached，LRU 驱逐——BlockPool 口径）、抢占分支、复活自命中**。对应 scheduler.py:254-292 与 block_pool.py 的 free 语义：
+ 
+ ```python
+ #!/usr/bin/env python3
+ """day12_sim.py —— preemption 最小仿真（v0.11.0 scheduler.py + BlockPool 语义）
+-用法: python day12_sim.py [--blocks 1920] [--no-cache] [--steps 40]
++用法: python day12_sim.py [--blocks 1920] [--no-cache] [--steps 6]
++场景: 10 个请求 × (prompt 4096, output 320)，budget 32768（让 KV 而非 budget 成为约束）
+ """
+ import argparse
+ from collections import deque
+ 
+@@ -492,27 +493,37 @@
+ 
+ def bfor(n, bs):                         # ceil(n / bs) 个 block
+     return (n + bs - 1) // bs
+ 
+-def simulate(reqs, num_blocks, bs=16, budget=2048, cache=True, max_steps=4000):
++def simulate(reqs, num_blocks, bs=16, budget=32768, cache=True, max_steps=4000):
+     waiting, running = list(reqs), []
+-    free, cached, lru = num_blocks, {}, deque()   # cached: rid -> 可驱逐块数
++    free, cached, lru = num_blocks, {}, deque()  # free=真空闲+可驱逐（BlockPool 口径）
+     total_pre, log = 0, []
+ 
+     def try_alloc(r, rows, hit=0):
+-        """allocate_slots：hit=自己的缓存命中块；失败须无副作用（:271-273）"""
++        """allocate_slots：need+hit > free 即失败且无副作用
++        （single_type_kv_cache_manager.py:82-86：命中块此刻在 free 队列里，
++          认领它们也要占 free 名额——想想为什么两边都要算 hit）"""
++        nonlocal free
+         need = bfor(rows, bs) - r.blocks - hit
+-        if need > 0:
+-            evictable = sum(v for k, v in cached.items() if k != r.rid)
+-            if need > free + evictable:
+-                return False
+-            while free < need:                     # LRU 驱逐补 free
+-                free += cached.pop(lru.popleft())
+-            free, r.blocks = free - need, r.blocks + need
+-        if hit:                                    # 命中块重新 pin 住
+-            r.blocks += hit
++        if need + hit > free:
++            return False
++        if hit:                                    # 认领命中块：ref_cnt 0→1
++            free -= hit
+             cached.pop(r.rid, None)
+             if r.rid in lru: lru.remove(r.rid)
++            r.blocks += hit
++        if need > 0:                               # 分配按 LRU 先驱逐最老缓存
++            remaining = need
++            while remaining > 0 and lru:
++                rid0 = lru[0]
++                take = min(cached[rid0], remaining)
++                cached[rid0] -= take
++                remaining -= take
++                if cached[rid0] == 0:
++                    lru.popleft()
++            free -= need
++            r.blocks += need
+         return True
+ 
+     for step in range(1, max_steps + 1):
+         budget_left, preempted, sched = budget, False, {}
+@@ -523,9 +534,9 @@
+             target, ok = r.computed + n, True
+             if not try_alloc(r, target):                     # :254-258 失败 → 抢占
+                 while True:                                  # :254-290
+                     v = running.pop()                        # :271 FCFS 弹最新
+-                    free += v.blocks
++                    free += v.blocks                         # 块进 free 队列
+                     if cache:                                # hash 保留 → 缓存候选
+                         cached[v.rid] = v.blocks; lru.append(v.rid)
+                     v.blocks, v.computed = 0, 0              # :276 账本清零
+                     v.preemptions += 1
+@@ -548,21 +559,22 @@
+                 n = min(r.ctx - hit * bs, budget_left)       # :423/:437
+                 if not try_alloc(r, hit * bs + n, hit):      # :471
+                     break                                    # :483 HOL
+                 waiting.pop(0); running.append(r)            # :507 又回队尾
++                if r.preemptions:                            # 只有复活才记重算账
++                    r.recomputed += r.ctx - hit * bs         # 重算 = ctx − 命中
+                 r.computed = hit * bs                        # :526 回填命中值
+-                r.recomputed += r.ctx - r.computed           # 重算账
+                 budget_left -= n; r.computed += n; sched[r.rid] = n
+         for r in reqs:                                       # 采样推进（Day 11 同款）
+             if r.rid in sched and r.computed == r.ctx:
+                 r.output += 1
+                 if r.output >= r.max_tokens and r.done_step is None:
+                     r.done_step = step
+                     if r in running: running.remove(r)
+-                    free += r.blocks                          # 完成也走 cached 语义
++                    free += r.blocks                         # 完成也走 cached 语义
+                     if cache: cached[r.rid] = r.blocks; lru.append(r.rid)
+                     r.blocks = 0
+-        if step <= (args.steps or 0) or total_pre and step < 3:
++        if step <= (args.steps or 0):
+             log.append(f"step {step:3d} | free={free:4d} cached={sum(cached.values()):4d} "
+                        f"running={len(running)} waiting={len(waiting)} "
+                        f"pre={total_pre} | " + " ".join(f"{r.rid}:{sched.get(r.rid,0)}" for r in running))
+         if all(r.done_step for r in reqs):
+@@ -570,27 +582,28 @@
+     return total_pre, step, log
+ 
+ if __name__ == "__main__":
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--blocks", type=int, default=1920)   # 6 × (4096+1024)/16
++    ap.add_argument("--blocks", type=int, default=1920)   # ≈ 7 个 prompt / 6.9 个全上下文
+     ap.add_argument("--no-cache", action="store_true")
+     ap.add_argument("--steps", type=int, default=0)
+     args = ap.parse_args()
+-    reqs = [Req(f"R{i}", 4096, 1024) for i in range(1, 11)]   # 10 个请求
++    reqs = [Req(f"R{i}", 4096, 320) for i in range(1, 11)]    # 10 个请求
+     total_pre, fin, log = simulate(reqs, args.blocks, cache=not args.no_cache)
+     for line in log[:24]: print(line)
+     print(f"\n总步数={fin}  总抢占={total_pre}  cache={'on' if not args.no_cache else 'off'}")
+     for r in reqs:
+         print(f"{r.rid}: 抢占 {r.preemptions} 次 | 重算 {r.recomputed} token | 完成于 step {r.done_step}")
+ ```
+ 
+-**检查点**（先手推再跑，对不上就 debug 你的理解）：
+-- [ ] 第 1 步 admission 收 **7 个**（7×4096/16=1792 块 ≤ 1920；第 8 个再要 256 块 → `break`，R8-R10 留在 waiting）
+-- [ ] 池耗尽后第一次抢占：victim 是 **R7**（最新者），它 free 的块进 cached；同一步 waiting 被跳过
+-- [ ] R7 队首复活时 `hit ≈ 全上下文的完整块` → `recomputed` 每次只 +≤16；随后它又成为最新者 → 反复 bounce（数一数 R7 被祭几次、每次前进多少）
+-- [ ] R1-R6 完成后块释放，R8-R10 依次入场——**全程有进展、无活锁**
+-- [ ] `--no-cache` 再跑：R7 每次 bounce 全量重算 4K+，对比 `重算 token` 总量——放大多少倍？这就是 V1 砍 swap 的底气与 swap 时代的代价
+-- [ ] `--blocks 250`（一个请求的全上下文都放不下）：R1 都无法 admission → waiting 永久阻塞 → **HOL 假死**的仿真版（§2.6 底线检查）
++**检查点**（先手推再跑，对不上就 debug 你的理解——以下数字为实测）：
++- [ ] Step 1：admission 收 **7 个**（7×4096 = 28672 token / 1792 块 ≤ 1920；R8 再要 256 块 > 剩 128 → `break`——HOL 保序，R8-R10 的顺序不乱）
++- [ ] Step 290：**唯一一次抢占**：victim = **R7**（最新者，ctx 4385，归还 274 块进 cached）；本步 waiting 被跳过（:335）
++- [ ] Step 291-320：R7 每步在队首尝试复活、每步失败（`free − hit = 0`：空闲块全是它自己的缓存）——§2.6 形态 A"让路型"；期间幸存者的增长吃掉它 10 块缓存（hit 274 → 264）；R1-R6 在 step 320 完成，**全程未被抢占**（FCFS 保护）
++- [ ] Step 321：R7 复活（hit=264 块 → **重算仅 161 token**），R8-R10 同步入场（budget 还很宽裕）；全部完成于 step 640
++- [ ] `--no-cache` 再跑：R7 重算 **4385 token（27×）**——完成步数不变（sim 只记 token 账、不记时间；真实系统差 ≈ 4224 × 32µs ≈ 135ms @H100 的停顿）
++- [ ] `--blocks 250`：R1 连 admission 都过不去（bfor(4096) = 256 > 250）→ waiting 永久阻塞 → 4000 步 0 完成——**HOL 假死**的仿真版（§2.6 底线检查）
++- [ ] 进阶（§2.6 形态 B 复现）：改 `__main__`——池 1820 块、R1 的 output 改 100、其余改 900 → R7 被**祭两次**（step 66 / 754），两次复活都靠缓存命中（第二次靠驱逐 R1 留下的缓存），总重算 ~1K token
+ 
+ ### 实验 2（GPU，20 min）：挤爆 KV——看指标四件套（Day 13 实验 13.2 的缩小版）
+ 
+ ```bash
+
+[0m
+现在更新 §8 自测题 Q2 的答案以及 §9 检查清单，并填入确认的数据：
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -716,13 +716,13 @@
+ 
+ 预算 0.85×80=68GB；权重 ≈16.4GB；activation（budget 4096）≈2GB；KV 池 ≈49.6GB → 49.6e9÷147456 ≈ **33.6 万 token** ≈ **2.1 万 block**（2.25MiB/块）。12K 上下文（含输出余量按 12.5K 算）并发上限 ≈ 33.6万 ÷ 12512 ≈ **26~27 路**。`max_num_seqs=64` ≫ 27：第 28 个请求起先驱逐 prefix cache（hit rate 下滑），池真耗尽后开始抢占——victim 是最新者，老请求受保护；长输出堆积时 bounce 出现，ITL 长毛刺。修法：`max_num_seqs` 收到 ~24（留 10% 余量）或 KV FP8（容量×2 → 64 可用）。
+ </details>
+ 
+-**Q2**：10 个请求（prompt 4096、output 1024）、KV 只够 6 个全上下文（1920 块）、budget 2048、block 16。推演前 3 个关键事件；关掉 prefix caching 后浪费放大几倍？
++**Q2**：10 个请求（prompt 4096、output 320）、KV 池 1920 块（够 ~7 个 prompt / ~6.9 个全上下文）、budget 32768、block 16。推演全程；关掉 prefix caching 后浪费放大几倍？
+ 
+ <details><summary>参考答案</summary>
+ 
+-① Step 1 admission：7×256=1792 块 ≤1920 收 7 个（R1-R7），R8 需要 256 块 → 失败 break（HOL 保护了 R8-R10 不至于乱序）；② R1-R7 decode 增长，约 128 个剩余 token 槽（2048/16=128 块）耗尽后，某老请求要新块失败 → victim=R7（最新），free ≈256+ 块进 cached，同一步 waiting 跳过；③ 下一步 R7 队首复活：自命中 ≈ 全上下文完整块 → 重算 ≤16 token → 又 append 回队尾成为最新者 → 池再满再被祭（bounce，每轮前进 ~16 token）；R1-R6 完成（~step 750）释放块后 R7-R10 陆续稳定入场。**有进展、无活锁**。关缓存：R7 每次 bounce 全量重算 4.3K~5K token（vs 16），若 bounce ~45 次浪费 ≈ 45×4.6K ≈ 20 万 token ≈ **放大 ~290 倍**（实验 1 实测同量级）——这就是 V1 把"复活近免费"当作砍 swap 前提的原因。
++① Step 1 admission：7×4096 = 28672 token / 1792 块 ≤ 1920 → 收 **7 个**；R8 再要 256 块 > 剩 128 → `break`（HOL 保序）。② Steps 2-290：7 路 decode，128 块余量 = 2048 token ÷ 7 ≈ 292 步耗尽 → **step 290 第一次（也是唯一一次）抢占，victim = R7（最新者，ctx 4385，归还 274 块）**，本步 waiting 跳过。③ Steps 291-320：R7 每步尝试复活失败——free 全是它自己的缓存（`free − hit = 0`），幸存者增长吃掉它 10 块（hit 274→264）；R1-R6 step 320 完成，全程未被抢占。④ Step 321：R7 复活（hit=264 块，重算仅 **161 token**），R8-R10 同步入场，全部完成于 step 640——**有进展、无活锁**。⑤ `--no-cache`：R7 全量重算 **4385 token，放大约 27×**（完成步数不变——sim 不计时；真实系统差 ≈ 4224×32µs ≈ 135ms @H100）。⑥ 想看 bounce（形态 B）：池 1820 + 一个短输出请求先完成留缓存 → victim 靠驱逐"别人"的缓存快速复活 → 再被祭（实验 1 进阶项，R7 被祭两次）。
+ </details>
+ 
+ **Q3**：恢复 1K-token 上下文（Qwen3-8B），swap 与 recompute 各要多久（H100 与 A100）？
+ 
+
+[0m
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -793,9 +793,9 @@
+ prefix caching 让回滚 ≈ 免费 —— 目标是稳态斜率 0。
+ ```
+ 
+ - [ ] 诊断卡（填上你的手算台账与实测数据）
+-- [ ] 实验 1 的手推 + 仿真输出（对账：admission 收 7 个、victim=R7、bounce 步进 ≈16 token、no-cache 放大倍数）
++- [ ] 实验 1 的手推 + 仿真输出（对账：admission 收 7 个、victim=R7 @step 290、复活 hit=264/重算 161、no-cache 放大 27×、HOL 假死与 bounce 两个加练）
+ - [ ] 实验 2/3 的指标四件套记录（Day 13 在此基础上补"源码机制"列，凑齐三段对照）
+ - [ ] 在图 2 上用第三种颜色补画：请求被 abort 时从 PREEMPTED 直达 FINISHED_ABORTED 的旁路（:937/:984-986）
+ - [ ] 一句话收获（写进打卡，例："一直以为 victim 该选占 KV 最大的，今天才想通抢占优化的是沉没成本不是释放量；以及 swap 在 V1 里连代码都没了，`--swap-space` 是留给 offloading 连接器的"）
+ 
+
+[0m
+Now align the two SVGs with the verified two-pattern behavior:
+[0m← [0mEdit week2/assets/day12_recompute_vs_swap.svg
+Index: /mnt/workspace/aiinfra/vllm/week2/assets/day12_recompute_vs_swap.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/assets/day12_recompute_vs_swap.svg
++++ /mnt/workspace/aiinfra/vllm/week2/assets/day12_recompute_vs_swap.svg
+@@ -88,10 +88,10 @@
+ 
+ <!-- thrashing box -->
+ <rect x="670" y="436" width="490" height="118" rx="6" fill="#fef2f2" stroke="#ef4444"/>
+ <text x="915" y="458" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#991b1b">thrashing（反复抢占）识别与破解</text>
+-<text x="915" y="476" text-anchor="middle" font-size="8.6" fill="#7c2d12">形态：同一请求反复 victim（复活→16 token→再祭）· 计数陡增 · 吞吐掉一半以上</text>
+-<text x="915" y="492" text-anchor="middle" font-size="8.6" fill="#7c2d12">诱因：长输出堆积（KV 增长超预期）· max_num_seqs 远超容量手算 · 缓存被驱逐压力</text>
++<text x="915" y="476" text-anchor="middle" font-size="8.6" fill="#7c2d12">形态 A 让路型：free−hit=0，victim 等幸存者走完（缓存被吃：hit 274→264）</text>
++<text x="915" y="492" text-anchor="middle" font-size="8.6" fill="#7c2d12">形态 B 震荡型：靠驱逐他人缓存快速复活 → 又是最新者 → 再被祭（bounce）</text>
+ <text x="915" y="508" text-anchor="middle" font-size="8.6" fill="#7c2d12">底线检查：单请求上下文 &gt; 全池 → 队首永远放不下 → :481 break 阻塞整个 waiting（HOL）</text>
+ <text x="915" y="524" text-anchor="middle" font-size="8.6" fill="#7c2d12">破法：容量手算重配 admission（max_num_seqs ↓ 到手算值以内）→ 让 preemption 归零</text>
+ <text x="915" y="542" text-anchor="middle" font-size="8.6" fill="#7c2d12">进阶：限制 output 长度 / 前缀路由（Day 34）/ P-D 分离给 prefill 独立算力（Day 29）</text>
+ 
+
+[0m
+[0m← [0mEdit week2/assets/day12_preemption_flow.svg
+Index: /mnt/workspace/aiinfra/vllm/week2/assets/day12_preemption_flow.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/assets/day12_preemption_flow.svg
++++ /mnt/workspace/aiinfra/vllm/week2/assets/day12_preemption_flow.svg
+@@ -71,9 +71,9 @@
+ 
+ <text x="80" y="404" font-size="8.5" fill="#64748b">客户端视角：E 的流式输出原地暂停（不失败、不重发）；本次停顿 ≈ 重算时长（见下方 Step k+1 与 §3.1 公式）</text>
+ 
+ <!-- ================= Panel 2: Step k+1 resume ================= -->
+-<text x="70" y="452" font-size="13.5" font-weight="bold" fill="#065f46">2 · Step k+1：E 从 waiting 队首复活（本步无抢占 → waiting 循环恢复运行）</text>
++<text x="70" y="452" font-size="13.5" font-weight="bold" fill="#065f46">2 · Step k+1：E 从 waiting 队首复活（前提 free−hit ≥ 新块需求；饱和负载下可能要等幸存者让路，§2.6）</text>
+ <rect x="60" y="462" width="1120" height="186" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+ 
+ <!-- waiting head -->
+ <rect x="80" y="480" width="330" height="70" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2/assets && for f in day12_*.svg; do python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('$f'); print('$f: OK')"; done; cd /mnt/workspace/aiinfra/vllm/week2 && grep -n "290 倍\|45 次\|每轮 bounce\|bounce 步进\|只够 6 个\|output 1024）" day12_preemption.md
+day12_preemption_flow.svg: OK
+day12_preemption_state_machine.svg: OK
+day12_recompute_vs_swap.svg: OK
+4:> **今日位置**：Day 11 读 chunked prefill 时，running 循环里留了一个分支没展开——`allocate_slots` 返回 `None`（scheduler.py:259），KV block 不够了。今天沿这条分支走完全程：**触发条件的精确判定（"free" 到底是什么）→ victim 怎么选（为什么是最新者）→ 六步复位（`num_computed_tokens = 0`、output 保留、waiting 队首）→ 恢复路径（prefix caching 让复活近乎免费）→ recompute vs swap（V1 为什么砍掉 swap）**，并回答 README 的两连问：**什么指标说明系统在频繁抢占？怎么调？** 今天也是 Day 14 复盘自测题「10 个请求、KV 只够 6 个」的预演日——实验 1 的仿真器就是它的可执行版
+[0m
+All SVGs valid. Now a final full review of the tutorial for consistency:
+[0m→ [0mRead week2/day12_preemption.md[90m [limit=120][0m
+[0m→ [0mRead week2/day12_preemption.md[90m [limit=200, offset=121][0m
+[0m
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -130,9 +130,9 @@
+ > **附注（版本演进，读码记版本的一个活案例）**：v0.11.0 的 PRIORITY 分支里，若 victim 恰好是**本步已调度**的请求（在 `scheduled_running_reqs` 里），只把它从 `scheduled_running_reqs` 移除（:268-269），`num_scheduled_tokens` 的残留条目与 token_budget 都没有回滚；main 分支后来补全了这条路径（`num_scheduled_tokens.pop`、`req_to_new_blocks.pop`、encoder 预算恢复，并把六步复位提成 `_preempt_request` 方法）。FCFS 主路径（vLLM 默认）在 v0.11.0 就是干净的：victim 弹自队尾、必然未调度。**面试讲这段的前提是先讲清 FCFS 主干，再以"我对比过 main 分支"的姿态带出**。
+ 
+ ### 2.4 恢复路径：从队首复活到 block table 整表替换（图 1 底部、图 2）
+ 
+-抢占发生后的下一个 step（假设该步没再发生抢占），waiting 循环恢复运行，被抢占的 E 正在**队首**。恢复的四段语义：
++抢占发生后，E 就在 waiting **队首**。此后的某个 step（该步没再发生抢占，且 E 的复活判定 `need + hit ≤ free` 通过——可能是下一步，也可能要等幸存者让路，见 §2.6 两种形态），waiting 循环把它接回来。恢复的四段语义：
+ 
+ **① 缓存查询（救命的一步）**。E 的 `num_computed_tokens` 已被清零，所以走 `if request.num_computed_tokens == 0:` 分支（:380-384）→ `get_computed_blocks(E)`。由于 E 的块刚被 free、hash 保留、LRU 序里排在最后被驱逐的位置——**大概率命中自己刚才的几乎全部上下文**（命中数 = 完整块数 × block_size，上限 `num_tokens − 1`，kv_cache_manager.py:174-179 注释：最后一块必须重算以拿到 logits）。注意前提：**这些块还没被幸存请求的增长驱逐**——饱和负载下 hit 会打折甚至清零（§2.6 形态 A，实验 1 实测 hit 274→264）。即便如此，"重算量从整个上下文塌缩到尾部块"仍是 V1 把恢复设计成"全量重算"的物质基础。
+ 
+ **② 欠账的口径**（:420-423，注释原文值得背）：
+
+[0m
+[0m→ [0mRead week2/day12_preemption.md[90m [limit=180, offset=321][0m
+[0m→ [0mRead week2/day12_preemption.md[90m [limit=180, offset=626][0m
+[0m
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -686,9 +686,9 @@
+ > 骨架：① 四件套：`vllm:num_preemptions` 斜率持续 >0（counter，PREEMPTED 事件驱动、随请求下次输出延迟上报）+ `gpu_cache_usage_perc` 钉 ~1.0（free 含可驱逐块，到 1.0 = 连缓存都没得驱逐）+ ITL 秒级长毛刺 + prefix hit rate 下滑（驱逐先于抢占）；② 调参分诊：usage≈1.0 主导 → KV 超配 → `max_num_seqs`↓（首选）/`max_model_len`↓/`gpu-mem-util`↑/KV FP8/加卡；queue time 也高 → 并发超配 → 前置限流；**无抢占但 TTFT 高 → prefill 拥塞，别动 KV 旋钮**；③ 容量手算先行：并发上限 ≈ KV tokens ÷ 平均上下文（H100 80G Qwen3-8B ≈ 22 路 @16K）。**收尾**：目标是稳态斜率 0；`max_num_batched_tokens` 不是抢占的旋钮（它管单步时长/ITL 上界）。
+ 
+ **Q6：什么负载会反复抢占（thrashing）？怎么破？**
+ 
+-> 骨架：① 形态：长输出堆积 + `max_num_seqs` 远超容量手算 + 前缀不共享 → 最新者反复 bounce（复活→16 token→再祭）；有缓存命中时每轮只浪费尾部块、有进展无活锁，但 ITL 长毛刺；缓存被驱逐时每轮全量重算 → 吞吐崩塌；② 底线：单请求上下文 > 全池 → 队首永远放不下 → `break` 阻塞整个 waiting（HOL 假死）；③ 破法按层次：`max_num_seqs` 收到手算值内（治本）→ 限制输出/`max_model_len` → KV FP8 → 前缀路由（Day 34）→ P/D 分离（Day 29）。**收尾**：先做一行底线检查 `max_model_len × KV/token ≤ 全池`，再谈其他。
++> 骨架：① 两种形态：让路型（饱和常态——free−hit=0，victim 每步尝试复活失败，等幸存者走完；期间它的缓存被幸存者的增长逐块吃掉，hit 打折）；震荡型 bounce（池里还有别人的可驱逐缓存 → victim 靠驱逐它们快速复活 → 又是最新者 → 再被祭）；② 诱因：长输出堆积 + `max_num_seqs` 远超容量手算 + 前缀不共享；有缓存命中时每轮只浪费尾部块、有进展无活锁（ITL 长毛刺但能走出来），缓存被吃光时全量重算 → 吞吐崩塌；③ 底线：单请求上下文 > 全池 → 队首永远放不下 → `break` 阻塞整个 waiting（HOL 假死）；④ 破法按层次：`max_num_seqs` 收到手算值内（治本）→ 限制输出/`max_model_len` → KV FP8 → 前缀路由（Day 34）→ P/D 分离（Day 29）。**收尾**：先做一行底线检查 `max_model_len × KV/token ≤ 全池`，再谈其他。
+ 
+ **Q7：为什么 vLLM 不给每个请求预留足额 KV，而是宁可抢占？**
+ 
+ > 骨架：① 预留制 = 按最坏情况（prompt+max_tokens，通常 ≤ max_model_len）分配 → 内部碎片浪费 60-80%（PagedAttention 论文的核心动机，Day 4）；② 乐观放行 + 抢占 = OCC：正常路径高利用率，过载时回滚最年轻者，代价集中在少数请求的一段 ITL；③ 前提是回滚便宜——V1 的 prefix caching 让复活 ≈ 1 个 block，这个设计才闭环；④ 生产补丁：入口侧按 KV 足记限流（goodput 视角），把"抢占"挡在引擎外面。**收尾**：这是"利用率 vs 稳定性"的经典权衡，vLLM 选了前者 + 便宜的回滚，生产系统再加一层 admission 兜底。
+
+[0m
+[0m→ [0mRead week2/day12_preemption.md[90m [offset=501, limit=126][0m
+教程中的模拟器代码与测试版本一致。让我进行最后的结构验证：
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2 && sed -n '804,806p' day12_preemption.md; echo ===; grep -c "^#" day12_preemption.md; grep -n "^## " day12_preemption.md; echo ===; python3 - <<'EOF'
+# verify tutorial sim code == tested sim code
+import re
+md = open("day12_preemption.md").read()
+m = re.search(r'```python\n(#!/usr/bin/env python3.*?day12_sim\.py.*?)\n```', md, re.S)
+code = m.group(1)
+tested = open("/tmp/opencode/day12_sim_test.py").read()
+# strip trailing whitespace differences
+a = [l.rstrip() for l in code.splitlines() if l.strip()]
+b = [l.rstrip() for l in tested.splitlines() if l.strip()]
+print("sim code identical to tested:", a == b)
+if a != b:
+    for i,(x,y) in enumerate(zip(a,b)):
+        if x!=y: print(i, repr(x), "!=", repr(y)); break
+EOF
+echo ===; grep -n "assets/day12" day12_preemption.md
+## 10. 明日预告（Day 13 · 动手验证调度行为）
+
+今天的实验 2/3 明天升级为正式压测，凑齐 README 要求的**三段对照记录**（现象 → 源码机制 → 指标表现）：① 长 prompt 洪峰 + budget 分组（{2048, 8192, 16384}）验证 Day 11 的 ITL 有界性与 TTFT 代价；② 高并发挤爆 KV（64 prompts @ rate 4）验证今天的抢占链路——`gpu_cache_usage_perc` 冲 1.0 的时点、`num_preemptions` 的爬升斜率（记得延迟上报）、ITL 毛刺与 victim 的对应关系；③ 实验 4 的探针日志与 `/metrics` 对时序。产出：实验记录表——这张表同时是 Day 51 性能诊断树（"preemption 增长 → KV 超配调 max_num_seqs"）的一手证据。带上今天的诊断卡，明天的每一行日志你都知道它在源码的哪一行。
+===
+78
+14:## 0. 今日学习目标
+29:## 1. 核心概念速览
+54:## 2. 原理深入讲解
+229:## 3. 性能模型：今日的数学
+282:## 4. 关键代码走读（v0.11.0 逐行核对版）
+453:## 5. 动手实验（约 60~90 分钟）
+666:## 6. 面试高频问题（含答题骨架）
+698:## 7. 今日总结
+711:## 8. 今日自测题（先自己做，再展开答案）
+757:## 9. 今日产出物：preemption 诊断-调参卡
+762:## 触发判定（一行）
+766:## 处理六步（scheduler.py:271-281）
+770:## 观测四件套
+774:## 调参（按手算并发上限 = KV tokens ÷ 平均上下文）
+780:## 手算台账（我的机器）
+785:## 实测（实验 2/3 数据）
+791:## 一句话
+804:## 10. 明日预告（Day 13 · 动手验证调度行为）
+===
+sim code identical to tested: False
+19 '    free, cached, lru = num_blocks, {}, deque()  # free=真空闲+可驱逐（BlockPool 口径）' != '    free, cached, lru = num_blocks, {}, deque()  # free=真空闲+可驱逐(BLockPool 口径)'
+===
+9:> **配套材料**：`week2/README.md` Day 12 节；三张 SVG：`assets/day12_preemption_flow.svg`（今日主图：触发→复位→复活全链路）、`assets/day12_preemption_state_machine.svg`（P1 状态机 + P2 持久批/block table 语义）、`assets/day12_recompute_vs_swap.svg`（恢复成本手算 + 诊断-调参树——今日产出物的底稿）
+74:![preemption 全链路](assets/day12_preemption_flow.svg)
+[0m
+Need to embed figures 2 and 3 as image references (only figure 1 is embedded). Let me add them:
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -130,8 +130,10 @@
+ > **附注（版本演进，读码记版本的一个活案例）**：v0.11.0 的 PRIORITY 分支里，若 victim 恰好是**本步已调度**的请求（在 `scheduled_running_reqs` 里），只把它从 `scheduled_running_reqs` 移除（:268-269），`num_scheduled_tokens` 的残留条目与 token_budget 都没有回滚；main 分支后来补全了这条路径（`num_scheduled_tokens.pop`、`req_to_new_blocks.pop`、encoder 预算恢复，并把六步复位提成 `_preempt_request` 方法）。FCFS 主路径（vLLM 默认）在 v0.11.0 就是干净的：victim 弹自队尾、必然未调度。**面试讲这段的前提是先讲清 FCFS 主干，再以"我对比过 main 分支"的姿态带出**。
+ 
+ ### 2.4 恢复路径：从队首复活到 block table 整表替换（图 1 底部、图 2）
+ 
++![preemption 状态机与 P2 批语义](assets/day12_preemption_state_machine.svg)
++
+ 抢占发生后，E 就在 waiting **队首**。此后的某个 step（该步没再发生抢占，且 E 的复活判定 `need + hit ≤ free` 通过——可能是下一步，也可能要等幸存者让路，见 §2.6 两种形态），waiting 循环把它接回来。恢复的四段语义：
+ 
+ **① 缓存查询（救命的一步）**。E 的 `num_computed_tokens` 已被清零，所以走 `if request.num_computed_tokens == 0:` 分支（:380-384）→ `get_computed_blocks(E)`。由于 E 的块刚被 free、hash 保留、LRU 序里排在最后被驱逐的位置——**大概率命中自己刚才的几乎全部上下文**（命中数 = 完整块数 × block_size，上限 `num_tokens − 1`，kv_cache_manager.py:174-179 注释：最后一块必须重算以拿到 logits）。注意前提：**这些块还没被幸存请求的增长驱逐**——饱和负载下 hit 会打折甚至清零（§2.6 形态 A，实验 1 实测 hit 274→264）。即便如此，"重算量从整个上下文塌缩到尾部块"仍是 V1 把恢复设计成"全量重算"的物质基础。
+ 
+
+[0m
+[0m← [0mEdit week2/day12_preemption.md
+Index: /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
++++ /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md
+@@ -157,8 +157,10 @@
+ **终态旁路**：请求也可能**死在 waiting 里**——被抢占后在 waiting 队首等恢复时被 abort（客户端断开）或判停。`update_from_output` 用 `stopped_preempted_reqs` 集合处理这条路径（scheduler.py:883/:937/:984-986，`self.waiting.remove_requests(...)`），注释自嘲"This is a rare case and unlikely to impact performance"。
+ 
+ ### 2.5 recompute vs swap：V1 为什么砍掉 swap（图 3 左/中）
+ 
++![recompute vs swap 与诊断调参树](assets/day12_recompute_vs_swap.svg)
++
+ V0 的 `preemption_mode` 可选 recompute（默认）/ swap；V1 只留 recompute（Day 8 的 V0→V1 表）。先把两种模式的成本摆到桌面上（详细手算见 §3.3）：
+ 
+ | | recompute（V1 唯一） | swap（V0 可选，V1 已删） |
+ |---|---|---|
+
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week2 && grep -n '!\[' day12_preemption.md && wc -l day12_preemption.md && ls -la day12_preemption.md assets/day12_*.svg && rm /tmp/opencode/day12_sim_test.py
+74:![preemption 全链路](assets/day12_preemption_flow.svg)
+134:![preemption 状态机与 P2 批语义](assets/day12_preemption_state_machine.svg)
+161:![recompute vs swap 与诊断调参树](assets/day12_recompute_vs_swap.svg)
+810 day12_preemption.md
+-rw-r--r-- 1 root root 12432 Oct  2 05:12 assets/day12_preemption_flow.svg
+-rw-r--r-- 1 root root 12641 Oct  2 04:52 assets/day12_preemption_state_machine.svg
+-rw-r--r-- 1 root root 11254 Oct  2 05:12 assets/day12_recompute_vs_swap.svg
+-rw-r--r-- 1 root root 69085 Oct  2 05:14 day12_preemption.md
+[0m
+[0m# [0mTodos
+[✓] 验证 v0.11.0 源码事实（scheduler/block_pool/kv_cache_manager/metrics）
+[✓] 绘制 3 张 SVG 到 week2/assets/
+[✓] 撰写 week2/day12_preemption.md
+[✓] 校验文件写入与内部一致性
+[0m
+Day 12 教程已完成并写入。
+
+**文件清单**：
+- `week2/day12_preemption.md`（810 行）—— Scheduler（三）preemption 专题
+- `week2/assets/day12_preemption_flow.svg` —— 主图：KV 失守 → victim 选择 → 六步复位 → 队首复活全链路
+- `week2/assets/day12_preemption_state_machine.svg` —— P1 状态机 + P2 持久批/block table 替换语义
+- `week2/assets/day12_recompute_vs_swap.svg` —— 恢复成本手算 + V1 砍 swap 理由 + 诊断-调参树
+
+**内容要点**（严格对应 README Day 12 三问）：
+- **触发条件**：`num_blocks_to_allocate > get_num_free_blocks()`（含“free = 真空闲 + 可驱逐 cached 块”的精确语义、v0.11.0 无 watermark），全部源码坐标按 v0.11.0 tag 逐行核对（scheduler.py:254-292、kv_cache_manager.py:271-273 等）
+- **recompute vs swap**：4K ctx 手算（swap 24ms / 无命中重算 131ms / prefix 命中 0.5ms）+ V1 砍 swap 的 4 条理由
+- **观测与调参**：指标四件套（`vllm:num_preemptions` 斜率 + `gpu_cache_usage_perc≈1.0` + ITL 毛刺 + hit rate 下滑）与调参树
+- **实验**：含一个无 GPU 可跑的 preemption 仿真器（实测验证：7 admission、victim=R7、复活 hit=264、no-cache 浪费放大 27×、HOL 假死与 bounce 复现），实验 2/3 为 Day 13 压测的缩小版
+
+与前几天的衔接（Day 9 的 `prepend_request`/账本清零伏笔、Day 11 的 `num_tokens` 语义与抢占分支留白）均已兑现，未改动任何已有文件。

@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 880" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="pl19a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="pl19g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <marker id="pl19r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="880" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">「晚一步」账本：placeholder 乐观调度的状态推演与两个深水场景（v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：稳态 decode 的账本循环（tokens / computed / placeholders 三色筹码） · 右上：EOS「僵尸步」 · 右下：异步抢占（Day 12 伏笔兑现）</text>
+
+  <!-- ================= Left panel: steady-state ledger ================= -->
+  <rect x="40" y="70" width="600" height="700" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.4"/>
+  <text x="340" y="94" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a">稳态 decode：一个请求的账本循环（async，无 spec decode）</text>
+  <rect x="56" y="104" width="568" height="30" rx="5" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="340" y="124" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#334155">调度公式：num_new_tokens = num_tokens_with_spec + num_output_placeholders − num_computed_tokens</text>
+  <text x="340" y="142" text-anchor="middle" font-size="8" fill="#94a3b8">（scheduler.py:213-215；同步模式对照：schedule 入口是 (T, T−1, 0)——computed 恰比 tokens 少 1）</text>
+
+  <!-- column headers -->
+  <text x="200" y="162" font-size="8.6" font-weight="bold" fill="#64748b">tokens（值已到账）</text>
+  <text x="322" y="162" font-size="8.6" font-weight="bold" fill="#64748b">computed（乐观推进）</text>
+  <text x="452" y="162" font-size="8.6" font-weight="bold" fill="#64748b">placeholders（欠条）</text>
+
+  <!-- R1 -->
+  <rect x="56" y="170" width="568" height="74" rx="7" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="70" y="190" font-size="9.5" font-weight="bold" fill="#4c1d95">① schedule(N) 入口</text>
+  <text x="70" y="206" font-size="8" fill="#475569">update(N−1) 尚未执行（队列未满）；</text>
+  <text x="70" y="220" font-size="8" fill="#475569">占位补上「+1 差」→ 本步调度 1 token</text>
+  <rect x="200" y="182" width="86" height="22" rx="11" fill="#dbeafe" stroke="#2563eb"/><text x="243" y="197" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">T</text>
+  <rect x="322" y="182" width="86" height="22" rx="11" fill="#ede9fe" stroke="#7c3aed"/><text x="365" y="197" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">T</text>
+  <rect x="452" y="182" width="86" height="22" rx="11" fill="#fef3c7" stroke="#d97706"/><text x="495" y="197" text-anchor="middle" font-size="10" font-weight="bold" fill="#78350f">1</text>
+  <text x="560" y="197" font-size="8.2" fill="#065f46">→ 调 1</text>
+
+  <!-- R2 -->
+  <rect x="56" y="252" width="568" height="74" rx="7" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="70" y="272" font-size="9.5" font-weight="bold" fill="#4c1d95">② schedule(N) 出口（_update_after_schedule）</text>
+  <text x="70" y="288" font-size="8" fill="#475569">computed += 调度数；且「将生成新 token」</text>
+  <text x="70" y="302" font-size="8" fill="#475569">→ 再打一张欠条 ph+=1（async_scheduler.py:16-27）</text>
+  <rect x="200" y="264" width="86" height="22" rx="11" fill="#dbeafe" stroke="#2563eb"/><text x="243" y="279" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">T</text>
+  <rect x="322" y="264" width="86" height="22" rx="11" fill="#ede9fe" stroke="#7c3aed"/><text x="365" y="279" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">T+1</text>
+  <rect x="452" y="264" width="86" height="22" rx="11" fill="#fef3c7" stroke="#d97706"/><text x="495" y="279" text-anchor="middle" font-size="10" font-weight="bold" fill="#78350f">2</text>
+  <text x="560" y="279" font-size="8.2" fill="#9a3412">已调 token #T 尚不存在</text>
+
+  <!-- R3 -->
+  <rect x="56" y="334" width="568" height="86" rx="7" fill="#fffbeb" stroke="#f59e0b"/>
+  <text x="70" y="354" font-size="9.5" font-weight="bold" fill="#92400e">③ update(N−1)（batch_queue 满 → pop → future.result 之后）</text>
+  <text x="70" y="370" font-size="8" fill="#475569">真 token #T 到账（旁路 stream 拷回）：tokens+=1、ph−=1；</text>
+  <text x="70" y="384" font-size="8" fill="#475569">cache_blocks(computed−ph = T)：hash 只注册「值已到账」的块</text>
+  <text x="70" y="398" font-size="8" fill="#475569">——飞行中 forward 的任何写都落在未注册 hash 的块上（右上图的前提）</text>
+  <rect x="200" y="358" width="86" height="22" rx="11" fill="#bfdbfe" stroke="#2563eb"/><text x="243" y="373" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">T+1</text>
+  <rect x="322" y="358" width="86" height="22" rx="11" fill="#ede9fe" stroke="#7c3aed"/><text x="365" y="373" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">T+1</text>
+  <rect x="452" y="358" width="86" height="22" rx="11" fill="#fef3c7" stroke="#d97706"/><text x="495" y="373" text-anchor="middle" font-size="10" font-weight="bold" fill="#78350f">1</text>
+
+  <!-- R4 -->
+  <rect x="56" y="428" width="568" height="74" rx="7" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="70" y="448" font-size="9.5" font-weight="bold" fill="#4c1d95">④ schedule(N+1) 入口（紧跟 ③ 之后）</text>
+  <text x="70" y="464" font-size="8" fill="#475569">再次调度 1：forward(N) 的输入 = token #T，</text>
+  <text x="70" y="478" font-size="8" fill="#475569">它此刻还在 GPU 上被 forward(N−1) 生成着</text>
+  <rect x="200" y="440" width="86" height="22" rx="11" fill="#dbeafe" stroke="#2563eb"/><text x="243" y="455" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">T+1</text>
+  <rect x="322" y="440" width="86" height="22" rx="11" fill="#ede9fe" stroke="#7c3aed"/><text x="365" y="455" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">T+1</text>
+  <rect x="452" y="440" width="86" height="22" rx="11" fill="#fef3c7" stroke="#d97706"/><text x="495" y="455" text-anchor="middle" font-size="10" font-weight="bold" fill="#78350f">1</text>
+  <text x="560" y="455" font-size="8.2" fill="#065f46">→ 调 1</text>
+
+  <!-- R5 -->
+  <rect x="56" y="510" width="568" height="74" rx="7" fill="#eff6ff" stroke="#60a5fa"/>
+  <text x="70" y="530" font-size="9.5" font-weight="bold" fill="#1e3a8a">⑤ forward(N) 在 GPU 执行</text>
+  <text x="70" y="546" font-size="8" fill="#475569">input_ids ← prev_sampled_token_ids 的 D2D 直拷</text>
+  <text x="70" y="560" font-size="8" fill="#475569">（快路径 :876-887 单 slice；乱序 :888-903 scatter）</text>
+  <text x="200" y="556" font-size="9" fill="#64748b">token 值全程不经过 CPU —— 「零开销」的数据面前提</text>
+
+  <!-- R6 -->
+  <rect x="56" y="592" width="568" height="74" rx="7" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="70" y="612" font-size="9.5" font-weight="bold" fill="#4c1d95">⑥ update(N)：token #T+1 到账</text>
+  <text x="70" y="628" font-size="8" fill="#475569">tokens+=1、ph−=1 → 回到 ④ 的形态，循环闭合</text>
+  <rect x="200" y="604" width="86" height="22" rx="11" fill="#dbeafe" stroke="#2563eb"/><text x="243" y="619" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">T+2</text>
+  <rect x="322" y="604" width="86" height="22" rx="11" fill="#ede9fe" stroke="#7c3aed"/><text x="365" y="619" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">T+2</text>
+  <rect x="452" y="604" width="86" height="22" rx="11" fill="#fef3c7" stroke="#d97706"/><text x="495" y="619" text-anchor="middle" font-size="10" font-weight="bold" fill="#78350f">1</text>
+
+  <!-- loop arrows -->
+  <line x1="340" y1="244" x2="340" y2="250" stroke="#475569" stroke-width="1.4" marker-end="url(#pl19a)"/>
+  <line x1="340" y1="326" x2="340" y2="332" stroke="#475569" stroke-width="1.4" marker-end="url(#pl19a)"/>
+  <line x1="340" y1="420" x2="340" y2="426" stroke="#475569" stroke-width="1.4" marker-end="url(#pl19a)"/>
+  <line x1="340" y1="502" x2="340" y2="508" stroke="#475569" stroke-width="1.4" marker-end="url(#pl19a)"/>
+  <line x1="340" y1="584" x2="340" y2="590" stroke="#475569" stroke-width="1.4" marker-end="url(#pl19a)"/>
+  <path d="M 624 629 C 700 629 700 455 624 455" fill="none" stroke="#059669" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#pl19g)"/>
+  <text x="700" y="530" font-size="8.4" fill="#047857" text-anchor="middle" transform="rotate(90 700 530)">⑥ → ④ 稳态循环</text>
+
+  <text x="340" y="688" text-anchor="middle" font-size="8.6" fill="#475569">读法：每半步只有一次状态写入——schedule 写「乐观账」（computed/欠条），update 写「真实账」（tokens/扣欠条/注册 hash）</text>
+  <text x="340" y="706" text-anchor="middle" font-size="8.6" fill="#475569">调度永远领先执行一步：schedule(N+1) 时的 KV 视图 = post-schedule(N) 的乐观视图——这是「晚一步」语义的精确定义</text>
+  <text x="340" y="724" text-anchor="middle" font-size="8.6" fill="#64748b">面试一句话：调度器只需要「token 会存在」就能排产，不需要知道「token 是什么」——值留在 GPU，账记在 CPU</text>
+  <text x="340" y="748" text-anchor="middle" font-size="8.6" fill="#9a3412">推演作业（实验 0）：从 (T, T, 1) 出发闭卷推 ⑥，再推「prefill 3000-token 的新请求插进 ②」时各请求的账</text>
+
+  <!-- ================= Right-top panel: EOS zombie step ================= -->
+  <rect x="660" y="70" width="540" height="330" rx="10" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.4"/>
+  <text x="930" y="94" text-anchor="middle" font-size="13" font-weight="bold" fill="#991b1b">场景 A：token #T 是 EOS——「僵尸步」（zombie step）</text>
+
+  <rect x="676" y="108" width="508" height="48" rx="6" fill="#ffffff" stroke="#fca5a5"/>
+  <text x="690" y="126" font-size="8.8" font-weight="bold" fill="#7f1d1d">1. schedule(N) 已把 token #T 当输入调度（它此刻还不存在）</text>
+  <text x="690" y="142" font-size="8.2" fill="#475569">allocate_slots 也已为它分好 KV 槽——欠条 ph=2，computed=T+1</text>
+
+  <rect x="676" y="162" width="508" height="48" rx="6" fill="#ffffff" stroke="#fca5a5"/>
+  <text x="690" y="180" font-size="8.8" font-weight="bold" fill="#7f1d1d">2. update(N−1)：EOS 到账 → stopped → _free_request</text>
+  <text x="690" y="196" font-size="8.2" fill="#475569">块全部归还（hash 保留在缓存索引）；尾块因 hash 只注册到 computed−ph=T 而未入库</text>
+
+  <rect x="676" y="216" width="508" height="48" rx="6" fill="#ffffff" stroke="#fca5a5"/>
+  <text x="690" y="234" font-size="8.8" font-weight="bold" fill="#7f1d1d">3. forward(N) 仍会执行该请求（它在飞行中 batch 里）并写 token #T 的 KV</text>
+  <text x="690" y="250" font-size="8.2" fill="#475569">写目标是「已释放的尾块」——计算白做一步，输出被丢弃</text>
+
+  <rect x="676" y="270" width="508" height="72" rx="6" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="930" y="290" text-anchor="middle" font-size="9.2" font-weight="bold" fill="#065f46">无害的三道闸门（为什么不会写坏别人的数据）</text>
+  <text x="930" y="306" text-anchor="middle" font-size="8.2" fill="#166534">闸 1：尾块未注册 hash → 不可能被 prefix 命中（Day 16 的 hash 索引只收注册过的块）</text>
+  <text x="930" y="320" text-anchor="middle" font-size="8.2" fill="#166534">闸 2：CUDA stream 顺序 → forward(N) 的写先于 forward(N+1) 的任何读写完成</text>
+  <text x="930" y="334" text-anchor="middle" font-size="8.2" fill="#166534">闸 3：hash 注册只覆盖 computed−ph（值已到账）→ 已入库块的内容此后不再被写</text>
+
+  <text x="930" y="366" text-anchor="middle" font-size="9" font-weight="bold" fill="#991b1b">结论：浪费一步算力，不产生错误——异步调度的正确性代价</text>
+  <text x="930" y="384" text-anchor="middle" font-size="8" fill="#9a3412">（三道闸门是从 v0.11.0 代码 + Day 15/16 机制推出的论证；完整设计讨论见相关 PR review，引用前自行复核）</text>
+
+  <!-- ================= Right-bottom panel: async preemption ================= -->
+  <rect x="660" y="420" width="540" height="350" rx="10" fill="#fff7ed" stroke="#fdba74" stroke-width="1.4"/>
+  <text x="930" y="444" text-anchor="middle" font-size="13" font-weight="bold" fill="#7c2d12">场景 B：schedule(N+1) 时 KV 不足 → 异步抢占（Day 12 伏笔兑现）</text>
+
+  <rect x="676" y="458" width="508" height="52" rx="6" fill="#ffffff" stroke="#fdba74"/>
+  <text x="690" y="476" font-size="8.8" font-weight="bold" fill="#7c2d12">1. schedule(N+1) 与 forward(N) 并发运行</text>
+  <text x="690" y="492" font-size="8.2" fill="#475569">allocate_slots 返回 None（scheduler.py:254-292）→ 抢占 running 尾部请求：free（CPU 簿记）+ num_computed=0 + prepend 回 waiting</text>
+
+  <rect x="676" y="516" width="508" height="52" rx="6" fill="#ffffff" stroke="#fdba74"/>
+  <text x="690" y="534" font-size="8.8" font-weight="bold" fill="#7c2d12">2. 被抢占请求在飞行中 batch N 里的 KV 写 → 落在它自己的尾块 / 新块</text>
+  <text x="690" y="550" font-size="8.2" fill="#475569">两类块都未注册 hash（同场景 A 的闸 1/闸 2/闸 3）；被重新分配后，新主人先写后读，旧写无害</text>
+
+  <rect x="676" y="574" width="508" height="52" rx="6" fill="#ffffff" stroke="#fdba74"/>
+  <text x="690" y="592" font-size="8.8" font-weight="bold" fill="#7c2d12">3. 恢复：resumed_from_preemption=True（scheduler.py:698-699）</text>
+  <text x="690" y="608" font-size="8.2" fill="#475569">CachedRequestData 全量重发状态给 model runner；V1 无 swap，重算即恢复（Day 12：preemption 只 recompute）</text>
+
+  <rect x="676" y="632" width="508" height="56" rx="6" fill="#ffffff" stroke="#fdba74"/>
+  <text x="690" y="650" font-size="8.8" font-weight="bold" fill="#7c2d12">4. 面试追问：如果「不允许基于过期状态抢占」会怎样？</text>
+  <text x="690" y="666" font-size="8.2" fill="#475569">只能推迟到输出到账再决策 → KV 超卖恶化、有效 batch 缩水、吞吐下降；vLLM 的选择：乐观抢占 + 三道闸门兜底正确性</text>
+  <text x="690" y="680" font-size="8.2" fill="#475569">代价是极端负载下「抢了又马上能恢复」的抖动（preemption 计数升高——Day 13 的指标仍适用）</text>
+
+  <rect x="676" y="694" width="508" height="30" rx="6" fill="#fef2f2" stroke="#dc2626"/>
+  <text x="930" y="714" text-anchor="middle" font-size="9.2" font-weight="bold" fill="#991b1b">考点：异步抢占的安全性不靠「等」，靠「写不进已注册 hash 的块」+ stream 顺序</text>
+
+  <text x="620" y="812" text-anchor="middle" font-size="9" fill="#475569">实验 0 推演题（答案见教程 §8）：① 从 (T, T, 1) 闭卷推演 ⑥ 的三筹码值 · ② 场景 A 中若 cache_blocks 忘了减 ph 会发生什么？ · ③ 场景 B 中被抢占请求的 zombie 写为什么不会污染 prefix cache？</text>
+  <text x="620" y="832" text-anchor="middle" font-size="8.6" fill="#64748b">配套：day19_sync_vs_async_timeline.svg（时间线）· day19_async_dataflow.svg（进程与队列全景）</text>
+</svg>

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 680" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="680" fill="#ffffff"/>
+  <text x="620" y="28" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">ncu 判读决策树：SM busy × DRAM busy → bound 诊断 → 药方</text>
+  <text x="620" y="50" text-anchor="middle" font-size="12" fill="#64748b">SM busy = sm__throughput.avg.pct_of_peak_sustained_elapsed（计算侧最忙流水线 %）· DRAM busy = dram__throughput.avg.pct_of_peak_sustained_elapsed（显存接口 %）· 指标名随 CUDA 版本略有差异</text>
+
+  <!-- 输入 -->
+  <rect x="60" y="70" width="500" height="48" rx="8" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+  <text x="310" y="90" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">ncu --section SpeedOfLight（单 kernel 深挖）</text>
+  <text x="310" y="108" text-anchor="middle" font-size="11" fill="#475569">读两个百分比：SM busy（计算侧） 与 DRAM busy（显存侧）</text>
+  <line x1="310" y1="118" x2="310" y2="132" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 判定链 -->
+  <polygon points="340,134 450,158 340,182 230,158" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="340" y="162" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#9a3412">两者都 &lt; 40%？</text>
+  <line x1="340" y1="182" x2="340" y2="220" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="348" y="205" font-size="11" fill="#64748b">否</text>
+
+  <polygon points="340,222 450,248 340,274 230,248" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="340" y="252" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#9a3412">DRAM busy ≥ 85%？</text>
+  <line x1="340" y1="274" x2="340" y2="312" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="348" y="297" font-size="11" fill="#64748b">否</text>
+
+  <polygon points="340,314 450,338 340,362 230,338" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="340" y="342" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#9a3412">SM busy ≥ 85%？</text>
+  <line x1="340" y1="362" x2="340" y2="390" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="348" y="382" font-size="11" fill="#64748b">否</text>
+
+  <rect x="150" y="392" width="380" height="58" rx="8" fill="#fafafa" stroke="#64748b" stroke-width="1.5"/>
+  <text x="340" y="412" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#334155">SM ≈ DRAM ≈ 50~70%：分块不当 / 流水未排满</text>
+  <text x="340" y="430" text-anchor="middle" font-size="10.5" fill="#475569">调 threadblock / warp tile 尺寸；多 stage cp.async；</text>
+  <text x="340" y="444" text-anchor="middle" font-size="10.5" fill="#475569">消除尾块长尾（对照：昇腾 mTail×nTail 尾块再切分）</text>
+
+  <!-- 三个结论框 -->
+  <line x1="450" y1="158" x2="578" y2="162" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="505" y="152" font-size="11" fill="#64748b">是</text>
+  <rect x="580" y="128" width="370" height="68" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="590" y="148" font-size="12" font-weight="bold" fill="#991b1b">Latency / Launch bound（未饱和）</text>
+  <text x="590" y="166" font-size="10.5" fill="#7f1d1d">① 先 nsys 看时间线：kernel 是否 µs 级、launch gap 多大</text>
+  <text x="590" y="182" font-size="10.5" fill="#7f1d1d">② 药方：小 kernel 融合；CUDA Graph；提 occupancy；增 ILP</text>
+  <text x="590" y="193" font-size="10" fill="#b91c1c">vLLM 对应：decode 全 step CUDA Graph（Day 18）</text>
+
+  <line x1="450" y1="248" x2="578" y2="252" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="505" y="242" font-size="11" fill="#64748b">是</text>
+  <rect x="580" y="218" width="370" height="68" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+  <text x="590" y="238" font-size="12" font-weight="bold" fill="#9a3412">Memory bound（斜坡上）</text>
+  <text x="590" y="256" font-size="10.5" fill="#7c2d12">① 减字节：权重 / KV 量化 FP8、INT4（Day 22-24）</text>
+  <text x="590" y="272" font-size="10.5" fill="#7c2d12">② 摊销：加大 batch（AI 右移）；合并访存 / 布局重排</text>
+  <text x="590" y="283" font-size="10" fill="#c2410c">vLLM 对应：continuous batching、paged KV gather（Day 17）</text>
+
+  <line x1="450" y1="338" x2="578" y2="342" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="505" y="332" font-size="11" fill="#64748b">是</text>
+  <rect x="580" y="308" width="370" height="68" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="590" y="328" font-size="12" font-weight="bold" fill="#1e3a8a">Compute bound（屋顶上）</text>
+  <text x="590" y="346" font-size="10.5" fill="#1e40af">① tiling / autotune 贴满 tensor pipe；② 降精度 FP8</text>
+  <text x="590" y="362" font-size="10.5" fill="#1e40af">③ 换算法：FlashAttention 式的重算换访存（tiling 内联 softmax）</text>
+  <text x="590" y="373" font-size="10" fill="#1d4ed8">vLLM 对应：torch.compile piecewise + GEMM backend（Day 18）</text>
+
+  <!-- 右侧：三类误判 -->
+  <text x="1100" y="118" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a">三类常见误判（先排除再下结论）</text>
+  <rect x="975" y="128" width="250" height="100" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="985" y="148" font-size="11" font-weight="bold" fill="#854d0e">① L2 命中假象</text>
+  <text x="985" y="166" font-size="10.5" fill="#a16207">DRAM busy 低 ≠ 不卡在存储：Memory Throughput</text>
+  <text x="985" y="181" font-size="10.5" fill="#a16207">= max(DRAM, L2, L1)，L2 命中率高时瓶颈在 L2 带宽</text>
+  <text x="985" y="196" font-size="10.5" fill="#a16207">→ 加看 lts__t_sector_hit_rate.pct</text>
+  <text x="985" y="218" font-size="10" fill="#854d0e">案例：32 MB 权重反复 GEMV，全驻 L2</text>
+
+  <rect x="975" y="240" width="250" height="100" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="985" y="260" font-size="11" font-weight="bold" fill="#854d0e">② kernel 太短</text>
+  <text x="985" y="278" font-size="10.5" fill="#a16207">µs 级 decode kernel：launch / 同步开销占比高，</text>
+  <text x="985" y="293" font-size="10.5" fill="#a16207">SM 与 DRAM 双低，看着像「没救了」</text>
+  <text x="985" y="308" font-size="10.5" fill="#a16207">→ 先 nsys 看时间线，再决定是否值得 ncu 深挖；</text>
+  <text x="985" y="323" font-size="10.5" fill="#a16207">解药通常是 CUDA Graph / 融合，不是改 kernel 内部</text>
+
+  <rect x="975" y="352" width="250" height="100" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="985" y="372" font-size="11" font-weight="bold" fill="#854d0e">③ 假 memory bound</text>
+  <text x="985" y="390" font-size="10.5" fill="#a16207">M=1 的 GEMV 看似带宽问题，实则并行度不足</text>
+  <text x="985" y="405" font-size="10.5" fill="#a16207">（少量 SM 在忙、大量 SM 空转）→ latency bound</text>
+  <text x="985" y="420" font-size="10.5" fill="#a16207">药方完全不同：减字节没用，要提 occupancy / ILP /</text>
+  <text x="985" y="435" font-size="10.5" fill="#a16207">换 kernel 形态（split-K 等增加并行度的切法）</text>
+
+  <!-- 底部速查表 -->
+  <text x="620" y="486" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a">判读速查表（背下来）</text>
+  <rect x="80" y="498" width="1080" height="26" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="180" y="515" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">SM busy</text>
+  <text x="400" y="515" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">DRAM busy</text>
+  <text x="610" y="515" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">结论</text>
+  <text x="930" y="515" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">首选动作</text>
+  <line x1="80" y1="524" x2="1160" y2="524" stroke="#cbd5e1"/>
+  <rect x="80" y="524" width="1080" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="180" y="541" text-anchor="middle" font-size="11" fill="#dc2626">&lt; 40%</text>
+  <text x="400" y="541" text-anchor="middle" font-size="11" fill="#dc2626">&lt; 40%</text>
+  <text x="610" y="541" text-anchor="middle" font-size="11" fill="#334155">latency bound（未饱和）</text>
+  <text x="930" y="541" text-anchor="middle" font-size="11" fill="#334155">nsys 时间线 → 融合 / CUDA Graph / occupancy</text>
+  <rect x="80" y="550" width="1080" height="26" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="180" y="567" text-anchor="middle" font-size="11" fill="#2563eb">≥ 85%</text>
+  <text x="400" y="567" text-anchor="middle" font-size="11" fill="#64748b">任意</text>
+  <text x="610" y="567" text-anchor="middle" font-size="11" fill="#334155">compute bound（看 tensor pipe 更准）</text>
+  <text x="930" y="567" text-anchor="middle" font-size="11" fill="#334155">tiling / autotune / FP8 / 换算法</text>
+  <rect x="80" y="576" width="1080" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="180" y="593" text-anchor="middle" font-size="11" fill="#64748b">任意</text>
+  <text x="400" y="593" text-anchor="middle" font-size="11" fill="#ea580c">≥ 85%</text>
+  <text x="610" y="593" text-anchor="middle" font-size="11" fill="#334155">memory bound</text>
+  <text x="930" y="593" text-anchor="middle" font-size="11" fill="#334155">查访存量能不能砍：量化 / batch / 合并访存</text>
+  <rect x="80" y="602" width="1080" height="26" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="180" y="619" text-anchor="middle" font-size="11" fill="#7c3aed">~60%</text>
+  <text x="400" y="619" text-anchor="middle" font-size="11" fill="#7c3aed">~60%</text>
+  <text x="610" y="619" text-anchor="middle" font-size="11" fill="#334155">两者都半吊子：分块 / 流水有问题</text>
+  <text x="930" y="619" text-anchor="middle" font-size="11" fill="#334155">调 tile 尺寸、多级缓冲、消除尾块长尾</text>
+
+  <text x="620" y="652" text-anchor="middle" font-size="10.5" fill="#64748b">GEMM 判 compute bound 时，tensor pipe 利用率（如 sm__pipe_tensor_cycles_active）比 SM busy 更准；指标名随 CUDA 版本变化，以 ncu --query-metrics 实测为准</text>
+</svg>
