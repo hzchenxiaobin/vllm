@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 780" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar13a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar13b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#60a5fa"/></marker>
+    <marker id="ar13g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="780" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">Day 13 方法论主图：三段对照法 —— 现象 → 源码机制 → 指标表现</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">把 Day 10~12 的源码结论写成可证伪的预测，用受控负载打出来，再归因回源码 · vLLM V1（v0.11.0）· Qwen3-8B · H100 量级</text>
+
+  <!-- ================= Left: three-layer evidence chain ================= -->
+  <text x="70" y="80" font-size="13.5" font-weight="bold" fill="#0f172a">① 三段对照法：三层证据链</text>
+  <rect x="60" y="88" width="500" height="478" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+  <!-- Layer 1: phenomenon -->
+  <rect x="85" y="106" width="450" height="98" rx="6" fill="#eff6ff" stroke="#60a5fa"/>
+  <text x="100" y="126" font-size="11" font-weight="bold" fill="#1e3a8a">现象层 · 客户端口径（用户看到了什么）</text>
+  <text x="100" y="143" font-size="9" fill="#334155">• bench 的 TTFT / TPOT / ITL 分位数、吞吐、goodput（SLO 内完成数）</text>
+  <text x="100" y="158" font-size="9" fill="#334155">• SSE 流的时间戳：流暂停 = 一段长 ITL（token 不丢不重）</text>
+  <text x="100" y="173" font-size="9" fill="#334155">• 陷阱：口径含网络 + P0 入口（Day 9 的 t_entry，数 ms/请求）</text>
+  <text x="100" y="190" font-size="8.5" fill="#64748b">证据形式：分位数表 / 曲线截图，标注负载与参数</text>
+
+  <!-- arrows between L1 and L2 -->
+  <line x1="170" y1="208" x2="170" y2="238" stroke="#60a5fa" stroke-width="1.6" marker-end="url(#ar13b)"/>
+  <text x="178" y="222" font-size="8.5" fill="#2563eb">预测 ↓（机制 → 将观测到什么）</text>
+  <line x1="440" y1="238" x2="440" y2="208" stroke="#475569" stroke-width="1.6" marker-end="url(#ar13a)"/>
+  <text x="448" y="222" font-size="8.5" fill="#475569">归因 ↑（观测 → 哪行代码）</text>
+
+  <!-- Layer 2: mechanism -->
+  <rect x="85" y="242" width="450" height="98" rx="6" fill="#0f172a" stroke="#0f172a"/>
+  <text x="100" y="262" font-size="11" font-weight="bold" fill="#f1f5f9">源码机制层 · 文件:行号 + 账本字段（引擎为什么这么做）</text>
+  <text x="100" y="279" font-size="9" fill="#cbd5e1">• scheduler.py 分支：waiting 循环 :336 / 抢占 :254-292 / HOL :481-483</text>
+  <text x="100" y="294" font-size="9" fill="#cbd5e1">• 账本字段流转：num_computed_tokens / block_ids / output 保留</text>
+  <text x="100" y="309" font-size="9" fill="#cbd5e1">• 陷阱：结论有前提（victim=最新者仅 FCFS；free 含可驱逐块）</text>
+  <text x="100" y="326" font-size="8.5" fill="#94a3b8">证据形式：分支条件 + 字段取值序列（Day 10~12 已读毕，今日只引用）</text>
+
+  <!-- arrows between L2 and L3 -->
+  <line x1="170" y1="344" x2="170" y2="374" stroke="#60a5fa" stroke-width="1.6" marker-end="url(#ar13b)"/>
+  <text x="178" y="358" font-size="8.5" fill="#2563eb">stats 链路上报 ↓</text>
+  <line x1="440" y1="374" x2="440" y2="344" stroke="#475569" stroke-width="1.6" marker-end="url(#ar13a)"/>
+  <text x="448" y="358" font-size="8.5" fill="#475569">监控 / 告警 ↑</text>
+
+  <!-- Layer 3: metrics -->
+  <rect x="85" y="378" width="450" height="104" rx="6" fill="#ecfdf5" stroke="#059669"/>
+  <text x="100" y="398" font-size="11" font-weight="bold" fill="#065f46">指标层 · 引擎口径（运维怎么监控到它）</text>
+  <text x="100" y="415" font-size="9" fill="#334155">• gauge：running / waiting / gpu_cache_usage_perc（每 step 快照）</text>
+  <text x="100" y="430" font-size="9" fill="#334155">• counter：num_preemptions（事件累加 + 延迟上报）→ 永远看斜率</text>
+  <text x="100" y="445" font-size="9" fill="#334155">• histogram：queue time / TTFT / TPOT（请求粒度落账）</text>
+  <text x="100" y="460" font-size="9" fill="#334155">• 探针 print：事件级真值（对时序的基准）</text>
+  <text x="100" y="476" font-size="8.5" fill="#64748b">陷阱：scrape 15s 太粗 → 调 1s；周期统计行按步数对齐</text>
+
+  <!-- loop box -->
+  <rect x="85" y="494" width="450" height="60" rx="6" fill="#fff7ed" stroke="#f59e0b"/>
+  <text x="100" y="512" font-size="10" font-weight="bold" fill="#9a3412">操作循环（预测先行）</text>
+  <text x="100" y="528" font-size="9" fill="#7c2d12">机制 → 预测（公式代入，§3 两张表先填）→ 实验（受控负载）→ 现象 + 指标</text>
+  <text x="100" y="543" font-size="9" fill="#7c2d12">→ 归因回机制；对不上的格子 = misunderstanding 定位器（Day 12 方法论）</text>
+
+  <!-- ================= Right: two validation chains ================= -->
+  <text x="598" y="80" font-size="13.5" font-weight="bold" fill="#0f172a">② 两条验证链：本周结论 → 预测 → 实验 → 证据</text>
+
+  <!-- Chain 1 -->
+  <rect x="588" y="88" width="592" height="220" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="604" y="108" font-size="11.5" font-weight="bold" fill="#0f172a">链 1 · chunked prefill（Day 11 公式 → 实验 13.1 budget 分组）</text>
+
+  <rect x="600" y="118" width="568" height="38" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <rect x="600" y="118" width="52" height="38" rx="4" fill="#334155"/>
+  <text x="626" y="141" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#f1f5f9">机制</text>
+  <text x="664" y="133" font-size="9" fill="#334155">ITL ≤ ρ·B + T_fixed（混排步 decode 搭车，边际计算 ≈ 0）· ΔTTFT ≈ (k−1)·T_fixed</text>
+  <text x="664" y="148" font-size="9" fill="#334155">FLOPs 守恒：切块不增计算量，只多付每步固定开销</text>
+
+  <rect x="880" y="158" width="10" height="8" fill="#94a3b8"/><path d="M 885 158 l 5 8 l -10 0 z" fill="#94a3b8"/>
+
+  <rect x="600" y="166" width="568" height="38" rx="4" fill="#fffbeb" stroke="#fcd34d"/>
+  <rect x="600" y="166" width="52" height="38" rx="4" fill="#b45309"/>
+  <text x="626" y="189" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#fffbeb">预测</text>
+  <text x="664" y="181" font-size="9" fill="#334155">B ∈ {2048, 8192, 16384} → ITL p99 ≈ 71 / 270 / 535 ms；k = 5 / 2 / 1</text>
+  <text x="664" y="196" font-size="9" fill="#334155">长 prompt TTFT 差仅 ≈ 20 ms（守恒）；ITL p50 三组同（6~8 ms，纯 decode 步）</text>
+
+  <path d="M 885 206 l 5 8 l -10 0 z" fill="#94a3b8"/>
+
+  <rect x="600" y="214" width="568" height="38" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+  <rect x="600" y="214" width="52" height="38" rx="4" fill="#1d4ed8"/>
+  <text x="626" y="237" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#eff6ff">实验</text>
+  <text x="664" y="229" font-size="9" fill="#334155">长 prompt 洪峰：32 × (8192+128) @ rate 2，--max-num-seqs 32，三组只动 budget</text>
+  <text x="664" y="244" font-size="9" fill="#334155">第 0 步先单发 burst 校准 ρ；隔离前提：num_preemptions = 0（26.6 万 &lt; 37 万 token）</text>
+
+  <path d="M 885 254 l 5 8 l -10 0 z" fill="#94a3b8"/>
+
+  <rect x="600" y="262" width="568" height="38" rx="4" fill="#ecfdf5" stroke="#6ee7b7"/>
+  <rect x="600" y="262" width="52" height="38" rx="4" fill="#047857"/>
+  <text x="626" y="285" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#ecfdf5">证据</text>
+  <text x="664" y="277" font-size="9" fill="#334155">ITL p99 单调 ↑ ~7×；TTFT p50 近似守恒；晚到者判决：G1 ≈ G2（速率守恒）</text>
+  <text x="664" y="292" font-size="9" fill="#334155">G3（threshold 钳位）快 ~4× → 公平性有专用旋钮，budget 不是</text>
+
+  <!-- Chain 2 -->
+  <rect x="588" y="320" width="592" height="246" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="604" y="340" font-size="11.5" font-weight="bold" fill="#0f172a">链 2 · preemption（Day 12 判定式 → 实验 13.2 挤爆 KV）</text>
+
+  <rect x="600" y="350" width="568" height="42" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <rect x="600" y="350" width="52" height="42" rx="4" fill="#334155"/>
+  <text x="626" y="375" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#f1f5f9">机制</text>
+  <text x="664" y="365" font-size="9" fill="#334155">allocate_slots：need &gt; free（free 含可驱逐 cached）→ None（kv_cache_manager.py:271-273）</text>
+  <text x="664" y="380" font-size="9" fill="#334155">→ 祭最新者（:271）六步复位（:271-281）→ 队首复活自命中（:380-384）；waiting 失败只 break（:483）</text>
+
+  <path d="M 885 394 l 5 8 l -10 0 z" fill="#94a3b8"/>
+
+  <rect x="600" y="402" width="568" height="42" rx="4" fill="#fffbeb" stroke="#fcd34d"/>
+  <rect x="600" y="402" width="52" height="42" rx="4" fill="#b45309"/>
+  <text x="626" y="427" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#fffbeb">预测</text>
+  <text x="664" y="417" font-size="9" fill="#334155">util 0.5 → KV ≈ 14 万 token；64 × 12512 ≈ 80 万 → 必然过载</text>
+  <text x="664" y="432" font-size="9" fill="#334155">t ≈ 3~5 s 首抢（幸存者首个块边界）；victim 常为刚入场者（bounce）；全程数十次</text>
+
+  <path d="M 885 446 l 5 8 l -10 0 z" fill="#94a3b8"/>
+
+  <rect x="600" y="454" width="568" height="42" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+  <rect x="600" y="454" width="52" height="42" rx="4" fill="#1d4ed8"/>
+  <text x="626" y="479" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#eff6ff">实验</text>
+  <text x="664" y="469" font-size="9" fill="#334155">挤爆 KV：64 prompts @ rate 4 + --max-num-seqs 128 + 探针 B 对时序</text>
+  <text x="664" y="484" font-size="9" fill="#334155">A/B/C/D 对照：max_num_seqs 8（收容量）/ KV FP8 + 16（扩容量）/ budget-only（鉴别组）</text>
+
+  <path d="M 885 498 l 5 8 l -10 0 z" fill="#94a3b8"/>
+
+  <rect x="600" y="506" width="568" height="48" rx="4" fill="#ecfdf5" stroke="#6ee7b7"/>
+  <rect x="600" y="506" width="52" height="48" rx="4" fill="#047857"/>
+  <text x="626" y="533" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#ecfdf5">证据</text>
+  <text x="664" y="521" font-size="9" fill="#334155">usage 钳 1.0 → preemptions 爬升（延迟上报，以探针时刻为真值）→ ITL 秒级毛刺</text>
+  <text x="664" y="536" font-size="9" fill="#334155">Running 锯齿 11↔12↔10；hit rate 从 ~0 抬升（victim 自命中）</text>
+  <text x="664" y="549" font-size="9" fill="#334155">B/C 组 preemptions ≈ 0；D 组不降 → budget 不是抢占旋钮（实测版）</text>
+
+  <!-- ================= Bottom: record table ================= -->
+  <rect x="60" y="582" width="1120" height="166" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="76" y="602" font-size="11.5" font-weight="bold" fill="#0f172a">③ 产出：三段对照记录表（README 13.4 模板 + 预测 / 归因两列）</text>
+
+  <!-- mini table -->
+  <rect x="76" y="612" width="700" height="22" fill="#0f172a"/>
+  <text x="86" y="627" font-size="8.5" font-weight="bold" fill="#f1f5f9">#</text>
+  <text x="106" y="627" font-size="8.5" font-weight="bold" fill="#f1f5f9">现象（数据 / 截图）</text>
+  <text x="306" y="627" font-size="8.5" font-weight="bold" fill="#f1f5f9">源码机制（文件 : 行为）</text>
+  <text x="546" y="627" font-size="8.5" font-weight="bold" fill="#f1f5f9">指标表现</text>
+  <rect x="76" y="634" width="700" height="28" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="86" y="652" font-size="8.5" fill="#334155">1</text>
+  <text x="106" y="645" font-size="8.5" fill="#334155">ITL p99 随 budget 71 → 535 ms，</text>
+  <text x="106" y="657" font-size="8.5" fill="#334155">p50 三组同为 6~8 ms</text>
+  <text x="306" y="645" font-size="8.5" fill="#334155">混排步 ρ·B + T_fixed（:437/:524</text>
+  <text x="306" y="657" font-size="8.5" fill="#334155">min 链 + :645 逐块推进）</text>
+  <text x="546" y="645" font-size="8.5" fill="#334155">ITL 直方图双峰；Running 稳定</text>
+  <text x="546" y="657" font-size="8.5" fill="#334155">32；preemptions = 0</text>
+  <rect x="76" y="662" width="700" height="28" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="86" y="680" font-size="8.5" fill="#334155">2</text>
+  <text x="106" y="673" font-size="8.5" fill="#334155">t ≈ 4 s 起某请求输出停顿数秒</text>
+  <text x="106" y="685" font-size="8.5" fill="#334155">后恢复，token 不丢不重</text>
+  <text x="306" y="673" font-size="8.5" fill="#334155">抢占 :259 → :271 六步复位 →</text>
+  <text x="306" y="685" font-size="8.5" fill="#334155">队首自命中复活（:380-384）</text>
+  <text x="546" y="673" font-size="8.5" fill="#334155">探针 B ↔ usage 1.0 ↔ counter</text>
+  <text x="546" y="685" font-size="8.5" fill="#334155">爬升（延迟上报偏移 ms）</text>
+  <text x="76" y="712" font-size="8.5" fill="#64748b">预测列跑前填（公式 / 推演），归因列跑后填（对不上的格子最有价值）</text>
+  <text x="76" y="728" font-size="8.5" fill="#64748b">这张表 = Day 14 状态机「每条边对应哪条指标曲线」的素材 + Day 51 性能诊断树的一手证据</text>
+
+  <!-- two discipline notes -->
+  <rect x="800" y="612" width="364" height="60" rx="6" fill="#fef2f2" stroke="#ef4444"/>
+  <text x="814" y="630" font-size="9.5" font-weight="bold" fill="#991b1b">纪律一 · 隔离原则：一次实验只验证一个机制</text>
+  <text x="814" y="645" font-size="8.5" fill="#7c2d12">13.1 必须 num_preemptions = 0（容量 sanity：26.6 万 &lt; 37 万 token）</text>
+  <text x="814" y="660" font-size="8.5" fill="#7c2d12">不为 0 → chunked 结论被抢占毛刺污染，先修负载再开机</text>
+  <rect x="800" y="680" width="364" height="60" rx="6" fill="#eef2ff" stroke="#818cf8"/>
+  <text x="814" y="698" font-size="9.5" font-weight="bold" fill="#3730a3">纪律二 · goodput 评判（Day 5）</text>
+  <text x="814" y="713" font-size="8.5" fill="#4338ca">A 组 raw throughput 可能最高，但 ITL SLO 内完成数最低</text>
+  <text x="814" y="728" font-size="8.5" fill="#4338ca">按 goodput 排序 A/B/C/D ——「看起来忙」≠「没违约」</text>
+
+  <text x="620" y="768" text-anchor="middle" font-size="8.5" fill="#94a3b8">预测数字为 H100 80G + Qwen3-8B 量级演示（ρ ≈ 32.4 µs/token，T_fixed ≈ 5 ms），以实测为准 · 源码坐标按 v0.11.0</text>
+</svg>

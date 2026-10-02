@@ -1,0 +1,788 @@
+[0m
+> build · glm-5.3
+[0m
+[0m→ [0mRead prompt.md
+[0m→ [0mRead README.md
+[0m
+[0m$ [0mls -la /mnt/workspace/aiinfra/vllm/ && ls -la /mnt/workspace/aiinfra/vllm/week3/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week1/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/week2/ 2>/dev/null
+total 120
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 .
+drwxr-xr-x 14 root root  4096 Oct  1 23:03 ..
+drwxr-xr-x  3 root root  4096 Oct  1 23:04 .arts
+drwxr-xr-x  3 root root  4096 Oct  2 00:10 build
+-rw-r--r--  1 root root  1547 Oct  2 00:10 build.py
+-rwxr-xr-x  1 root root  6704 Oct  2 02:43 generate_tutorials.sh
+drwxr-xr-x  8 root root  4096 Oct  2 08:37 .git
+drwxr-xr-x  3 root root  4096 Oct  2 00:12 .github
+-rw-r--r--  1 root root    79 Oct  2 00:12 .gitignore
+drwxr-xr-x  2 root root  4096 Oct  2 08:37 logs
+drwxr-xr-x  7 root root  4096 Oct  1 23:04 .opencode
+-rw-r--r--  1 root root  2163 Oct  1 23:26 prompt.md
+drwxr-xr-x 12 root root  4096 Oct  2 00:11 public
+-rw-r--r--  1 root root 14453 Oct  1 23:03 README.md
+drwxr-xr-x  4 root root  4096 Oct  2 00:09 static
+-rw-r--r--  1 root root     3 Oct  2 08:05 .tutorial_progress
+drwxr-xr-x  3 root root  4096 Oct  2 03:09 week1
+drwxr-xr-x  3 root root  4096 Oct  2 06:00 week2
+drwxr-xr-x  3 root root  4096 Oct  2 08:05 week3
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week4
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week5
+drwxr-xr-x  2 root root  4096 Oct  1 23:15 week6
+drwxr-xr-x  2 root root  4096 Oct  1 23:14 week7
+drwxr-xr-x  2 root root  4096 Oct  1 23:17 week8
+-rw-r--r--  1 root root  4933 Oct  1 23:06 陈斌斌简历.md
+total 320
+drwxr-xr-x  3 root root  4096 Oct  2 08:05 .
+drwxr-xr-x 18 root root  4096 Oct  2 00:12 ..
+drwxr-xr-x  2 root root  4096 Oct  2 08:00 assets
+-rw-r--r--  1 root root 60544 Oct  2 06:24 day15_kv_cache_manager_block_pool.md
+-rw-r--r--  1 root root 74001 Oct  2 07:10 day17_attention_backend_abstraction.md
+-rw-r--r--  1 root root 65820 Oct  2 07:36 day18_cuda_graph.md
+-rw-r--r--  1 root root 61646 Oct  2 08:05 day19_async_scheduling.md
+-rw-r--r--  1 root root 37509 Oct  1 23:15 README.md
+assets
+day01_transformer_inference.md
+day02_memory_latency_hand_calc.md
+day03_roofline_model.md
+day04_paged_attention_paper.md
+day05_serving_metrics.md
+day06_env_setup_first_bench.md
+day07_first_principles_review.md
+README.md
+assets
+day08_v1_architecture_overview.md
+day09_request_entry_pipeline.md
+day11_chunked_prefill.md
+day12_preemption.md
+day14_request_state_machine_review.md
+README.md
+[0m
+[0m$ [0mcat /mnt/workspace/aiinfra/vllm/.tutorial_progress; ls /mnt/workspace/aiinfra/vllm/week3/assets/ /mnt/workspace/aiinfra/vllm/week2/assets/ 2>/dev/null
+19
+/mnt/workspace/aiinfra/vllm/week2/assets/:
+day08_startup_sequence.svg
+day08_step_ipc_timeline.svg
+day08_v1_process_architecture.svg
+day09_request_entry_pipeline.svg
+day09_request_object_anatomy.svg
+day09_ttft_decomposition.svg
+day11_budget_tradeoff.svg
+day11_chunked_prefill_timeline.svg
+day11_unified_scheduling_ledger.svg
+day12_preemption_flow.svg
+day12_preemption_state_machine.svg
+day12_recompute_vs_swap.svg
+day14_request_state_machine.svg
+day14_ten_requests_six_kv_timeline.svg
+day14_week2_one_graph_flow.svg
+
+/mnt/workspace/aiinfra/vllm/week3/assets/:
+day15_capacity_handcalc_lru.svg
+day15_request_kv_lifecycle.svg
+day15_three_layer_architecture.svg
+day17_backend_abstraction_layers.svg
+day17_forward_dataflow.svg
+day17_paged_gather.svg
+day18_capture_replay_lifecycle.svg
+day18_full_vs_piecewise.svg
+day18_launch_bound_timeline.svg
+day19_async_dataflow.svg
+day19_placeholder_ledger.svg
+day19_sync_vs_async_timeline.svg
+[0m
+[0m→ [0mRead week3/day19_async_scheduling.md[90m [limit=150][0m
+[0m→ [0mRead week3/day19_async_scheduling.md[90m [limit=200, offset=151][0m
+[0m
+[0m$ [0mcat /mnt/workspace/aiinfra/vllm/generate_tutorials.sh; ls /mnt/workspace/aiinfra/vllm/week3/*.md | cat
+#!/usr/bin/env bash
+#
+# generate_tutorials.sh — 按天调用 cannbot 生成 vLLM 推理系统教程（Day 1 ~ Day 56）
+#
+# 行为：
+#   - 每次只向 cannbot 发送「一天」的教程生成任务；
+#   - 默认单线程：前一天生成完成（产出 dayNN_*.md）后才发送下一天；
+#     需要加速时可用 JOBS=2 等开启并发；
+#   - 支持断点续跑：已生成的 Day 自动跳过；
+#   - 不重试：某天失败则记录并继续生成下一天，失败的 Day 在结束时汇总，
+#     重新运行本脚本即可补跑；
+#   - 每天之间冷却 COOLDOWN 秒（默认 600，即 10 分钟）：缓解网关限流；
+#   - 模型思考强度 CANNBOT_VARIANT（默认 low）：GLM-5.3 默认思考过长，
+#     复盘类任务会烧 3 万+ reasoning token 撞输出上限（finish=length）导致
+#     空退，low 可避免该失败模式；
+#   - 末尾自动补跑：第一轮结束后，对缺失的 Day 最多再补跑 MAX_PASSES-1 轮
+#     （默认共 3 轮），轮间同样冷却。
+#
+# 用法：
+#   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
+#   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
+#   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
+#   COOLDOWN=600 ./generate_tutorials.sh    # 自定义冷却秒数（默认 600，即 10 分钟）
+#   CANNBOT_VARIANT=medium ./generate_tutorials.sh   # 调整思考强度（默认 low）
+#   MAX_PASSES=5 ./generate_tutorials.sh    # 最多补跑轮数（默认 3）
+#
+set -u
+
+WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$WORKDIR"
+
+START_DAY="${START_DAY:-1}"
+END_DAY="${END_DAY:-56}"
+JOBS="${JOBS:-1}"
+COOLDOWN="${COOLDOWN:-600}"
+MAX_PASSES="${MAX_PASSES:-3}"
+LOG_DIR="$WORKDIR/logs"
+PROGRESS_FILE="$WORKDIR/.tutorial_progress"
+mkdir -p "$LOG_DIR"
+
+# cannbot 需要自动写入文件，必须跳过权限确认才能无人值守运行
+# 默认模型：cannbot/glm-5.3（可用 `cannbot models` 查看全部，用 CANNBOT_MODEL 覆盖）
+CANNBOT_MODEL="${CANNBOT_MODEL:-cannbot/glm-5.3}"
+CANNBOT_VARIANT="${CANNBOT_VARIANT:-low}"
+CANNBOT_OPTS=(--dir "$WORKDIR" --dangerously-skip-permissions -m "$CANNBOT_MODEL" --variant "$CANNBOT_VARIANT")
+
+log() {
+  echo "[$(date '+%F %T')] $*" | tee -a "$LOG_DIR/run.log" >&2
+}
+
+# 判断某一天是否已有产出文件（day01_*.md / day1_*.md 等，任意子目录）
+day_done() {
+  local day="$1"
+  local padded
+  padded="$(printf '%02d' "$day")"
+  find "$WORKDIR" -type f \
+    \( -iname "day${padded}_*.md" -o -iname "day${day}_*.md" \) \
+    ! -path '*/.git/*' | grep -q .
+}
+
+# 找出该 Day 产出文件的存放目录：按周组织（week1..week8），目录不存在则用根目录
+day_dir() {
+  local day="$1"
+  local week=$(( (day - 1) / 7 + 1 ))
+  if [[ -d "$WORKDIR/week${week}" ]]; then
+    echo "week${week}"
+  else
+    echo "."
+  fi
+
+}
+
+# 构造发给 cannbot 的当天任务提示
+build_prompt() {
+  local day="$1"
+  local padded
+  padded="$(printf '%02d' "$day")"
+  local outdir
+  outdir="$(day_dir "$day")"
+  cat <<EOF
+请阅读当前目录下的 prompt.md 和 README.md。
+
+README.md 中是 Day 1 ~ Day 56 的学习计划，prompt.md 中是教程的格式与深度要求（一日一文、章节结构、SVG 图、vLLM V1 主线、代码与源码调用链、面试问题等），请严格遵守。
+
+本次任务：只生成 Day ${day} 这一天的教程，严格对应 README.md 中 Day ${day} 的主题、学习目标、实验和产出，不要生成其他天的内容。
+
+要求：
+- 输出一个 Markdown 文件到 ${outdir}/ 目录下，文件名形如 day${padded}_<主题英文小写下划线>.md。
+- SVG 图保存到 ${outdir}/assets/ 并引用，或直接内嵌在 Markdown 中。
+- 写作前可以浏览已存在的 day*.md 文件（如果存在），在内容上主动与前几天衔接（例如「回顾 Day X」），但不要修改已有文件。
+- 完成后请确认文件已写入，并简要说明文件路径和主要内容。
+EOF
+}
+
+# 生成某一天的教程：只尝试一次，失败返回 1（由调用方决定是否继续）
+run_day() {
+  local day="$1"
+  local prompt
+  prompt="$(build_prompt "$day")"
+
+  log "Day ${day}: 发送给 cannbot ..."
+  if cannbot run "${CANNBOT_OPTS[@]}" \
+      --title "vLLM 教程 Day ${day}" \
+      "$prompt" > "$LOG_DIR/day$(printf '%02d' "$day").log" 2>&1; then
+    if day_done "$day"; then
+      log "Day ${day}: 完成，产出文件已确认。"
+      echo "$day" > "$PROGRESS_FILE"
+      return 0
+    fi
+    log "Day ${day}: cannbot 正常退出但未找到 day 产出文件，视为失败（详见 logs/day$(printf '%02d' "$day").log）。"
+  else
+    log "Day ${day}: cannbot 退出码非零（详见 logs/day$(printf '%02d' "$day").log）。"
+  fi
+  return 1
+}
+
+# 单轮扫描：对范围内所有缺失的 Day 各生成一次，返回缺失列表（echo，逗号分隔）
+run_pass() {
+  local day
+  local launched=0
+  for (( day = START_DAY; day <= END_DAY; day++ )); do
+    if day_done "$day"; then
+      log "Day ${day}: 已存在产出文件，跳过。"
+      continue
+    fi
+    # 并发控制：运行中的任务达到 JOBS 上限时，等待任意一个结束
+    while (( $(jobs -rp | wc -l) >= JOBS )); do
+      wait -n
+    done
+    # 冷却：仅在本轮已经跑过任务后生效，避免紧跟大生成触发网关限流
+    if (( launched )) && (( COOLDOWN > 0 )); then
+      log "冷却 ${COOLDOWN}s 后生成 Day ${day} ..."
+      sleep "$COOLDOWN"
+    fi
+    # 失败不中断：run_day 返回非零也继续派发下一天
+    run_day "$day" &
+    launched=1
+    sleep 2  # 错峰启动，避免两个 cannbot 同时请求
+  done
+  wait
+
+  # 汇总本轮结束后仍缺失的 Day
+  local missing=()
+  for (( day = START_DAY; day <= END_DAY; day++ )); do
+    day_done "$day" || missing+=("$day")
+  done
+  echo "${missing[*]}"
+}
+
+main() {
+  log "===== 教程生成开始：Day ${START_DAY} ~ Day ${END_DAY}（并发 ${JOBS}，冷却 ${COOLDOWN}s，variant ${CANNBOT_VARIANT}，最多 ${MAX_PASSES} 轮）====="
+  local pass=1
+  local missing=""
+  while (( pass <= MAX_PASSES )); do
+    log "----- 第 ${pass}/${MAX_PASSES} 轮 -----"
+    missing="$(run_pass)"
+    if [[ -z "$missing" ]]; then
+      log "===== 全部完成：Day ${START_DAY} ~ Day ${END_DAY} ====="
+      return 0
+    fi
+    log "第 ${pass} 轮结束，以下 Day 未产出：${missing}"
+    pass=$(( pass + 1 ))
+    if (( pass <= MAX_PASSES )) && (( COOLDOWN > 0 )); then
+      log "冷却 ${COOLDOWN}s 后开始补跑轮 ..."
+      sleep "$COOLDOWN"
+    fi
+  done
+  log "===== ${MAX_PASSES} 轮后仍缺失：${missing}（重跑本脚本可继续补）====="
+  return 1
+}
+
+main "$@"
+/mnt/workspace/aiinfra/vllm/week3/day15_kv_cache_manager_block_pool.md
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md
+/mnt/workspace/aiinfra/vllm/week3/day18_cuda_graph.md
+/mnt/workspace/aiinfra/vllm/week3/day19_async_scheduling.md
+/mnt/workspace/aiinfra/vllm/week3/README.md
+[0m
+[0m→ [0mRead week3/day19_async_scheduling.md[90m [offset=351][0m
+[0m→ [0mRead week3/README.md[90m [limit=80][0m
+[0m✱ [0mGrep "Day 2[01]"[90m in week3/README.md · 9 matches[0m
+[0m→ [0mRead week3/README.md[90m [limit=160, offset=464][0m
+[0m
+[0m$ [0mls /mnt/workspace/aiinfra/vllm/vllm/v1/core/sched/ 2>/dev/null; ls /mnt/workspace/aiinfra/vllm/vllm/v1/engine/ 2>/dev/null; git -C /mnt/workspace/aiinfra/vllm log --oneline -3 2>/dev/null; git -C /mnt/workspace/aiinfra/vllm describe --tags 2>/dev/null
+9f00707 Add Day 03-19 tutorial notes (weeks 1-3) with logs; improve generator (cooldown, no-retry, low thinking variant)
+6684e08 Switch Pages to VitePress-style build system (weeks/day pages + Actions deploy)
+b8c699d Fix Pages: use README.html links, drop readme-index plugin
+[0m
+[0m→ [0mRead week3/day15_kv_cache_manager_block_pool.md[90m [limit=120][0m
+[0m→ [0mRead week3/README.md[90m [limit=383, offset=81][0m
+[0m
+[0m$ [0mgrep -n "scheduler.py:" /mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md | head -40; echo ---; grep -n "budget" /mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md | head -30
+19:- [ ] **背下统一调度模型**：schedule() 顶部注释（scheduler.py:180-189）——"没有 prefill/decode 阶段，只有让 `num_computed_tokens` 追上 `num_tokens_with_spec`"；chunked prefill / prefix caching / 投机解码都是这一个模型的不同侧面
+44:| **`long_prefill_token_threshold`** | 单个请求单步 prefill 的钳位（config/scheduler.py:59） | 知道默认 0（不钳）、与 `max_num_partial_prefills` 配套的"短请求插队"动机 |
+118:**Running 循环**（scheduler.py:209-320）对每个在跑请求计算本步 token 数：
+134:2. **钳位①是可选的"每请求单步上限"**：`long_prefill_token_threshold`（config/scheduler.py:59，默认 0 = 不钳）。它不是 chunked prefill 本身，而是 chunk 的**再切小**——动机见 §2.7（给晚到请求留预算）。
+160:**一个不变量收尾**：`max_num_batched_tokens ≥ max_num_seqs` 被 config 强制校验（config/scheduler.py:245-249）。为什么？running 循环先到先得，若 budget < running 请求数，排后面的请求连 1 个 token 都拿不到。这条校验保证**（不开投机解码时）每个 running 请求每步至少分到 1 token**——它是"decode 节奏不被饿死"的制度保证。两个看似独立的旋钮被一条不变量绑在一起，这是 V1 设计里我最喜欢的一处。
+230:**⑤ 晚到者排队（深入一步，留给 Day 13 验证）**。running 循环**先到先得**：mid-prefill 的 chunk 请求若每步吃满剩余预算，那么比它晚入 running 的请求、以及 waiting 里的新请求，在 chunk 完成前分不到预算（只能等最后一块的富余）。推演：budget 8192、一个 24K chunk 在跑 → 新短请求等 ⌈24K/8182⌉ = 3 步 ≈ 0.8s——与不开 chunked 时等一个 0.77s 巨型步**总时长相同**（预算消耗速率不变），受害的只是"期间新到的请求没有提前量"。两个配套旋钮就是为此而生：`long_prefill_token_threshold`（把每请求单步 chunk 钳小，给晚到者留预算）和 `max_num_partial_prefills`（限制并发部分 prefill 数）——config docstring 明示动机（config/scheduler.py:53-57："allow shorter prompts to jump the queue in front of longer prompts in some cases, improving latency"）。**这条推论的正确打开方式**：记下推理链，Day 13 用长 prompt 洪峰压测验证。
+245:启动日志可观察：`Chunked prefill is enabled with max_num_batched_tokens=8192.`（config/scheduler.py:204-207，EngineCore 进程打印）——实验 0 的检查点。
+313:# scheduler.py:197-198 —— budget 就是一个局部变量
+317:### 4.2 running 循环：切块主战场（scheduler.py:209-320）
+351:### 4.3 waiting 循环：chunked 分支与入队（scheduler.py:335-537）
+388:### 4.4 账本推进与输出（scheduler.py:582-645）
+428:| ① | budget 初始化 | `schedule()`（`token_budget = max_num_batched_tokens`） | `v1/core/sched/scheduler.py:198` |
+438:| ⑪ | 回填与不变量 | `update_from_output`（"no partial prefill outputs"） | `scheduler.py:861, :978` |
+453:#              （A100 上应是 2048；来源 config/scheduler.py:205-207）
+462:# day11_sim.py —— chunked prefill 切块算术的最小仿真（对应 scheduler.py:209-320）
+630:> 骨架：① 问题：prefill compute-bound、decode 访存 bound（Day 1），混跑时长 prompt 的整段 prefill 把单步推到数百 ms~秒级，同批 decode 的 ITL 出现两个数量级的尖峰；② 机制：把 prompt 按 token 预算切成多个 chunk 跨 step 完成，与 decode 混排在同一 forward（piggybacking，Sarathi-Serve OSDI 2024）；③ 实现：vLLM V1 里它不是独立特性——调度器无阶段之分（schedule() 顶部注释），budget 的 `min` 钳位（scheduler.py:220）天然切片，V1 默认开启；④ 数学：ITL 上界从 ρ·L（无界）变为 ρ·B + T_fixed（可调）。**收尾**：FLOPs 守恒——attention 的 query-key 对总数两种方式同为 ≈L²/2，切块只增加控制开销，所以近乎免费。
+638:> 骨架：① 位置：`Scheduler.schedule()` 的 running 循环（scheduler.py:220）与 waiting 循环（:437）两处 `min(num_new_tokens, token_budget)`；② 大小 = `min(欠账, long_prefill_token_threshold?, 剩余 budget, max_model_len−1−computed)`——**是"剩余预算"不是固定值**：decode 先扣完后 chunk 吃剩余，所以并发 decode 越多每块越小；③ 没有任何语义切块（句子/窗口都不看）。**收尾**：chunk 的输入切片 = `all_token_ids[num_computed_tokens : +num_scheduled_tokens]`——账本字段就是数组下标。
+705:running 循环先到先得扣 budget：若 budget < running 请求数，排在后面的请求 `num_new_tokens = min(need, 0) = 0`（:238-252 continue），本步无 token——decode 的 ITL 出现"预算性空洞"。校验（config/scheduler.py:245-249）保证每个 running 每步至少 1 token（不开投机解码时；spec decode 下每请求需 draft+1，是已知的例外场景）。这是"ITL 平滑靠不变量不靠运气"的制度层体现。
+752:- [ ] 在图 2 上补一条：如果 `chunked_prefill_enabled=False`，A 的三步会变成什么样？（答案分两种：B=8192 时剩余预算 8189 ≥ 6000，A 一步整段进批（不切）；B=2048 时 A 永远放不进去——而这种组合 vLLM 根本拒绝启动：config 校验"关 chunked 时 budget 必须 ≥ max_model_len"（config/scheduler.py:235-243）防的就是这种死锁）
+759:今天的链路里留了一个分支没展开：`allocate_slots` 返回 `None`（scheduler.py:259）——KV block 不够了。明天沿这条分支读 preemption：victim 怎么选（FCFS 下 `running.pop()` 弹**最新**者，:271——"保护已投入计算的旧请求"）、recompute 模式如何把请求打回 `num_computed_tokens = 0`（今天最重要的账本字段会被清零）、塞回 waiting **队首**的恢复语义（`prepend_request`——Day 9 埋的伏笔兑现）、V1 为什么砍掉 swap 只留 recompute、以及 `/metrics` 里的 `vllm:num_preemptions` 怎么读、什么时候该降 `max_num_seqs`。今天实验 2/3 的脚本明天直接复用——构造"KV 挤爆"只差一个参数。
+---
+5:> **前置要求**：Day 9（`Request` 账本组、QUEUED/SCHEDULED 事件、"日志跟踪一个请求"基建）、Day 10（两队列与 budget 记账、`num_scheduled_tokens` 的含义）、Day 1（prefill compute-bound vs decode memory-bound——今天的所有公式都是它的应用）、Day 5（TTFT/TPOT/ITL 定义）、Day 6（Qwen3-8B 台账与 `/metrics`）
+7:> **背景衔接**：你在昇腾上做算子优化时干过无数次"切大任务"：大 GEMM 按 tile 切、L1 放不下就分块流式搬、流水线按拍均衡。chunked prefill 是同一思想在**系统层**的重现——把一个不可预测的大任务（16K prompt 的整段 prefill）切成规模可预测的小任务（budget 大小的 chunk），用**每步时间的上界**换全系统的时延平滑。而且它和你熟悉的 tiling 一样遵守同一条守恒律：**切块不增加计算量（FLOPs 守恒），增加的只是控制开销**——这句话今天会用数学证一遍（§3.2），也是面试的高频误区（§6 Q1）。你做高并发服务时的"长任务切片防队头阻塞"经验同样直接适用（§2.7 的晚到者排队问题）。
+9:> **配套材料**：`week2/README.md` Day 11 节；三张 SVG：`assets/day11_chunked_prefill_timeline.svg`（今日主图：时间洞 vs 有界 chunk）、`assets/day11_unified_scheduling_ledger.svg`（schedule() 切块路径 + 账本推进表）、`assets/day11_budget_tradeoff.svg`（收益/代价一页决策图——今日产出物的底稿）
+20:- [ ] **手推切块算法**：chunk 大小 = 三个 `min()` 的叠加（need → `long_prefill_token_threshold` → 剩余 budget → `max_model_len−1`），以及 waiting 侧 `chunked_prefill_enabled=False` 时"整请求跳过"的分支（§2.4）
+23:- [ ] **说全代价清单**（README 原题）：TTFT 略升、固定开销 ×k、混排步不能用整图 CUDA Graph、晚到者排队、A100 上大 budget 反降吞吐——每条能落到源码或实验数据（§2.7）
+36:| **token budget** | `max_num_batched_tokens`：单步 forward 的总 token 上限 | 知道它先被 running 消耗、再给 waiting；默认值分硬件（H100 serve 8192 / A100 2048） |
+37:| **chunk 大小** | `min(need, threshold?, 剩余 budget, max_model_len−1−computed)` | 能在给定负载下手算每步的批组成（实验 1） |
+47:> **一句话本质**：chunked prefill = **把 budget 从"准入单位"变成"切片刀"**。Day 10 里 budget 决定"这一步一共算多少 token"；今天看到它顺带决定了"单个请求这一步最多算多少 token"——于是单步时间有了上界，decode 的 ITL 有了上界；代价是 prefill 被拉长成 k 步、多付 (k−1) 次每步固定开销，且计算总量不变（FLOPs 守恒）。
+61:| Day 10 | 两队列 + budget 记账 + `max_num_seqs`/KV 两道闸 | ✅（计划内） |
+62:| **Day 11（今天）** | **budget 的第二重身份：切片刀（chunked prefill）** | ▶ |
+63:| Day 12 | budget/KV 失守时：preemption（`allocate_slots` 返回 None 的分支） | 待 |
+81:不开 chunked prefill（等价于 budget ≥ prompt 长度）：16K prompt 到来并被接纳的那个 step，**同批所有 decode 请求的下一个 token 要等 0.5~1.9s**——ITL 从 ~6ms 尖峰到数百 ms（两个数量级），流式体验直接崩坏。这正是 week2/README 11.1 的 A100 算例（7.5ms → 900ms，120 倍），今天是它的 H100 版 + 源码版。
+112:所以"chunked prefill 是怎么实现的"这个问题的第一层答案是：**它不是被"实现"的，它是统一模型的一个自然推论**——只要 budget 限制了单步还款额，长 prompt 自然被切。第二层答案（§2.4）才是 budget 怎么切。这也是为什么 V1 敢把 chunked prefill 设为默认开启（`EngineArgs._set_default_args`，`arg_utils.py:1544-1548`："V1 always uses chunked prefills and prefix caching for non-pooling tasks"）——它的实现复杂度约等于零。
+126:num_new_tokens = min(num_new_tokens, token_budget)        # 钳位②（:220）★ 切块
+133:1. **钳位②就是 chunked prefill 的全部**：`token_budget` 从 `max_num_batched_tokens` 起步（:198），每个请求扣走自己的份额。一个欠账 24K 的请求在 budget 8192 下每步只能还 ~8182——剩余部分**没有状态、没有回调、没有定时器**，下一轮循环它还在 running 列表里，need 自动变成 24K−8182。
+151:        num_new_tokens > token_budget:
+155:num_new_tokens = min(num_new_tokens, token_budget)
+160:**一个不变量收尾**：`max_num_batched_tokens ≥ max_num_seqs` 被 config 强制校验（config/scheduler.py:245-249）。为什么？running 循环先到先得，若 budget < running 请求数，排后面的请求连 1 个 token 都拿不到。这条校验保证**（不开投机解码时）每个 running 请求每步至少分到 1 token**——它是"decode 节奏不被饿死"的制度保证。两个看似独立的旋钮被一条不变量绑在一起，这是 V1 设计里我最喜欢的一处。
+210:**chunked（budget B）**：任何一步的总 token ≤ B（decode 先扣、chunk 吃剩余），
+224:**② 每步固定开销 ×k + 小 chunk 的计算效率损失**。FLOPs 守恒（§3.2 证明），但每步都要重新付 T_fixed，且 GEMM 的 M 从 L 变成 B——B 很小时矩阵乘效率下降。极端实证：A100 上把 budget 调大（如 8192）反而**降低**吞吐（`arg_utils.py:1598-1600` 注释引用 PR #17885 的实测，vLLM 为此按设备名把 A100 的默认值钉在 2048）——budget 是硬件相关的经验值，不是越大越好。
+230:**⑤ 晚到者排队（深入一步，留给 Day 13 验证）**。running 循环**先到先得**：mid-prefill 的 chunk 请求若每步吃满剩余预算，那么比它晚入 running 的请求、以及 waiting 里的新请求，在 chunk 完成前分不到预算（只能等最后一块的富余）。推演：budget 8192、一个 24K chunk 在跑 → 新短请求等 ⌈24K/8182⌉ = 3 步 ≈ 0.8s——与不开 chunked 时等一个 0.77s 巨型步**总时长相同**（预算消耗速率不变），受害的只是"期间新到的请求没有提前量"。两个配套旋钮就是为此而生：`long_prefill_token_threshold`（把每请求单步 chunk 钳小，给晚到者留预算）和 `max_num_partial_prefills`（限制并发部分 prefill 数）——config docstring 明示动机（config/scheduler.py:53-57："allow shorter prompts to jump the queue in front of longer prompts in some cases, improving latency"）。**这条推论的正确打开方式**：记下推理链，Day 13 用长 prompt 洪峰压测验证。
+239:| `max_num_seqs` | H100 → 1024；A100 → 256（config 兜底 128） | 同上 / config:169 | 并发上限；受 budget ≥ max_num_seqs 约束 |
+242:| `enable_chunked_prefill` | **V1 generate 任务恒 True** | `arg_utils.py:1544-1548` | 显式关闭时强制 budget ≥ max_model_len（config:235-243） |
+278:### 3.3 budget 怎么设：SLO 反推（图 3 左侧）
+280:![budget 权衡决策图](assets/day11_budget_tradeoff.svg)
+288:实操：从默认值出发（H100 serve 8192 / A100 2048——不是玄学，是两条曲线的实测折中），用 Day 6 的压测法固定负载扫 {512, 2048, 8192, 32768}，画"ITL p99 vs B"与"长请求 TTFT p50 vs B"的交点（实验 3 就是它的缩小版）。**这正是 Day 5 的 SLO/goodput 思维：budget 是把 ITL SLO 翻译成引擎语言的那个参数**。
+294:> **题 2**：你的产品流式 SLO 是"ITL p99 ≤ 120ms"，模型 Qwen3-8B @ H100。budget 应设多少？如果运维同时要求"32K 长文 TTFT ≤ 1.5s"，两个 SLO 打架吗？
+302:### 4.1 step 入口与 budget 初始化（`vllm/v1/engine/core.py` + scheduler.py）
+313:# scheduler.py:197-198 —— budget 就是一个局部变量
+314:token_budget = self.max_num_scheduled_tokens    # = max_num_batched_tokens（:74-75）
+[0m
+[0m$ [0mgrep -n "v0.11.0\|版本口径" /mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md /mnt/workspace/aiinfra/vllm/week2/day12_preemption.md /mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md /mnt/workspace/aiinfra/vllm/week3/day18_cuda_graph.md | head -20
+/mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md:10:> **版本口径**：源码坐标按 **v0.11.0 tag** 逐行核对（2026-10 复核），与 Day 8/9/10 一致；`max_num_batched_tokens` 默认值与 partial-prefill 相关旋钮（`long_prefill_token_threshold` / `max_num_partial_prefills`）**随版本演进较快**，读码先对版本（实验 0）
+/mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md:234:### 2.8 配置旋钮与默认值（v0.11.0 源码口径）
+/mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md:298:## 4. 关键代码走读（v0.11.0 逐行核对版）
+/mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md:300:> **阅读方法**：先看图 2 左列从上往下走。以下为**节选**（主干保真、删减分支），行号以 v0.11.0 为准。
+/mnt/workspace/aiinfra/vllm/week2/day11_chunked_prefill.md:650:> 骨架：① 上界由 ITL SLO 反推：B ≤ (SLO_ITL − T_fixed)/ρ；② 下界压力：k=⌈L/B⌉ 别太大，否则 TTFT/吞吐被每步开销吃掉；③ 硬约束：B ≥ max_num_seqs、关闭 chunked 时 B ≥ max_model_len；④ 经验值硬件相关：v0.11.0 默认 H100 serve 8192 / A100 2048（A100 上调大反降吞吐，PR #17885）；⑤ 方法论：固定负载扫 {512…32768}，画 ITL p99 与长请求 TTFT 的交点。**收尾**：把它定位成"把 ITL SLO 翻译成引擎语言的参数"——Day 5 的 goodput 思维。
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:10:> **版本口径**：源码坐标按 **v0.11.0 tag** 逐行核对（2026-10 复核），与 Day 8/9/10/11 一致。两个随版本演进的点已标注：① v0.11.0 的 PRIORITY 策略下抢占"本步已调度的 victim"的回滚不完整，main 分支已补全（§2.3 附注）；② V0 的 swap/watermark 坐标属历史记忆（V0 代码已删除），面试引用时要带版本前缀
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:18:- [ ] **写出触发条件的精确判定**：`num_blocks_to_allocate > get_num_free_blocks()` → `None`（kv_cache_manager.py:271-273），并能解释 **"free" 含 ref_cnt=0 的可驱逐 cached 块**、v0.11.0 **没有 watermark**（§2.2）
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:89:2. **v0.11.0 没有 watermark**。V0 时代分配侧有 ~1% 块的预留水位线（`watermark_blocks`），宁可少用也不碰底；V1 把它删了——精确到"free < 需要"才失败，靠抢占兜底。这是"悲观预留 → 乐观放行 + 回滚"的完整转向。
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:130:> **附注（版本演进，读码记版本的一个活案例）**：v0.11.0 的 PRIORITY 分支里，若 victim 恰好是**本步已调度**的请求（在 `scheduled_running_reqs` 里），只把它从 `scheduled_running_reqs` 移除（:268-269），`num_scheduled_tokens` 的残留条目与 token_budget 都没有回滚；main 分支后来补全了这条路径（`num_scheduled_tokens.pop`、`req_to_new_blocks.pop`、encoder 预算恢复，并把六步复位提成 `_preempt_request` 方法）。FCFS 主路径（vLLM 默认）在 v0.11.0 就是干净的：victim 弹自队尾、必然未调度。**面试讲这段的前提是先讲清 FCFS 主干，再以"我对比过 main 分支"的姿态带出**。
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:198:事件 → 统计 → 指标的三级链路（全部 v0.11.0 实测坐标）：
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:286:## 4. 关键代码走读（v0.11.0 逐行核对版）
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:288:> **阅读方法**：对照图 1 从上往下走。以下为主干保真节选，行号以 v0.11.0 为准。
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:464:pip show vllm | head -3        # 记录版本（本篇坐标：v0.11.0）
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:481:"""day12_sim.py —— preemption 最小仿真（v0.11.0 scheduler.py + BlockPool 语义）
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:674:> 骨架：① 判定式：running 循环里 `allocate_slots` 需要 `num_blocks_to_allocate > get_num_free_blocks()` 时返回 None（kv_cache_manager.py:271-273）；② free 的精确含义：真空闲 + ref_cnt=0 的可驱逐 cached 块——所以顺序是**先驱逐缓存、后抢占请求**；③ v0.11.0 无 watermark，精确耗尽才失败；④ 诱因：`max_num_seqs` 超配 + 长输出堆积 → KV 增长超预期。**收尾**：抢占是 admission control 失灵的信号，不是正常态——vLLM 乐观放行（不预留）换利用率，抢占是过载保险。
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:704:1. **触发条件**：`num_blocks_to_allocate > get_num_free_blocks()` → None（kv_cache_manager.py:271-273）；free 含 ref_cnt=0 的可驱逐 cached 块 → **先驱逐缓存、后抢占请求**；v0.11.0 无 watermark，精确耗尽才失败。
+/mnt/workspace/aiinfra/vllm/week2/day12_preemption.md:768:v0.11.0 无 watermark；顺序：先驱逐缓存（hit rate↓）→ 后抢占（usage≈1.0 → preemptions↑）
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md:10:> **版本口径**：源码坐标按 **v0.11.0 tag** 逐行核对（2026-10 复核），与 Day 8/9/11/12/15 一致。⚠️ **四处与本仓库 week3/README.md 速查表、旧博客不一致，以 tag 为准**：① 后端实现已从 `vllm/attention/backends/` 迁到 **`vllm/v1/attention/backends/`**（`vllm/attention/` 只剩抽象层 `layer.py`/`selector.py`/`backends/abstract.py` 与 Triton ops）；② **`vllm/attention/registry.py` 不存在**——注册与选择是 `selector.py:get_attn_backend` + `current_platform.get_attn_backend_cls`（返回 qualname 字符串再动态 import）；③ `AttentionType` 只有 DECODER / ENCODER / ENCODER_ONLY / ENCODER_DECODER 四种（**没有** PREFILL_ONLY，MTP draft 层复用 DECODER）；④ v0.11.0 的 FlashAttention 后端**不再分派 prefill/decode 两个 kernel**——单一 `flash_attn_varlen_func` 统一调用同时吃混合 batch（§2.6，这是与所有旧文章差异最大的一处）。引用前先 `git log --oneline -3` 记版本
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md:25:- [ ] 交付：**后端抽象分层图笔记**（带源码行号）+ **《新硬件 backend 接入清单》一页**（v0.11.0 接口实测版，W6 Day 36 直接当 checklist）+ **三后端对比实验数据表**（§9）
+/mnt/workspace/aiinfra/vllm/week3/day17_attention_backend_abstraction.md:34:| **`AttentionType`**（abstract.py:12-24） | 层的语义角色：DECODER / ENCODER / ENCODER_ONLY / ENCODER_DECODER | ⚠️ v0.11.0 **没有** PREFILL_ONLY；encoder 层不碰 KV cache（flash_attn.py:474-481） |
+[0m
+[0m$ [0mfind /mnt/workspace/aiinfra/vllm -type f \( -iname "day16*" -o -iname "day20*" -o -iname "day10*" -o -iname "day13*" \) ! -path '*/.git/*' 2>/dev/null; echo ---; ls /mnt/workspace/aiinfra/vllm/week2/
+/mnt/workspace/aiinfra/vllm/logs/day16.log
+/mnt/workspace/aiinfra/vllm/logs/day13.log
+/mnt/workspace/aiinfra/vllm/logs/day20.log
+/mnt/workspace/aiinfra/vllm/logs/day10.log
+---
+assets
+day08_v1_architecture_overview.md
+day09_request_entry_pipeline.md
+day11_chunked_prefill.md
+day12_preemption.md
+day14_request_state_machine_review.md
+README.md
+[0m
+我先查看一个现有的 SVG，以确保视觉风格一致：
+[0m→ [0mRead week3/assets/day19_placeholder_ledger.svg[90m [limit=100][0m
+现在我已经了解了全貌。Day 21 = mini 引擎 continuous batching 调度器 + 第 3 周复盘（V1 全链路大图）。在编写教程之前，让我先对 mini-engine 代码进行原型设计并进行验证，从而确保教程中的代码和演示追踪是准确的：
+[0m
+[0m$ [0mmkdir -p /tmp/opencode/mini_vllm/mini_vllm /tmp/opencode/mini_vllm/tests
+(no output)
+[0m
+[0m← [0mWrite /tmp/opencode/mini_vllm/mini_vllm/blocks.py
+Wrote file successfully.
+[0m
+[0m← [0mWrite /tmp/opencode/mini_vllm/mini_vllm/engine.py
+Wrote file successfully.
+[0m
+[0m$ [0mcat > /tmp/opencode/mini_vllm/demo.py <<'EOF'
+from mini_vllm.engine import MiniEngine
+
+eng = MiniEngine(num_blocks=16, block_size=4, token_budget=32, max_seqs=4,
+                 max_model_len=64, reserve_per_running=1, verbose=True)
+for rid, p, o in [("r1", 8, 6), ("r2", 12, 3), ("r3", 6, 10), ("r4", 20, 4), ("r5", 10, 5)]:
+    eng.add_request(rid, p, o)
+eng.run()
+EOF
+cd /tmp/opencode/mini_vllm && python demo.py
+step   1: t=    6.2ms  running=['r1', 'r2', 'r3']  new_tokens=[r1:8,r2:12,r3:6]  waiting=2 free_blocks=9
+step   2: t=   13.2ms  running=['r1', 'r2', 'r3']  new_tokens=[r1:1,r2:1,r3:1]  waiting=2 free_blocks=7
+step   3: t=   20.2ms  running=['r1', 'r3']  new_tokens=[r1:1,r2:1,r3:1]  waiting=2 free_blocks=7  done=['r2']
+step   4: t=   31.2ms  running=['r1', 'r3', 'r4']  new_tokens=[r1:1,r3:1,r4:20]  waiting=1 free_blocks=5
+step   5: t=   38.2ms  running=['r1', 'r3', 'r4']  new_tokens=[r1:1,r3:1,r4:1]  waiting=1 free_blocks=4
+step   6: t=   45.2ms  running=['r3', 'r4']  new_tokens=[r1:1,r3:1,r4:1]  waiting=1 free_blocks=3  done=['r1']
+step   7: t=   54.2ms  running=['r3', 'r5']  new_tokens=[r3:1,r4:1,r5:10]  waiting=0 free_blocks=4  done=['r4']
+step   8: t=   61.2ms  running=['r3', 'r5']  new_tokens=[r3:1,r5:1]  waiting=0 free_blocks=9
+step   9: t=   68.2ms  running=['r3', 'r5']  new_tokens=[r3:1,r5:1]  waiting=0 free_blocks=9
+step  10: t=   75.2ms  running=['r5']  new_tokens=[r3:1,r5:1]  waiting=0 free_blocks=8  done=['r3']
+step  11: t=   82.2ms  running=[]  new_tokens=[r5:1]  waiting=0 free_blocks=12  done=['r5']
+---- all done: makespan=82.2ms, steps=11, I1 check: free=16/16
+  r2: ttft=6.2 e2e=20.2
+  r1: ttft=6.2 e2e=45.2
+  r4: ttft=31.2 e2e=54.2
+  r3: ttft=6.2 e2e=75.2
+  r5: ttft=54.2 e2e=82.2
+[0m
+演示完全符合我的手动推演。让我微调日志行（实时空闲计数）并编写集成测试：
+[0m← [0mEdit /tmp/opencode/mini_vllm/mini_vllm/engine.py
+Index: /tmp/opencode/mini_vllm/mini_vllm/engine.py
+===================================================================
+--- /tmp/opencode/mini_vllm/mini_vllm/engine.py
++++ /tmp/opencode/mini_vllm/mini_vllm/engine.py
+@@ -199,9 +199,9 @@
+         stall = f"  STALLED={out.stalled}" if out.stalled else ""
+         print(f"step {self.step_id:3d}: t={self.clock:7.1f}ms  "
+               f"running={[r.request_id for r in self.scheduler.running]}  "
+               f"new_tokens=[{new}]  waiting={out.num_waiting} "
+-              f"free_blocks={out.num_free_blocks}{done}{stall}")
++              f"free_blocks={self.block_table.pool.num_free_blocks}{done}{stall}")
+     return True
+ 
+ def run(self):
+     while self.has_unfinished():
+
+[0m
+[0m← [0mWrite /tmp/opencode/mini_vllm/tests/test_scheduler.py
+Wrote file successfully.
+[0m
+[0m← [0mEdit /tmp/opencode/mini_vllm/mini_vllm/engine.py
+Index: /tmp/opencode/mini_vllm/mini_vllm/engine.py
+===================================================================
+--- /tmp/opencode/mini_vllm/mini_vllm/engine.py
++++ /tmp/opencode/mini_vllm/mini_vllm/engine.py
+@@ -189,8 +189,9 @@
+               f"waiting={out.num_waiting}, free={out.num_free_blocks})")
+     return False
+ self.stall_run = 0
+ sampled, dt = self.executor.execute(out)
++self.last_total_tokens = out.total_tokens
+ self.clock += dt
+ finished = self.scheduler.update_from_output(out, sampled, self.clock)
+ self.finished.extend(finished)
+ if self.verbose:
+
+[0m
+[0m← [0mEdit /tmp/opencode/mini_vllm/mini_vllm/engine.py
+Index: /tmp/opencode/mini_vllm/mini_vllm/engine.py
+===================================================================
+--- /tmp/opencode/mini_vllm/mini_vllm/engine.py
++++ /tmp/opencode/mini_vllm/mini_vllm/engine.py
+@@ -165,8 +165,9 @@
+     self.clock = 0.0
+     self.step_id = 0
+     self.stall_run = 0
+     self.finished: list[MiniRequest] = []
++    self.last_total_tokens = 0
+     self.verbose = verbose
+ 
+ def add_request(self, request_id, prompt_len, output_len):
+     self.scheduler.add_request(
+
+[0m
+[0m← [0mEdit /tmp/opencode/mini_vllm/tests/test_scheduler.py
+Index: /tmp/opencode/mini_vllm/tests/test_scheduler.py
+===================================================================
+--- /tmp/opencode/mini_vllm/tests/test_scheduler.py
++++ /tmp/opencode/mini_vllm/tests/test_scheduler.py
+@@ -46,36 +46,19 @@
+     eng = MiniEngine(num_blocks=32, block_size=4, token_budget=16, max_seqs=4,
+                      max_model_len=64)
+     eng.add_request("r1", 12, 4)
+     eng.add_request("r2", 8, 4)
+-
+     totals = []
+     while eng.has_unfinished():
+-        ran = eng.step()
+-        assert ran
+-        totals.append(eng.scheduler and None or None)
+-    # 逐步核对：用事件日志重放
+-    eng2 = MiniEngine(num_blocks=32, block_size=4, token_budget=16, max_seqs=4,
+-                      max_model_len=64)
+-    eng2.add_request("r1", 12, 4)
+-    eng2.add_request("r2", 8, 4)
+-    step_totals = []
+-    orig_step = eng2.step
++        eng.step()
++        totals.append(eng.last_total_tokens)
+ 
+-    while eng2.has_unfinished():
+-        out = eng2.scheduler.schedule()
+-        assert out.total_tokens <= 16                     # 不变量：单步总量 ≤ budget
+-        step_totals.append(out.total_tokens)
+-        sampled, dt = eng2.executor.execute(out)
+-        eng2.clock += dt
+-        eng2.step_id += 1
+-        eng2.finished.extend(eng2.scheduler.update_from_output(out, sampled, eng2.clock))
++    assert max(totals) <= 16                # 不变量：单步总量 ≤ budget
++    assert totals[0] == 12                   # 第 1 步只有 r1 的 prefill（26 > 16 进不来）
++    assert totals[1] == 8 + 1                # r2 的 prefill 被推到第 2 步，与 r1 decode 混排
++    assert eng.block_table.pool.num_free_blocks == 32
+ 
+-    assert step_totals[0] == 12                           # 第 1 步只有 r1 的 prefill
+-    assert 8 in step_totals[1] and step_totals[1] <= 16   # r2 的 prefill 被推到第 2 步
+-    assert eng2.block_table.pool.num_free_blocks == 32
+ 
+-
+ def test_deadlock_detected_needs_preemption():
+     # 场景 4（bonus）：故意构造停摆——亲眼看 preemption 的必要性（Day 27）
+     eng = MiniEngine(num_blocks=4, block_size=4, token_budget=32, max_seqs=4,
+                      max_model_len=64, reserve_per_running=0)
+
+[0m
+[0m$ [0mcd /tmp/opencode/mini_vllm && touch mini_vllm/__init__.py tests/__init__.py && python -m pytest tests/ -v 2>&1 | tail -20 && python demo.py
+def test_deadlock_detected_needs_preemption():
+        # 场景 4（bonus）：故意构造停摆——亲眼看 preemption 的必要性（Day 27）
+        eng = MiniEngine(num_blocks=4, block_size=4, token_budget=32, max_seqs=4,
+                         max_model_len=64, reserve_per_running=0)
+        eng.add_request("r1", 8, 100)      # 2 blocks
+        eng.add_request("r2", 8, 100)      # 2 blocks —— reserve=0 时也放进池，之后双双停摆
+        with pytest.raises(RuntimeError, match="preemption"):
+            while eng.has_unfinished():
+                eng.step()
+        # 即使死锁，I1 仍守恒：free(2) + r1 持有(2) == 4
+>       assert eng.block_table.pool.num_free_blocks == 2
+E       assert 0 == 2
+E        +  where 0 = <mini_vllm.blocks.BlockPool object at 0xffffa4548a90>.num_free_blocks
+E        +    where <mini_vllm.blocks.BlockPool object at 0xffffa4548a90> = <mini_vllm.blocks.BlockTable object at 0xffffa45484d0>.pool
+E        +      where <mini_vllm.blocks.BlockTable object at 0xffffa45484d0> = <mini_vllm.engine.MiniEngine object at 0xffffa4549650>.block_table
+
+tests/test_scheduler.py:71: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_scheduler.py::test_deadlock_detected_needs_preemption - ass...
+========================= 1 failed, 3 passed in 0.04s ==========================
+step   1: t=    6.2ms  running=['r1', 'r2', 'r3']  new_tokens=[r1:8,r2:12,r3:6]  waiting=2 free_blocks=9
+step   2: t=   13.2ms  running=['r1', 'r2', 'r3']  new_tokens=[r1:1,r2:1,r3:1]  waiting=2 free_blocks=7
+step   3: t=   20.2ms  running=['r1', 'r3']  new_tokens=[r1:1,r2:1,r3:1]  waiting=2 free_blocks=11  done=['r2']
+step   4: t=   31.2ms  running=['r1', 'r3', 'r4']  new_tokens=[r1:1,r3:1,r4:20]  waiting=1 free_blocks=5
+step   5: t=   38.2ms  running=['r1', 'r3', 'r4']  new_tokens=[r1:1,r3:1,r4:1]  waiting=1 free_blocks=4
+step   6: t=   45.2ms  running=['r3', 'r4']  new_tokens=[r1:1,r3:1,r4:1]  waiting=1 free_blocks=7  done=['r1']
+step   7: t=   54.2ms  running=['r3', 'r5']  new_tokens=[r3:1,r4:1,r5:10]  waiting=0 free_blocks=10  done=['r4']
+step   8: t=   61.2ms  running=['r3', 'r5']  new_tokens=[r3:1,r5:1]  waiting=0 free_blocks=9
+step   9: t=   68.2ms  running=['r3', 'r5']  new_tokens=[r3:1,r5:1]  waiting=0 free_blocks=9
+step  10: t=   75.2ms  running=['r5']  new_tokens=[r3:1,r5:1]  waiting=0 free_blocks=12  done=['r3']
+step  11: t=   82.2ms  running=[]  new_tokens=[r5:1]  waiting=0 free_blocks=16  done=['r5']
+---- all done: makespan=82.2ms, steps=11, I1 check: free=16/16
+  r2: ttft=6.2 e2e=20.2
+  r1: ttft=6.2 e2e=45.2
+  r4: ttft=31.2 e2e=54.2
+  r3: ttft=6.2 e2e=75.2
+  r5: ttft=54.2 e2e=82.2
+[0m
+出现了一次断言失误——在死锁时，池完全被占用（free=0，而不是 2）。让我修复并使用 `reserve=1` 变体验证该声明：
+[0m← [0mEdit /tmp/opencode/mini_vllm/tests/test_scheduler.py
+Index: /tmp/opencode/mini_vllm/tests/test_scheduler.py
+===================================================================
+--- /tmp/opencode/mini_vllm/tests/test_scheduler.py
++++ /tmp/opencode/mini_vllm/tests/test_scheduler.py
+@@ -66,6 +66,8 @@
+ eng.add_request("r2", 8, 100)      # 2 blocks —— reserve=0 时也放进池，之后双双停摆
+ with pytest.raises(RuntimeError, match="preemption"):
+     while eng.has_unfinished():
+         eng.step()
+-# 即使死锁，I1 仍守恒：free(2) + r1 持有(2) == 4
+-assert eng.block_table.pool.num_free_blocks == 2
++# 即使死锁，I1 仍守恒：free(0) + r1(2) + r2(2) == 4 块，一块不丢
++assert eng.block_table.pool.num_free_blocks == 0
++assert len(eng.block_table.get_block_ids("r1")) == 2
++assert len(eng.block_table.get_block_ids("r2")) == 2
+
+[0m
+[0m$ [0mcd /tmp/opencode/mini_vllm && python -m pytest tests/ -q 2>&1 | tail -3 && cat > /tmp/opencode/mini_vllm/deadlock2.py <<'EOF'
+from mini_vllm.engine import MiniEngine
+
+# reserve=1 也防不住：单个长输出请求最终独占全池 → 停摆（watermark 只是推迟，不是配额）
+eng = MiniEngine(num_blocks=4, block_size=4, token_budget=32, max_seqs=4,
+                 max_model_len=64, reserve_per_running=1, verbose=True)
+eng.add_request("r1", 8, 100)
+eng.add_request("r2", 8, 100)
+try:
+    while eng.has_unfinished():
+        eng.step()
+except RuntimeError as e:
+    print("RuntimeError:", e)
+    print("r2 admitted ever?", any(r.request_id == "r2" for r in eng.scheduler.running))
+EOF
+python deadlock2.py
+....                                                                     [100%]
+4 passed in 0.02s
+step   1: t=    2.6ms  running=['r1']  new_tokens=[r1:8]  waiting=1 free_blocks=2
+step   2: t=    9.6ms  running=['r1']  new_tokens=[r1:1]  waiting=1 free_blocks=1
+step   3: t=   16.6ms  running=['r1']  new_tokens=[r1:1]  waiting=1 free_blocks=1
+step   4: t=   23.6ms  running=['r1']  new_tokens=[r1:1]  waiting=1 free_blocks=1
+step   5: t=   30.6ms  running=['r1']  new_tokens=[r1:1]  waiting=1 free_blocks=1
+step   6: t=   37.6ms  running=['r1']  new_tokens=[r1:1]  waiting=1 free_blocks=0
+step   7: t=   44.6ms  running=['r1']  new_tokens=[r1:1]  waiting=1 free_blocks=0
+step   8: t=   51.6ms  running=['r1']  new_tokens=[r1:1]  waiting=1 free_blocks=0
+step   9: t=   58.6ms  running=['r1']  new_tokens=[r1:1]  waiting=1 free_blocks=0
+step  10: t=   58.6ms  STALL (running=['r1'], waiting=1, free=0)
+step  11: t=   58.6ms  STALL (running=['r1'], waiting=1, free=0)
+step  12: t=   58.6ms  STALL (running=['r1'], waiting=1, free=0)
+step  13: t=   58.6ms  STALL (running=['r1'], waiting=1, free=0)
+step  14: t=   58.6ms  STALL (running=['r1'], waiting=1, free=0)
+step  15: t=   58.6ms  STALL (running=['r1'], waiting=1, free=0)
+step  16: t=   58.6ms  STALL (running=['r1'], waiting=1, free=0)
+RuntimeError: 停摆：waiting 进不来 + running 全停（缺 preemption——Day 27 的课题）
+r2 admitted ever? False
+[0m
+四个测试全部通过，demo 追踪和死锁变体已验证。现在我来创建这三张 SVG。首先是静态与动态批处理（static vs continuous batching）的概念图：
+[0m← [0mWrite week3/assets/day21_static_vs_continuous.svg
+Wrote file successfully.
+[0m
+接下来是第二张 SVG — mini 引擎架构 + 调度流程图：
+[0m← [0mWrite week3/assets/day21_mini_engine_architecture.svg
+Wrote file successfully.
+[0m
+Fixing a typo in SVG 2 (`</texttext>`):
+[0m← [0mEdit week3/assets/day21_mini_engine_architecture.svg
+Index: /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
++++ /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
+@@ -165,9 +165,9 @@
+ <text x="922" y="584" font-size="7.8" fill="#475569">否</text>
+ 
+ <!-- gate 5: KV + reserve -->
+ <polygon points="915,588 1050,624 915,660 780,624" fill="#fffbeb" stroke="#f59e0b"/>
+-<text x="915" y="616" text-anchor="middle" font-size="8.4" fill="#334155">need + reserve·(len(running)+1)</texttext>
++<text x="915" y="616" text-anchor="middle" font-size="8.4" fill="#334155">need + reserve·(len(running)+1)</text>
+ <text x="915" y="628" text-anchor="middle" font-size="8.4" fill="#334155">&gt; num_free_blocks ?</text>
+ <text x="915" y="646" text-anchor="middle" font-size="7.4" fill="#92400e">reserve = watermark 余量（v0.11.0 已删，Day 12）</text>
+ <line x1="1050" y1="624" x2="1090" y2="624" stroke="#dc2626" stroke-width="1.3" marker-end="url(#d21bc)"/>
+ <text x="1068" y="618" text-anchor="middle" font-size="7.8" fill="#b91c1c">是</text>
+
+[0m
+接下来是核心 SVG —— V1 完整数据流大图（本周最重要的交付成果）：
+[0m← [0mWrite week3/assets/day21_v1_full_dataflow.svg
+Wrote file successfully.
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week3/assets && for f in day21_static_vs_continuous.svg day21_mini_engine_architecture.svg day21_v1_full_dataflow.svg; do python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('$f'); print('$f: OK')"; done
+day21_static_vs_continuous.svg: OK
+day21_mini_engine_architecture.svg: OK
+day21_v1_full_dataflow.svg: OK
+[0m
+SVGs validated. Now writing the Day 21 tutorial markdown:
+[0m← [0mWrite week3/day21_continuous_batching_scheduler.md
+Wrote file successfully.
+[0m
+[0m← [0mEdit week3/assets/day21_static_vs_continuous.svg
+Index: /mnt/workspace/aiinfra/vllm/week3/assets/day21_static_vs_continuous.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/assets/day21_static_vs_continuous.svg
++++ /mnt/workspace/aiinfra/vllm/week3/assets/day21_static_vs_continuous.svg
+@@ -24,9 +24,9 @@
+ 
+ <!-- queue row -->
+ <text x="92" y="137" font-size="9" font-weight="bold" fill="#64748b">queue</text>
+ <rect x="130" y="122" width="294" height="22" fill="url(#d21hatch)" stroke="#cbd5e1"/>
+-<text x="277" y="136" text-anchor="middle" font-size="8.4" fill="#9a3412">r5 到达 t=0，但要等整个批 1 跑完（队头阻塞 head-of-line blocking）</text>
++<text x="277" y="136" text-anchor="middle" font-size="8.4" fill="#9a3412">r5 在 t=0 已到达，但要等批 1 跑完（队头阻塞）</text>
+ <line x1="424" y1="133" x2="446" y2="152" stroke="#d97706" stroke-width="1.6" marker-end="url(#d21a)"/>
+ 
+ <!-- seat rows -->
+ <text x="92" y="167" font-size="9" font-weight="bold" fill="#64748b">S1</text>
+
+[0m
+现在进行一些小幅的 SVG 优化（修复文字溢出和箭头穿过方框的路径）：
+[0m← [0mEdit week3/assets/day21_mini_engine_architecture.svg
+Index: /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
++++ /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
+@@ -159,9 +159,9 @@
+ <text x="915" y="538" text-anchor="middle" font-size="8.6" fill="#334155">head.prompt_len &gt; budget ?</text>
+ <line x1="1040" y1="542" x2="1090" y2="542" stroke="#dc2626" stroke-width="1.3" marker-end="url(#d21bc)"/>
+ <text x="1064" y="536" text-anchor="middle" font-size="7.8" fill="#b91c1c">是</text>
+ <text x="1096" y="538" font-size="7.8" fill="#b91c1c">break：FCFS 不跳队</text>
+-<text x="1096" y="550" font-size="7.6" fill="#94a3b8">短请求插队是 threshold 旋钮的活（D11）</text>
++<text x="1096" y="550" font-size="7.6" fill="#94a3b8">插队是 threshold 旋钮（D11）</text>
+ <line x1="915" y1="574" x2="915" y2="586" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ba)"/>
+ <text x="922" y="584" font-size="7.8" fill="#475569">否</text>
+ 
+ <!-- gate 5: KV + reserve -->
+
+[0m
+[0m← [0mEdit week3/assets/day21_mini_engine_architecture.svg
+Index: /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
++++ /mnt/workspace/aiinfra/vllm/week3/assets/day21_mini_engine_architecture.svg
+@@ -83,9 +83,9 @@
+ <text x="522" y="846" text-anchor="middle" font-size="8" fill="#64748b">↔ update_from_output：stop 检查/finish/free</text>
+ <text x="522" y="860" text-anchor="middle" font-size="8" fill="#64748b">本版同步到账——Day 19 的 async 版要晚一步</text>
+ 
+ <!-- loop back arrow -->
+-<path d="M 404 820 C 60 820 60 236 76 236" fill="none" stroke="#059669" stroke-width="1.8" stroke-dasharray="6,3" marker-end="url(#d21bd)"/>
++<path d="M 404 820 L 56 820 L 56 236 L 74 236" fill="none" stroke="#059669" stroke-width="1.8" stroke-dasharray="6,3" marker-end="url(#d21bd)"/>
+ <text x="66" y="530" font-size="8.4" fill="#047857" transform="rotate(-90 66 530)">下一个 step：完成者已离席、waiting 重试准入 —— 这就是 iteration 级调度</text>
+ 
+ <!-- stall branch -->
+ <rect x="80" y="524" width="286" height="120" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week3 && for f in assets/day21_*.svg; do python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('$f'); print('$f: OK')"; done && wc -l day21_continuous_batching_scheduler.md && grep -c "assets/day21" day21_continuous_batching_scheduler.md && grep -n "^## " day21_continuous_batching_scheduler.md
+assets/day21_mini_engine_architecture.svg: OK
+assets/day21_static_vs_continuous.svg: OK
+assets/day21_v1_full_dataflow.svg: OK
+761 day21_continuous_batching_scheduler.md
+4
+14:## 0. 今日学习目标
+28:## 1. 核心概念速览
+52:## 2. 原理深入讲解
+179:## 3. 性能模型与复杂度：今日的数学
+218:## 4. 关键代码走读（完整可运行实现，~230 行）
+567:## 5. 动手实验（约 3 ~ 3.5 小时，无 GPU）
+669:## 6. 面试高频问题（含答题骨架）
+697:## 7. 今日总结
+706:## 8. 今日自测题（先做，再展开答案）
+729:## 9. 今日产出物
+759:## 10. 明日预告（Day 22 · 量化基础串讲——W4 开篇）
+[0m
+[0m← [0mEdit week3/assets/day21_static_vs_continuous.svg
+Index: /mnt/workspace/aiinfra/vllm/week3/assets/day21_static_vs_continuous.svg
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/assets/day21_static_vs_continuous.svg
++++ /mnt/workspace/aiinfra/vllm/week3/assets/day21_static_vs_continuous.svg
+@@ -154,9 +154,9 @@
+ <text x="696" y="454" font-size="9" fill="#475569">诚实代价②：r4 TTFT = 31.2ms（vs 10.2）——budget 保护 decode 平滑的代价（Day 11 结论重现）</text>
+ <text x="696" y="478" font-size="8.6" fill="#047857">本质：调度粒度从「请求」降到「迭代」——每个 step 都是重新组批的机会，批内成员可变</text>
+ <text x="696" y="494" font-size="8.6" fill="#047857">术语：NVIDIA TensorRT-LLM 称同一机制为 in-flight batching（调度粒度 = 单个 iteration）</text>
+ 
+-<text x="930" y="536" text-anchor="middle" font-size="8.8" fill="#64748b">完成序 = r2(3) → r1(6) → r4(4) → r3(10) → r5(5)：长度序，与到达序无关</text>
++<text x="930" y="536" text-anchor="middle" font-size="8.8" fill="#64748b">完成序 = r2 → r1 → r4 → r3 → r5：由「输出长度 × 入场时机」共同决定（r4 比 r1 短却更晚完成——它 step 4 才入场）</text>
+ <text x="930" y="556" text-anchor="middle" font-size="8.8" fill="#94a3b8">vLLM V1 的统一调度模型（Day 11）：没有 prefill/decode 批的概念，只有「每步让 computed 追上 tokens」</text>
+ 
+ <!-- ================= bottom strip ================= -->
+ <rect x="40" y="640" width="1160" height="140" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>
+
+[0m
+One precision fix — the finish order comment (r4 finishes after r1 despite shorter output, since it was admitted later):
+[0m← [0mEdit week3/day21_continuous_batching_scheduler.md
+Index: /mnt/workspace/aiinfra/vllm/week3/day21_continuous_batching_scheduler.md
+===================================================================
+--- /mnt/workspace/aiinfra/vllm/week3/day21_continuous_batching_scheduler.md
++++ /mnt/workspace/aiinfra/vllm/week3/day21_continuous_batching_scheduler.md
+@@ -498,9 +498,9 @@
+     eng.step()
+ eng.add_request("r5", 10, 5)                    # 晚到：中途加入
+ while eng.has_unfinished():
+     eng.step()
+-assert [r.request_id for r in eng.finished] == ["r2", "r1", "r4", "r3", "r5"]  # 完成序=长度序
++assert [r.request_id for r in eng.finished] == ["r2", "r1", "r4", "r3", "r5"]  # 完成序=长度×入场时机
+ by_id = {r.request_id: r for r in eng.finished}
+ assert by_id["r4"].ttft > by_id["r1"].ttft      # budget 闸推迟了 r4 的 prefill
+ assert by_id["r5"].ttft > by_id["r4"].ttft      # KV+reserve 闸推迟了 r5
+ assert eng.block_table.pool.num_free_blocks == 16   # I1 守恒横跨整个 run
+
+[0m
+[0m$ [0mcd /mnt/workspace/aiinfra/vllm/week3 && python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('assets/day21_static_vs_continuous.svg'); print('SVG OK')" && ls -la day21_continuous_batching_scheduler.md assets/day21_*.svg
+SVG OK
+-rw-r--r-- 1 root root 17950 Oct  2 09:06 assets/day21_mini_engine_architecture.svg
+-rw-r--r-- 1 root root 17099 Oct  2 09:06 assets/day21_static_vs_continuous.svg
+-rw-r--r-- 1 root root 22272 Oct  2 08:57 assets/day21_v1_full_dataflow.svg
+-rw-r--r-- 1 root root 66657 Oct  2 09:06 day21_continuous_batching_scheduler.md
+[0m
+Day 21 教程已完成并验证。
+
+**文件路径**
+- `week3/day21_continuous_batching_scheduler.md`（761 行）
+- `week3/assets/day21_static_vs_continuous.svg` — 图 1：static vs continuous 时间线（含舱位浪费公式、demo 实测轨迹）
+- `week3/assets/day21_mini_engine_architecture.svg` — 图 2：mini 引擎组件图 + schedule() 四道闸决策流程（每道闸标 vLLM v0.11.0 对照）
+- `week3/assets/day21_v1_full_dataflow.svg` — 图 3：复盘主图，V1 完整数据流大图（三进程泳道 + prefix/COW/LRU/CG/async 五个标注点 + Day 8-19 覆盖色带）
+
+**主要内容**（严格对应 README Day 21 两项任务）
+1. **项目 B**：iteration 级 continuous batching 调度器完整实现（~230 行，waiting/running + token budget 四道闸 + 模拟执行器 + 引擎主循环），端到端 demo 的 11 步日志**全部经实际运行验证**；week3 README 的 3 个验收场景 + 死锁构造写成 4 个集成测试（已跑通全绿）。核心洞见：reserve/watermark 式准入保证不了活性（死锁实验亲手复现），preemption 是唯一通用解——Day 27 的伏笔。
+2. **复盘**：V1 大图三连自测（60 秒「一个 token 的旅程」、三个 KV 复用机制指认、CG 区段与 async 重叠标注）+ 本周十问带答案骨架。
+
+内容主动衔接 Day 8-20（Day 16/20 未单独成文处按既有惯例以 week3/README 对应节为读本，并在版本口径中注明）；所有 vLLM 行号回收自前几日已按 v0.11.0 核对的锚点，未新增未经核对的源码断言（COW 物理拷贝时机明确标注「以你版本源码为准」）。

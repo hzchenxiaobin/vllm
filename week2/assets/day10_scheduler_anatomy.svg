@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 700" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar10a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar10r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+    <marker id="ar10g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="700" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">Scheduler 解剖：五件家当与两种队列（vLLM V1 · v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：对象解剖（v1/core/sched/scheduler.py:45-177）与四个生命周期入口 · 右：waiting 队列的两种实现（request_queue.py）</text>
+
+  <!-- ================= 左列：外部调用面 ================= -->
+  <rect x="30" y="60" width="160" height="40" rx="6" fill="#eef2ff" stroke="#818cf8"/>
+  <text x="110" y="77" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">add_request（:1097）</text>
+  <text x="110" y="91" text-anchor="middle" font-size="7.8" fill="#1e3a8a">Day 9 入口终点 · 入队</text>
+
+  <rect x="215" y="60" width="160" height="40" rx="6" fill="#f0f9ff" stroke="#60a5fa"/>
+  <text x="295" y="77" text-anchor="middle" font-size="9" font-weight="bold" fill="#0c1e4e">schedule（:179）</text>
+  <text x="295" y="91" text-anchor="middle" font-size="7.8" fill="#0c1e4e">每 step 一次 · 读两队列</text>
+
+  <rect x="400" y="60" width="160" height="40" rx="6" fill="#fff1f2" stroke="#fda4af"/>
+  <text x="480" y="77" text-anchor="middle" font-size="9" font-weight="bold" fill="#991b1b">finish_requests（:1103）</text>
+  <text x="480" y="91" text-anchor="middle" font-size="7.8" fill="#991b1b">abort · 两遍扫描摘除</text>
+
+  <line x1="110" y1="100" x2="150" y2="128" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10a)"/>
+  <line x1="295" y1="100" x2="290" y2="128" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10a)"/>
+  <line x1="480" y1="100" x2="440" y2="128" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar10r)"/>
+
+  <!-- ================= 左列：Scheduler 对象 ================= -->
+  <rect x="30" y="130" width="530" height="330" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.4"/>
+  <rect x="30" y="130" width="530" height="30" rx="8" fill="#0f172a"/>
+  <text x="295" y="150" text-anchor="middle" font-size="11" font-weight="bold" fill="#f1f5f9">class Scheduler（scheduler.py:43）—— 单线程、每 step 跑一次的决策体</text>
+
+  <rect x="45" y="172" width="240" height="58" rx="5" fill="#fefce8" stroke="#facc15"/>
+  <text x="57" y="189" font-size="9.4" font-weight="bold" fill="#78350f">waiting: RequestQueue（:125）</text>
+  <text x="57" y="203" font-size="8.2" fill="#0f172a">FCFS → deque ／ PRIORITY → 堆</text>
+  <text x="57" y="217" font-size="8.2" fill="#0f172a">已入队未进批 + 被抢占回滚者</text>
+
+  <rect x="305" y="172" width="240" height="58" rx="5" fill="#f0fdf4" stroke="#6ee7b7"/>
+  <text x="317" y="189" font-size="9.4" font-weight="bold" fill="#065f46">running: list[Request]（:126）</text>
+  <text x="317" y="203" font-size="8.2" fill="#0f172a">普通 list · 列表序 = 入 running 序</text>
+  <text x="317" y="217" font-size="8.2" fill="#0f172a">decode + 未完成的 chunked prefill</text>
+
+  <line x1="165" y1="230" x2="165" y2="252" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10a)"/>
+  <line x1="425" y1="252" x2="425" y2="230" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10a)"/>
+  <text x="295" y="247" text-anchor="middle" font-size="8" fill="#475569">waiting → running（schedule :507 append）｜running → waiting（抢占 :281 prepend，Day 12）</text>
+
+  <rect x="45" y="262" width="500" height="54" rx="5" fill="#f0f9ff" stroke="#93c5fd"/>
+  <text x="57" y="279" font-size="9.4" font-weight="bold" fill="#0c1e4e">requests: dict[req_id → Request]（:115）—— 第三份索引（权威生存期）</text>
+  <text x="57" y="293" font-size="8.2" fill="#0f172a">update_from_output（:886 get）与 _update_after_schedule（:644）按 id O(1) 查找</text>
+  <text x="57" y="307" font-size="8.2" font-weight="bold" fill="#991b1b">del self.requests[...]（:1165）才是请求的正式死亡</text>
+
+  <rect x="45" y="326" width="240" height="58" rx="5" fill="#faf5ff" stroke="#c4b5fd"/>
+  <text x="57" y="343" font-size="9.4" font-weight="bold" fill="#4c1d95">finished_req_ids: set（:132）</text>
+  <text x="57" y="357" font-size="8.2" fill="#0f172a">跨步信箱：步间结束的请求 id</text>
+  <text x="57" y="371" font-size="8.2" fill="#0f172a">随下个 SchedulerOutput 通知 Worker</text>
+
+  <rect x="305" y="326" width="240" height="58" rx="5" fill="#fef3c7" stroke="#fbbf24"/>
+  <text x="317" y="343" font-size="9.4" font-weight="bold" fill="#78350f">kv_cache_manager（:168-176）</text>
+  <text x="317" y="357" font-size="8.2" fill="#0f172a">allocate_slots / free / get_computed_blocks</text>
+  <text x="317" y="371" font-size="8.2" fill="#0f172a">Day 15 主角 · 闸③ 的裁判</text>
+
+  <rect x="45" y="394" width="500" height="52" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="57" y="411" font-size="9.4" font-weight="bold" fill="#0f172a">三大约束（:73-76，init 物化）</text>
+  <text x="57" y="425" font-size="8.2" fill="#0f172a">K = max_num_batched_tokens（单步 token 预算 → ITL 上界） · S = max_num_seqs（并发闸，:337）</text>
+  <text x="57" y="439" font-size="8.2" fill="#0f172a">max_model_len（:224-226 长度护栏） · policy 构造期定型（:117-125），不可热切换</text>
+
+  <!-- ================= 左列：底部提示 ================= -->
+  <rect x="30" y="474" width="530" height="46" rx="6" fill="#fff1f2" stroke="#fda4af"/>
+  <text x="295" y="491" text-anchor="middle" font-size="8.8" font-weight="bold" fill="#991b1b">没有线程、没有锁：schedule() 是对当前状态的纯函数式决策</text>
+  <text x="295" y="506" text-anchor="middle" font-size="8.2" fill="#991b1b">同样的（waiting, running, KV 余量）→ 同样的 SchedulerOutput —— 这也是 Day 19 async scheduling 的前提</text>
+
+  <!-- ================= 右上：FCFS 队列 ================= -->
+  <rect x="590" y="60" width="620" height="270" rx="8" fill="#f0f9ff" stroke="#60a5fa"/>
+  <text x="604" y="82" font-size="10.5" font-weight="bold" fill="#0c1e4e">FCFSRequestQueue（request_queue.py:81-136）—— 穿接口马甲的 deque</text>
+
+  <text x="604" y="102" font-size="8.6" fill="#475569">add_request: append（:84）</text>
+  <text x="1200" y="102" text-anchor="end" font-size="8.6" fill="#475569">pop_request: popleft（:88）</text>
+
+  <rect x="620" y="112" width="70" height="34" fill="#ffffff" stroke="#60a5fa" stroke-width="1.4"/>
+  <rect x="690" y="112" width="70" height="34" fill="#ffffff" stroke="#60a5fa" stroke-width="1.4"/>
+  <rect x="760" y="112" width="70" height="34" fill="#ffffff" stroke="#60a5fa" stroke-width="1.4"/>
+  <rect x="830" y="112" width="70" height="34" fill="#ffffff" stroke="#60a5fa" stroke-width="1.4"/>
+  <rect x="900" y="112" width="70" height="34" fill="#ffffff" stroke="#60a5fa" stroke-width="1.4"/>
+  <text x="655" y="133" text-anchor="middle" font-size="8.6" fill="#0f172a">R1</text>
+  <text x="725" y="133" text-anchor="middle" font-size="8.6" fill="#0f172a">R2</text>
+  <text x="795" y="133" text-anchor="middle" font-size="8.6" fill="#0f172a">R3</text>
+  <text x="865" y="133" text-anchor="middle" font-size="8.6" fill="#0f172a">R4</text>
+  <text x="935" y="133" text-anchor="middle" font-size="8.6" fill="#0f172a">R5</text>
+  <text x="604" y="164" font-size="8" fill="#64748b">队首（老）</text>
+  <text x="975" y="164" font-size="8" fill="#64748b">队尾（新）</text>
+
+  <line x1="604" y1="150" x2="612" y2="150" stroke="#059669" stroke-width="1.4" marker-end="url(#ar10g)"/>
+  <line x1="1000" y1="150" x2="992" y2="150" stroke="#059669" stroke-width="1.4" marker-end="url(#ar10g)"/>
+
+  <rect x="620" y="182" width="280" height="60" rx="5" fill="#ffffff" stroke="#bfdbfe"/>
+  <text x="634" y="199" font-size="8.6" font-weight="bold" fill="#0f172a">prepend_request = appendleft（:98）</text>
+  <text x="634" y="213" font-size="8" fill="#0f172a">抢占复活插队首（:281，Day 12）</text>
+  <text x="634" y="227" font-size="8" fill="#0f172a">skipped 回插（:539-541）——「顺序债」的还法</text>
+
+  <rect x="920" y="182" width="276" height="60" rx="5" fill="#ffffff" stroke="#bfdbfe"/>
+  <text x="934" y="199" font-size="8.6" font-weight="bold" fill="#0f172a">全部操作 O(1)；remove O(n)</text>
+  <text x="934" y="213" font-size="8" fill="#0f172a">priority 字段完全不参与排序</text>
+  <text x="934" y="227" font-size="8" fill="#64748b">（deque 根本不看它）</text>
+
+  <rect x="620" y="252" width="576" height="62" rx="5" fill="#eef2ff" stroke="#818cf8"/>
+  <text x="634" y="270" font-size="8.8" font-weight="bold" fill="#1e3a8a">running 的 FCFS 语义（scheduler.py:209-211）</text>
+  <text x="634" y="284" font-size="8.2" fill="#0f172a">RUNNING 循环按下标从前往后扫 —— 列表序 = 入 running 时间序</text>
+  <text x="634" y="298" font-size="8.2" fill="#0f172a">victim = running.pop()（:271 队尾最新者）—— 「先来先服务」+「保护沉没成本最多者」</text>
+
+  <!-- ================= 右下：PRIORITY 队列 ================= -->
+  <rect x="590" y="344" width="620" height="270" rx="8" fill="#faf5ff" stroke="#c4b5fd"/>
+  <text x="604" y="366" font-size="10.5" font-weight="bold" fill="#4c1d95">PriorityRequestQueue（request_queue.py:139-214）—— 小顶堆</text>
+  <text x="604" y="382" font-size="8.6" fill="#4c1d95">heappush((priority, arrival_time, request))（:151-154）· O(log n)</text>
+
+  <g>
+    <rect x="800" y="396" width="110" height="30" rx="4" fill="#ffffff" stroke="#a78bfa" stroke-width="1.4"/>
+    <text x="855" y="415" text-anchor="middle" font-size="8.4" fill="#0f172a">(0, t1, R_a)</text>
+    <rect x="700" y="444" width="110" height="30" rx="4" fill="#ffffff" stroke="#a78bfa" stroke-width="1.4"/>
+    <text x="755" y="463" text-anchor="middle" font-size="8.4" fill="#0f172a">(2, t2, R_b)</text>
+    <rect x="900" y="444" width="110" height="30" rx="4" fill="#ffffff" stroke="#a78bfa" stroke-width="1.4"/>
+    <text x="955" y="463" text-anchor="middle" font-size="8.4" fill="#0f172a">(5, t3, R_c)</text>
+    <rect x="650" y="492" width="110" height="30" rx="4" fill="#ffffff" stroke="#a78bfa" stroke-width="1.4"/>
+    <text x="705" y="511" text-anchor="middle" font-size="8.4" fill="#0f172a">(7, t4, R_d)</text>
+    <rect x="950" y="492" width="110" height="30" rx="4" fill="#ffffff" stroke="#a78bfa" stroke-width="1.4"/>
+    <text x="1005" y="511" text-anchor="middle" font-size="8.4" fill="#0f172a">(2, t5, R_e)</text>
+    <line x1="830" y1="426" x2="770" y2="444" stroke="#a78bfa" stroke-width="1.2"/>
+    <line x1="880" y1="426" x2="940" y2="444" stroke="#a78bfa" stroke-width="1.2"/>
+    <line x1="725" y1="474" x2="695" y2="492" stroke="#a78bfa" stroke-width="1.2"/>
+    <line x1="785" y1="474" x2="1000" y2="492" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="3,3"/>
+  </g>
+  <text x="604" y="415" font-size="8.2" fill="#4c1d95">先出堆</text>
+  <line x1="648" y1="411" x2="795" y2="411" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ar10r)"/>
+  <text x="1090" y="540" font-size="7.8" fill="#64748b">虚线：同 (2,·) 时按 arrival_time 先到先走</text>
+
+  <rect x="620" y="552" width="280" height="50" rx="5" fill="#ffffff" stroke="#ddd6fe"/>
+  <text x="632" y="568" font-size="8.4" font-weight="bold" fill="#4c1d95">prepend 在堆里没有队首概念（:170-175）</text>
+  <text x="632" y="582" font-size="8" fill="#0f172a">退化为普通 heappush —— 「复活优先」语义消失</text>
+  <text x="632" y="595" font-size="8" fill="#0f172a">由抢占 victim 的 max(priority, arrival) 补偿</text>
+
+  <rect x="920" y="552" width="276" height="50" rx="5" fill="#fef3c7" stroke="#fbbf24"/>
+  <text x="934" y="568" font-size="8.4" font-weight="bold" fill="#78350f">彩蛋：tool-call ping-pong（serving_engine.py:906）</text>
+  <text x="934" y="582" font-size="8" fill="#0f172a">多轮工具调用第二轮 priority = orig − 1</text>
+  <text x="934" y="595" font-size="8" fill="#0f172a">= 插在自己前面，防同洪峰淹没</text>
+</svg>

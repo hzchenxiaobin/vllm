@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1030" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="d21ca" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="d21cb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+    <marker id="d21cg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <marker id="d21cv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1400" height="1030" fill="#ffffff"/>
+  <text x="700" y="26" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f172a">vLLM V1 完整数据流大图：一个 token 的旅程（Day 8 ~ Day 19 全景复盘）</text>
+  <text x="700" y="46" text-anchor="middle" font-size="11" fill="#64748b">自测三连：① 闭卷指着图讲 60 秒「一个 token 的旅程」 ② 标出 prefix 命中 / COW / LRU 驱逐各在哪一环 ③ 标出 CUDA Graph 覆盖区段与 async scheduling 重叠的两段 —— 标不出即回去补读（源码坐标 v0.11.0）</text>
+
+  <!-- ======================= P0 band ======================= -->
+  <rect x="40" y="64" width="1320" height="196" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.4"/>
+  <rect x="52" y="76" width="120" height="22" rx="11" fill="#e2e8f0"/>
+  <text x="112" y="91" text-anchor="middle" font-size="10" font-weight="bold" fill="#334155">P0 · API Server 进程</text>
+  <text x="186" y="91" font-size="8.6" fill="#64748b">纯 CPU 工作与 EngineCore 物理隔离（GIL）——Day 8 架构 / Day 19 三级重叠之一</text>
+
+  <!-- entry path -->
+  <rect x="70" y="110" width="180" height="58" rx="7" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="160" y="130" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#334155">POST /chat/completions</text>
+  <text x="160" y="146" text-anchor="middle" font-size="8.4" fill="#475569">AsyncLLM.generate()</text>
+  <text x="160" y="160" text-anchor="middle" font-size="8" fill="#64748b">↔ Day 9 请求入口</text>
+  <line x1="250" y1="139" x2="272" y2="139" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <rect x="274" y="110" width="270" height="58" rx="7" fill="#eff6ff" stroke="#60a5fa"/>
+  <text x="409" y="130" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#1e3a8a">Processor：tokenize → 构造 Request</text>
+  <text x="409" y="146" text-anchor="middle" font-size="8.4" fill="#475569">prompt_token_ids / max_tokens / 到达序号</text>
+  <text x="409" y="160" text-anchor="middle" font-size="8" fill="#64748b">↔ Day 9：Request 账本组在此出生</text>
+  <line x1="544" y1="139" x2="566" y2="139" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <rect x="568" y="118" width="150" height="42" rx="7" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="643" y="136" text-anchor="middle" font-size="8.8" font-weight="bold" fill="#334155">ZMQ add_request →</text>
+  <text x="643" y="150" text-anchor="middle" font-size="8" fill="#64748b">→ P1（io_thread 收）</text>
+
+  <!-- exit path -->
+  <rect x="830" y="110" width="250" height="58" rx="7" fill="#f0fdf4" stroke="#86efac"/>
+  <text x="955" y="130" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#065f46">OutputProcessor</text>
+  <text x="955" y="146" text-anchor="middle" font-size="8.4" fill="#475569">stop-string 检查 / 流式切分 / 请求完成通知</text>
+  <text x="955" y="160" text-anchor="middle" font-size="8" fill="#64748b">↔ Day 19 Q7：detokenize 为何在 P0</text>
+  <line x1="1080" y1="139" x2="1102" y2="139" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <rect x="1104" y="110" width="240" height="58" rx="7" fill="#f0fdf4" stroke="#86efac"/>
+  <text x="1224" y="130" text-anchor="middle" font-size="9.6" font-weight="bold" fill="#065f46">IncrementalDetokenizer → SSE</text>
+  <text x="1224" y="146" text-anchor="middle" font-size="8.4" fill="#475569">增量 detokenize（每 token 只解尾巴）</text>
+  <text x="1224" y="160" text-anchor="middle" font-size="8" fill="#64748b">客户端看见 token（async 下平均晚半步）</text>
+
+  <text x="700" y="196" text-anchor="middle" font-size="8.6" fill="#64748b">← 同一进程的两端：入口把文本变 token id，出口把 token id 变文本；中间所有环节只见 token id —— 控制面流 P0 ⇄ P1，数据面（token 值）能不过 CPU 就不过（Day 19）</text>
+  <text x="700" y="212" text-anchor="middle" font-size="8.6" fill="#94a3b8">mini 引擎对照：add_request() 的长度校验 + finished[] 的 TTFT/E2E 记账（Day 21 §4）</text>
+
+  <!-- arrow P0 -> P1 -->
+  <line x1="643" y1="160" x2="643" y2="286" stroke="#2563eb" stroke-width="2" marker-end="url(#d21cb)"/>
+  <text x="652" y="226" font-size="8.6" font-weight="bold" fill="#2563eb">Request（token ids + 参数）</text>
+  <!-- arrow P1 -> P0 -->
+  <line x1="1000" y1="286" x2="1000" y2="172" stroke="#059669" stroke-width="2" marker-end="url(#d21cg)"/>
+  <text x="1008" y="226" font-size="8.6" font-weight="bold" fill="#059669">EngineCoreOutputs（sampled ids + finish 原因）</text>
+
+  <!-- ======================= P1 band ======================= -->
+  <rect x="40" y="290" width="1320" height="310" rx="10" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1.4"/>
+  <rect x="52" y="302" width="128" height="22" rx="11" fill="#ddd6fe"/>
+  <text x="116" y="317" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">P1 · EngineCore 进程</text>
+  <text x="196" y="317" font-size="8.6" fill="#64748b">调度 + KV 簿记（纯 CPU 元数据层）——Day 8/10/11/12/15/16/19</text>
+
+  <!-- waiting queue -->
+  <rect x="70" y="340" width="130" height="70" rx="7" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="135" y="360" text-anchor="middle" font-size="9.4" font-weight="bold" fill="#4c1d95">waiting（FCFS）</text>
+  <text x="135" y="376" text-anchor="middle" font-size="8" fill="#475569">新请求在此排队</text>
+  <text x="135" y="392" text-anchor="middle" font-size="8" fill="#64748b">↔ Day 10 两队列</text>
+  <line x1="200" y1="375" x2="222" y2="375" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <!-- scheduler -->
+  <rect x="224" y="332" width="330" height="120" rx="7" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="389" y="352" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#4c1d95">Scheduler.schedule()</text>
+  <text x="389" y="370" text-anchor="middle" font-size="8.4" fill="#475569">running 循环：num_new = tokens − computed，budget 钳位</text>
+  <text x="389" y="384" text-anchor="middle" font-size="8.4" fill="#475569">waiting 准入：三道闸（budget / max_seqs / KV 检查）</text>
+  <text x="389" y="402" text-anchor="middle" font-size="8.2" fill="#92400e">KV 失守 → preemption：free 最新 running + computed=0 +</text>
+  <text x="389" y="416" text-anchor="middle" font-size="8.2" fill="#92400e">塞回 waiting 队首（recompute，无 swap）↔ Day 12</text>
+  <text x="389" y="436" text-anchor="middle" font-size="8" fill="#64748b">async：placeholder 打欠条 +1（computed 领先 tokens）↔ Day 19</text>
+  <line x1="554" y1="392" x2="576" y2="392" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <!-- kv cache manager -->
+  <rect x="578" y="332" width="330" height="120" rx="7" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="743" y="352" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#4c1d95">KVCacheManager.allocate_slots()</text>
+  <text x="743" y="370" text-anchor="middle" font-size="8.4" fill="#475569">① get_computed_blocks：沿 hash 链查 prefix 命中（满块）</text>
+  <text x="743" y="384" text-anchor="middle" font-size="8.4" fill="#475569">② 需要的新块数 = 需要 − 已有 − 命中 + 可驱逐命中</text>
+  <text x="743" y="398" text-anchor="middle" font-size="8.4" fill="#475569">③ get_new_blocks 分配 → 登记进 block table（P1 对象账本）</text>
+  <text x="743" y="416" text-anchor="middle" font-size="8.2" fill="#4c1d95">不够 → 返回 None → 上游触发 preemption（kv_cache_manager.py:271-273）</text>
+  <text x="743" y="436" text-anchor="middle" font-size="8" fill="#64748b">decode 大多数步 0 新块（尾块空位），每 16 步才 +1 ↔ Day 15 §2.7</text>
+  <line x1="908" y1="392" x2="930" y2="392" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <!-- scheduler output -->
+  <rect x="932" y="332" width="200" height="120" rx="7" fill="#ede9fe" stroke="#7c3aed"/>
+  <text x="1032" y="352" text-anchor="middle" font-size="10" font-weight="bold" fill="#4c1d95">SchedulerOutput</text>
+  <text x="1032" y="370" text-anchor="middle" font-size="8.2" fill="#475569">token_ids 切片（按 computed）</text>
+  <text x="1032" y="384" text-anchor="middle" font-size="8.2" fill="#475569">new_block_ids 增量</text>
+  <text x="1032" y="398" text-anchor="middle" font-size="8.2" fill="#475569">num_scheduled_tokens / positions</text>
+  <text x="1032" y="412" text-anchor="middle" font-size="8.2" fill="#475569">cached_reqs（新请求全量行）</text>
+  <text x="1032" y="434" text-anchor="middle" font-size="8" fill="#64748b">P1 的「一次调度」的全部输出</text>
+
+  <!-- batch queue annotation -->
+  <rect x="1160" y="332" width="184" height="120" rx="7" fill="#fffbeb" stroke="#f59e0b"/>
+  <text x="1252" y="352" text-anchor="middle" font-size="9.4" font-weight="bold" fill="#78350f">async scheduling</text>
+  <text x="1252" y="370" text-anchor="middle" font-size="8.2" fill="#475569">execute_model(non_block)</text>
+  <text x="1252" y="384" text-anchor="middle" font-size="8.2" fill="#475569">→ Future 进 batch_queue</text>
+  <text x="1252" y="398" text-anchor="middle" font-size="8.2" fill="#475569">（deque maxlen=2）</text>
+  <text x="1252" y="416" text-anchor="middle" font-size="8.2" fill="#92400e">调度领先执行恰好一步</text>
+  <text x="1252" y="434" text-anchor="middle" font-size="7.8" fill="#92400e">↔ core.py:300-352（Day 19）</text>
+
+  <!-- update path (lower half of P1) -->
+  <rect x="224" y="470" width="680" height="112" rx="7" fill="#ffffff" stroke="#a78bfa"/>
+  <text x="564" y="490" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#4c1d95">update_from_output（token 到账后；async 下晚一步）</text>
+  <text x="564" y="508" text-anchor="middle" font-size="8.4" fill="#475569">stop 检查（EOS / stop-string / max_tokens / max_model_len）→ finish 判定 → kv_cache_manager.free（ref_cnt−1，hash 保留 → 块变 evictable）</text>
+  <text x="564" y="526" text-anchor="middle" font-size="8.4" fill="#475569">placeholder 核销（async）→ cache_blocks 只注册值已到账的块（computed − ph）→ finished_req_ids 随下一个 SchedulerOutput 通知 P2 清理</text>
+  <text x="564" y="546" text-anchor="middle" font-size="8.2" fill="#4c1d95">mini 引擎对照：update_from_output = token 到账 + 「EOS」判定 + free_request（Day 21 §4.4）—— 同名同职责</text>
+  <text x="564" y="566" text-anchor="middle" font-size="8" fill="#64748b">Day 14 状态机的「资源面」：入场建表 / decode 追加 / finish 释放 / 抢占复位 全在此汇合</text>
+
+  <!-- badges: prefix / COW / LRU -->
+  <rect x="950" y="470" width="400" height="112" rx="7" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="966" y="490" font-size="9.4" font-weight="bold" fill="#0f172a">三个 KV 复用机制各发生在哪一环（自测 ②）</text>
+  <circle cx="978" cy="506" r="8" fill="#2563eb"/><text x="978" y="509.5" text-anchor="middle" font-size="8" font-weight="bold" fill="#ffffff">1</text>
+  <text x="992" y="510" font-size="8.4" fill="#475569">prefix 命中：allocate_slots 的 ① 步（hash 链查询，TTFT 直降）</text>
+  <circle cx="978" cy="526" r="8" fill="#d97706"/><text x="978" y="529.5" text-anchor="middle" font-size="8" font-weight="bold" fill="#ffffff">2</text>
+  <text x="992" y="530" font-size="8.4" fill="#475569">COW：共享尾块要写入时 fork 出新块（Day 16，P1 簿记层）</text>
+  <circle cx="978" cy="546" r="8" fill="#dc2626"/><text x="978" y="549.5" text-anchor="middle" font-size="8" font-weight="bold" fill="#ffffff">3</text>
+  <text x="992" y="550" font-size="8.4" fill="#475569">LRU 驱逐 = 分配：get_new_blocks 从 free 队头取块顺手摘 hash（Day 15/16）</text>
+  <text x="992" y="570" font-size="8" fill="#64748b">三者都不在时间线上「另找时间做」——藏在正常路径里，这是设计精髓</text>
+
+  <!-- arrow P1 -> P2 -->
+  <line x1="1032" y1="452" x2="1032" y2="616" stroke="#2563eb" stroke-width="2" marker-end="url(#d21cb)"/>
+  <text x="1042" y="520" font-size="8.6" font-weight="bold" fill="#2563eb">SchedulerOutput（shm MQ → P2）</text>
+  <text x="1042" y="534" font-size="8" fill="#64748b">io_thread_pool / collective_rpc（Day 19 §2.3）</text>
+  <!-- arrow P2 -> P1 -->
+  <line x1="700" y1="616" x2="700" y2="588" stroke="#059669" stroke-width="2" marker-end="url(#d21cg)"/>
+  <text x="710" y="604" font-size="8.6" font-weight="bold" fill="#059669">EngineCoreOutputs（response MQ）</text>
+
+  <!-- async overlap double arrow -->
+  <path d="M 1290 452 C 1360 500 1360 560 1330 614" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="6,3" marker-end="url(#d21ca)"/>
+  <text x="1356" y="530" font-size="8.4" font-weight="bold" fill="#b45309" transform="rotate(90 1356 530)">⑤ schedule(N+1) ∥ forward(N)：两段重叠（Day 19）</text>
+
+  <!-- ======================= P2 band ======================= -->
+  <rect x="40" y="620" width="1320" height="300" rx="10" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.4"/>
+  <rect x="52" y="632" width="116" height="22" rx="11" fill="#bfdbfe"/>
+  <text x="110" y="647" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">P2 · Worker 进程</text>
+  <text x="184" y="647" font-size="8.6" fill="#64748b">模型执行（GPU）——Day 17 / 18 / 19</text>
+
+  <!-- prepare inputs -->
+  <rect x="70" y="666" width="300" height="104" rx="7" fill="#ffffff" stroke="#60a5fa"/>
+  <text x="220" y="686" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">GPUModelRunner._prepare_inputs</text>
+  <text x="220" y="704" text-anchor="middle" font-size="8.4" fill="#475569">写持久 buffer：input_ids / positions / seq_lens</text>
+  <text x="220" y="718" text-anchor="middle" font-size="8.4" fill="#475569">slot_mapping = block_table[r, pos÷B]×B + pos mod B</text>
+  <text x="220" y="732" text-anchor="middle" font-size="8.4" fill="#475569">P2 侧 BlockTable tensor：add_row / append_row（增量对账）</text>
+  <text x="220" y="750" text-anchor="middle" font-size="8.2" fill="#92400e">async：input_ids 从 prev_sampled_token_ids D2D 直拷</text>
+  <text x="220" y="762" text-anchor="middle" font-size="8" fill="#64748b">↔ Day 15 双账本 / Day 18 状态写入 / Day 19 数据留 GPU</text>
+  <line x1="370" y1="718" x2="392" y2="718" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <!-- forward with CG -->
+  <rect x="394" y="666" width="430" height="104" rx="7" fill="#ffffff" stroke="#60a5fa"/>
+  <text x="609" y="686" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">model forward（36 层循环）· CUDA Graph replay</text>
+  <text x="609" y="704" text-anchor="middle" font-size="8.4" fill="#475569">每层：rmsnorm → qkv GEMM → rope → attention → o_proj → residual</text>
+  <text x="609" y="718" text-anchor="middle" font-size="8.4" fill="#475569">decode：整步一张图，replay 前 memcpy 新状态进固定地址 buffer</text>
+  <text x="609" y="732" text-anchor="middle" font-size="8.4" fill="#475569">prefill：piecewise（attention 切分点外子图）或 eager</text>
+  <text x="609" y="750" text-anchor="middle" font-size="8.2" fill="#92400e">图引用地址不引用值——「一次录制、换状态重放」</text>
+  <text x="609" y="762" text-anchor="middle" font-size="8" fill="#64748b">↔ Day 18 三静态化技巧（bucket / 持久 buffer / 共享 pool）</text>
+  <line x1="824" y1="718" x2="846" y2="718" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <!-- attention detail -->
+  <rect x="394" y="786" width="430" height="106" rx="7" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="609" y="806" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">Attention 后端（flash_attn.py，Day 17）</text>
+  <text x="609" y="824" text-anchor="middle" font-size="8.4" fill="#475569">写侧：reshape_and_cache_flash 按 slot_mapping scatter K/V 进池</text>
+  <text x="609" y="838" text-anchor="middle" font-size="8.4" fill="#475569">读侧：flash_attn_varlen_func 按 block_table 逐块 gather（非连续读）</text>
+  <text x="609" y="856" text-anchor="middle" font-size="8.4" fill="#475569">单一 varlen kernel 吃混合 batch（prefill chunk + decode 同 forward）</text>
+  <text x="609" y="874" text-anchor="middle" font-size="8.2" fill="#92400e">KV 永不搬移：间接寻址读非连续内存 = PagedAttention 论文落点（Day 4）</text>
+  <text x="609" y="886" text-anchor="middle" font-size="8" fill="#64748b">给新硬件写后端的最小接口集：Backend / Impl / MetadataBuilder / 平台注册 / 特性声明</text>
+
+  <!-- sampler -->
+  <rect x="848" y="666" width="200" height="104" rx="7" fill="#ffffff" stroke="#60a5fa"/>
+  <text x="948" y="686" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">Sampler</text>
+  <text x="948" y="704" text-anchor="middle" font-size="8.4" fill="#475569">logits → 温度/top-p → token id</text>
+  <text x="948" y="722" text-anchor="middle" font-size="8.2" fill="#92400e">async：结果驻留 GPU</text>
+  <text x="948" y="736" text-anchor="middle" font-size="8.2" fill="#92400e">（prev_sampled_token_ids）</text>
+  <text x="948" y="756" text-anchor="middle" font-size="8" fill="#64748b">↔ Day 19：值不过 CPU</text>
+  <line x1="1048" y1="718" x2="1070" y2="718" stroke="#475569" stroke-width="1.4" marker-end="url(#d21ca)"/>
+
+  <!-- output path -->
+  <rect x="1072" y="666" width="272" height="104" rx="7" fill="#f0fdf4" stroke="#86efac"/>
+  <text x="1208" y="686" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">输出回传（async 版）</text>
+  <text x="1208" y="704" text-anchor="middle" font-size="8.4" fill="#475569">旁路 stream：non_blocking D2H + event</text>
+  <text x="1208" y="718" text-anchor="middle" font-size="8.4" fill="#475569">WorkerAsyncOutputCopy 线程 get_output() 物化</text>
+  <text x="1208" y="736" text-anchor="middle" font-size="8.4" fill="#475569">→ response MQ → P1 future.result() → update</text>
+  <text x="1208" y="756" text-anchor="middle" font-size="8" fill="#64748b">↔ Day 19 三级重叠的第二级</text>
+
+  <!-- KV tensor -->
+  <rect x="848" y="786" width="496" height="106" rx="7" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="1096" y="806" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e3a8a">KV cache 物理层（P2 显存，Day 15）</text>
+  <text x="1096" y="824" text-anchor="middle" font-size="8.4" fill="#475569">每层 K/V：[num_blocks, block_size, H_kv, d]，dtype = kv_cache_dtype（W4 Day 23 的 FP8 入口）</text>
+  <text x="1096" y="842" text-anchor="middle" font-size="8.4" fill="#475569">num_blocks = floor(可用显存 ÷ page_size ÷ layers)；Qwen3-8B@H100 ≈ 24.1k 块（page 64KiB）</text>
+  <text x="1096" y="860" text-anchor="middle" font-size="8.2" fill="#92400e">逻辑在 P1（对象账本）、物理在 P2（tensor + block table），两者靠 SchedulerOutput 对账</text>
+  <text x="1096" y="880" text-anchor="middle" font-size="8" fill="#64748b">mini 引擎对照：BlockPool 的 blocks 只是 int id——真实系统里每个 id 背后是 2.25MB 显存</text>
+
+  <!-- CG coverage bracket -->
+  <path d="M 394 782 L 394 776 L 824 776 L 824 782" fill="none" stroke="#dc2626" stroke-width="1.6"/>
+  <text x="609" y="772" text-anchor="middle" font-size="8.2" font-weight="bold" fill="#b91c1c">④ CUDA Graph 覆盖区段（自测 ③）：decode 整图 / prefill piecewise（Day 18）</text>
+
+  <!-- ======================= bottom: day coverage ======================= -->
+  <rect x="40" y="936" width="1320" height="74" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.4"/>
+  <text x="60" y="958" font-size="10" font-weight="bold" fill="#0f172a">本图 = 三周知识的收口（每段的详解日）：</text>
+  <g font-size="8.6" text-anchor="middle" font-weight="bold">
+    <rect x="60" y="968" width="170" height="26" rx="5" fill="#e2e8f0"/><text x="145" y="985" fill="#334155">进程架构与请求入口 · D8/9</text>
+    <rect x="236" y="968" width="200" height="26" rx="5" fill="#dbeafe"/><text x="336" y="985" fill="#1e3a8a">调度/预算/抢占/状态机 · D10-14</text>
+    <rect x="442" y="968" width="210" height="26" rx="5" fill="#ede9fe"/><text x="547" y="985" fill="#4c1d95">KV 管理与 prefix caching · D15/16</text>
+    <rect x="658" y="968" width="180" height="26" rx="5" fill="#dcfce7"/><text x="748" y="985" fill="#14532d">attention 后端抽象 · D17</text>
+    <rect x="844" y="968" width="150" height="26" rx="5" fill="#fef3c7"/><text x="919" y="985" fill="#78350f">CUDA Graph · D18</text>
+    <rect x="1000" y="968" width="160" height="26" rx="5" fill="#ffedd5"/><text x="1080" y="985" fill="#9a3412">async 调度 · D19</text>
+    <rect x="1166" y="968" width="176" height="26" rx="5" fill="#fecaca"/><text x="1254" y="985" fill="#991b1b">mini 引擎复刻 · D20/21</text>
+  </g>
+  <text x="700" y="1012" text-anchor="middle" font-size="8.8" fill="#64748b">这张图是 W8 白板四件套的底稿：面试画图题（「讲讲 vLLM 的架构 / 一个请求怎么被处理」）闭卷 3 分钟画出本图骨架 + 5 个标注点即满分</text>
+</svg>

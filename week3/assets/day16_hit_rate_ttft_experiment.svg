@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 820" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar16g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="820" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">实验设计与预期结果：命中率上限、TTFT 收益、冷热启动与 salt 归零（Day 16 产出物底稿）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">左：负载构造（三组前缀长度梯度） · 中：hit rate 上限的阶梯公式 · 右：TTFT 冷/热对比 · 下：五个实验陷阱</text>
+
+  <!-- ================= Left: workload design ================= -->
+  <rect x="40" y="60" width="380" height="360" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="60" y="84" font-size="13" font-weight="bold" fill="#0f172a">① 负载构造：同一 system prompt，不同 user 问题</text>
+  <g font-size="8.8" fill="#334155">
+    <rect x="60" y="100" width="340" height="74" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="74" y="118" font-weight="bold">请求模板</text>
+    <text x="74" y="134">[system]（共享前缀，长度 c ∈ {256, 2048, 8192}）</text>
+    <text x="74" y="150">[user]（每请求随机 ~128 token，保证互不相同）</text>
+    <text x="74" y="166">max_tokens=64 · 并发 N=32 · 共 200 请求/组</text>
+
+    <rect x="60" y="184" width="340" height="96" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="74" y="202" font-weight="bold">三个对照组</text>
+    <text x="74" y="218">A. 随机前缀（每请求独立 prompt）→ 命中率 ≈ 0 的基线</text>
+    <text x="74" y="234">B. 共享 c=256 / 2048 / 8192（三组梯度，均 ≥ 数个 block）</text>
+    <text x="74" y="250">C. salt 组：B-2048 + 每请求不同 cache_salt → 命中率应归零</text>
+    <text x="74" y="268">（协议层：extra_body={"cache_salt": ...}，protocol.py:322）</text>
+
+    <rect x="60" y="290" width="340" height="112" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="74" y="308" font-weight="bold">观测指标（/metrics + 引擎日志）</text>
+    <text x="74" y="324">vllm:prefix_cache_queries / hits（token 粒度 counter，</text>
+    <text x="74" y="338">loggers.py:258-271；旧名 gpu_prefix_cache_* 已弃用）</text>
+    <text x="74" y="354">hit_rate = Δhits / Δqueries（两次采样做差）</text>
+    <text x="74" y="370">引擎日志 "Prefix cache hit rate"：最近 1000 请求的滑窗</text>
+    <text x="74" y="386">（PrefixCachingMetrics，kv_cache_utils.py:99）</text>
+  </g>
+
+  <!-- ================= Middle: hit rate upper bound ================= -->
+  <rect x="440" y="60" width="380" height="360" rx="8" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="460" y="84" font-size="13" font-weight="bold" fill="#064e3b">② 命中率上限：块粒度截断的阶梯（B=16）</text>
+
+  <rect x="460" y="98" width="340" height="56" rx="5" fill="#ffffff" stroke="#86efac"/>
+  <text x="630" y="118" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">hit_tokens = min( ⌊c/B⌋, ⌊(N−1)/B⌋ ) × B</text>
+  <text x="630" y="140" text-anchor="middle" font-size="9" fill="#15803d">hit_rate = hit_tokens / N（N = prompt 总长）· ⌊(N−1)/B⌋ 来自"最后 1 token 必须重算"</text>
+
+  <!-- axis -->
+  <line x1="500" y1="330" x2="790" y2="330" stroke="#94a3b8" stroke-width="1.2"/>
+  <line x1="500" y1="150" x2="500" y2="330" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="492" y="334" text-anchor="end" font-size="9" fill="#64748b">0%</text>
+  <text x="492" y="190" text-anchor="end" font-size="9" fill="#64748b">100%</text>
+  <line x1="500" y1="186" x2="790" y2="186" stroke="#e2e8f0" stroke-dasharray="4 3"/>
+
+  <!-- stairs: c=256 (N=384): floor(256/16)=16 blocks=256 tok -> 66%; but (N-1)/16=23 so 256; rate 66% -->
+  <!-- y = 330 - rate*1.44 ; 66% -> 235 ; 2048/2176=94% -> 195 ; 8192/8320=98% -> 189 -->
+  <path d="M 500 330 L 560 330 L 560 235 L 640 235 L 640 195 L 720 195 L 720 189 L 790 189"
+        fill="none" stroke="#16a34a" stroke-width="2.4"/>
+  <text x="530" y="250" font-size="9" fill="#166534" text-anchor="middle">c=256</text>
+  <text x="530" y="262" font-size="8.4" fill="#166534" text-anchor="middle">66%</text>
+  <text x="600" y="222" font-size="9" fill="#166534" text-anchor="middle">c=2048</text>
+  <text x="600" y="234" font-size="8.4" fill="#166534" text-anchor="middle">94%</text>
+  <text x="755" y="176" font-size="9" fill="#166534" text-anchor="middle">c=8192</text>
+  <text x="755" y="188" font-size="8.4" fill="#166534" text-anchor="middle">98%</text>
+
+  <text x="460" y="352" font-size="9" fill="#15803d">N = c + 128（user 部分）：共享前缀越长，截断损失占比越小</text>
+  <text x="460" y="368" font-size="9" fill="#15803d">c=16 时只能命中 1 块？不——⌊16/16⌋=1 块=16 tok，但还要过 ⌊(N−1)/B⌋ 与</text>
+  <text x="460" y="382" font-size="9" fill="#15803d">"块必须已在索引里"两道闸；c&lt;B（如 c=10）⇒ 命中 0 —— 共享前缀</text>
+  <text x="460" y="396" font-size="9" fill="#15803d">不足一个块 = prefix caching 完全失效（README 实验陷阱第一条）</text>
+  <text x="460" y="412" font-size="9" font-weight="bold" fill="#166534">实测应贴着阶梯走：偏差 = 驱逐/抢占/未入库造成的额外损失</text>
+
+  <!-- ================= Right: TTFT ================= -->
+  <rect x="840" y="60" width="360" height="360" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="860" y="84" font-size="13" font-weight="bold" fill="#1e3a8a">③ TTFT 收益：省掉的 prefill 与曲线形态</text>
+
+  <rect x="860" y="98" width="320" height="52" rx="5" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="1020" y="117" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1e40af">ΔTTFT ≈ (2·P·c) / (有效算力)</text>
+  <text x="1020" y="138" text-anchor="middle" font-size="9" fill="#1e40af">Qwen3-8B：c=2048, 400 TFLOPs 有效 → ≈ 2×8G×2048/400T ≈ 82 ms</text>
+
+  <!-- axis -->
+  <line x1="900" y1="320" x2="1170" y2="320" stroke="#94a3b8" stroke-width="1.2"/>
+  <line x1="900" y1="150" x2="900" y2="320" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="892" y="324" text-anchor="end" font-size="9" fill="#64748b">0</text>
+  <text x="892" y="154" text-anchor="end" font-size="9" fill="#64748b">高</text>
+
+  <!-- cold curve -->
+  <path d="M 900 300 C 950 240, 1000 210, 1170 190" fill="none" stroke="#dc2626" stroke-width="2.2"/>
+  <!-- warm curve -->
+  <path d="M 900 300 C 960 288, 1020 282, 1170 278" fill="none" stroke="#2563eb" stroke-width="2.2"/>
+  <text x="1130" y="182" font-size="9" fill="#b91c1c">冷（随机前缀基线）</text>
+  <text x="1100" y="270" font-size="9" fill="#1e40af">热（共享前缀，命中 c）</text>
+  <text x="910" y="336" font-size="8.6" fill="#64748b">x：共享前缀长度 c（对数视角）</text>
+  <text x="860" y="352" font-size="9" fill="#1e40af">省的是计算（prefill FLOPs ∝ c），但排队和调度开销不省：</text>
+  <text x="860" y="366" font-size="9" fill="#1e40af">高并发下 TTFT 差距还会放大（prefill 占用 token budget 变少，</text>
+  <text x="860" y="380" font-size="9" fill="#1e40af">队列消化更快——chunked prefill 的 Day 11 交叉点）。</text>
+  <text x="860" y="398" font-size="9" font-weight="bold" fill="#1e3a8a">TPOT 基本不变：decode 侧只是换了 block table 的挂法</text>
+
+  <!-- ================= Bottom: pitfalls ================= -->
+  <rect x="40" y="440" width="1160" height="290" rx="8" fill="#fff7ed" stroke="#fed7aa"/>
+  <text x="60" y="464" font-size="13" font-weight="bold" fill="#7c2d12">④ 五个实验陷阱（每条都对应一个源码机制——写实验记录时把机制一并记上）</text>
+  <g font-size="9.2" fill="#7c2d12">
+    <text x="70" y="492" font-weight="bold">1. 冷/热启动混淆</text>
+    <text x="70" y="508">第一轮请求本身会"焐热"缓存（queries 里有 miss、hits 里下一次才有）——正式采集前先打一轮 warmup，</text>
+    <text x="70" y="522">或用 reset_prefix_cache（block_pool.py:355，RLHF/基准测试专用）在组间清缓存；注意它要求全部块已 free。</text>
+
+    <text x="70" y="548" font-weight="bold">2. 指标是 token 粒度、counter 是累计值</text>
+    <text x="70" y="564">vllm:prefix_cache_queries/hits 按 token 计数（stats.py:16-26），且是进程生命周期累计——必须两次采样做差，</text>
+    <text x="70" y="578">而不是直接读瞬时值；日志里的 "Prefix cache hit rate" 是最近 1000 请求滑窗，两者口径不同。</text>
+
+    <text x="70" y="604" font-weight="bold">3. 请求级例外会拉低命中率</text>
+    <text x="70" y="620">带 prompt_logprobs 的请求整体跳过 prefix caching（manager:165-167）；多模态/LoRA/salt 会改变 hash——</text>
+    <text x="70" y="634">对照组要控制变量（salt 实验本身正是利用这一点把命中率打到 0）。</text>
+
+    <text x="70" y="660" font-weight="bold">4. 缓存太小 → 驱逐把收益吃掉</text>
+    <text x="70" y="676">并发高、输出长时 free 队列被快速消费（驱逐=分配，get_new_blocks:257 顺手 evict），命中率跌破阶梯上限；</text>
+    <text x="70" y="690">用 --num-gpu-blocks-override 把池子调小可以主动复现这个失效模式（Day 15 实验 3 的反向版）。</text>
+
+    <text x="70" y="716" font-weight="bold">5. 两个"看起来该命中却没命中"的 case</text>
+    <text x="70" y="732">① 尾块截断：共享前缀 100 token、B=16 → 只命中 96；② 驱逐截断：断链即停（h2 被逐 ⇒ h3 起全 miss）。</text>
+    <text x="70" y="746">排查顺序：先看 hit_rate 是否贴阶梯（排除负载问题），再看队列消费速度（排除容量问题），最后抓日志定位单请求。</text>
+  </g>
+</svg>

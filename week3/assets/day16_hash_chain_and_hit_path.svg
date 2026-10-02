@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 880" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar16a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar16b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+    <marker id="ar16c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="880" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">前缀的身份证：block hash 链——怎么造、怎么查、怎么防串（v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">上：满块 → 递归哈希（父 hash 参与运算，天然编码完整路径） · 右：extra_keys 完整配方 + group_id 打包 · 下：索引结构与断链即停的命中路径</text>
+
+  <!-- ================= Panel 1: token stream -> recursive hash ================= -->
+  <rect x="40" y="60" width="740" height="380" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="60" y="84" font-size="13" font-weight="bold" fill="#0f172a">① 一条前缀的指纹：h_i = H( h_(i-1), tokens_i, extra_keys )（kv_cache_utils.py:547 hash_block_tokens）</text>
+
+  <!-- token stream: blocks of 16 tokens -->
+  <text x="60" y="108" font-size="10" font-weight="bold" fill="#334155">请求的 token 流（block_size=16，画 3 个满块 + 1 个尾块）</text>
+  <g font-size="8.2">
+    <!-- block 0 -->
+    <rect x="60" y="118" width="150" height="34" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="135" y="132" text-anchor="middle" fill="#1e3a8a">块 0：t0 … t15（16 个）</text>
+    <text x="135" y="145" text-anchor="middle" fill="#1e3a8a">满 → 有 hash</text>
+    <!-- block 1 -->
+    <rect x="210" y="118" width="150" height="34" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="285" y="132" text-anchor="middle" fill="#1e3a8a">块 1：t16 … t31</text>
+    <text x="285" y="145" text-anchor="middle" fill="#1e3a8a">满 → 有 hash</text>
+    <!-- block 2 -->
+    <rect x="360" y="118" width="150" height="34" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="435" y="132" text-anchor="middle" fill="#1e3a8a">块 2：t32 … t47</text>
+    <text x="435" y="145" text-anchor="middle" fill="#1e3a8a">满 → 有 hash</text>
+    <!-- tail block -->
+    <rect x="510" y="118" width="120" height="34" fill="#fef9c3" stroke="#fde047"/>
+    <text x="570" y="132" text-anchor="middle" fill="#713f12">尾块：t48 …</text>
+    <text x="570" y="145" text-anchor="middle" fill="#713f12">未满 → 无 hash</text>
+    <text x="638" y="139" fill="#b45309">★ 内容还会变，永不入库</text>
+  </g>
+
+  <!-- hash computation chain -->
+  <text x="60" y="180" font-size="10" font-weight="bold" fill="#334155">递归哈希（Request 出生时预计算，decode 补算新满块——request.py:118-123 / :161-162）</text>
+
+  <!-- NONE_HASH seed -->
+  <rect x="60" y="196" width="120" height="40" rx="5" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="120" y="212" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#334155">NONE_HASH</text>
+  <text x="120" y="226" text-anchor="middle" font-size="8" fill="#64748b">32B 随机种子（:78-95）</text>
+
+  <!-- h0 -->
+  <line x1="180" y1="216" x2="222" y2="216" stroke="#475569" stroke-width="1.6" marker-end="url(#ar16a)"/>
+  <rect x="224" y="196" width="150" height="40" rx="5" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="299" y="212" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e40af">h0 = sha256(种子‖t0..15‖ek)</text>
+  <text x="299" y="226" text-anchor="middle" font-size="8" fill="#64748b">第一个满块的指纹</text>
+
+  <line x1="374" y1="216" x2="416" y2="216" stroke="#475569" stroke-width="1.6" marker-end="url(#ar16a)"/>
+  <rect x="418" y="196" width="150" height="40" rx="5" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="493" y="212" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e40af">h1 = sha256(h0‖t16..31‖ek)</text>
+  <text x="493" y="226" text-anchor="middle" font-size="8" fill="#64748b">掺入父块指纹</text>
+
+  <line x1="568" y1="216" x2="610" y2="216" stroke="#475569" stroke-width="1.6" marker-end="url(#ar16a)"/>
+  <rect x="612" y="196" width="150" height="40" rx="5" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="687" y="212" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e40af">h2 = sha256(h1‖t32..47‖ek)</text>
+  <text x="687" y="226" text-anchor="middle" font-size="8" fill="#64748b">每块 O(1) 增量计算</text>
+
+  <!-- key insight box -->
+  <rect x="60" y="256" width="700" height="52" rx="6" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="410" y="276" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1e3a8a">为什么父 hash 必须参与：h2 相同 ⇒ (h1, tokens_2, ek) 相同 ⇒ h0 相同 ⇒ 整条前缀相同</text>
+  <text x="410" y="294" text-anchor="middle" font-size="9" fill="#1e3a8a">两个请求在第 k 块命中 = 它们的前 k 块全部相同 → 可整段复用 KV，不必逐 token 比对（O(块数) 查表 vs O(k·B) 比较）</text>
+
+  <!-- BlockHash bytes -->
+  <text x="60" y="332" font-size="10" font-weight="bold" fill="#334155">指纹的物理形态：32 字节 sha256 摘要（不是 Python 64 位 int hash！）</text>
+  <g font-size="8.4">
+    <rect x="60" y="344" width="440" height="30" fill="#f0fdf4" stroke="#86efac"/>
+    <text x="280" y="363" text-anchor="middle" fill="#166534">BlockHash = NewType("BlockHash", bytes)（kv_cache_utils.py:27）——sha256 摘要 2^256 空间，碰撞概率 ≈ 0</text>
+    <rect x="510" y="344" width="250" height="30" fill="#f0fdf4" stroke="#86efac"/>
+    <text x="635" y="358" text-anchor="middle" fill="#166534">命中时不校验 token_ids（v0.11.0 块上</text>
+    <text x="635" y="369" text-anchor="middle" fill="#166534">不存 token_ids）——防冲突全靠哈希宽度</text>
+  </g>
+  <text x="60" y="398" font-size="9" fill="#475569">序列化算法二选一（config/cache.py:72 prefix_caching_hash_algo）："sha256"（pickle 序列化，默认）/ "sha256_cbor"（CBOR 规范化，跨语言可复现，</text>
+  <text x="60" y="411" font-size="9" fill="#475569">需固定 PYTHONHASHSEED，否则 NONE_HASH 用 os.urandom(32)——engine/core.py:153-166 启动时 get_hash_fn_by_name + init_none_hash 接线）</text>
+  <text x="60" y="428" font-size="9" fill="#b45309">为什么换掉 Python hash()：旧版本 64 位空间在数万块高频插入下碰撞不可忽略；sha256 把"哈希冲突处理"这个问题从机制上消灭（面试考点 §6-Q2）</text>
+
+  <!-- ================= Panel 2: extra keys recipe ================= -->
+  <rect x="800" y="60" width="400" height="380" rx="8" fill="#fdf4ff" stroke="#e9d5ff"/>
+  <text x="820" y="84" font-size="13" font-weight="bold" fill="#581c87">② extra_keys 配方：四种"防串味"的料（generate_block_hash_extra_keys :513-545）</text>
+
+  <g font-size="8.8">
+    <rect x="820" y="100" width="360" height="64" rx="5" fill="#ffffff" stroke="#d8b4fe"/>
+    <text x="832" y="118" font-weight="bold" fill="#6b21a8">LoRA：lora_int_id（:502-510）</text>
+    <text x="832" y="132" fill="#6b21a8">不同 adapter 的 KV 不能混 —— 每一块都掺（adapter 影响所有层的 K/V）</text>
+    <text x="832" y="148" fill="#9ca3af">request.lora_request.lora_int_id → [id]</text>
+
+    <rect x="820" y="172" width="360" height="64" rx="5" fill="#ffffff" stroke="#d8b4fe"/>
+    <text x="832" y="190" font-weight="bold" fill="#6b21a8">多模态：mm_feature.identifier（:440-499）</text>
+    <text x="832" y="204" fill="#6b21a8">一个图片/视频跨多个块：逐块判断 [start, end) 是否与 mm 区间相交，</text>
+    <text x="832" y="218" fill="#6b21a8">相交则把 mm hash 掺入该块 —— 同图不同 prompt 不误命中</text>
+    <text x="832" y="232" fill="#9ca3af">identifier = 内容哈希（processor 侧算好）</text>
+
+    <rect x="820" y="244" width="360" height="64" rx="5" fill="#ffffff" stroke="#d8b4fe"/>
+    <text x="832" y="262" font-weight="bold" fill="#6b21a8">cache_salt：只掺进第 0 块（:536-537 start_token_idx==0）</text>
+    <text x="832" y="276" fill="#6b21a8">多租户隔离：salt 不同 ⇒ h0 不同 ⇒ 整条链全不同（链式传播，一块掺料全链变味）</text>
+    <text x="832" y="292" fill="#9ca3af">OpenAI API：extra_body={"cache_salt": "..."}（protocol.py:322）</text>
+
+    <rect x="820" y="316" width="360" height="64" rx="5" fill="#ffffff" stroke="#d8b4fe"/>
+    <text x="832" y="334" font-weight="bold" fill="#6b21a8">group_id：拼在 hash 后面的 4 字节（:40-51）</text>
+    <text x="832" y="348" fill="#6b21a8">BlockHashWithGroupId = hash ‖ group_id(BE 4B)：混合注意力模型里，同一前缀</text>
+    <text x="832" y="362" fill="#6b21a8">在 full-attention 组和 sliding-window 组必须映射到不同物理块</text>
+    <text x="832" y="376" fill="#9ca3af">make_block_hash_with_group_id / get_block_hash</text>
+
+    <text x="820" y="400" fill="#6b21a8" font-size="9">触发判定：mm_features 或 lora_request 或 cache_salt 任一非空才生成 extra_keys</text>
+    <text x="820" y="414" fill="#6b21a8" font-size="9">（:425-437）——纯文本无 LoRA 时 extra_keys=None，零开销。</text>
+    <text x="820" y="430" fill="#7c2d92" font-size="9" font-weight="bold">W5 Day 34 的 cache-aware routing / cache_salt 防泄漏，机制根源全在这张卡片。</text>
+  </g>
+
+  <!-- ================= Panel 3: index + hit path ================= -->
+  <rect x="40" y="460" width="740" height="290" rx="8" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="60" y="484" font-size="13" font-weight="bold" fill="#064e3b">③ 索引与命中：断链即停的查链（BlockHashToBlockMap + find_longest_cache_hit）</text>
+
+  <!-- index structure -->
+  <rect x="60" y="500" width="330" height="150" rx="5" fill="#ffffff" stroke="#86efac"/>
+  <text x="74" y="520" font-size="10.5" font-weight="bold" fill="#166534">cached_block_hash_to_block（block_pool.py:44）</text>
+  <g font-size="8.4" fill="#065f46">
+    <rect x="74" y="530" width="140" height="24" fill="#dcfce7" stroke="#4ade80"/><text x="144" y="546" text-anchor="middle">key: hash‖group_id</text>
+    <rect x="214" y="530" width="160" height="24" fill="#dcfce7" stroke="#4ade80"/><text x="294" y="546" text-anchor="middle">value: KVCacheBlock</text>
+    <rect x="74" y="560" width="140" height="24" fill="#dcfce7" stroke="#4ade80"/><text x="144" y="576" text-anchor="middle">同 key 再插入</text>
+    <rect x="214" y="560" width="160" height="24" fill="#fef9c3" stroke="#fde047"/><text x="294" y="576" text-anchor="middle">{block_id: block} 字典</text>
+  </g>
+  <text x="74" y="604" font-size="8.8" fill="#15803d">NOTE（:57-63 原文口径）：不做去重——块满了就插入，即使索引里已有</text>
+  <text x="74" y="618" font-size="8.8" fill="#15803d">相同 hash 的块。因为去重要改别人已发出的 block_id，破坏 append-only。</text>
+  <text x="74" y="632" font-size="8.8" fill="#15803d">代价：同一前缀可能存多份物理拷贝（内存换正确性，§3.3 算账）。</text>
+
+  <!-- hit path -->
+  <rect x="410" y="500" width="350" height="150" rx="5" fill="#ffffff" stroke="#86efac"/>
+  <text x="424" y="520" font-size="10.5" font-weight="bold" fill="#166534">请求 B 入场查链（FullAttentionManager :252-283）</text>
+  <g font-size="8.8">
+    <rect x="424" y="530" width="70" height="26" fill="#dcfce7" stroke="#22c55e"/><text x="459" y="547" text-anchor="middle" fill="#14532d">h0 ✓</text>
+    <rect x="494" y="530" width="70" height="26" fill="#dcfce7" stroke="#22c55e"/><text x="529" y="547" text-anchor="middle" fill="#14532d">h1 ✓</text>
+    <rect x="564" y="530" width="70" height="26" fill="#dcfce7" stroke="#22c55e"/><text x="599" y="547" text-anchor="middle" fill="#14532d">h2 ✓</text>
+    <rect x="634" y="530" width="70" height="26" fill="#fecaca" stroke="#ef4444"/><text x="669" y="547" text-anchor="middle" fill="#7f1d1d">h3 ✗ break</text>
+    <text x="424" y="574" fill="#15803d">itertools.islice(block_hashes, max_num_blocks) 逐块查</text>
+    <text x="424" y="588" fill="#15803d">get_cached_block(block_hash, group_ids)（:163）</text>
+    <text x="424" y="602" fill="#7f1d1d">断链即停：h3 不在索引 ⇒ h4..h_k 必然也没算完/没缓存</text>
+    <text x="424" y="618" fill="#475569">EAGLE 开启时 computed.pop() 丢掉最后一块（:282-283，</text>
+    <text x="424" y="630" fill="#475569">draft head 需要最后一块的 hidden states——W4 Day 25 伏笔）</text>
+  </g>
+
+  <!-- touch + attach -->
+  <rect x="60" y="666" width="700" height="70" rx="6" fill="#ffffff" stroke="#86efac"/>
+  <text x="74" y="686" font-size="10" font-weight="bold" fill="#166534">命中之后（allocate_slots 内，kv_cache_manager.py:277-287）：touch → 挂账 → 分配增量</text>
+  <text x="74" y="703" font-size="9" fill="#15803d">① touch(hit_blocks)（block_pool.py:322）：ref_cnt==0 且在 free 队列 → O(1) 摘出（不再是驱逐候选）；然后 ref_cnt += 1 → 两个请求共享同一物理块</text>
+  <text x="74" y="719" font-size="9" fill="#15803d">② save_new_computed_blocks：命中块直接 extend 进 req_to_blocks（零拷贝）；③ allocate_new_blocks 只为新 token 拿新块 → 命中的 token 全部跳过 prefill</text>
+
+  <!-- ================= Panel 4: invariants box ================= -->
+  <rect x="800" y="460" width="400" height="290" rx="8" fill="#fff7ed" stroke="#fed7aa"/>
+  <text x="820" y="484" font-size="13" font-weight="bold" fill="#7c2d12">④ 三条边界规则（源码注释原文口径）</text>
+  <g font-size="9" fill="#7c2d12">
+    <text x="820" y="510" font-weight="bold">1. 只有满块才算 hash（get_request_block_hasher :601-604）</text>
+    <text x="820" y="524">while 循环里 end_token_idx &gt; num_tokens 直接 break——</text>
+    <text x="820" y="538">未满块内容还会变，指纹语义不稳定。</text>
+
+    <text x="820" y="564" font-weight="bold">2. 全命中边界：max_cache_hit_length = N−1（manager:172）</text>
+    <text x="820" y="578">全部 token 都命中 ⇒ 最后 1 个 token 必须重算才能拿 logits；</text>
+    <text x="820" y="592">且 num_computed_tokens 要按块对齐，可能多回算一整块。</text>
+
+    <text x="820" y="618" font-weight="bold">3. prompt_logprobs 请求整体跳过（manager:165-167）</text>
+    <text x="820" y="632">要 prompt 每个位置的 logprob ⇒ 每个 prompt token 的 logits</text>
+    <text x="820" y="646">都得算 ⇒ 命中跳算会丢数据 → 返回空命中。</text>
+
+    <text x="820" y="672" font-weight="bold">★ hash 的三重身份（承 Day 15 block_size 三重身份之二）</text>
+    <text x="820" y="686">缓存粒度：命中按整块计——前缀 100 token、B=16 时只能</text>
+    <text x="820" y="700">命中 6 块 = 96 token，余 4 token 全浪费（"块粒度截断"，§3.1）。</text>
+    <text x="820" y="718" fill="#9a3412">前缀越短、B 越大，截断损失占比越高——这是实验 2 要量化的核心。</text>
+  </g>
+
+  <text x="620" y="786" text-anchor="middle" font-size="10" font-weight="bold" fill="#0f172a">一句话：hash 链 = 「内容寻址的 KV」——把"这段前缀我算过吗"从逐 token 比较变成 O(块数) 查表，且键里掺好了 LoRA/多模态/salt/group 四味防串料</text>
+  <text x="620" y="806" text-anchor="middle" font-size="9" fill="#64748b">坐标系：v0.11.0 tag（kv_cache_utils.py / block_pool.py / kv_cache_manager.py / request.py / engine/core.py / config/cache.py），引用前先 git log --oneline -3 记版本</text>
+</svg>

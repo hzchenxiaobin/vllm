@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 880" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar16d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar16e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
+    <marker id="ar16f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="880" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">两个请求 + 一条 LRU：共享、免除 COW、逆序归还与"驱逐 = 分配"（v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">场景：系统提示词 64 token（4 个满块）+ 各自问题 · 上：时间线五个阶段 · 下：free 队列的 LRU 快照与驱逐瞬间</text>
+
+  <!-- ================= Timeline: 5 stages ================= -->
+  <rect x="40" y="60" width="1160" height="470" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="60" y="84" font-size="13" font-weight="bold" fill="#0f172a">① 时间线：A 独跑 → B 命中共享 → 双双 decode（尾块私有）→ 依次结束 → C 的分配触发驱逐</text>
+
+  <!-- stage labels -->
+  <g font-size="9.5" font-weight="bold" fill="#334155">
+    <text x="120" y="106" text-anchor="middle">阶段 1 · A 入场（冷）</text>
+    <text x="370" y="106" text-anchor="middle">阶段 2 · B 入场（命中）</text>
+    <text x="620" y="106" text-anchor="middle">阶段 3 · A/B 各自 decode</text>
+    <text x="870" y="106" text-anchor="middle">阶段 4 · A、B 结束</text>
+    <text x="1120" y="106" text-anchor="middle">阶段 5 · C 分配 → 驱逐</text>
+  </g>
+  <line x1="245" y1="96" x2="245" y2="510" stroke="#e2e8f0" stroke-dasharray="4 3"/>
+  <line x1="495" y1="96" x2="495" y2="510" stroke="#e2e8f0" stroke-dasharray="4 3"/>
+  <line x1="745" y1="96" x2="745" y2="510" stroke="#e2e8f0" stroke-dasharray="4 3"/>
+  <line x1="995" y1="96" x2="995" y2="510" stroke="#e2e8f0" stroke-dasharray="4 3"/>
+
+  <!-- stage 1 -->
+  <g font-size="8.6">
+    <rect x="62" y="122" width="160" height="120" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="74" y="140" font-weight="bold" fill="#0f172a">A：无命中</text>
+    <text x="74" y="156" fill="#475569">get_computed_blocks → 0 块</text>
+    <text x="74" y="170" fill="#475569">allocate_slots(96)：</text>
+    <text x="74" y="184" fill="#475569">popleft_n 拿 6 个新块</text>
+    <text x="74" y="200" fill="#475569">（4 系统提示 + 2 问题）</text>
+    <text x="74" y="216" fill="#7c2d12">prefill 全量算，满块入库：</text>
+  </g>
+  <g font-size="8.2" fill="#065f46">
+    <rect x="74" y="222" width="26" height="16" fill="#dcfce7" stroke="#4ade80"/><text x="87" y="234" text-anchor="middle">h0</text>
+    <rect x="100" y="222" width="26" height="16" fill="#dcfce7" stroke="#4ade80"/><text x="113" y="234" text-anchor="middle">h1</text>
+    <rect x="126" y="222" width="26" height="16" fill="#dcfce7" stroke="#4ade80"/><text x="139" y="234" text-anchor="middle">h2</text>
+    <rect x="152" y="222" width="26" height="16" fill="#dcfce7" stroke="#4ade80"/><text x="165" y="234" text-anchor="middle">h3</text>
+    <text x="182" y="234">→ 索引</text>
+  </g>
+
+  <!-- stage 2 -->
+  <g font-size="8.6">
+    <rect x="312" y="122" width="160" height="120" rx="5" fill="#f0fdf4" stroke="#86efac"/>
+    <text x="324" y="140" font-weight="bold" fill="#064e3b">B：命中 4 块</text>
+    <text x="324" y="156" fill="#475569">查链 h0✓ h1✓ h2✓ h3✓</text>
+    <text x="324" y="172" fill="#15803d">touch（:322）：ref_cnt 1→2</text>
+    <text x="324" y="188" fill="#15803d">（若已在 free 队：摘出+1）</text>
+    <text x="324" y="204" fill="#7c2d12">只 prefill 自己的 32 token</text>
+    <text x="324" y="222" fill="#166534">TTFT：省 64 token 的计算</text>
+    <text x="324" y="236" fill="#166534">＝ 64×2×P FLOPs（§3.2）</text>
+  </g>
+
+  <!-- stage 3: the COW panel -->
+  <rect x="562" y="122" width="160" height="230" rx="5" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="574" y="140" font-size="8.6" font-weight="bold" fill="#7c2d12">decode：写入哪？</text>
+  <g font-size="8.2">
+    <!-- shared chain -->
+    <rect x="574" y="150" width="28" height="18" fill="#dcfce7" stroke="#4ade80"/><text x="588" y="163" text-anchor="middle" fill="#14532d">h0</text>
+    <rect x="602" y="150" width="28" height="18" fill="#dcfce7" stroke="#4ade80"/><text x="616" y="163" text-anchor="middle" fill="#14532d">h1</text>
+    <rect x="630" y="150" width="28" height="18" fill="#dcfce7" stroke="#4ade80"/><text x="644" y="163" text-anchor="middle" fill="#14532d">h2</text>
+    <rect x="658" y="150" width="28" height="18" fill="#dcfce7" stroke="#4ade80"/><text x="672" y="163" text-anchor="middle" fill="#14532d">h3</text>
+    <text x="574" y="180" fill="#7c2d12">↑共享段：全部是满块（不可变）</text>
+    <!-- private tails -->
+    <rect x="574" y="190" width="50" height="18" fill="#bfdbfe" stroke="#60a5fa"/><text x="599" y="203" text-anchor="middle" fill="#1e3a8a">A 尾块(私有)</text>
+    <rect x="636" y="190" width="50" height="18" fill="#fce7f3" stroke="#f472b6"/><text x="661" y="203" text-anchor="middle" fill="#831843">B 尾块(私有)</text>
+    <text x="574" y="222" fill="#7c2d12">A 的新 token → A 自己的尾块；</text>
+    <text x="574" y="236" fill="#7c2d12">B 的新 token → B 自己的尾块。</text>
+    <text x="574" y="252" fill="#7c2d12" font-weight="bold">没有任何请求会写共享块！</text>
+    <text x="574" y="270" fill="#7c2d12">v0.11.0 的结构性答案：</text>
+    <text x="574" y="284" fill="#7c2d12">① 只有满块入库可共享；</text>
+    <text x="574" y="298" fill="#7c2d12">② 满块第 B 个 token 写完即封存，</text>
+    <text x="574" y="312" fill="#7c2d12">&#160;&#160;&#160;后续 token 落到下一块；</text>
+    <text x="574" y="326" fill="#7c2d12">③ 活动尾块永不入库 → ref_cnt=1；</text>
+    <text x="574" y="340" fill="#7c2d12" font-weight="bold">⇒ COW 被"只共享不可变块"</text>
+    <text x="574" y="352" fill="#7c2d12" font-weight="bold">&#160;&#160;&#160;这条不变式结构性免除。</text>
+  </g>
+
+  <!-- stage 3 continued: decode detail under -->
+  <g font-size="8.4">
+    <rect x="562" y="362" width="160" height="66" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="574" y="380" fill="#475569">chunked prefill 中途的半成品：</text>
+    <text x="574" y="394" fill="#475569">每步 cache_blocks 把"新变满的块"</text>
+    <text x="574" y="408" fill="#475569">增量入库（:133-154）——A 还在跑，</text>
+    <text x="574" y="422" fill="#475569">B 已可命中它的前缀（无需 finish）</text>
+  </g>
+
+  <!-- stage 4 -->
+  <g font-size="8.6">
+    <rect x="812" y="122" width="160" height="180" rx="5" fill="#fef2f2" stroke="#fecaca"/>
+    <text x="824" y="140" font-weight="bold" fill="#7f1d1d">free：逆序归还</text>
+    <text x="824" y="156" fill="#7f1d1d">A 结束（先到 EOS）：</text>
+    <text x="824" y="172" fill="#475569">req_to_blocks = [h0..h3, A尾]</text>
+    <text x="824" y="188" fill="#b91c1c">reversed() → A尾, h3, h2, h1, h0</text>
+    <text x="824" y="204" fill="#475569">共享块 ref_cnt 2→1（B 还在用，</text>
+    <text x="824" y="218" fill="#475569">不回队）；A 尾 ref_cnt→0 进队尾</text>
+    <text x="824" y="236" fill="#475569">B 结束：h0..h3 ref_cnt→0</text>
+    <text x="824" y="250" fill="#475569">带 hash 进 free 队列（hash 不清）</text>
+    <text x="824" y="268" fill="#7f1d1d" font-weight="bold">★ 块的"缓存命"比"租约"长</text>
+    <text x="824" y="282" fill="#7f1d1d">（Day 15 池不变式②的兑现）</text>
+  </g>
+
+  <!-- stage 5 -->
+  <g font-size="8.6">
+    <rect x="1062" y="122" width="126" height="180" rx="5" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="1074" y="140" font-weight="bold" fill="#1e3a8a">C 入场（新话题）</text>
+    <text x="1074" y="156" fill="#475569">需要 6 个新块：</text>
+    <text x="1074" y="172" fill="#1e40af">get_new_blocks(6)</text>
+    <text x="1074" y="188" fill="#475569">→ popleft_n(6)</text>
+    <text x="1074" y="204" fill="#475569">→ 从队头拿最老的块</text>
+    <text x="1074" y="222" fill="#b91c1c">取到带 hash 的块 →</text>
+    <text x="1074" y="236" fill="#b91c1c">_maybe_evict_cached_block</text>
+    <text x="1074" y="252" fill="#b91c1c">（:286）摘索引+reset_hash</text>
+    <text x="1074" y="270" fill="#7f1d1d" font-weight="bold">驱逐发生在分配路径，</text>
+    <text x="1074" y="284" fill="#7f1d1d" font-weight="bold">不在释放路径</text>
+  </g>
+
+  <!-- stage 4/5 COW residual note -->
+  <g font-size="8.4">
+    <rect x="812" y="312" width="376" height="116" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="824" y="330" font-weight="bold" fill="#0f172a">面试追问："那 V0 的 COW 去哪了？"</text>
+    <text x="824" y="346" fill="#475569">V0（PrefixCachingBlockSpaceManager）：块可变、可追加 slot，共享块</text>
+    <text x="824" y="360" fill="#475569">要写入时需 fork + 拷贝（真正的 copy-on-write）。</text>
+    <text x="824" y="376" fill="#166534">V1：共享只发生在不可变满块上，"写共享块"这个事件被设计掉；</text>
+    <text x="824" y="390" fill="#166534">"COW" 退化为 "写新块"——本来就是常规路径，零额外拷贝。</text>
+    <text x="824" y="408" fill="#9a3412">残存的真实拷贝语义在 KVConnector（P/D 分离的 CPU 侧块，Block.raw_data），</text>
+    <text x="824" y="420" fill="#9a3412">W5 Day 29-31 读到时回来对照——block_pool.py 里 grep 不到 fork（Day 21 验证点关闭）</text>
+  </g>
+
+  <!-- stage 1 bottom: notes -->
+  <g font-size="8.4">
+    <rect x="62" y="254" width="160" height="174" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="74" y="272" font-weight="bold" fill="#0f172a">入库的时机（细节）</text>
+    <text x="74" y="288" fill="#475569">不是"请求结束时"一次性入库，</text>
+    <text x="74" y="302" fill="#475569">而是每次 allocate_slots 尾部：</text>
+    <text x="74" y="316" fill="#166534">cache_blocks(req, N)（manager:302）</text>
+    <text x="74" y="330" fill="#475569">N = min(computed+new, num_tokens)</text>
+    <text x="74" y="344" fill="#475569">num_full = N // B 个满块入库</text>
+    <text x="74" y="360" fill="#475569">draft token 不入库（拒绝的草稿</text>
+    <text x="74" y="374" fill="#475569">不能污染缓存——W4 伏笔）</text>
+    <text x="74" y="392" fill="#9a3412">"未满尾块补算入库"在 v0.11.0</text>
+    <text x="74" y="406" fill="#9a3412">不存在：尾块永远等下一个</text>
+    <text x="74" y="420" fill="#9a3412">token 把它填满（或永远不满）</text>
+  </g>
+
+  <!-- stage 2 bottom -->
+  <g font-size="8.4">
+    <rect x="312" y="254" width="160" height="174" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="324" y="272" font-weight="bold" fill="#0f172a">预算三笔账（:60-88）</text>
+    <text x="324" y="288" fill="#475569">需要 = cdiv(N, B)</text>
+    <text x="324" y="302" fill="#475569">− 已有 − 命中</text>
+    <text x="324" y="316" fill="#475569">+ 可驱逐命中块数</text>
+    <text x="324" y="332" fill="#7c2d12">★ 命中块若在 free 队列</text>
+    <text x="324" y="346" fill="#7c2d12">（ref_cnt==0），把它改成</text>
+    <text x="324" y="360" fill="#7c2d12">"被引用"会消耗 free 池，</text>
+    <text x="324" y="374" fill="#7c2d12">所以预算检查要把它算进去</text>
+    <text x="324" y="394" fill="#475569">Day 12 推演题里"命中了还</text>
+    <text x="324" y="408" fill="#475569">返回 None"的反直觉 case，</text>
+    <text x="324" y="420" fill="#475569">账就在这一笔</text>
+  </g>
+
+  <!-- ================= Bottom: LRU queue snapshots ================= -->
+  <rect x="40" y="548" width="1160" height="240" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+  <text x="60" y="572" font-size="13" font-weight="bold" fill="#7f1d1d">② free_block_queue 的三张 LRU 快照：队列顺序 = 驱逐优先级（Day 15 伏笔在此回收）</text>
+
+  <!-- snapshot T1: after A finished -->
+  <text x="60" y="596" font-size="10" font-weight="bold" fill="#991b1b">T1：A 结束后（B 还在跑，共享块不回队）</text>
+  <g font-size="8.4">
+    <rect x="60" y="606" width="60" height="24" fill="#e2e8f0" stroke="#94a3b8"/><text x="90" y="622" text-anchor="middle" fill="#334155">旧空闲…</text>
+    <rect x="120" y="606" width="56" height="24" fill="#bfdbfe" stroke="#60a5fa"/><text x="148" y="622" text-anchor="middle" fill="#1e3a8a">A尾(无hash)</text>
+    <text x="190" y="622" fill="#64748b">队尾 ← 归还端（append_n :376）</text>
+    <text x="190" y="640" fill="#64748b">h0..h3 仍被 B 引用（ref_cnt=1）→ 不在队里：被引用的块永远不是驱逐候选</text>
+  </g>
+
+  <!-- snapshot T2: after B finished -->
+  <text x="60" y="666" font-size="10" font-weight="bold" fill="#991b1b">T2：B 也结束后（整条链变成 evictable 缓存，hash 保留）</text>
+  <g font-size="8.4">
+    <rect x="60" y="676" width="60" height="24" fill="#e2e8f0" stroke="#94a3b8"/><text x="90" y="692" text-anchor="middle" fill="#334155">旧空闲…</text>
+    <rect x="120" y="676" width="56" height="24" fill="#bfdbfe" stroke="#60a5fa"/><text x="148" y="692" text-anchor="middle" fill="#1e3a8a">A尾</text>
+    <rect x="176" y="676" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="198" y="692" text-anchor="middle" fill="#7f1d1d">B尾</text>
+    <rect x="220" y="676" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="242" y="692" text-anchor="middle" fill="#7f1d1d">h3</text>
+    <rect x="264" y="676" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="286" y="692" text-anchor="middle" fill="#7f1d1d">h2</text>
+    <rect x="308" y="676" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="330" y="692" text-anchor="middle" fill="#7f1d1d">h1</text>
+    <rect x="352" y="676" width="44" height="24" fill="#fecaca" stroke="#ef4444"/><text x="374" y="692" text-anchor="middle" fill="#7f1d1d">h0</text>
+    <text x="410" y="686" fill="#b91c1c">★ 逆序进队 ⇒ 同链的尾块（h3）离队头更近 ⇒ 先被逐</text>
+    <text x="410" y="700" fill="#b91c1c">保住更长公共前缀（h0/h1）——驱逐牺牲的是"最短的后缀"</text>
+  </g>
+
+  <!-- snapshot T3: C allocates -->
+  <text x="60" y="726" font-size="10" font-weight="bold" fill="#991b1b">T3：C 要 6 块 → popleft_n(6)（get_new_blocks :257-275）</text>
+  <g font-size="8.4">
+    <rect x="60" y="736" width="60" height="24" fill="#e2e8f0" stroke="#94a3b8"/><text x="90" y="752" text-anchor="middle" fill="#334155">剩余空闲</text>
+    <rect x="124" y="736" width="52" height="24" fill="#fca5a5" stroke="#dc2626"/><text x="150" y="752" text-anchor="middle" fill="#7f1d1d">旧空闲✂</text>
+    <rect x="176" y="736" width="48" height="24" fill="#fca5a5" stroke="#dc2626"/><text x="200" y="752" text-anchor="middle" fill="#7f1d1d">A尾✂</text>
+    <rect x="224" y="736" width="48" height="24" fill="#fca5a5" stroke="#dc2626"/><text x="248" y="752" text-anchor="middle" fill="#7f1d1d">B尾✂</text>
+    <rect x="272" y="736" width="48" height="24" fill="#fca5a5" stroke="#dc2626"/><text x="296" y="752" text-anchor="middle" fill="#7f1d1d">h3✂逐</text>
+    <rect x="320" y="736" width="48" height="24" fill="#fca5a5" stroke="#dc2626"/><text x="344" y="752" text-anchor="middle" fill="#7f1d1d">h2✂逐</text>
+    <rect x="368" y="736" width="48" height="24" fill="#fca5a5" stroke="#dc2626"/><text x="392" y="752" text-anchor="middle" fill="#7f1d1d">h1✂逐</text>
+    <text x="430" y="748" fill="#b91c1c">h3/h2/h1 被驱逐：从索引 pop + reset_hash（:286-320）</text>
+    <text x="430" y="762" fill="#b91c1c">h0 幸存（队尾）—— 若 D 来的还是这条系统提示词，还能命中 h0</text>
+  </g>
+
+  <rect x="60" y="768" width="1120" height="14" fill="none"/>
+  <text x="620" y="780" text-anchor="middle" font-size="10" font-weight="bold" fill="#7f1d1d">驱逐的完整判定链：拿块（popleft_n）→ 块上有 hash？（:286）→ 从 cached_block_hash_to_block pop（:80）→ reset_hash → ref_cnt+=1 转为新租约</text>
+</svg>

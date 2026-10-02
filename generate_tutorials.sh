@@ -9,7 +9,8 @@
 #   - 支持断点续跑：已生成的 Day 自动跳过；
 #   - 不重试：某天失败则记录并继续生成下一天，失败的 Day 在结束时汇总，
 #     重新运行本脚本即可补跑；
-#   - 每天之间冷却 COOLDOWN 秒（默认 600，即 10 分钟）：缓解网关限流；
+#   - 每天之间默认不冷却（实测冷却对失败率无明显影响）；如遇网关限流
+#     可用 COOLDOWN=600 等自行开启；
 #   - 模型思考强度 CANNBOT_VARIANT（默认 low）：GLM-5.3 默认思考过长，
 #     复盘类任务会烧 3 万+ reasoning token 撞输出上限（finish=length）导致
 #     空退，low 可避免该失败模式；
@@ -20,7 +21,7 @@
 #   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
 #   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
 #   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
-#   COOLDOWN=600 ./generate_tutorials.sh    # 自定义冷却秒数（默认 600，即 10 分钟）
+#   COOLDOWN=600 ./generate_tutorials.sh    # 可选：每天之间冷却秒数（默认 0，不冷却）
 #   CANNBOT_VARIANT=medium ./generate_tutorials.sh   # 调整思考强度（默认 low）
 #   MAX_PASSES=5 ./generate_tutorials.sh    # 最多补跑轮数（默认 3）
 #
@@ -32,7 +33,7 @@ cd "$WORKDIR"
 START_DAY="${START_DAY:-1}"
 END_DAY="${END_DAY:-56}"
 JOBS="${JOBS:-1}"
-COOLDOWN="${COOLDOWN:-600}"
+COOLDOWN="${COOLDOWN:-0}"
 MAX_PASSES="${MAX_PASSES:-3}"
 LOG_DIR="$WORKDIR/logs"
 PROGRESS_FILE="$WORKDIR/.tutorial_progress"
@@ -87,7 +88,8 @@ README.md 中是 Day 1 ~ Day 56 的学习计划，prompt.md 中是教程的格�
 要求：
 - 输出一个 Markdown 文件到 ${outdir}/ 目录下，文件名形如 day${padded}_<主题英文小写下划线>.md。
 - SVG 图保存到 ${outdir}/assets/ 并引用，或直接内嵌在 Markdown 中。
-- 写作前可以浏览已存在的 day*.md 文件（如果存在），在内容上主动与前几天衔接（例如「回顾 Day X」），但不要修改已有文件。
+- 写作前可以浏览 ${outdir}/ 目录下本周已生成的 day*.md（只看本周，不要读其他周的文件），在内容上主动与本周前几天衔接（例如「回顾 Day X」），但不要修改已有文件；浏览时每篇只读开头几十行了解结构即可，不要全文精读。
+- 写作策略：不要做长篇规划，尽快动笔。Markdown 正文分 2~3 次写入（先 Write 前半部分，再 append 后半部分）；SVG 一张一张创建。避免在单次回复中规划完整篇内容后再动手。
 - 完成后请确认文件已写入，并简要说明文件路径和主要内容。
 EOF
 }

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 780" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar10b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="780" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">schedule() 骨架：一个预算、两个循环、三道闸（vLLM V1 · v0.11.0）</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">今日主产出底稿 · 行号按 v0.11.0 逐行核对（v1/core/sched/scheduler.py）· 闸①②③ 颜色与右侧图例对应</text>
+
+  <!-- ================= 顶部：调用入口 ================= -->
+  <rect x="140" y="58" width="640" height="44" rx="6" fill="#eef2ff" stroke="#818cf8"/>
+  <text x="460" y="76" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">EngineCore.step（v1/engine/core.py:272-291，busy loop 每次）</text>
+  <text x="460" y="91" text-anchor="middle" font-size="8.4" fill="#1e3a8a">has_requests（:281）→ schedule()（:283）→ execute_model（:284-286）→ update_from_output（:287-288）</text>
+  <line x1="460" y1="102" x2="460" y2="118" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10b)"/>
+
+  <!-- ================= ① 预算开账 ================= -->
+  <rect x="240" y="120" width="440" height="42" rx="6" fill="#fefce8" stroke="#facc15" stroke-width="1.6"/>
+  <text x="460" y="138" text-anchor="middle" font-size="9.8" font-weight="bold" fill="#78350f">① 预算开账：token_budget = max_num_batched_tokens（:198）</text>
+  <text x="460" y="153" text-anchor="middle" font-size="8.2" fill="#78350f">K 的默认值分硬件分 context：H100 serve 8192 ／ A100 serve 2048（arg_utils.py:1595-1624）</text>
+  <line x1="460" y1="162" x2="460" y2="178" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10b)"/>
+
+  <!-- ================= ② RUNNING 循环 ================= -->
+  <rect x="140" y="180" width="640" height="128" rx="6" fill="#f0f9ff" stroke="#60a5fa"/>
+  <text x="156" y="200" font-size="10.2" font-weight="bold" fill="#0c1e4e">② RUNNING 循环（:209-320）—— 先保住在飞的：每个老请求每步至少 1 token</text>
+  <text x="156" y="218" font-size="8.4" fill="#0f172a">守卫：req_index &lt; len(running) 且 token_budget &gt; 0（:210）＝ 闸① ｜ 列表序 = 入 running 时间序（FCFS 物理实现）</text>
+  <text x="156" y="234" font-size="8.4" fill="#0f172a">need = num_tokens_with_spec + num_output_placeholders − num_computed_tokens（:213，Day 9 的账本）</text>
+  <text x="156" y="250" font-size="8.4" font-weight="bold" fill="#1d4ed8">num_new_tokens = min(need, token_budget)（:220）★ 预算钳位 —— Day 11 切块机关</text>
+  <text x="156" y="266" font-size="8.4" fill="#0f172a">护栏 min(need, max_model_len − 1 − computed)（:224）｜ need == 0 → continue 跳过（:251，注释自认不严格 FCFS）</text>
+  <rect x="156" y="274" width="300" height="26" rx="4" fill="#fff1f2" stroke="#fda4af"/>
+  <text x="306" y="291" text-anchor="middle" font-size="8.4" font-weight="bold" fill="#991b1b">allocate_slots → None（:259）＝ 闸③ → 抢占（Day 12 ⤴）</text>
+  <text x="480" y="291" font-size="8.4" font-weight="bold" fill="#1d4ed8">token_budget −= n（:299）★ 先扣账</text>
+  <line x1="460" y1="308" x2="460" y2="324" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10b)"/>
+  <text x="475" y="320" font-size="8" fill="#475569">RUNNING 扣完，剩余预算交给 WAITING</text>
+
+  <!-- ================= ③ WAITING 循环 ================= -->
+  <rect x="140" y="326" width="640" height="168" rx="6" fill="#f0fdf4" stroke="#6ee7b7"/>
+  <text x="156" y="346" font-size="10.2" font-weight="bold" fill="#065f46">③ WAITING 循环（:335-537）—— 用剩余预算捞新请求：能捞多少捞多少</text>
+  <text x="156" y="364" font-size="8.4" fill="#0f172a">守卫：本步无抢占（:335，归还块先留幸存者）且 token_budget &gt; 0（:336）＝ 闸①</text>
+  <text x="156" y="380" font-size="8.4" font-weight="bold" fill="#7c3aed">守卫：len(running) &lt; max_num_seqs（:337-338）＝ 闸② max_num_seqs —— 只闸 WAITING，不踢 RUNNING</text>
+  <text x="156" y="396" font-size="8.4" fill="#0f172a">peek_request 只看不取（:340）｜ 软跳过三分支：远端KV(:343) / FSM(:357) / LoRA(:368) → 塞回 skipped 临时队（:332）</text>
+  <text x="156" y="412" font-size="8.4" fill="#0f172a">prefix 命中：get_computed_blocks 扣减已算 token（:380-384，Day 16）｜ need = num_tokens − computed（:423）</text>
+  <text x="156" y="428" font-size="8.4" fill="#0f172a">chunked 关闭且 need &gt; budget → 整请求跳过（:431-435）；开启则 min(need, token_budget)（:437）★ 预算钳位</text>
+  <rect x="156" y="436" width="300" height="26" rx="4" fill="#fff1f2" stroke="#fda4af"/>
+  <text x="306" y="453" text-anchor="middle" font-size="8.4" font-weight="bold" fill="#991b1b">allocate_slots → None（:481）＝ 闸③ → break（head-of-line 阻塞）</text>
+  <text x="480" y="446" font-size="8.4" font-weight="bold" fill="#065f46">成功路径：pop（:498）→ running.append（:507）</text>
+  <text x="480" y="460" font-size="8.4" font-weight="bold" fill="#1d4ed8">→ SCHEDULED 事件（:509）→ 扣账（:524）</text>
+  <text x="480" y="474" font-size="8.2" fill="#0f172a">status = RUNNING（:525）· computed 写回（:526）</text>
+  <line x1="460" y1="494" x2="460" y2="510" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10b)"/>
+
+  <!-- ================= ④⑤ 收尾 ================= -->
+  <rect x="140" y="512" width="310" height="66" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="295" y="530" text-anchor="middle" font-size="9.4" font-weight="bold" fill="#0f172a">④ skipped 回插队首（:539-541）</text>
+  <text x="295" y="545" text-anchor="middle" font-size="8.2" fill="#0f172a">waiting.prepend_requests(skipped)</text>
+  <text x="295" y="559" text-anchor="middle" font-size="8.2" fill="#64748b">顺序保住，但本步让后面的人先走</text>
+
+  <rect x="470" y="512" width="310" height="66" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="625" y="530" text-anchor="middle" font-size="9.4" font-weight="bold" fill="#0f172a">⑤ 断言三连（:543-552）</text>
+  <text x="625" y="545" text-anchor="middle" font-size="8.2" fill="#0f172a">Σ scheduled ≤ K · token_budget ≥ 0 · len(running) ≤ S</text>
+  <text x="625" y="559" text-anchor="middle" font-size="8.2" fill="#64748b">「预算不超发」的制度化验收</text>
+  <line x1="460" y1="578" x2="460" y2="594" stroke="#475569" stroke-width="1.2" marker-end="url(#ar10b)"/>
+
+  <!-- ================= ⑥ 输出与账本推进 ================= -->
+  <rect x="140" y="596" width="640" height="92" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.2"/>
+  <text x="156" y="616" font-size="9.8" font-weight="bold" fill="#0f172a">⑥ SchedulerOutput（:582-599）+ _update_after_schedule（:626 → :629-645）</text>
+  <text x="156" y="634" font-size="8.4" fill="#0f172a">scheduled_new_reqs（全量：prompt + block_ids + 采样参数）｜ scheduled_cached_reqs（diff：req_id + new_block_ids + computed）</text>
+  <text x="156" y="650" font-size="8.4" fill="#0f172a">num_scheduled_tokens: dict[req_id → 本步 token 数]（budget 记账的账本产物）｜ total &gt; 0 才真跑 forward（core.py:291）</text>
+  <text x="156" y="666" font-size="8.4" font-weight="bold" fill="#1d4ed8">步末推进：num_computed_tokens += num_scheduled_tokens（:645）—— 不等 forward 返回，下一步即可续算</text>
+  <text x="156" y="681" font-size="8" fill="#64748b">new 全量 / cached 增量 = diff-only 通信：每步 IPC 从 O(全批全量) 降到 O(增量)（Worker 常驻 InputBatch）</text>
+
+  <!-- ================= 右侧：三道闸图例 ================= -->
+  <rect x="810" y="180" width="400" height="508" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="1010" y="204" text-anchor="middle" font-size="11" font-weight="bold" fill="#7f1d1d">三道闸（本步放多少请求进来的裁决）</text>
+
+  <rect x="826" y="218" width="368" height="128" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.4"/>
+  <text x="840" y="238" font-size="9.6" font-weight="bold" fill="#78350f">闸① token budget（K = max_num_batched_tokens）</text>
+  <text x="840" y="255" font-size="8.2" fill="#0f172a">位置：:210/:220（RUNNING）· :336/:437（WAITING）</text>
+  <text x="840" y="270" font-size="8.2" fill="#0f172a">限：单步 forward 总 token 数（prefill chunk + 全部 decode）</text>
+  <text x="840" y="285" font-size="8.2" fill="#0f172a">钉住单步时长上界 → ITL 上界 ≈ T_fix + ρ·K</text>
+  <text x="840" y="300" font-size="8.2" fill="#0f172a">纯 decode 永不先爆（K ≥ S 校验，config/scheduler.py:245-249）</text>
+  <text x="840" y="315" font-size="8.2" font-weight="bold" fill="#991b1b">发力时刻 = prefill 到来的瞬间</text>
+  <text x="840" y="332" font-size="7.8" fill="#64748b">H100 8192 / A100 2048 → 最坏步 ≈ 0.26s 殊途同归</text>
+
+  <rect x="826" y="356" width="368" height="108" rx="6" fill="#f5f3ff" stroke="#a78bfa" stroke-width="1.4"/>
+  <text x="840" y="376" font-size="9.6" font-weight="bold" fill="#4c1d95">闸② max_num_seqs（S）</text>
+  <text x="840" y="393" font-size="8.2" fill="#0f172a">位置：:337-338（只在 WAITING 循环）+ 断言 :547</text>
+  <text x="840" y="408" font-size="8.2" fill="#0f172a">限：同时 in-flight 的请求数（并发闸）</text>
+  <text x="840" y="423" font-size="8.2" fill="#0f172a">影响 KV 占用水位 → 抢占概率（Day 12 的调参对象）</text>
+  <text x="840" y="438" font-size="8.2" fill="#0f172a">默认：H100 serve 1024 / A100 serve 256</text>
+  <text x="840" y="453" font-size="7.8" fill="#64748b">调大它只是开闸 —— 池子水位由 KV 决定</text>
+
+  <rect x="826" y="474" width="368" height="128" rx="6" fill="#fff1f2" stroke="#f87171" stroke-width="1.4"/>
+  <text x="840" y="494" font-size="9.6" font-weight="bold" fill="#991b1b">闸③ KV 余量（allocate_slots ≠ None）</text>
+  <text x="840" y="511" font-size="8.2" fill="#0f172a">位置：:255（RUNNING）· :471（WAITING）—— 闸③ 的裁判是</text>
+  <text x="840" y="526" font-size="8.2" fill="#0f172a">kv_cache_manager（Day 15）；free 含 ref_cnt=0 的可驱逐块</text>
+  <text x="840" y="541" font-size="8.2" fill="#0f172a">RUNNING 侧 None → 抢占六步（:262-290，Day 12 ⤴）</text>
+  <text x="840" y="556" font-size="8.2" fill="#0f172a">WAITING 侧 None → break（:483）head-of-line 阻塞</text>
+  <text x="840" y="571" font-size="8.2" font-weight="bold" fill="#991b1b">真正的内存背压 —— 生产上几乎总是它先绷紧</text>
+  <text x="840" y="588" font-size="7.8" fill="#64748b">Qwen3-8B@H100：36.6万 token 池 → 4K ctx 约 89 路</text>
+
+  <rect x="826" y="612" width="368" height="64" rx="6" fill="#f0fdf4" stroke="#6ee7b7"/>
+  <text x="840" y="631" font-size="9" font-weight="bold" fill="#065f46">软跳过（不阻塞整队，回插队首 :539-541）</text>
+  <text x="840" y="646" font-size="8.2" fill="#0f172a">FSM 未编译（:357）· 远端 KV 未就绪（:343）· LoRA 超限（:368）</text>
+  <text x="840" y="661" font-size="8" fill="#64748b">共同套路：pop → skipped 临时队 → 步末 prepend 回队首</text>
+
+  <!-- ================= 底部：记账顺序 ================= -->
+  <rect x="140" y="700" width="1070" height="56" rx="6" fill="#eef2ff" stroke="#818cf8"/>
+  <text x="156" y="721" font-size="9.6" font-weight="bold" fill="#1e3a8a">budget 记账顺序（今日核心结论）</text>
+  <text x="156" y="738" font-size="8.6" fill="#1e3a8a">token_budget = K  →  RUNNING 先扣（:299，老请求保底 1 token）  →  WAITING 吃剩余（:524，能捞则捞）  →  断言结算（:544-546）＝ 同一步内老请求绝对优先</text>
+  <text x="156" y="751" font-size="8.2" fill="#475569">语义：老请求 ITL 不断裂 vs 新请求 TTFT 排队 —— TTFT 与 ITL 的跷跷板在调度器里的第一次握手（Day 11/12/13 的共同起点）</text>
+</svg>

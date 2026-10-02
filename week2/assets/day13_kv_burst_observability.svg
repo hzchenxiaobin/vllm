@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 780" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar13k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+    <marker id="ar13kr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="780" fill="#ffffff"/>
+  <text x="620" y="26" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">实验 13.2：挤爆 KV——时间线预测 · 三层时钟对时序 · A/B/C/D 对照</text>
+  <text x="620" y="46" text-anchor="middle" font-size="11" fill="#64748b">util 0.5 + --max-model-len 16384 + --max-num-seqs 128 · 64 × (12000+512) @ rate 4 · H100 80G 量级 · 四件套逐条打勾，对不上的格子 = misunderstanding 定位器</text>
+
+  <!-- ================= Panel A: multi-track timeline ================= -->
+  <rect x="60" y="56" width="1120" height="306" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="76" y="76" font-size="12.5" font-weight="bold" fill="#0f172a">A · 预测时间线（0 ~ 30 s）</text>
+
+  <!-- time axis: x0=170, 30s -> 950px (31.67 px/s) -->
+  <line x1="170" y1="338" x2="1140" y2="338" stroke="#94a3b8" stroke-width="1" marker-end="url(#ar13k)"/>
+  <text x="170" y="352" font-size="8.5" fill="#64748b">0s</text>
+  <text x="328" y="352" font-size="8.5" fill="#64748b">5s</text>
+  <text x="487" y="352" font-size="8.5" fill="#64748b">10s</text>
+  <text x="645" y="352" font-size="8.5" fill="#64748b">15s</text>
+  <text x="803" y="352" font-size="8.5" fill="#64748b">20s</text>
+  <text x="962" y="352" font-size="8.5" fill="#64748b">25s</text>
+  <text x="1120" y="352" font-size="8.5" fill="#64748b">30s</text>
+
+  <!-- track 1: arrivals / waiting -->
+  <text x="76" y="98" font-size="9.5" font-weight="bold" fill="#334155">到达 / waiting</text>
+  <line x1="170" y1="130" x2="677" y2="100" stroke="#1d4ed8" stroke-width="1.8"/>
+  <line x1="677" y1="100" x2="1140" y2="100" stroke="#1d4ed8" stroke-width="1.8"/>
+  <text x="700" y="96" font-size="8" fill="#1d4ed8">64 个（rate 4/s × 16s）</text>
+  <path d="M 265 130 L 265 128 L 390 124 L 480 118 L 570 112 L 677 108 L 800 106 L 950 112 L 1080 122 L 1140 128" fill="none" stroke="#ef4444" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="300" y="142" font-size="8" fill="#ef4444">waiting 堆积（R12 起 admission 只 break :483）</text>
+
+  <!-- track 2: gpu_cache_usage -->
+  <text x="76" y="164" font-size="9.5" font-weight="bold" fill="#334155">KV usage</text>
+  <line x1="170" y1="172" x2="1140" y2="172" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <text x="1144" y="175" font-size="8" fill="#64748b">1.0</text>
+  <path d="M 170 206 L 265 176 L 328 172 L 1140 172" fill="none" stroke="#0d9488" stroke-width="1.8"/>
+  <text x="330" y="192" font-size="8" fill="#0f766e">t≈3s 冲 ~0.93 → t≈5s 钳位 1.0（free 含可驱逐块，到 1.0 = 连缓存都没得驱逐）</text>
+
+  <!-- track 3: preemption counter -->
+  <text x="76" y="232" font-size="9.5" font-weight="bold" fill="#334155">preemptions</text>
+  <path d="M 170 262 L 297 262 L 297 256 L 380 256 L 380 250 L 462 250 L 462 244 L 545 244 L 545 238 L 628 238 L 628 232 L 710 232 L 710 226 L 793 226 L 793 220 L 875 220 L 875 214 L 958 214 L 958 208 L 1040 208 L 1040 204 L 1140 204" fill="none" stroke="#b45309" stroke-width="1.8"/>
+  <line x1="297" y1="262" x2="297" y2="232" stroke="#ef4444" stroke-width="1" stroke-dasharray="2 2"/>
+  <text x="240" y="276" font-size="8" fill="#ef4444">t≈4s 首抢（探针 B：victim=最新 running）</text>
+  <text x="640" y="252" font-size="8" fill="#b45309">斜率 ≈ 1 次/s（admission-growth 相位差 → bounce）</text>
+  <text x="905" y="196" font-size="8" fill="#b45309">counter：延迟上报</text>
+  <line x1="958" y1="200" x2="930" y2="218" stroke="#ef4444" stroke-width="1" marker-end="url(#ar13kr)"/>
+  <text x="760" y="288" font-size="8" fill="#64748b">事件(探针即时) → 随请求下次输出落账 → counter 可见：偏移 数百 ms ~ 秒级 → 看斜率，别拿跳变时刻当事件时刻</text>
+
+  <!-- track 4: running sawtooth + ITL spikes -->
+  <text x="76" y="308" font-size="9.5" font-weight="bold" fill="#334155">Running / ITL</text>
+  <path d="M 170 330 L 265 292 L 297 292 L 312 288 L 345 288 L 360 292 L 392 292 L 407 288 L 440 288 L 455 292 L 487 292 L 502 288 L 535 288 L 550 292 L 582 292 L 597 288 L 630 288 L 645 292 L 677 292 L 692 288 L 725 288 L 740 292 L 772 292 L 787 288 L 820 288 L 835 292 L 867 292 L 882 288 L 915 288 L 930 292 L 962 292 L 977 288 L 1010 288 L 1025 292 L 1057 292 L 1072 288 L 1105 288 L 1120 292 L 1140 292" fill="none" stroke="#334155" stroke-width="1.5"/>
+  <line x1="345" y1="330" x2="345" y2="288" stroke="#ef4444" stroke-width="1.6"/>
+  <line x1="535" y1="330" x2="535" y2="288" stroke="#ef4444" stroke-width="1.6"/>
+  <line x1="725" y1="330" x2="725" y2="288" stroke="#ef4444" stroke-width="1.6"/>
+  <line x1="915" y1="330" x2="915" y2="288" stroke="#ef4444" stroke-width="1.6"/>
+  <line x1="1105" y1="330" x2="1105" y2="288" stroke="#ef4444" stroke-width="1.6"/>
+  <text x="540" y="326" font-size="8" fill="#ef4444">红色竖线 = ITL 秒级长毛刺（victim 等幸存者完成：512 tok × ~8ms ≈ 4s）</text>
+  <text x="180" y="286" font-size="8" fill="#475569">0 → 11 路（t≈3s 前）→ 锯齿 10~12</text>
+
+  <!-- ================= Panel B: three clocks ================= -->
+  <rect x="60" y="376" width="560" height="196" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="76" y="396" font-size="12.5" font-weight="bold" fill="#0f172a">B · 三层时钟：对时序的守则</text>
+
+  <rect x="76" y="406" width="528" height="42" rx="4" fill="#ecfdf5" stroke="#6ee7b7"/>
+  <rect x="76" y="406" width="96" height="42" rx="4" fill="#047857"/>
+  <text x="124" y="424" text-anchor="middle" font-size="9" font-weight="bold" fill="#ecfdf5">探针 print</text>
+  <text x="124" y="437" text-anchor="middle" font-size="7.5" fill="#a7f3d0">事件级 · 真值</text>
+  <text x="184" y="422" font-size="8.5" fill="#334155">[probe] 12.41 PREEMPT victim=...R27 ctx=12510 free=3（§4.2，flush=True）</text>
+  <text x="184" y="438" font-size="8" fill="#64748b">ms 级、无偏移 —— 事件时刻的基准；只用于对时序，不用于性能数值</text>
+
+  <rect x="76" y="454" width="528" height="42" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+  <rect x="76" y="454" width="96" height="42" rx="4" fill="#1d4ed8"/>
+  <text x="124" y="472" text-anchor="middle" font-size="9" font-weight="bold" fill="#eff6ff">周期统计行</text>
+  <text x="124" y="485" text-anchor="middle" font-size="7.5" fill="#bfdbfe">周期级</text>
+  <text x="184" y="470" font-size="8.5" fill="#334155">EngineCore 前缀：Running: 11  Waiting: 30  GPU KV cache usage: 100.0%</text>
+  <text x="184" y="486" font-size="8" fill="#64748b">按步数对齐 —— 慢过程（usage 逐步爬升 / queue 涨落）的最佳观测点</text>
+
+  <rect x="76" y="502" width="528" height="42" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+  <rect x="76" y="502" width="96" height="42" rx="4" fill="#b91c1c"/>
+  <text x="124" y="520" text-anchor="middle" font-size="9" font-weight="bold" fill="#fef2f2">Prometheus</text>
+  <text x="124" y="533" text-anchor="middle" font-size="7.5" fill="#fecaca">scrape 级</text>
+  <text x="184" y="518" font-size="8.5" fill="#334155">scrape_interval 调 1s（默认 15s 对 30s 实验太粗，时序被采样抹平）</text>
+  <text x="184" y="534" font-size="8" fill="#64748b">穷人版：watch -n1 curl；曲线与告警层 —— counter 用 rate()[30s] 看斜率</text>
+
+  <text x="76" y="564" font-size="9" font-weight="bold" fill="#991b1b">守则：counter 永远看斜率；对时序以探针为准——三层互证，才算把一次事件钉在同一条时间轴上</text>
+
+  <!-- ================= Panel C: A/B/C/D ================= -->
+  <rect x="640" y="376" width="580" height="196" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="656" y="396" font-size="12.5" font-weight="bold" fill="#0f172a">C · A/B/C/D 调参对照（Day 12 调参树 → 实测数据）</text>
+
+  <rect x="656" y="406" width="548" height="20" fill="#0f172a"/>
+  <text x="664" y="420" font-size="8.5" font-weight="bold" fill="#f1f5f9">组</text>
+  <text x="694" y="420" font-size="8.5" font-weight="bold" fill="#f1f5f9">参数</text>
+  <text x="856" y="420" font-size="8.5" font-weight="bold" fill="#f1f5f9">preemptions</text>
+  <text x="966" y="420" font-size="8.5" font-weight="bold" fill="#f1f5f9">ITL p99</text>
+  <text x="1060" y="420" font-size="8.5" font-weight="bold" fill="#f1f5f9">goodput</text>
+
+  <rect x="656" y="426" width="548" height="28" fill="#fef2f2" stroke="#e2e8f0"/>
+  <text x="664" y="444" font-size="9" font-weight="bold" fill="#991b1b">A</text>
+  <text x="694" y="438" font-size="8.5" fill="#334155">max_num_seqs 128（基线）</text>
+  <text x="694" y="450" font-size="8" fill="#64748b">admission 超容量 11 倍</text>
+  <text x="856" y="444" font-size="8.5" fill="#334155">持续爬升（数十）</text>
+  <text x="966" y="444" font-size="8.5" fill="#334155">秒级毛刺</text>
+  <text x="1060" y="444" font-size="8.5" font-weight="bold" fill="#991b1b">最低</text>
+
+  <rect x="656" y="454" width="548" height="28" fill="#ecfdf5" stroke="#e2e8f0"/>
+  <text x="664" y="472" font-size="9" font-weight="bold" fill="#065f46">B</text>
+  <text x="694" y="466" font-size="8.5" fill="#334155">max_num_seqs 8</text>
+  <text x="694" y="478" font-size="8" fill="#64748b">收到容量手算 11.4 路以内</text>
+  <text x="856" y="472" font-size="8.5" fill="#334155">≈ 0</text>
+  <text x="966" y="472" font-size="8.5" fill="#334155">~10 ms 平滑</text>
+  <text x="1060" y="472" font-size="8.5" font-weight="bold" fill="#065f46">高</text>
+
+  <rect x="656" y="482" width="548" height="28" fill="#ecfdf5" stroke="#e2e8f0"/>
+  <text x="664" y="500" font-size="9" font-weight="bold" fill="#065f46">C</text>
+  <text x="694" y="494" font-size="8.5" fill="#334155">KV FP8 + max_num_seqs 16</text>
+  <text x="694" y="506" font-size="8" fill="#64748b">容量 ×2 ≈ 22.8 路 &gt; 16</text>
+  <text x="856" y="500" font-size="8.5" fill="#334155">≈ 0</text>
+  <text x="966" y="500" font-size="8.5" fill="#334155">平滑</text>
+  <text x="1060" y="500" font-size="8.5" font-weight="bold" fill="#065f46">最高</text>
+
+  <rect x="656" y="510" width="548" height="28" fill="#fffbeb" stroke="#e2e8f0"/>
+  <text x="664" y="528" font-size="9" font-weight="bold" fill="#b45309">D</text>
+  <text x="694" y="522" font-size="8.5" fill="#334155">A + budget 32768（鉴别组）</text>
+  <text x="694" y="534" font-size="8" fill="#64748b">只动 max_num_batched_tokens</text>
+  <text x="856" y="528" font-size="8.5" fill="#334155">不降！</text>
+  <text x="966" y="528" font-size="8.5" fill="#334155">毛刺更宽</text>
+  <text x="1060" y="528" font-size="8.5" fill="#64748b">—</text>
+
+  <text x="656" y="560" font-size="8.5" fill="#64748b">D 证明「budget 不是抢占旋钮」（它管单步时长/ITL 上界）；A 组 raw throughput 可能最高，但 ITL SLO 内完成数最低 —— 按 goodput 排序（Day 5）</text>
+
+  <!-- ================= Bottom: capacity + timeline deduction ================= -->
+  <rect x="60" y="588" width="1120" height="158" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="76" y="608" font-size="12.5" font-weight="bold" fill="#0f172a">容量手算 + 时序推演（预测，跑完逐格对账）</text>
+
+  <rect x="76" y="620" width="470" height="76" rx="6" fill="#eff6ff" stroke="#60a5fa"/>
+  <text x="90" y="638" font-size="9" font-weight="bold" fill="#1e3a8a">容量手算（Day 12 §3.2 复用）</text>
+  <text x="90" y="654" font-size="8.5" fill="#334155">0.5×80 − 16.4(权重) − ~2.5(act) ≈ 21 GB ≈ 14 万 token ≈ 8.9K block</text>
+  <text x="90" y="670" font-size="8.5" fill="#334155">满上下文路数 14万 ÷ 12512 ≈ 11.4 路 ≪ max_num_seqs 128 → 必然过载</text>
+  <text x="90" y="686" font-size="8.5" fill="#334155">总需求 64 × 12512 ≈ 80 万 token = 容量的 5.7 倍</text>
+
+  <rect x="560" y="620" width="604" height="112" rx="6" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="574" y="638" font-size="9" font-weight="bold" fill="#334155">推演（每行对应源码坐标）</text>
+  <text x="574" y="654" font-size="8.5" fill="#334155">• t=0~3s：R1~R11 入场（greedy admission :471/:507），usage 0 → 0.93</text>
+  <text x="574" y="670" font-size="8.5" fill="#334155">• t≈2.75s：R12 admission 失败 → HOL break（waiting 侧失败 ≠ 抢占，:483）</text>
+  <text x="574" y="686" font-size="8.5" fill="#334155">• t≈3~5s：幸存者首个块边界 → allocate_slots None（:259）→ 首抢（victim=最新 :271）</text>
+  <text x="574" y="702" font-size="8.5" fill="#334155">• 稳态：完成→释放→入场清零 free→增长再失败→再抢（Running 锯齿、bounce）</text>
+  <text x="574" y="718" font-size="8.5" fill="#334155">• hit rate：~0%（random 无共享前缀）→ 抬升（victim 自命中 :380-384）</text>
+
+  <text x="76" y="734" font-size="8.5" fill="#64748b">注意：首抢发生在 running 循环（decode 增长触块边界），不是第 12 个请求到达时（那只是 waiting break）——两者在监控上差一个「num_preemptions 何时开始爬」</text>
+  <text x="620" y="762" text-anchor="middle" font-size="8.5" fill="#94a3b8">预测数字为 H100 80G + Qwen3-8B 量级演示，以实测为准 · 源码坐标按 v0.11.0 · 实验 3 的对账动作：探针时刻 ↔ usage 钳位 ↔ counter 爬升 ↔ ITL 毛刺 victim 名单</text>
+</svg>
