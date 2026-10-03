@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="830" viewBox="0 0 1000 830" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrP" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#475569"/>
+    </marker>
+    <marker id="arrV" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#7c3aed"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="830" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">P/D 分离：把 bound 相反的两种负载拆开，各自吃到最优配置</text>
+  <text x="500" y="50" text-anchor="middle" font-size="12" fill="#64748b">prefill 吃算力（大 M GEMM）· decode 吃带宽（小 M + 大 KV 回看）· chunked prefill 只能缓解干扰，分离才是根治</text>
+
+  <!-- ================= Panel A: interference ================= -->
+  <rect x="40" y="70" width="450" height="230" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="58" y="95" font-size="13" font-weight="bold" fill="#7f1d1d">① 不分的痛：同实例混跑，长 prefill 顶住 decode</text>
+  <g>
+    <line x1="58" y1="170" x2="480" y2="170" stroke="#475569" stroke-width="1"/>
+    <!-- decode steps small -->
+    <rect x="70" y="152" width="26" height="18" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
+    <rect x="100" y="152" width="26" height="18" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
+    <!-- long prefill block -->
+    <rect x="130" y="112" width="150" height="58" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+    <text x="205" y="138" text-anchor="middle" font-size="10" font-weight="bold" fill="#92400e">4K prompt prefill</text>
+    <text x="205" y="154" text-anchor="middle" font-size="9.5" fill="#92400e">独占 ~170ms（Day 3）</text>
+    <!-- starved decode steps -->
+    <rect x="284" y="152" width="26" height="18" fill="#fecaca" stroke="#dc2626" stroke-width="1" stroke-dasharray="2,2"/>
+    <rect x="314" y="152" width="26" height="18" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
+    <rect x="344" y="152" width="26" height="18" fill="#bfdbfe" stroke="#2563eb" stroke-width="1"/>
+    <!-- TPOT spike annotation -->
+    <line x1="130" y1="200" x2="280" y2="200" stroke="#dc2626" stroke-width="2" marker-end="url(#arrP)"/>
+    <text x="205" y="218" text-anchor="middle" font-size="10" fill="#b91c1c">这段时间 decode 全员等待 → TPOT 尖峰（×20 量级）</text>
+    <text x="58" y="245" font-size="10" fill="#7f1d1d">chunked prefill 把 170ms 切成 4×~50ms：尖峰变小但仍在（预算被分走）；</text>
+    <text x="58" y="262" font-size="10" fill="#7f1d1d">且 kernel 选择/显存配比仍只能折中——资源层面拆开才是根治</text>
+    <text x="58" y="285" font-size="10" font-weight="bold" fill="#7f1d1d">第三动机：prefill 容量 ∝ 流量，decode 容量 ∸ 并发存量 → 扩容比例不同</text>
+  </g>
+
+  <!-- ================= Panel B: architecture ================= -->
+  <rect x="510" y="70" width="450" height="230" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="528" y="95" font-size="13" font-weight="bold" fill="#1e3a8a">② 分离架构：P 池与 D 池独立伸缩，KV 单向流</text>
+  <g>
+    <rect x="528" y="120" width="64" height="44" rx="6" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+    <text x="560" y="138" text-anchor="middle" font-size="10">Client</text>
+    <text x="560" y="152" text-anchor="middle" font-size="9" fill="#64748b">SLO 路由</text>
+
+    <rect x="630" y="110" width="150" height="64" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+    <text x="705" y="130" text-anchor="middle" font-size="11" font-weight="bold" fill="#713f12">Prefill 池</text>
+    <text x="705" y="146" text-anchor="middle" font-size="9" fill="#713f12">小 batch · 吃算力</text>
+    <text x="705" y="160" text-anchor="middle" font-size="9" fill="#713f12">配置向 TFLOPS 倾斜</text>
+
+    <rect x="630" y="196" width="150" height="64" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="705" y="216" text-anchor="middle" font-size="11" font-weight="bold" fill="#14532d">Decode 池</text>
+    <text x="705" y="232" text-anchor="middle" font-size="9" fill="#14532d">大 batch · 吃带宽</text>
+    <text x="705" y="246" text-anchor="middle" font-size="9" fill="#14532d">CUDA Graph + 大 KV 池</text>
+
+    <line x1="592" y1="135" x2="628" y2="135" stroke="#475569" stroke-width="1.5" marker-end="url(#arrP)"/>
+    <line x1="592" y1="155" x2="628" y2="222" stroke="#475569" stroke-width="1.5" marker-end="url(#arrP)"/>
+    <text x="600" y="185" font-size="9" fill="#64748b" transform="rotate(66 600 185)">新请求→P</text>
+
+    <line x1="705" y1="174" x2="705" y2="194" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrV)"/>
+    <text x="715" y="188" font-size="9.5" fill="#7c3aed" font-weight="bold">KV 传输（核心难点）</text>
+
+    <line x1="780" y1="228" x2="830" y2="228" stroke="#475569" stroke-width="1.5" marker-end="url(#arrP)"/>
+    <rect x="832" y="206" width="112" height="44" rx="6" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+    <text x="888" y="224" text-anchor="middle" font-size="10">token 流回</text>
+    <text x="888" y="240" text-anchor="middle" font-size="9" fill="#64748b">（增量 logits）</text>
+    <text x="528" y="285" font-size="10" fill="#1e3a8a">DeepSeek 公开分享：生产上按负载动态调 P/D 配比 + 留 ~15% 余量做速率匹配</text>
+  </g>
+
+  <!-- ================= Panel C: transfer math ================= -->
+  <rect x="40" y="320" width="920" height="250" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="58" y="345" font-size="13" font-weight="bold" fill="#4c1d95">③ 传输量手算与「怎么藏」：70B · FP16 KV · 8K prompt（Day 1 的 320 KiB/token）</text>
+  <text x="58" y="372" font-size="12" fill="#4c1d95" font-family="monospace">KV 传输量 = 320 KiB × 8192 ≈ 2.5 GiB</text>
+
+  <!-- two mediums -->
+  <g>
+    <rect x="58" y="390" width="440" height="60" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="70" y="410" font-size="11" font-weight="bold" fill="#14532d">同节点 NVLink：~900 GB/s</text>
+    <text x="70" y="428" font-size="10" fill="#166534">2.5 GiB / 900 GB/s ≈ 3 ms</text>
+    <text x="70" y="443" font-size="9.5" fill="#166534">相对几百 ms 的 8K prefill 可忽略 → 点对点 DMA 直传</text>
+
+    <rect x="520" y="390" width="424" height="60" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="532" y="410" font-size="11" font-weight="bold" fill="#7f1d1d">跨节点 RDMA（400 GbE）：~50 GB/s</text>
+    <text x="532" y="428" font-size="10" fill="#b91c1c">2.5 GiB / 50 GB/s ≈ 52 ms —— 直接打进 TTFT，不可接受</text>
+    <text x="532" y="443" font-size="9.5" fill="#b91c1c">解法：逐层流水 + FP8 KV 传输减半（量化专题在此合流）</text>
+  </g>
+
+  <!-- layerwise pipeline -->
+  <g>
+    <text x="58" y="480" font-size="11" font-weight="bold" fill="#4c1d95">逐层流水：第 L 层 KV 传输 ∥ 第 L+1 层计算（每层 KV = 2.5GiB/80 ≈ 32 MiB → RDMA 下 0.64 ms/层）</text>
+    <!-- compute row -->
+    <text x="58" y="505" font-size="10" font-weight="bold" fill="#b45309">P 计算</text>
+    <rect x="120" y="492" width="100" height="20" fill="#fde68a" stroke="#d97706" stroke-width="1"/><text x="170" y="506" text-anchor="middle" font-size="9">layer 1 算</text>
+    <rect x="224" y="492" width="100" height="20" fill="#fde68a" stroke="#d97706" stroke-width="1"/><text x="274" y="506" text-anchor="middle" font-size="9">layer 2 算</text>
+    <rect x="328" y="492" width="100" height="20" fill="#fde68a" stroke="#d97706" stroke-width="1"/><text x="378" y="506" text-anchor="middle" font-size="9">layer 3 算</text>
+    <text x="440" y="506" font-size="10" fill="#92400e">…（每层几十 ms）</text>
+    <!-- transfer row -->
+    <text x="58" y="535" font-size="10" font-weight="bold" fill="#7c3aed">KV 传输</text>
+    <rect x="224" y="522" width="100" height="20" fill="#e9d5ff" stroke="#7c3aed" stroke-width="1"/><text x="274" y="536" text-anchor="middle" font-size="9">layer 1 传</text>
+    <rect x="328" y="522" width="100" height="20" fill="#e9d5ff" stroke="#7c3aed" stroke-width="1"/><text x="378" y="536" text-anchor="middle" font-size="9">layer 2 传</text>
+    <rect x="432" y="522" width="100" height="20" fill="#e9d5ff" stroke="#7c3aed" stroke-width="1"/><text x="482" y="536" text-anchor="middle" font-size="9">layer 3 传</text>
+    <text x="58" y="560" font-size="10" fill="#4c1d95">0.64 ms 的传输完全藏进几十 ms 的计算影子 → 端到端传输时延趋近 0；D 侧收齐即可无缝接管 decode</text>
+  </g>
+
+  <!-- ================= Panel D: systems ================= -->
+  <rect x="40" y="590" width="600" height="170" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="58" y="615" font-size="13" font-weight="bold" fill="#14532d">④ 三个系统：名字 + 一句话设计</text>
+  <g font-size="10.5">
+    <rect x="58" y="630" width="564" height="36" fill="#ffffff" stroke="#16a34a" stroke-width="1"/>
+    <text x="68" y="646" font-weight="bold" fill="#14532d">Mooncake（月之暗面）</text>
+    <text x="68" y="660" font-size="9.5" fill="#166534">KV 中心化：集群空闲 DRAM/SSD 组全局 KV 池，prefix 跨实例共享 + RDMA 传输引擎</text>
+    <rect x="58" y="672" width="564" height="36" fill="#ffffff" stroke="#16a34a" stroke-width="1"/>
+    <text x="68" y="688" font-weight="bold" fill="#14532d">NVIDIA Dynamo</text>
+    <text x="68" y="702" font-size="9.5" fill="#166534">推理编排层：KV-aware 路由（同前缀请求送到已有 KV 的实例）+ 分层 offload GPU→CPU→SSD + P/D 比例自动调节</text>
+    <rect x="58" y="714" width="564" height="36" fill="#ffffff" stroke="#16a34a" stroke-width="1"/>
+    <text x="68" y="730" font-weight="bold" fill="#14532d">llm-d</text>
+    <text x="68" y="744" font-size="9.5" fill="#166534">Kubernetes 原生分离推理框架（红帽/Google 等共建）：prefill/decode 独立部署 + KV 共享调度</text>
+  </g>
+
+  <!-- failure box -->
+  <rect x="660" y="590" width="300" height="170" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="678" y="615" font-size="13" font-weight="bold" fill="#7f1d1d">⑤ 什么时候别分</text>
+  <g font-size="10.5" fill="#7f1d1d">
+    <text x="678" y="640">· 流量小、单实例够 → 传输出纯亏</text>
+    <text x="678" y="666">· prompt 短：prefill 占比小，没收益</text>
+    <text x="678" y="692">· 网络差：传输成本 &gt; 干扰损失</text>
+    <text x="678" y="718">· 复杂度税：P/D/传输三段故障域，</text>
+    <text x="690" y="734">运维与排障成本上升</text>
+  </g>
+
+  <!-- footer -->
+  <text x="500" y="795" text-anchor="middle" font-size="10.5" fill="#64748b">与 Day 2 的衔接：V1 拆进程（AsyncLLM / EngineCore 分离）正是 P/D 分离的工程前奏——多个 EngineCore 挂在同一入口后面</text>
+  <text x="500" y="815" text-anchor="middle" font-size="10.5" fill="#64748b">与 Day 3 的衔接：Mooncake 的全局 KV 池 = prefix caching（block hash + 引用计数）的集群级放大；FP8 KV 传输 = 量化专题的直接应用</text>
+</svg>

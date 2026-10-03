@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="520" fill="#ffffff"/>
+  <text x="500" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">KV Cache：每步 +1 格线性增长，Attention 全量回看</text>
+  <text x="500" y="52" text-anchor="middle" font-size="12" fill="#64748b">以单层为例；实际每层各有一份独立的 KV cache</text>
+
+  <!-- ================= Left: 3 decode steps ================= -->
+  <text x="290" y="86" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d4ed8">Decode 三步快照（单层）</text>
+
+  <!-- step 1 -->
+  <text x="40" y="122" font-size="12" font-weight="bold" fill="#1e293b">第 1 步</text>
+  <rect x="100" y="106" width="58" height="28" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="129" y="125" text-anchor="middle" font-size="11" fill="#1e3a8a">Q₁</text>
+  <line x1="158" y1="120" x2="196" y2="120" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrB)"/>
+  <rect x="200" y="106" width="70" height="28" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="235" y="125" text-anchor="middle" font-size="11" fill="#4c1d95">K₁V₁</text>
+  <text x="290" y="125" font-size="11" fill="#475569">新算 1 个，回看 1 个</text>
+
+  <!-- step 2 -->
+  <text x="40" y="176" font-size="12" font-weight="bold" fill="#1e293b">第 2 步</text>
+  <rect x="100" y="160" width="58" height="28" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="129" y="179" text-anchor="middle" font-size="11" fill="#1e3a8a">Q₂</text>
+  <line x1="158" y1="168" x2="196" y2="168" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrB)"/>
+  <line x1="158" y1="180" x2="196" y2="182" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrB)"/>
+  <rect x="200" y="154" width="70" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed" opacity="0.45"/><text x="235" y="171" text-anchor="middle" font-size="10" fill="#4c1d95">K₁V₁ (缓存)</text>
+  <rect x="200" y="182" width="70" height="26" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/><text x="235" y="199" text-anchor="middle" font-size="10" fill="#4c1d95">K₂V₂ (新)</text>
+  <text x="290" y="176" font-size="11" fill="#475569">新算 1 个，回看 2 个</text>
+
+  <!-- step t -->
+  <text x="40" y="248" font-size="12" font-weight="bold" fill="#1e293b">第 t 步</text>
+  <rect x="100" y="228" width="58" height="30" rx="4" fill="#dbeafe" stroke="#2563eb"/><text x="129" y="248" text-anchor="middle" font-size="12" fill="#1e3a8a">Qₜ</text>
+  <g stroke="#2563eb" stroke-width="1.6">
+    <line x1="158" y1="235" x2="196" y2="231" marker-end="url(#arrB)"/>
+    <line x1="158" y1="243" x2="196" y2="243" marker-end="url(#arrB)"/>
+    <line x1="158" y1="251" x2="196" y2="255" marker-end="url(#arrB)"/>
+  </g>
+  <g font-size="10" fill="#4c1d95">
+    <rect x="200" y="218" width="66" height="24" rx="4" fill="#ede9fe" stroke="#7c3aed" opacity="0.45"/><text x="233" y="234" text-anchor="middle">K₁V₁</text>
+    <rect x="200" y="244" width="66" height="24" rx="4" fill="#ede9fe" stroke="#7c3aed" opacity="0.45"/><text x="233" y="260" text-anchor="middle">K₂V₂</text>
+    <rect x="270" y="218" width="60" height="24" rx="4" fill="#ede9fe" stroke="#7c3aed" opacity="0.45"/><text x="300" y="234" text-anchor="middle">…</text>
+    <rect x="270" y="244" width="60" height="24" rx="4" fill="#ede9fe" stroke="#7c3aed" opacity="0.45"/><text x="300" y="260" text-anchor="middle">Kₜ₋₁Vₜ₋₁</text>
+    <rect x="334" y="231" width="66" height="26" rx="4" fill="#ddd6fe" stroke="#7c3aed" stroke-width="2"/><text x="367" y="248" text-anchor="middle" font-weight="bold">KₜVₜ (新)</text>
+  </g>
+  <text x="200" y="290" font-size="11" fill="#475569">新算 1 个（O(1) 投影），回看 t 个（O(t) 读取）</text>
+
+  <!-- cost box -->
+  <rect x="40" y="312" width="460" height="98" rx="8" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="60" y="338" font-size="12.5" font-weight="bold" fill="#0f172a">无缓存 vs 有缓存（T 步生成）</text>
+  <text x="60" y="360" font-size="12" fill="#334155">无缓存：每步重算全部历史 K/V 投影 → 总计算 O(T²)</text>
+  <text x="60" y="381" font-size="12" fill="#334155">有缓存：每步 1 次投影 O(1) + 读取 O(t) → 总计算 O(T)</text>
+  <text x="60" y="402" font-size="12" font-weight="bold" fill="#7c3aed">代价：显存 = 每 token KV × 当前长度 × 层数，随上下文线性增长 →</text>
+
+  <!-- ================= Right: memory growth chart ================= -->
+  <text x="770" y="86" text-anchor="middle" font-size="14" font-weight="bold" fill="#7c3aed">KV 显存增长：Llama-3-70B（FP16，单序列）</text>
+
+  <!-- chart frame: x 620..950, y 110..400 ; x-axis 0..128K, y-axis 0..80 GiB -->
+  <g stroke="#e2e8f0" stroke-width="1">
+    <line x1="620" y1="162" x2="950" y2="162"/>
+    <line x1="620" y1="214" x2="950" y2="214"/>
+    <line x1="620" y1="266" x2="950" y2="266"/>
+    <line x1="620" y1="318" x2="950" y2="318"/>
+    <line x1="620" y1="370" x2="950" y2="370"/>
+  </g>
+  <line x1="620" y1="110" x2="620" y2="400" stroke="#334155" stroke-width="1.5"/>
+  <line x1="620" y1="400" x2="950" y2="400" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- y labels: 80->110, 60->162(? compute): value v -> y = 400 - v/80*290 ; 80->110, 60->182.5? -->
+  <!-- recompute: scale 290px per 80GiB => 3.625 px/GiB. y(80)=110, y(60)=182.5, y(40)=255, y(20)=327.5, y(0)=400 -->
+  <g font-size="11" fill="#475569" text-anchor="end">
+    <text x="614" y="114">80</text>
+    <text x="614" y="186">60</text>
+    <text x="614" y="259">40</text>
+    <text x="614" y="331">20</text>
+    <text x="614" y="404">0 GiB</text>
+  </g>
+
+  <!-- x labels: 0, 32K, 64K, 96K, 128K -> 620, 705, 790, 875, 950?; scale 330px/128K => 32K=82.5px -->
+  <g font-size="11" fill="#475569" text-anchor="middle">
+    <text x="620" y="420">0</text>
+    <text x="702" y="420">32K</text>
+    <text x="785" y="420">64K</text>
+    <text x="867" y="420">96K</text>
+    <text x="950" y="420">128K tokens</text>
+  </g>
+
+  <!-- H100 80GB dashed line at y=110 -->
+  <line x1="620" y1="110" x2="950" y2="110" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="946" y="104" text-anchor="end" font-size="11" font-weight="bold" fill="#dc2626">H100 整卡 80 GB</text>
+
+  <!-- growth line: 320KiB/token = 0.3125 GiB/K tokens.
+       tokens(K): 0,32,64,96,128 -> GiB 0,10,20,30,40
+       x: 620 + K*2.578 ; 32K->702.5, 64K->785, 96K->867.5, 128K->950
+       y: 400 - GiB*3.625 ; 10->363.75, 20->327.5, 30->291.25, 40->255 -->
+  <polyline points="620,400 702.5,363.75 785,327.5 867.5,291.25 950,255" fill="none" stroke="#7c3aed" stroke-width="3"/>
+  <g fill="#7c3aed">
+    <circle cx="702.5" cy="363.75" r="4"/><circle cx="785" cy="327.5" r="4"/><circle cx="867.5" cy="291.25" r="4"/>
+  </g>
+  <circle cx="950" cy="255" r="6" fill="#7c3aed" stroke="#ffffff" stroke-width="2"/>
+
+  <g font-size="11" fill="#4c1d95">
+    <text x="702" y="382" text-anchor="middle">32K: 10 GiB</text>
+    <text x="785" y="316" text-anchor="middle">64K: 20 GiB</text>
+    <text x="872" y="280" text-anchor="middle">128K: 40 GiB</text>
+  </g>
+  <text x="790" y="285" font-size="12" font-weight="bold" fill="#7c3aed">每 token 320 KiB = 2×80层×8头×128维×2B</text>
+
+  <!-- annotation -->
+  <rect x="600" y="440" width="400" height="60" rx="8" fill="#faf5ff" stroke="#7c3aed"/>
+  <text x="800" y="464" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5b21b6">一条 128K 序列的 KV ≈ 半张 H100</text>
+  <text x="800" y="486" text-anchor="middle" font-size="11.5" fill="#5b21b6">→ 128K 时代，并发的首要瓶颈是 KV 显存，不是权重</text>
+
+  <defs>
+    <marker id="arrB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#2563eb"/></marker>
+  </defs>
+</svg>

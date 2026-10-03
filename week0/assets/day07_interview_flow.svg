@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="660" viewBox="0 0 1080 660" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ivA" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#475569"/>
+    </marker>
+    <marker id="ivG" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="660" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">Day 7 · 全真模拟面试：60 分钟正戏 + 复盘闭环</text>
+  <text x="540" y="52" text-anchor="middle" font-size="12" fill="#64748b">正戏全程录音、中途不停（真实面试没有暂停键）——复盘的全部意义：当天 14:00 前把每个卡壳点补掉</text>
+
+  <!-- ============ timeline bar ============ -->
+  <rect x="70" y="86" width="235" height="10" fill="#2563eb"/>
+  <rect x="305" y="86" width="235" height="10" fill="#ea580c"/>
+  <rect x="540" y="86" width="313" height="10" fill="#7c3aed"/>
+  <rect x="853" y="86" width="157" height="10" fill="#16a34a"/>
+  <text x="70" y="76" font-size="10" fill="#64748b">0'</text>
+  <text x="305" y="76" font-size="10" fill="#64748b">15'</text>
+  <text x="540" y="76" font-size="10" fill="#64748b">30'</text>
+  <text x="853" y="76" font-size="10" fill="#64748b">50'</text>
+  <text x="1010" y="76" font-size="10" fill="#64748b">60'</text>
+
+  <!-- ============ stage boxes ============ -->
+  <rect x="55" y="122" width="225" height="196" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <rect x="55" y="122" width="225" height="34" rx="10" fill="#2563eb"/>
+  <rect x="55" y="146" width="225" height="10" fill="#2563eb"/>
+  <text x="167" y="144" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">环节 1 · 自我介绍+深挖 15'</text>
+  <text x="70" y="178" font-size="10.5" fill="#1e293b">· 3 分钟版叙事主线开场</text>
+  <text x="70" y="198" font-size="10.5" fill="#1e293b">· 必挖三问：85% 口径怎么算 /</text>
+  <text x="70" y="216" font-size="10.5" fill="#1e293b">  ASW 为何提升 L2 命中 /</text>
+  <text x="70" y="234" font-size="10.5" fill="#1e293b">  NPU 经验和 GPU 什么关系</text>
+  <text x="70" y="254" font-size="10.5" fill="#1e293b">· 每个 90 秒技术点带「放弃</text>
+  <text x="70" y="272" font-size="10.5" fill="#1e293b">  了什么」</text>
+  <text x="70" y="300" font-size="10.5" font-weight="bold" fill="#1d4ed8">验收：被追问不乱、句句带数字</text>
+
+  <rect x="320" y="122" width="225" height="196" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <rect x="320" y="122" width="225" height="34" rx="10" fill="#ea580c"/>
+  <rect x="320" y="146" width="225" height="10" fill="#ea580c"/>
+  <text x="432" y="144" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">环节 2 · 手算+白板 15'</text>
+  <text x="335" y="178" font-size="10.5" fill="#1e293b">· 显存估算 1 题（对方随机给</text>
+  <text x="335" y="196" font-size="10.5" fill="#1e293b">  模型 / 卡型 / 上下文）</text>
+  <text x="335" y="216" font-size="10.5" fill="#1e293b">· block table 手绘或调度推演</text>
+  <text x="335" y="234" font-size="10.5" fill="#1e293b">  二选一（Day 6 四件套 1/2/3）</text>
+  <text x="335" y="254" font-size="10.5" fill="#1e293b">· 条件不全先补假设再算</text>
+  <text x="335" y="300" font-size="10.5" font-weight="bold" fill="#c2410c">验收：先写公式再代数，边说边算</text>
+
+  <rect x="585" y="122" width="225" height="196" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <rect x="585" y="122" width="225" height="34" rx="10" fill="#7c3aed"/>
+  <rect x="585" y="146" width="225" height="10" fill="#7c3aed"/>
+  <text x="697" y="144" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">环节 3 · 机制快问+追问 20'</text>
+  <text x="600" y="178" font-size="10.5" fill="#1e293b">· Day 6 八题随机抽 4 道</text>
+  <text x="600" y="198" font-size="10.5" fill="#1e293b">· 每题必追问一层（追问链见</text>
+  <text x="600" y="216" font-size="10.5" fill="#1e293b">  正文「面试高频问题」节）</text>
+  <text x="600" y="236" font-size="10.5" fill="#1e293b">· 追问示例：答完 chunked</text>
+  <text x="600" y="254" font-size="10.5" fill="#1e293b">  prefill →「budget 怎么实测？」</text>
+  <text x="600" y="300" font-size="10.5" font-weight="bold" fill="#6d28d9">验收：trade-off 脱口而出</text>
+
+  <rect x="845" y="122" width="180" height="196" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <rect x="845" y="122" width="180" height="34" rx="10" fill="#16a34a"/>
+  <rect x="845" y="146" width="180" height="10" fill="#16a34a"/>
+  <text x="935" y="144" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">环节 4 · 系统设计 10'</text>
+  <text x="858" y="178" font-size="10.5" fill="#1e293b">· 客服机器人推理服务</text>
+  <text x="858" y="198" font-size="10.5" fill="#1e293b">· 四步框架走一遍：</text>
+  <text x="858" y="216" font-size="10.5" fill="#1e293b">  需求量化→容量规划→</text>
+  <text x="858" y="234" font-size="10.5" fill="#1e293b">  架构→可观测</text>
+  <text x="858" y="254" font-size="10.5" fill="#1e293b">· 容量必须现场手算</text>
+  <text x="935" y="300" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#15803d">验收：有量级、有权衡</text>
+
+  <!-- ============ debrief loop ============ -->
+  <rect x="55" y="356" width="970" height="252" rx="12" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="540" y="386" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e293b">复盘闭环（正戏结束后立即做，约 90 min——模拟面试的价值 100% 在这一步）</text>
+
+  <rect x="90" y="412" width="196" height="150" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="188" y="438" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">① 回听录音</text>
+  <text x="188" y="462" text-anchor="middle" font-size="10.5" fill="#475569">以面试官视角打分</text>
+  <text x="188" y="480" text-anchor="middle" font-size="10.5" fill="#475569">（评分表逐项过）</text>
+  <text x="188" y="498" text-anchor="middle" font-size="10.5" fill="#475569">听口头禅与沉默</text>
+
+  <rect x="322" y="412" width="196" height="150" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="420" y="438" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">② 记录四类问题</text>
+  <text x="420" y="462" text-anchor="middle" font-size="10.5" fill="#dc2626">卡壳 &gt; 5 秒的问题</text>
+  <text x="420" y="480" text-anchor="middle" font-size="10.5" fill="#dc2626">答错的事实性内容</text>
+  <text x="420" y="498" text-anchor="middle" font-size="10.5" fill="#dc2626">没给数字/公式的回答</text>
+  <text x="420" y="516" text-anchor="middle" font-size="10.5" fill="#dc2626">被说「太长了」的回答</text>
+
+  <rect x="554" y="412" width="196" height="150" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="652" y="438" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">③ 生成卡壳清单</text>
+  <text x="652" y="462" text-anchor="middle" font-size="10.5" fill="#475569">每条标注回哪个 Day</text>
+  <text x="652" y="480" text-anchor="middle" font-size="10.5" fill="#475569">的哪个模块补</text>
+  <text x="652" y="498" text-anchor="middle" font-size="10.5" fill="#475569">（回不去的标 ⭐，</text>
+  <text x="652" y="516" text-anchor="middle" font-size="10.5" fill="#475569">明早面试前最后过）</text>
+
+  <rect x="786" y="412" width="196" height="150" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="884" y="438" text-anchor="middle" font-size="12" font-weight="bold" fill="#15803d">④ 14:00 前全部补掉</text>
+  <text x="884" y="462" text-anchor="middle" font-size="10.5" fill="#166534">补完的题口头重答一遍</text>
+  <text x="884" y="480" text-anchor="middle" font-size="10.5" fill="#166534">（不写全文，讲提纲）</text>
+  <text x="884" y="498" text-anchor="middle" font-size="10.5" fill="#166534">补不完 → 降级策略：</text>
+  <text x="884" y="516" text-anchor="middle" font-size="10.5" fill="#166534">「还没读到这层，我的</text>
+  <text x="884" y="534" text-anchor="middle" font-size="10.5" fill="#166534">推测是……」</text>
+
+  <line x1="286" y1="487" x2="316" y2="487" stroke="#475569" stroke-width="2" marker-end="url(#ivA)"/>
+  <line x1="518" y1="487" x2="548" y2="487" stroke="#475569" stroke-width="2" marker-end="url(#ivA)"/>
+  <line x1="750" y1="487" x2="780" y2="487" stroke="#16a34a" stroke-width="2" marker-end="url(#ivG)"/>
+  <path d="M 884 562 C 884 596, 188 596, 188 568" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#ivG)"/>
+  <text x="536" y="592" text-anchor="middle" font-size="10" fill="#15803d">补掉后若仍不放心 → 隔 2 小时随机抽问重验（Day 6 协议）</text>
+
+  <text x="540" y="640" text-anchor="middle" font-size="11" fill="#64748b">铁律：今天的「新知识」只允许来自这批卡壳点——除此之外不看任何新资料</text>
+</svg>

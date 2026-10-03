@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="760" viewBox="0 0 1000 760" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="760" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">Scheduler.schedule()：一个 step 的两段式决策</text>
+  <text x="500" y="50" text-anchor="middle" font-size="12" fill="#64748b">budget 从 max_num_batched_tokens 起扣；先保 running（decode），再放 waiting（prefill 准入）；抢占只发生在第一段（vllm/v1/core/scheduler.py，简化）</text>
+
+  <!-- ============ Left: main flow ============ -->
+  <rect x="50" y="85" width="570" height="40" rx="6" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="335" y="110" text-anchor="middle" font-size="12" fill="#1e293b">step() 开始 · <tspan font-family="monospace">budget = max_num_batched_tokens</tspan></text>
+
+  <line x1="335" y1="125" x2="335" y2="148" stroke="#475569" stroke-width="2" marker-end="url(#arrK)"/>
+
+  <!-- Phase 1: running -->
+  <rect x="50" y="150" width="570" height="150" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2.5"/>
+  <text x="70" y="174" font-size="13" font-weight="bold" fill="#166534">第一段：遍历 running 队列（decode 优先）</text>
+  <g font-size="10.5" fill="#334155">
+    <text x="70" y="196">① 每请求要 num_new_tokens 个新 slot：decode ＝ 1（＋投机草稿 k）</text>
+    <text x="84" y="212">被 chunk 的请求 ＝ 剩余 prompt 段（续切优先）</text>
+    <text x="70" y="232">② kv_cache_manager.allocate_slots()：</text>
+    <text x="84" y="248">成功 → 计入本步 batch，budget −= num_new_tokens</text>
+    <text x="84" y="264">失败（free 块不足）→ preempt：抢占 running 队尾请求</text>
+    <text x="84" y="280">（free 其全部 block → 打回 waiting，重算恢复）</text>
+    <text x="70" y="296">③ budget ≤ 0 或扫完 → 进入第二段</text>
+  </g>
+
+  <line x1="335" y1="300" x2="335" y2="323" stroke="#475569" stroke-width="2" marker-end="url(#arrK)"/>
+
+  <!-- Phase 2: waiting -->
+  <rect x="50" y="325" width="570" height="170" rx="8" fill="#d1fae5" stroke="#059669" stroke-width="2.5"/>
+  <text x="70" y="349" font-size="13" font-weight="bold" fill="#065f46">第二段：遍历 waiting 队列（prefill 准入）</text>
+  <g font-size="10.5" fill="#334155">
+    <text x="70" y="371">① 前置检查：len(running) ＜ max_num_seqs？LoRA / 结构化输出约束？</text>
+    <text x="70" y="391">② get_computed_blocks()：链式 hash 找最长前缀命中</text>
+    <text x="84" y="407">命中部分不重算、不占新 block（prefix caching）</text>
+    <text x="70" y="427">③ num_new_tokens ＝ prompt 长 − 命中长，与剩余 budget 比较</text>
+    <text x="70" y="447">④ 超出 → chunked prefill：本步只切 budget 允许的一段</text>
+    <text x="84" y="463">（请求从此转 running，下步在第一段续切）</text>
+    <text x="70" y="483">⑤ allocate_slots() 失败 → 停止准入，新请求继续排队</text>
+  </g>
+
+  <line x1="335" y1="495" x2="335" y2="518" stroke="#475569" stroke-width="2" marker-end="url(#arrK)"/>
+
+  <!-- SchedulerOutput -->
+  <rect x="50" y="520" width="570" height="110" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5"/>
+  <text x="70" y="544" font-size="13" font-weight="bold" fill="#1e3a8a">产出 SchedulerOutput（交给 ModelRunner 的「施工单」）</text>
+  <g font-size="10.5" fill="#334155">
+    <text x="70" y="566">· scheduled_new_requests：新准入请求（含首 chunk）＋ 各自 token_ids / block 表</text>
+    <text x="70" y="586">· scheduled_running_reqs：decode 请求 ＋ 新 token 位置</text>
+    <text x="70" y="606">· blocks_to_copy（COW）· 抢占名单 · 采样参数……</text>
+  </g>
+
+  <line x1="335" y1="630" x2="335" y2="653" stroke="#475569" stroke-width="2" marker-end="url(#arrK)"/>
+
+  <!-- next step -->
+  <rect x="50" y="655" width="570" height="55" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-dasharray="6 3"/>
+  <g font-size="10.5" fill="#475569">
+    <text x="70" y="677">execute_model() → 前向 ＋ 采样（GPU）</text>
+    <text x="70" y="697">update_from_output()：追加新 token · 判完成 · free() 回收 block → 回到 step() 开始</text>
+  </g>
+
+  <!-- ============ Right: interview cards ============ -->
+  <rect x="650" y="85" width="300" height="130" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="668" y="109" font-size="12" font-weight="bold" fill="#92400e">为什么先 running 后 waiting？</text>
+  <g font-size="9.5" fill="#334155">
+    <text x="668" y="130">· decode 的 SLO 是连续 TPOT：饿死一步，</text>
+    <text x="668" y="146">  用户立刻感到「卡顿」</text>
+    <text x="668" y="164">· 推迟 waiting 新请求只影响 TTFT</text>
+    <text x="668" y="180">  （一次性代价，感知弱）</text>
+    <text x="668" y="194">· 极端化：prefill 永远进不来 → 需 budget</text>
+    <text x="668" y="210">  再平衡（Day 3 展开）</text>
+  </g>
+
+  <rect x="650" y="230" width="300" height="145" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="668" y="254" font-size="12" font-weight="bold" fill="#92400e">抢占（preemption）三问</text>
+  <g font-size="9.5" fill="#334155">
+    <text x="668" y="275">· 何时触发：running 请求要新 block，</text>
+    <text x="668" y="291">  free 池（含可逐出缓存块）不足</text>
+    <text x="668" y="309">· 挑谁：running 队尾（最后进来的）</text>
+    <text x="668" y="327">· 代价：V1 是重算式——free 全部 block</text>
+    <text x="668" y="343">  打回 waiting，重新 prefill；</text>
+    <text x="668" y="361">  prefix cache 可捞回大部分（hash 命中）</text>
+  </g>
+
+  <rect x="650" y="390" width="300" height="140" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="668" y="414" font-size="12" font-weight="bold" fill="#92400e">chunked prefill 的块大小谁定？</text>
+  <g font-size="9.5" fill="#334155">
+    <text x="668" y="435">· ＝ 剩余 token budget（budget − running</text>
+    <text x="668" y="451">  已消耗部分），不是固定值</text>
+    <text x="668" y="469">· 上一步被切的请求在第一段优先续切</text>
+    <text x="668" y="487">  （优先级高于新请求准入）</text>
+    <text x="668" y="505">· budget 是 TTFT 与 TPOT 的总旋钮</text>
+    <text x="668" y="521">  （今晚实验 / Day 3 展开）</text>
+  </g>
+
+  <rect x="650" y="545" width="300" height="165" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="668" y="569" font-size="12" font-weight="bold" fill="#92400e">复杂度：为什么调度够快</text>
+  <g font-size="9.5" fill="#334155">
+    <text x="668" y="590">· 每请求 O(1) 决策 ＋ 每新 block O(1)</text>
+    <text x="668" y="606">  分配（free_block_queue 双向链表）</text>
+    <text x="668" y="624">· 整个 schedule() 必须远小于一次前向</text>
+    <text x="668" y="640">  （ms 级），否则 CPU 成瓶颈（V0 教训）</text>
+    <text x="668" y="658">· async scheduling：CPU 调度与 GPU 前向</text>
+    <text x="668" y="674">  重叠执行（略读项，知道即可）</text>
+    <text x="668" y="692">· 今日实验观察：日志 preemption 计数</text>
+  </g>
+
+  <defs>
+    <marker id="arrK" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#475569"/></marker>
+  </defs>
+</svg>

@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="740" viewBox="0 0 1060 740" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <pattern id="hatchW" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="7" height="7" fill="#f1f5f9"/>
+      <line x1="0" y1="0" x2="0" y2="7" stroke="#cbd5e1" stroke-width="2"/>
+    </pattern>
+    <marker id="aX3" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect width="1060" height="740" fill="#ffffff"/>
+  <text x="530" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#1e293b">场景 2 抢占-恢复时序（全部为真实运行数据）</text>
+  <text x="530" y="48" text-anchor="middle" font-size="11.5" fill="#64748b">10 请求 × (prompt=64, output=256)，NUM_BLOCKS=100（稳态只够 5 个）· 横轴 = step · 抢占 5 次：r10@98 → r9@114 → r8@130 → r7@162 → r6@194（每次抢 running 队尾/LRU）</text>
+
+  <!-- vertical guides -->
+  <g stroke="#dc2626" stroke-width="1.3" stroke-dasharray="5,4" opacity="0.8">
+    <line x1="305.8" y1="100" x2="305.8" y2="470"/>
+    <line x1="507.4" y1="100" x2="507.4" y2="470"/>
+  </g>
+  <g stroke="#166534" stroke-width="1.3" stroke-dasharray="5,4" opacity="0.8">
+    <line x1="637.6" y1="100" x2="637.6" y2="470"/>
+  </g>
+  <rect x="637.6" y="100" width="10" height="370" fill="#fff7ed" opacity="0.8"/>
+
+  <text x="305.8" y="112" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#b91c1c">step 98：池满 free=0</text>
+  <text x="305.8" y="125" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#b91c1c">首次抢占 r10</text>
+  <text x="406" y="112" text-anchor="middle" font-size="10" fill="#b91c1c">连环回吃 r9→r8→r7→r6</text>
+  <text x="406" y="125" text-anchor="middle" font-size="10" fill="#b91c1c">直到稳态 5 个（还债式过准入）</text>
+  <text x="637.6" y="92" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#166534">step 256：r1~r5 全部完成，池释放</text>
+
+  <!-- lane labels -->
+  <g font-size="11.5" fill="#334155" font-weight="bold">
+    <text x="42" y="139">r1</text><text x="42" y="175">r2</text><text x="42" y="211">r3</text>
+    <text x="42" y="247">r4</text><text x="42" y="283">r5</text>
+    <text x="42" y="319" fill="#b45309">r6</text><text x="42" y="355" fill="#b45309">r7</text>
+    <text x="42" y="391" fill="#b45309">r8</text><text x="42" y="427" fill="#b45309">r9</text><text x="42" y="463" fill="#b45309">r10</text>
+  </g>
+  <g font-size="9" fill="#94a3b8">
+    <text x="72" y="139">64/256</text><text x="72" y="175">64/256</text><text x="72" y="211">64/256</text>
+    <text x="72" y="247">64/256</text><text x="72" y="283">64/256</text>
+    <text x="72" y="319">64/256</text><text x="72" y="355">64/256</text>
+    <text x="72" y="391">64/256</text><text x="72" y="427">64/256</text><text x="72" y="463">64/256</text>
+  </g>
+
+  <!-- r1..r5 lanes: pf@1, decode to 256, fin@256 -->
+  <g>
+    <g y="0">
+      <rect x="102" y="120" width="10" height="22" fill="#1d4ed8"/>
+      <rect x="112" y="120" width="525.6" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+      <text x="375" y="135" text-anchor="middle" font-size="10.5" fill="#14532d">decode（每步 1 token）</text>
+      <polygon points="637.6,150 631.6,160 643.6,160" fill="#166534"/>
+      <text x="637.6" y="172" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#166534">fin@256</text>
+    </g>
+    <g>
+      <rect x="102" y="156" width="10" height="22" fill="#1d4ed8"/>
+      <rect x="112" y="156" width="525.6" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+      <polygon points="637.6,186 631.6,196 643.6,196" fill="#166534"/>
+    </g>
+    <g>
+      <rect x="102" y="192" width="10" height="22" fill="#1d4ed8"/>
+      <rect x="112" y="192" width="525.6" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+      <polygon points="637.6,222 631.6,232 643.6,232" fill="#166534"/>
+    </g>
+    <g>
+      <rect x="102" y="228" width="10" height="22" fill="#1d4ed8"/>
+      <rect x="112" y="228" width="525.6" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+      <polygon points="637.6,258 631.6,268 643.6,268" fill="#166534"/>
+    </g>
+    <g>
+      <rect x="102" y="264" width="10" height="22" fill="#1d4ed8"/>
+      <rect x="112" y="264" width="525.6" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+      <polygon points="637.6,294 631.6,304 643.6,304" fill="#166534"/>
+    </g>
+    <text x="375" y="290" text-anchor="middle" font-size="10" fill="#166534" font-weight="bold">r1~r5：从未被抢，256 步准时完成 —— decode 优先 + 抢队尾 ⇒ 老请求零波及</text>
+  </g>
+
+  <!-- r6: pf@1, preempt@194(507.4), pf257@257(639.7), fin@319(769.9) -->
+  <g>
+    <rect x="102" y="300" width="10" height="22" fill="#1d4ed8"/>
+    <rect x="112" y="300" width="395.4" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="507.4,298 500.4,288 514.4,288" fill="#dc2626"/>
+    <text x="507.4" y="284" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#b91c1c">被抢@194</text>
+    <rect x="507.4" y="300" width="132.3" height="22" fill="url(#hatchW)" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="573" y="315" text-anchor="middle" font-size="9.5" fill="#64748b">waiting 排队</text>
+    <rect x="639.7" y="300" width="11" height="22" fill="#ea580c"/>
+    <rect x="650.7" y="300" width="119.2" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="769.9,330 762.9,340 776.9,340" fill="#166534"/>
+    <text x="646" y="292" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#c2410c">pf257 = 64+193 全量重算</text>
+    <text x="769.9" y="352" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#166534">fin@319</text>
+  </g>
+
+  <!-- r7: preempt@162(440.2), pf225@257, fin@351(837.1) -->
+  <g>
+    <rect x="102" y="336" width="10" height="22" fill="#1d4ed8"/>
+    <rect x="112" y="336" width="328.2" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="440.2,334 433.2,324 447.2,324" fill="#dc2626"/>
+    <text x="440.2" y="320" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#b91c1c">被抢@162</text>
+    <rect x="440.2" y="336" width="199.5" height="22" fill="url(#hatchW)" stroke="#cbd5e1" stroke-width="1"/>
+    <rect x="639.7" y="336" width="11" height="22" fill="#ea580c"/>
+    <rect x="650.7" y="336" width="186.4" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="837.1,366 830.1,376 844.1,376" fill="#166534"/>
+    <text x="646" y="330" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#c2410c">pf225</text>
+    <text x="837.1" y="388" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#166534">fin@351</text>
+  </g>
+
+  <!-- r8: preempt@130(373), pf193@258(641.8), fin@384(906.4) -->
+  <g>
+    <rect x="102" y="372" width="10" height="22" fill="#1d4ed8"/>
+    <rect x="112" y="372" width="261" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="373,370 366,360 380,360" fill="#dc2626"/>
+    <text x="373" y="356" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#b91c1c">被抢@130</text>
+    <rect x="373" y="372" width="268.8" height="22" fill="url(#hatchW)" stroke="#cbd5e1" stroke-width="1"/>
+    <rect x="641.8" y="372" width="11" height="22" fill="#ea580c"/>
+    <rect x="652.8" y="372" width="253.6" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="906.4,402 899.4,412 913.4,412" fill="#166534"/>
+    <text x="648" y="366" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#c2410c">pf193</text>
+    <text x="906.4" y="424" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#166534">fin@384</text>
+  </g>
+
+  <!-- r9: pf@2, preempt@114(339.4), pf176@258, fin@401(942.1) -->
+  <g>
+    <rect x="104.2" y="408" width="10" height="22" fill="#1d4ed8"/>
+    <rect x="114.2" y="408" width="225.2" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="339.4,406 332.4,396 346.4,396" fill="#dc2626"/>
+    <text x="339.4" y="392" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#b91c1c">被抢@114</text>
+    <rect x="339.4" y="408" width="302.4" height="22" fill="url(#hatchW)" stroke="#cbd5e1" stroke-width="1"/>
+    <rect x="641.8" y="408" width="11" height="22" fill="#ea580c"/>
+    <rect x="652.8" y="408" width="289.3" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="942.1,438 935.1,448 949.1,448" fill="#166534"/>
+    <text x="648" y="402" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#c2410c">pf176</text>
+    <text x="942.1" y="460" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#166534">fin@401</text>
+  </g>
+
+  <!-- r10: pf@2, preempt@98(305.8), pf160@259(643.9), fin@418(977.8) -->
+  <g>
+    <rect x="104.2" y="444" width="10" height="22" fill="#1d4ed8"/>
+    <rect x="114.2" y="444" width="191.6" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="305.8,442 298.8,432 312.8,432" fill="#dc2626"/>
+    <rect x="305.8" y="444" width="338.1" height="22" fill="url(#hatchW)" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="474" y="459" text-anchor="middle" font-size="9.5" fill="#64748b">被抢后想恢复：需 10 块、池仅 1~2 块 → 排队等释放</text>
+    <rect x="643.9" y="444" width="11" height="22" fill="#ea580c"/>
+    <rect x="654.9" y="444" width="322.9" height="22" fill="#4ade80" stroke="#16a34a" stroke-width="1"/>
+    <polygon points="977.8,474 970.8,484 984.8,484" fill="#166534"/>
+    <text x="650" y="438" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#c2410c">pf160</text>
+    <text x="977.8" y="496" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#166534">fin@418</text>
+  </g>
+
+  <!-- x axis -->
+  <line x1="100" y1="500" x2="990" y2="500" stroke="#334155" stroke-width="1.5"/>
+  <g stroke="#334155" stroke-width="1">
+    <line x1="100" y1="500" x2="100" y2="506"/><line x1="205" y1="500" x2="205" y2="506"/>
+    <line x1="310" y1="500" x2="310" y2="506"/><line x1="415" y1="500" x2="415" y2="506"/>
+    <line x1="520" y1="500" x2="520" y2="506"/><line x1="625" y1="500" x2="625" y2="506"/>
+    <line x1="730" y1="500" x2="730" y2="506"/><line x1="835" y1="500" x2="835" y2="506"/>
+    <line x1="940" y1="500" x2="940" y2="506"/>
+  </g>
+  <g font-size="10" fill="#475569" text-anchor="middle">
+    <text x="100" y="520">0</text><text x="205" y="520">50</text><text x="310" y="520">100</text>
+    <text x="415" y="520">150</text><text x="520" y="520">200</text><text x="625" y="520">250</text>
+    <text x="730" y="520">300</text><text x="835" y="520">350</text><text x="940" y="520">400</text>
+    <text x="985" y="520">step</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="10.5" fill="#334155">
+    <rect x="100" y="540" width="16" height="12" fill="#1d4ed8"/><text x="122" y="550">首次 prefill</text>
+    <rect x="210" y="540" width="16" height="12" fill="#4ade80" stroke="#16a34a"/><text x="232" y="550">decode</text>
+    <rect x="300" y="540" width="16" height="12" fill="#ea580c"/><text x="322" y="550">恢复 prefill（全量重算）</text>
+    <rect x="480" y="540" width="16" height="12" fill="url(#hatchW)" stroke="#cbd5e1"/><text x="502" y="550">waiting（被抢排队）</text>
+    <polygon points="630,540 624,550 636,550" fill="#dc2626"/><text x="642" y="550">被抢（队尾 LRU）</text>
+    <polygon points="770,540 764,550 776,550" fill="#166534"/><text x="782" y="550">完成</text>
+  </g>
+
+  <!-- stats -->
+  <rect x="100" y="572" width="880" height="60" rx="8" fill="#fef2f2" stroke="#f87171" stroke-width="1.5"/>
+  <text x="540" y="596" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#7f1d1d">重算浪费 1011 token / 有效产出 2560 token = 39.5% 白算 —— 真机上每次抢占 ≈ 2×P×T_已算token FLOPs（Day 2 公式）⇒ 抢占是最后手段</text>
+  <text x="540" y="618" text-anchor="middle" font-size="11" fill="#334155">抢占 5 次全部发生在 step 98~194 的「池满窗口」；恢复集中在 step 257~259（r1~r5 释放池之后，budget 限制每步只进 2 个）</text>
+
+  <!-- takeaways -->
+  <rect x="100" y="648" width="880" height="72" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="120" y="672" font-size="11.5" fill="#1e293b">① 恢复 = 全部进度重来：r6 的恢复 prefill 是 <tspan font-weight="bold">257 = prompt 64 + 已生成 193</tspan>（num_computed 清零的语义在数字上显形）</text>
+  <text x="120" y="692" font-size="11.5" fill="#1e293b">② 一次过准入的债用连环抢占来还：抢 r10 后池仍不够 → 准入失败 → 下个增长点抢 r9 …… 对应 vLLM 的旋钮 <tspan font-weight="bold">max_num_seqs</tspan>（Day 6 诊断树：preemption↑ → 调小并发）</text>
+  <text x="120" y="712" font-size="11.5" fill="#1e293b">③ r1~r5 全程无感、256 步准时完成 —— 「先 running 后 waiting + 抢队尾」让老请求零波及（Day 2 Q1 的实证）</text>
+</svg>

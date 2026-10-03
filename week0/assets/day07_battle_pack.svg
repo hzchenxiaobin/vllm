@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="720" viewBox="0 0 1080 720" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="bpA" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="720" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">最终面试作战包：7 件套总装（Day 1~7 产出 → 4 个面试环节）</text>
+  <text x="540" y="52" text-anchor="middle" font-size="12" fill="#64748b">左列 = 本周每天产出物；右列 = 面试环节；连线 = 何时取用哪件弹药。物理打包：打印或平板，前一晚 + 当天早上各过一遍</text>
+
+  <!-- ================= left column: 7 pieces ================= -->
+  <text x="225" y="86" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">作战包 · 七件套</text>
+
+  <rect x="50" y="100" width="350" height="62" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="66" y="124" font-size="12" font-weight="bold" fill="#1e40af">Day 1 · 一页纸《推理性能第一性原理》</text>
+  <text x="66" y="142" font-size="10" fill="#475569">三个公式（KV 显存 / decode 下界 / 并发上限）+ 3 道手算推导</text>
+  <text x="66" y="156" font-size="10" fill="#64748b">现场手算题的唯一依据，任何模型卡型现场重推</text>
+
+  <rect x="50" y="176" width="350" height="62" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="66" y="200" font-size="12" font-weight="bold" fill="#3730a3">Day 2 · V1 数据流图 + 压测数据表</text>
+  <text x="66" y="218" font-size="10" fill="#475569">AsyncLLM → Processor → EngineCore → ModelRunner 生命周期图</text>
+  <text x="66" y="232" font-size="10" fill="#64748b">TTFT / TPOT / 吞吐随并发的第一组曲线（诊断树的原材料）</text>
+
+  <rect x="50" y="252" width="350" height="62" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="66" y="276" font-size="12" font-weight="bold" fill="#15803d">Day 3 · 四张机制卡（各 ≤ 半页）</text>
+  <text x="66" y="294" font-size="10" fill="#475569">continuous batching / chunked prefill / prefix caching / CUDA Graph</text>
+  <text x="66" y="308" font-size="10" fill="#64748b">每张：原理 → 解决什么 → trade-off → 什么时候失效</text>
+
+  <rect x="50" y="328" width="350" height="62" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="66" y="352" font-size="12" font-weight="bold" fill="#c2410c">Day 4 · 四页专题卡 + 昇腾对照叙述</text>
+  <text x="66" y="370" font-size="10" fill="#475569">量化 / 投机解码 / P/D 分离 / 分布式并行</text>
+  <text x="66" y="384" font-size="10" fill="#64748b">王牌：WeightQuantBatchMatmul ↔ GPU 量化 GEMM 同构叙述（背熟）</text>
+
+  <rect x="50" y="404" width="350" height="62" rx="8" fill="#ecfeff" stroke="#0891b2" stroke-width="2"/>
+  <text x="66" y="428" font-size="12" font-weight="bold" fill="#0e7490">Day 5 · mini 调度器 + 五处差距清单</text>
+  <text x="66" y="446" font-size="10" fill="#475569">block 池 / 引用计数 / 两段式调度 / 重算式抢占（~190 行）</text>
+  <text x="66" y="460" font-size="10" fill="#64748b">差异化证据：「我写过它的骨架」+ 三场景真实数字</text>
+
+  <rect x="50" y="480" width="350" height="62" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="66" y="504" font-size="12" font-weight="bold" fill="#991b1b">Day 6 · 白板四件套 + 8 题修正稿 + 数字弹药库</text>
+  <text x="66" y="522" font-size="10" fill="#475569">显存估算 / block table / 调度推演 / 诊断树（3/5/5/3 分钟）</text>
+  <text x="66" y="536" font-size="10" fill="#64748b">弹药库一页：320 KiB · 20.9ms · 40.5%→65.3% · 2.5ms · 39.5% · 1.4×</text>
+
+  <rect x="50" y="556" width="350" height="62" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="66" y="580" font-size="12" font-weight="bold" fill="#6d28d9">Day 7 · 叙事主线 + 系统设计框架（今天产出）</text>
+  <text x="66" y="598" font-size="10" fill="#475569">3 分钟 / 10 分钟版讲稿 + 同构映射表 + 四步系统设计框架</text>
+  <text x="66" y="612" font-size="10" fill="#64748b">环节 1 的开场白与环节 4 的骨架</text>
+
+  <!-- ================= right column: 4 interview stages ================= -->
+  <text x="865" y="86" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">面试环节（何时取用）</text>
+
+  <rect x="720" y="110" width="290" height="100" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="865" y="138" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">环节 1 · 自我介绍 + 项目深挖</text>
+  <text x="865" y="162" text-anchor="middle" font-size="10.5" fill="#475569">开场 = Day 7 叙事 3 分钟版</text>
+  <text x="865" y="180" text-anchor="middle" font-size="10.5" fill="#475569">追问弹药 = Day 4 对照叙述 + 昇腾细节</text>
+  <text x="865" y="198" text-anchor="middle" font-size="10.5" fill="#475569">迁移证据 = Day 5 mini 引擎</text>
+
+  <rect x="720" y="238" width="290" height="100" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="865" y="266" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">环节 2 · 手算 + 白板</text>
+  <text x="865" y="290" text-anchor="middle" font-size="10.5" fill="#475569">Day 1 三公式（现场重推，不背答案）</text>
+  <text x="865" y="308" text-anchor="middle" font-size="10.5" fill="#475569">Day 6 四件套计时功底</text>
+  <text x="865" y="326" text-anchor="middle" font-size="10.5" fill="#475569">画图讲解 = Day 2 数据流图 + Day 5 架构图</text>
+
+  <rect x="720" y="366" width="290" height="100" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="865" y="394" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">环节 3 · 机制与专题快问</text>
+  <text x="865" y="418" text-anchor="middle" font-size="10.5" fill="#475569">Day 3 四段式机制卡 + Day 4 专题卡</text>
+  <text x="865" y="436" text-anchor="middle" font-size="10.5" fill="#475569">源码挂靠 = Day 2 两文件（scheduler / kv_cache_manager）</text>
+  <text x="865" y="454" text-anchor="middle" font-size="10.5" fill="#475569">数字例证 = Day 6 弹药库</text>
+
+  <rect x="720" y="494" width="290" height="100" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="865" y="522" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">环节 4 · 系统设计</text>
+  <text x="865" y="546" text-anchor="middle" font-size="10.5" fill="#475569">四步框架（需求 → 容量 → 架构 → 可观测）</text>
+  <text x="865" y="564" text-anchor="middle" font-size="10.5" fill="#475569">容量 = Day 1 公式现场算</text>
+  <text x="865" y="582" text-anchor="middle" font-size="10.5" fill="#475569">机制选型 = Day 3/Day 4 全部卡片</text>
+
+  <!-- ================= mapping lines ================= -->
+  <line x1="400" y1="131" x2="714" y2="160" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="207" x2="714" y2="288" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="207" x2="714" y2="420" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="283" x2="714" y2="400" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="359" x2="714" y2="436" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="435" x2="714" y2="330" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="435" x2="714" y2="200" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="511" x2="714" y2="310" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="511" x2="714" y2="448" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="587" x2="714" y2="180" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+  <line x1="400" y1="587" x2="714" y2="560" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#bpA)"/>
+
+  <rect x="50" y="646" width="960" height="50" rx="9" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="530" y="667" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#15803d">验收标准：随机指着任意一件，10 秒内说出「它对应面试哪一问、第一句话讲什么」——做不到就还没总装完</text>
+  <text x="530" y="685" text-anchor="middle" font-size="10.5" fill="#166534">面试前一天晚上 + 当天早上各完整过一遍（只过卡片，不看新资料）</text>
+</svg>

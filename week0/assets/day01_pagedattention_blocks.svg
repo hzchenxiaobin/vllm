@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="640" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">PagedAttention：Block Table 间接寻址 + 引用计数共享</text>
+  <text x="500" y="50" text-anchor="middle" font-size="12" fill="#64748b">Seq A 与 Seq B 共享同一 prompt 前缀（如 system prompt + few-shot）；Seq C 是无关请求。block_size = 16 token</text>
+
+  <!-- ============ 1. Logical view ============ -->
+  <text x="30" y="80" font-size="13" font-weight="bold" fill="#1e293b">① 逻辑视角：每条序列各自的逻辑块</text>
+
+  <!-- Seq A -->
+  <text x="40" y="112" font-size="12" font-weight="bold" fill="#047857">Seq A</text>
+  <rect x="110" y="94"  width="90" height="30" rx="4" fill="#d1fae5" stroke="#059669" stroke-width="2"/><text x="155" y="113" text-anchor="middle" font-size="11" fill="#065f46">L0（满 16）</text>
+  <rect x="206" y="94"  width="90" height="30" rx="4" fill="#d1fae5" stroke="#059669" stroke-width="2"/><text x="251" y="113" text-anchor="middle" font-size="11" fill="#065f46">L1（满 16）</text>
+  <rect x="302" y="94"  width="90" height="30" rx="4" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><text x="347" y="113" text-anchor="middle" font-size="11" fill="#9a3412">L2（未满）</text>
+  <text x="410" y="113" font-size="11" fill="#64748b">prompt 前缀 + 生成中</text>
+
+  <!-- Seq B -->
+  <text x="40" y="152" font-size="12" font-weight="bold" fill="#047857">Seq B</text>
+  <rect x="110" y="134" width="90" height="30" rx="4" fill="#d1fae5" stroke="#059669" stroke-width="2"/><text x="155" y="153" text-anchor="middle" font-size="11" fill="#065f46">L0（满 16）</text>
+  <rect x="206" y="134" width="90" height="30" rx="4" fill="#d1fae5" stroke="#059669" stroke-width="2"/><text x="251" y="153" text-anchor="middle" font-size="11" fill="#065f46">L1（满 16）</text>
+  <rect x="302" y="134" width="90" height="30" rx="4" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><text x="347" y="153" text-anchor="middle" font-size="11" fill="#9a3412">L2'（未满）</text>
+  <text x="410" y="153" font-size="11" fill="#64748b">同前缀，分叉生成</text>
+
+  <!-- Seq C -->
+  <text x="40" y="192" font-size="12" font-weight="bold" fill="#1d4ed8">Seq C</text>
+  <rect x="110" y="174" width="90" height="30" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="155" y="193" text-anchor="middle" font-size="11" fill="#1e3a8a">L0</text>
+  <rect x="206" y="174" width="90" height="30" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="251" y="193" text-anchor="middle" font-size="11" fill="#1e3a8a">L1</text>
+  <rect x="302" y="174" width="90" height="30" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="347" y="193" text-anchor="middle" font-size="11" fill="#1e3a8a">L2</text>
+  <text x="410" y="193" font-size="11" fill="#64748b">无关请求</text>
+
+  <line x1="500" y1="150" x2="530" y2="150" stroke="#475569" stroke-width="2" marker-end="url(#arrK)"/>
+
+  <!-- ============ 2. Block tables ============ -->
+  <text x="555" y="80" font-size="13" font-weight="bold" fill="#1e293b">② Block Table：逻辑块号 → 物理块号</text>
+
+  <!-- table A -->
+  <rect x="555" y="94" width="130" height="110" rx="6" fill="#f8fafc" stroke="#059669"/>
+  <text x="620" y="112" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#047857">Seq A</text>
+  <text x="570" y="132" font-size="11" fill="#334155">逻辑 0 → 物理 7</text>
+  <text x="570" y="152" font-size="11" fill="#334155">逻辑 1 → 物理 1</text>
+  <text x="570" y="172" font-size="11" fill="#334155">逻辑 2 → 物理 21</text>
+  <text x="570" y="194" font-size="10" fill="#9a3412">（分叉后 COW 指向新块）</text>
+
+  <!-- table B -->
+  <rect x="700" y="94" width="130" height="110" rx="6" fill="#f8fafc" stroke="#059669"/>
+  <text x="765" y="112" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#047857">Seq B</text>
+  <text x="715" y="132" font-size="11" fill="#334155">逻辑 0 → 物理 7</text>
+  <text x="715" y="152" font-size="11" fill="#334155">逻辑 1 → 物理 1</text>
+  <text x="715" y="172" font-size="11" fill="#334155">逻辑 2 → 物理 5</text>
+  <text x="715" y="194" font-size="10" fill="#9a3412">（COW 分配自己的块）</text>
+
+  <!-- table C -->
+  <rect x="845" y="94" width="130" height="110" rx="6" fill="#f8fafc" stroke="#2563eb"/>
+  <text x="910" y="112" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1d4ed8">Seq C</text>
+  <text x="860" y="132" font-size="11" fill="#334155">逻辑 0 → 物理 3</text>
+  <text x="860" y="152" font-size="11" fill="#334155">逻辑 1 → 物理 9</text>
+  <text x="860" y="172" font-size="11" fill="#334155">逻辑 2 → 物理 17</text>
+  <text x="860" y="194" font-size="10" fill="#475569">（独占，ref=1）</text>
+
+  <line x1="500" y1="230" x2="500" y2="258" stroke="#475569" stroke-width="2" marker-end="url(#arrK)"/>
+  <text x="515" y="248" font-size="13" font-weight="bold" fill="#1e293b">③ 物理块池（显存中的 KV cache 池，按 block 组织）</text>
+
+  <!-- ============ 3. Physical pool ============ -->
+  <!-- grid 8 x 3, pitch 52, size 46, origin (60, 270) -->
+  <g font-size="10" text-anchor="middle">
+    <!-- row 0 (blocks 0-7) -->
+    <rect x="60"  y="270" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="83"  y="288" fill="#94a3b8">空</text>
+    <rect x="112" y="270" width="46" height="46" rx="4" fill="#d1fae5" stroke="#059669" stroke-width="2.5"/><text x="135" y="288" font-weight="bold" fill="#065f46">块1</text><text x="135" y="303" font-size="9.5" fill="#047857">ref=2</text>
+    <rect x="164" y="270" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="187" y="288" fill="#94a3b8">空</text>
+    <rect x="216" y="270" width="46" height="46" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2.5"/><text x="239" y="288" font-weight="bold" fill="#1e3a8a">块3</text><text x="239" y="303" font-size="9.5" fill="#1d4ed8">ref=1</text>
+    <rect x="268" y="270" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="291" y="288" fill="#94a3b8">空</text>
+    <rect x="320" y="270" width="46" height="46" rx="4" fill="#ffedd5" stroke="#ea580c" stroke-width="2.5"/><text x="343" y="288" font-weight="bold" fill="#9a3412">块5</text><text x="343" y="303" font-size="9.5" fill="#c2410c">ref=1</text>
+    <rect x="372" y="270" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="395" y="288" fill="#94a3b8">空</text>
+    <rect x="424" y="270" width="46" height="46" rx="4" fill="#d1fae5" stroke="#059669" stroke-width="2.5"/><text x="447" y="288" font-weight="bold" fill="#065f46">块7</text><text x="447" y="303" font-size="9.5" fill="#047857">ref=2</text>
+    <!-- row 1 (blocks 8-15) -->
+    <rect x="60"  y="322" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="83"  y="340" fill="#94a3b8">空</text>
+    <rect x="112" y="322" width="46" height="46" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2.5"/><text x="135" y="340" font-weight="bold" fill="#1e3a8a">块9</text><text x="135" y="355" font-size="9.5" fill="#1d4ed8">ref=1</text>
+    <rect x="164" y="322" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="187" y="340" fill="#94a3b8">空</text>
+    <rect x="216" y="322" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="239" y="340" fill="#94a3b8">空</text>
+    <rect x="268" y="322" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="291" y="340" fill="#94a3b8">空</text>
+    <rect x="320" y="322" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="343" y="340" fill="#94a3b8">空</text>
+    <rect x="372" y="322" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="395" y="340" fill="#94a3b8">空</text>
+    <rect x="424" y="322" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="447" y="340" fill="#94a3b8">空</text>
+    <!-- row 2 (blocks 16-23) -->
+    <rect x="60"  y="374" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="83"  y="392" fill="#94a3b8">空</text>
+    <rect x="112" y="374" width="46" height="46" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2.5"/><text x="135" y="392" font-weight="bold" fill="#1e3a8a">块17</text><text x="135" y="407" font-size="9.5" fill="#1d4ed8">ref=1</text>
+    <rect x="164" y="374" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="187" y="392" fill="#94a3b8">空</text>
+    <rect x="216" y="374" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="239" y="392" fill="#94a3b8">空</text>
+    <rect x="268" y="374" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="291" y="392" fill="#94a3b8">空</text>
+    <rect x="320" y="374" width="46" height="46" rx="4" fill="#ffedd5" stroke="#ea580c" stroke-width="2.5"/><text x="343" y="392" font-weight="bold" fill="#9a3412">块21</text><text x="343" y="407" font-size="9.5" fill="#c2410c">ref=1</text>
+    <rect x="372" y="374" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="395" y="392" fill="#94a3b8">空</text>
+    <rect x="424" y="374" width="46" height="46" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/><text x="447" y="392" fill="#94a3b8">空</text>
+  </g>
+
+  <!-- shared prefix annotation arrows -->
+  <path d="M 447 316 Q 500 340 555 340" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrG)"/>
+
+  <!-- ============ 4. Key points ============ -->
+  <g>
+    <rect x="555" y="270" width="420" height="56" rx="6" fill="#f0fdf4" stroke="#059669"/>
+    <text x="570" y="292" font-size="12" font-weight="bold" fill="#047857">共享前缀：块 7、块 1 同时出现在 A/B 的表里</text>
+    <text x="570" y="312" font-size="11" fill="#334155">ref=2；引用计数归零才真正释放 → prefix caching 的基础</text>
+
+    <rect x="555" y="336" width="420" height="56" rx="6" fill="#fff7ed" stroke="#ea580c"/>
+    <text x="570" y="358" font-size="12" font-weight="bold" fill="#c2410c">COW 写时复制：分叉时只复制「未满的最后一块」</text>
+    <text x="570" y="378" font-size="11" fill="#334155">A 的 L2 与 B 的 L2' 逻辑同源、物理不同（块 21 / 块 5）；已满块零拷贝</text>
+
+    <rect x="555" y="402" width="420" height="56" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+    <text x="570" y="424" font-size="12" font-weight="bold" fill="#334155">固定块大小 16 token：按需分配，零外部碎片</text>
+    <text x="570" y="444" font-size="11" fill="#334155">内碎片每序列 ≤ 15 token；论文实测平均浪费 &lt;4%（对比预留式 60-80%）</text>
+  </g>
+
+  <text x="60" y="452" font-size="11.5" fill="#475569">灰色 = 空闲块。物理池不要求连续 → 彻底消除外部碎片；逻辑连续性完全由 block table 间接层保证</text>
+  <text x="60" y="478" font-size="12.5" font-weight="bold" fill="#1e293b">一张图串起 Day 2-6：Day 2 读 kv_cache_manager 的 allocate/free → Day 3 prefix caching 的 block hash → Day 5 mini 调度器 → Day 6 白板手画这张图</text>
+
+  <defs>
+    <marker id="arrK" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#475569"/></marker>
+    <marker id="arrG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#059669"/></marker>
+  </defs>
+</svg>

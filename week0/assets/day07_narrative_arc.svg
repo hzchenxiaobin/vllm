@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="660" viewBox="0 0 1080 660" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="naA" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#475569"/>
+    </marker>
+    <marker id="naB" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="660" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">叙事主线：一座金字塔 + 一张同构映射表</text>
+  <text x="540" y="52" text-anchor="middle" font-size="12" fill="#64748b">左侧：越往下细节越多，被追问时才逐层展开；右侧：把「我在学 vLLM」讲成「我在另一块硬件上做过同构问题」</text>
+
+  <!-- ================= left: narrative pyramid ================= -->
+  <text x="300" y="86" text-anchor="middle" font-size="14" font-weight="bold" fill="#334155">叙事金字塔（由窄到宽）</text>
+
+  <rect x="150" y="100" width="300" height="62" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="300" y="124" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e40af">30 秒 · 一句话定位</text>
+  <text x="300" y="143" text-anchor="middle" font-size="10" fill="#475569">十年系统工程师，三年昇腾算子优化，</text>
+  <text x="300" y="157" text-anchor="middle" font-size="10" fill="#475569">量化 GEMM 单核算力利用率 85%+</text>
+
+  <rect x="110" y="180" width="380" height="76" rx="9" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="300" y="204" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#15803d">3 分钟 · 自我介绍（计时 2'40"）</text>
+  <text x="300" y="224" text-anchor="middle" font-size="10" fill="#475569">定位 20s → 最强项目带数字 40s</text>
+  <text x="300" y="240" text-anchor="middle" font-size="10" fill="#475569">→ 方法论抽象 80s → 岗位连接 40s</text>
+
+  <rect x="70" y="274" width="460" height="90" rx="9" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="300" y="298" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#c2410c">10 分钟 · 项目深讲（STAR）</text>
+  <text x="300" y="318" text-anchor="middle" font-size="10" fill="#475569">S 场景 60s → T 目标 60s → A 三个技术点 × 90s</text>
+  <text x="300" y="334" text-anchor="middle" font-size="10" fill="#475569">（每点一句「为什么这么做」+ 一句「放弃了什么」）</text>
+  <text x="300" y="350" text-anchor="middle" font-size="10" fill="#475569">→ R 结果 + 方法论如何迁移到推理系统</text>
+
+  <rect x="40" y="382" width="520" height="118" rx="9" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="300" y="406" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#991b1b">追问层 · 技术弹药库（不主动讲，被问才给）</text>
+  <text x="300" y="428" text-anchor="middle" font-size="10" fill="#475569">85% 的 roofline 口径 / ASW 与 L2 命中原理 / bound 分界模型</text>
+  <text x="300" y="446" text-anchor="middle" font-size="10" fill="#475569">数字弹药库（Day 6）：320 KiB/token · 20.9ms · 40.5%→65.3% · 2.5ms</text>
+  <text x="300" y="464" text-anchor="middle" font-size="10" fill="#475569">不会的题的诚实话术：「还没读到这层，我的推测是……」</text>
+  <text x="300" y="486" text-anchor="middle" font-size="10" font-weight="bold" fill="#b91c1c">原则：上层讲结构，下层给证据；没人问就停在上一层</text>
+
+  <line x1="300" y1="166" x2="300" y2="176" stroke="#475569" stroke-width="2" marker-end="url(#naA)"/>
+  <line x1="300" y1="260" x2="300" y2="270" stroke="#475569" stroke-width="2" marker-end="url(#naA)"/>
+  <line x1="300" y1="368" x2="300" y2="378" stroke="#475569" stroke-width="2" marker-end="url(#naA)"/>
+  <text x="300" y="528" text-anchor="middle" font-size="10.5" fill="#64748b">面试官每追问一次，你下降一层——降级是有底气的降级</text>
+
+  <!-- ================= right: isomorphic mapping ================= -->
+  <text x="800" y="86" text-anchor="middle" font-size="14" font-weight="bold" fill="#334155">方法论同构：kernel 优化 ↔ 推理系统</text>
+
+  <rect x="620" y="102" width="170" height="34" rx="7" fill="#1e293b"/>
+  <text x="705" y="124" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">昇腾 kernel 优化</text>
+  <rect x="850" y="102" width="190" height="34" rx="7" fill="#1e293b"/>
+  <text x="945" y="124" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">LLM 推理系统</text>
+
+  <rect x="620" y="152" width="170" height="76" rx="7" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="705" y="176" text-anchor="middle" font-size="10.5" fill="#1e293b">小 M 量化 GEMM</text>
+  <text x="705" y="194" text-anchor="middle" font-size="10.5" fill="#1e293b">访存 bound，权重搬运</text>
+  <text x="705" y="212" text-anchor="middle" font-size="10.5" fill="#1e293b">是生命线</text>
+
+  <rect x="850" y="152" width="190" height="76" rx="7" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="945" y="176" text-anchor="middle" font-size="10.5" fill="#1e293b">decode 阶段</text>
+  <text x="945" y="194" text-anchor="middle" font-size="10.5" fill="#1e293b">memory-bound，时延 ≈</text>
+  <text x="945" y="212" text-anchor="middle" font-size="10.5" fill="#1e293b">权重字节 / HBM 带宽</text>
+
+  <line x1="790" y1="190" x2="846" y2="190" stroke="#2563eb" stroke-width="2" marker-end="url(#naB)"/>
+
+  <rect x="620" y="244" width="170" height="76" rx="7" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="705" y="268" text-anchor="middle" font-size="10.5" fill="#1e293b">bound 分界模型</text>
+  <text x="705" y="286" text-anchor="middle" font-size="10.5" fill="#1e293b">搜最优 baseM/baseN</text>
+  <text x="705" y="304" text-anchor="middle" font-size="10.5" fill="#1e293b">tiling（85%+ 的来源）</text>
+
+  <rect x="850" y="244" width="190" height="76" rx="7" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="945" y="268" text-anchor="middle" font-size="10.5" fill="#1e293b">roofline 定瓶颈 →</text>
+  <text x="945" y="286" text-anchor="middle" font-size="10.5" fill="#1e293b">选量化方案（TPOT ∝ 字节</text>
+  <text x="945" y="304" text-anchor="middle" font-size="10.5" fill="#1e293b">压缩比，prefill 看算力翻倍）</text>
+
+  <line x1="790" y1="282" x2="846" y2="282" stroke="#2563eb" stroke-width="2" marker-end="url(#naB)"/>
+
+  <rect x="620" y="336" width="170" height="76" rx="7" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="705" y="360" text-anchor="middle" font-size="10.5" fill="#1e293b">手工流水线隐藏</text>
+  <text x="705" y="378" text-anchor="middle" font-size="10.5" fill="#1e293b">多级存储搬运延迟</text>
+
+  <rect x="850" y="336" width="190" height="76" rx="7" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="945" y="360" text-anchor="middle" font-size="10.5" fill="#1e293b">P/D 分离 / CUDA Graph</text>
+  <text x="945" y="378" text-anchor="middle" font-size="10.5" fill="#1e293b">把两类 bound 的负载拆开</text>
+  <text x="945" y="396" text-anchor="middle" font-size="10.5" fill="#1e293b">各自优化、各自重叠</text>
+
+  <line x1="790" y1="374" x2="846" y2="374" stroke="#2563eb" stroke-width="2" marker-end="url(#naB)"/>
+
+  <rect x="620" y="428" width="170" height="76" rx="7" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="705" y="452" text-anchor="middle" font-size="10.5" fill="#1e293b">ASW 滑窗调度</text>
+  <text x="705" y="470" text-anchor="middle" font-size="10.5" fill="#1e293b">提升 L2 / 片上复用</text>
+
+  <rect x="850" y="428" width="190" height="76" rx="7" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="945" y="452" text-anchor="middle" font-size="10.5" fill="#1e293b">prefix caching / cache-aware</text>
+  <text x="945" y="470" text-anchor="middle" font-size="10.5" fill="#1e293b">路由：把访存留在</text>
+  <text x="945" y="488" text-anchor="middle" font-size="10.5" fill="#1e293b">更快的层级</text>
+
+  <line x1="790" y1="466" x2="846" y2="466" stroke="#2563eb" stroke-width="2" marker-end="url(#naB)"/>
+
+  <rect x="620" y="524" width="420" height="66" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="830" y="549" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1e40af">面试价值：每个推理话题都试着挂上这条经验</text>
+  <text x="830" y="570" text-anchor="middle" font-size="10.5" fill="#334155">KV cache 是内存问题 · continuous batching 是调度问题 · P/D 是 bound 拆分问题</text>
+
+  <text x="540" y="638" text-anchor="middle" font-size="11" fill="#64748b">计时标准：3 分钟版 2'40" 收住；10 分钟版 9'30" 收住——超时的唯一原因是没舍得删</text>
+</svg>

@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1140" viewBox="0 0 1000 1140" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="btA" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#ea580c"/>
+    </marker>
+    <marker id="btR" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="1140" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">白板第 2 件 · Block Table 五状态演进（prefix 命中 → COW → cached → 逐出）</text>
+  <text x="500" y="52" text-anchor="middle" font-size="12" fill="#64748b">block_size=4 · A="abcdefgh"（2 个满块）· B="abcdXYZ…"（共享前缀）· 分叉场景 prompt="abcdef" + n=2 —— 目标 5 分钟画完</text>
+
+  <!-- ================= Panel S1 ================= -->
+  <rect x="30" y="80" width="940" height="195" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.8"/>
+  <text x="50" y="106" font-size="13.5" font-weight="bold" fill="#1e293b">S1 · A prefill 完成 —— 满块注册进 hash 索引</text>
+
+  <text x="230" y="124" font-size="10" fill="#64748b">块 #7</text>
+  <rect x="230" y="128" width="120" height="48" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="290" y="158" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">a b c d</text>
+  <rect x="354" y="142" width="48" height="20" rx="10" fill="#e2e8f0"/>
+  <text x="378" y="156" text-anchor="middle" font-size="10.5" fill="#334155">ref=1</text>
+
+  <text x="420" y="124" font-size="10" fill="#64748b">块 #12</text>
+  <rect x="420" y="128" width="120" height="48" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="480" y="158" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">e f g h</text>
+  <rect x="544" y="142" width="48" height="20" rx="10" fill="#e2e8f0"/>
+  <text x="568" y="156" text-anchor="middle" font-size="10.5" fill="#334155">ref=1</text>
+
+  <text x="660" y="148" font-size="11.5" fill="#1e40af">h₁ = H(salt ∥ "abcd")</text>
+  <text x="660" y="170" font-size="11.5" fill="#1e40af">h₂ = H(h₁ ∥ "efgh")　← 链式：前块 hash 进后块</text>
+
+  <text x="50" y="224" font-size="11" fill="#475569">A.block_table</text>
+  <rect x="230" y="204" width="44" height="32" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="252" y="225" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">7</text>
+  <rect x="278" y="204" width="44" height="32" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="300" y="225" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">12</text>
+  <text x="345" y="225" font-size="10.5" fill="#64748b">→ 间接寻址：逻辑块号 → 物理块号（OS 页表同构）</text>
+
+  <text x="50" y="262" font-size="11" fill="#475569">hash 只算满块、部分块不哈希（Day 3 机制三）；满块边算边注册（V1 prefix caching 默认开）</text>
+
+  <!-- ================= Panel S2 ================= -->
+  <rect x="30" y="285" width="940" height="195" rx="10" fill="#eff6ff" stroke="#60a5fa" stroke-width="1.8"/>
+  <text x="50" y="311" font-size="13.5" font-weight="bold" fill="#1e40af">S2 · B 到达，h₁ 命中 #7 —— 零拷贝共享 + 免算前缀</text>
+
+  <text x="230" y="329" font-size="10" fill="#64748b">块 #7（命中）</text>
+  <rect x="230" y="333" width="120" height="48" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+  <text x="290" y="363" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">a b c d</text>
+  <rect x="354" y="347" width="48" height="20" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="378" y="361" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#c2410c">ref=2</text>
+
+  <text x="420" y="329" font-size="10" fill="#64748b">块 #12</text>
+  <rect x="420" y="333" width="120" height="48" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="480" y="363" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">e f g h</text>
+  <rect x="544" y="347" width="48" height="20" rx="10" fill="#e2e8f0"/>
+  <text x="568" y="361" text-anchor="middle" font-size="10.5" fill="#334155">ref=1</text>
+
+  <text x="610" y="329" font-size="10" fill="#64748b">块 #23（新分配）</text>
+  <rect x="610" y="333" width="120" height="48" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="670" y="363" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">X Y · ·</text>
+  <rect x="734" y="347" width="48" height="20" rx="10" fill="#e2e8f0"/>
+  <text x="758" y="361" text-anchor="middle" font-size="10.5" fill="#334155">ref=1</text>
+
+  <text x="50" y="429" font-size="11" fill="#475569">A.block_table</text>
+  <rect x="230" y="409" width="44" height="32" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="252" y="430" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">7</text>
+  <rect x="278" y="409" width="44" height="32" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="300" y="430" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">12</text>
+
+  <text x="360" y="429" font-size="11" fill="#475569">B.block_table</text>
+  <rect x="480" y="409" width="44" height="32" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="502" y="430" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">7</text>
+  <rect x="528" y="409" width="44" height="32" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="550" y="430" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">23</text>
+
+  <text x="50" y="467" font-size="11" fill="#475569">命中即免算：B 的 prefill 只算后缀 "XYZ…"（省 4 token 计算 + 590MB/4K 前缀级的收益，Day 3 数字）；#7 零拷贝共享，ref 1→2</text>
+
+  <!-- ================= Panel S3 ================= -->
+  <rect x="30" y="490" width="940" height="195" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.8"/>
+  <text x="50" y="516" font-size="13.5" font-weight="bold" fill="#9a3412">S3 · 分叉写入 → COW（换场景：prompt "abcdef" + n=2 采样）</text>
+
+  <text x="230" y="534" font-size="10" fill="#64748b">块 #7（两序列共享）</text>
+  <rect x="230" y="538" width="120" height="48" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="290" y="568" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">a b c d</text>
+  <rect x="354" y="552" width="48" height="20" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="378" y="566" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#c2410c">ref=2</text>
+
+  <text x="420" y="534" font-size="10" fill="#64748b">块 #8（非满块 · 要写入）</text>
+  <rect x="420" y="538" width="120" height="48" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="2"/>
+  <text x="480" y="568" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">e f · ·</text>
+  <rect x="544" y="552" width="48" height="20" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="568" y="566" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#c2410c">ref=2</text>
+
+  <line x1="598" y1="562" x2="626" y2="562" stroke="#ea580c" stroke-width="2" marker-end="url(#btA)"/>
+  <text x="612" y="550" text-anchor="middle" font-size="10" font-weight="bold" fill="#c2410c">COW</text>
+
+  <text x="634" y="534" font-size="10" fill="#64748b">块 #15（私有副本）</text>
+  <rect x="634" y="538" width="120" height="48" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="694" y="568" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">e f t₁ ·</text>
+  <rect x="758" y="552" width="48" height="20" rx="10" fill="#e2e8f0"/>
+  <text x="782" y="566" text-anchor="middle" font-size="10.5" fill="#334155">ref=1</text>
+  <text x="830" y="566" font-size="10.5" fill="#c2410c">A₁ 追加 t₁</text>
+
+  <text x="50" y="634" font-size="11" fill="#475569">A₁.block_table</text>
+  <rect x="230" y="614" width="44" height="32" rx="5" fill="#fff7ed" stroke="#ea580c" stroke-width="1.4"/>
+  <text x="252" y="635" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">7</text>
+  <rect x="278" y="614" width="44" height="32" rx="5" fill="#fff7ed" stroke="#ea580c" stroke-width="1.4"/>
+  <text x="300" y="635" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">15</text>
+
+  <text x="360" y="634" font-size="11" fill="#475569">A₂.block_table</text>
+  <rect x="480" y="614" width="44" height="32" rx="5" fill="#f8fafc" stroke="#64748b" stroke-width="1.4"/>
+  <text x="502" y="635" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">7</text>
+  <rect x="528" y="614" width="44" height="32" rx="5" fill="#f8fafc" stroke="#64748b" stroke-width="1.4"/>
+  <text x="550" y="635" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">8</text>
+
+  <text x="50" y="672" font-size="11" fill="#475569">COW 触发条件：ref&gt;1 且要写入；典型触发者：n&gt;1 采样 / beam search 在非整块 prompt 末尾分叉；只读共享永不复制（blocks_to_copy=[8→15]）</text>
+
+  <!-- ================= Panel S4 ================= -->
+  <rect x="30" y="695" width="940" height="195" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="50" y="721" font-size="13.5" font-weight="bold" fill="#166534">S4 · A 完成 —— 归零块转 cached，不回 free！</text>
+
+  <text x="230" y="739" font-size="10" fill="#64748b">块 #7（仍被 B 引用）</text>
+  <rect x="230" y="743" width="120" height="48" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="290" y="773" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">a b c d</text>
+  <rect x="354" y="757" width="92" height="20" rx="10" fill="#e2e8f0"/>
+  <text x="400" y="771" text-anchor="middle" font-size="10.5" fill="#334155">ref=1 · B 在用</text>
+
+  <text x="470" y="739" font-size="10" fill="#64748b">块 #12（A 释放）</text>
+  <rect x="470" y="743" width="120" height="48" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="530" y="773" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">e f g h</text>
+  <rect x="594" y="757" width="92" height="20" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="640" y="771" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#15803d">ref=0 → cached</text>
+
+  <rect x="720" y="743" width="230" height="48" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="835" y="762" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">LRU 逐出队列</text>
+  <text x="835" y="780" text-anchor="middle" font-size="10.5" fill="#475569">[#12(t₀)] ← 等待复用</text>
+
+  <text x="50" y="839" font-size="11" fill="#475569">B.block_table</text>
+  <rect x="230" y="819" width="44" height="32" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="252" y="840" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">7</text>
+  <rect x="278" y="819" width="44" height="32" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="300" y="840" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">23</text>
+
+  <text x="380" y="839" font-size="11" fill="#94a3b8">A.block_table（请求已结束）</text>
+  <rect x="580" y="819" width="44" height="32" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="602" y="840" text-anchor="middle" font-size="12" fill="#94a3b8">7</text>
+  <rect x="628" y="819" width="44" height="32" rx="5" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="650" y="840" text-anchor="middle" font-size="12" fill="#94a3b8">12</text>
+  <line x1="576" y1="835" x2="676" y2="835" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <text x="50" y="877" font-size="11" fill="#475569">V1 默认 prefix caching：ref 归零挂 LRU 等复用（下一条 "abcdefgh…" 开头的 prompt 直接全命中）；不开 caching 才直接回 free 池</text>
+
+  <!-- ================= Panel S5 ================= -->
+  <rect x="30" y="900" width="940" height="195" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="50" y="926" font-size="13.5" font-weight="bold" fill="#991b1b">S5 · 池紧张 → 逐出 —— 只逐 ref=0 的 cached 块</text>
+
+  <rect x="230" y="948" width="210" height="56" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="335" y="968" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">free 池（立即可分）</text>
+  <text x="335" y="988" text-anchor="middle" font-size="10.5" fill="#475569">[#31　#32　#33　…]</text>
+
+  <rect x="490" y="948" width="220" height="56" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="600" y="968" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">cached · 按 touch 排序（LRU）</text>
+  <text x="600" y="988" text-anchor="middle" font-size="10.5" fill="#475569">[#12 ← #30 ← …]（左 = 最旧）</text>
+
+  <line x1="488" y1="976" x2="448" y2="976" stroke="#dc2626" stroke-width="2" marker-end="url(#btR)"/>
+  <text x="468" y="964" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#b91c1c">逐出</text>
+
+  <text x="740" y="944" font-size="10" fill="#64748b">块 #7（B 还在跑）</text>
+  <rect x="740" y="948" width="120" height="48" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="800" y="978" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#334155">a b c d</text>
+  <text x="800" y="1018" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#b91c1c">ref=1 · 绝不可逐（被引用）</text>
+
+  <text x="50" y="1058" font-size="11" fill="#475569">分配顺序：先取 free，不够再从 LRU 尾逐出 touch 最旧者；被在跑请求引用的块（ref&gt;0）绝不动</text>
+  <text x="50" y="1078" font-size="11" fill="#475569">free 与 cached 是两个队列 —— 对应 Day 2 读的 BlockPool；Day 5 你写的 mini 版只有 free，差距清单 #3 补的就是 S2~S5</text>
+</svg>

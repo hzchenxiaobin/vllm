@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="765" viewBox="0 0 1000 765" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="765" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">vLLM V1 双进程架构与请求生命周期</text>
+  <text x="500" y="50" text-anchor="middle" font-size="12" fill="#64748b">API Server 进程（HTTP / tokenize / detokenize）＋ EngineCore 进程（调度 / KV 管理 / 前向），ZMQ 通信 —— 徽标 ①~⑦ 对应下方生命周期</text>
+
+  <!-- ============ Client ============ -->
+  <rect x="340" y="66" width="320" height="44" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="500" y="93" text-anchor="middle" font-size="12.5" fill="#1e293b">客户端（OpenAI SDK / vllm bench serve）</text>
+
+  <line x1="430" y1="112" x2="430" y2="136" stroke="#475569" stroke-width="2" marker-end="url(#arrK)"/>
+  <circle cx="449" cy="124" r="9" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+  <text x="449" y="128" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#334155">1</text>
+
+  <!-- 7: SSE return path (left corridor) -->
+  <path d="M 62 471 H 50 V 88 H 332" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arrO)"/>
+  <circle cx="140" cy="88" r="9" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="140" y="92" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#c2410c">7</text>
+  <text x="156" y="92" font-size="10" fill="#9a3412">SSE 流式返回</text>
+
+  <!-- ============ API Server process ============ -->
+  <rect x="40" y="140" width="430" height="425" rx="10" fill="#f8fafc" stroke="#2563eb" stroke-width="2.5"/>
+  <text x="62" y="168" font-size="14" font-weight="bold" fill="#1e3a8a">API Server 进程（前端）</text>
+  <text x="450" y="168" text-anchor="end" font-size="10.5" fill="#64748b">asyncio 并发接请求</text>
+
+  <rect x="62" y="185" width="386" height="52" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="74" y="207" font-size="12" font-weight="bold" fill="#1e3a8a">OpenAI API Server（entrypoints/openai/）</text>
+  <text x="74" y="225" font-size="10.5" fill="#334155">serving_chat.py：校验参数 · 渲染 chat template</text>
+
+  <line x1="255" y1="237" x2="255" y2="246" stroke="#475569" stroke-width="1.8" marker-end="url(#arrK)"/>
+
+  <rect x="62" y="248" width="386" height="52" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="74" y="270" font-size="12" font-weight="bold" fill="#1e3a8a">AsyncLLM（v1/engine/async_llm.py）</text>
+  <text x="74" y="288" font-size="10.5" fill="#334155">generate() 入口 · request_id ↔ RequestState 映射</text>
+
+  <line x1="255" y1="300" x2="255" y2="309" stroke="#475569" stroke-width="1.8" marker-end="url(#arrK)"/>
+
+  <rect x="62" y="311" width="386" height="52" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="74" y="333" font-size="12" font-weight="bold" fill="#1e3a8a">Processor（v1/engine/processor.py）</text>
+  <text x="74" y="351" font-size="10.5" fill="#334155">tokenize → Request（prompt_token_ids ＋ 采样参数）</text>
+
+  <rect x="62" y="440" width="386" height="62" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="74" y="462" font-size="12" font-weight="bold" fill="#92400e">OutputProcessor ＋ Detokenizer</text>
+  <text x="74" y="479" font-size="9.5" fill="#92400e">（output_processor.py · detokenizer.py）</text>
+  <text x="74" y="496" font-size="10.5" fill="#334155">增量 detokenize → 流式 chunk → SSE 推送</text>
+
+  <rect x="62" y="518" width="386" height="30" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="75" y="537" font-size="10" fill="#1e40af">同进程 asyncio：上千并发连接互不阻塞（IO 型负载不吃 GIL）</text>
+
+  <!-- ============ ZMQ band ============ -->
+  <rect x="474" y="210" width="52" height="290" rx="8" fill="#faf5ff" stroke="#a78bfa" stroke-dasharray="5 3"/>
+  <text x="500" y="202" text-anchor="middle" font-size="9.5" fill="#7c3aed">进程边界</text>
+  <text transform="rotate(-90 500 355)" x="500" y="355" text-anchor="middle" font-size="11" font-weight="bold" fill="#7c3aed">ZMQ（msgpack）</text>
+
+  <line x1="448" y1="337" x2="526" y2="337" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrP)"/>
+  <circle cx="487" cy="337" r="9" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="487" y="341" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#6d28d9">2</text>
+
+  <line x1="530" y1="471" x2="452" y2="471" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrP)"/>
+  <circle cx="491" cy="471" r="9" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="491" y="475" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#6d28d9">6</text>
+
+  <!-- ============ EngineCore process ============ -->
+  <rect x="530" y="140" width="430" height="425" rx="10" fill="#f8fafc" stroke="#059669" stroke-width="2.5"/>
+  <text x="552" y="168" font-size="14" font-weight="bold" fill="#065f46">EngineCore 进程（引擎）</text>
+  <text x="938" y="168" text-anchor="end" font-size="10.5" fill="#64748b">1..N 个（DP / P-D 分离的基础）</text>
+
+  <rect x="552" y="185" width="386" height="52" rx="6" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+  <text x="564" y="207" font-size="12" font-weight="bold" fill="#065f46">EngineCore 主循环（v1/engine/core.py）</text>
+  <text x="564" y="225" font-size="10.5" fill="#334155">step() ＝ schedule() → execute_model() → update_from_output()</text>
+
+  <line x1="745" y1="237" x2="745" y2="246" stroke="#059669" stroke-width="2" marker-end="url(#arrG)"/>
+
+  <rect x="552" y="248" width="386" height="82" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="564" y="270" font-size="12" font-weight="bold" fill="#065f46">Scheduler（v1/core/scheduler.py）</text>
+  <rect x="562" y="281" width="366" height="17" rx="3" fill="#ffffff" stroke="#16a34a"/>
+  <text x="572" y="293" font-size="9.5" fill="#166534">waiting 队列：等 prefill 准入（token budget 内切块）</text>
+  <rect x="562" y="303" width="366" height="17" rx="3" fill="#ffffff" stroke="#16a34a"/>
+  <text x="572" y="315" font-size="9.5" fill="#166534">running 队列：每请求 1 token/步 · KV 不足 → 抢占队尾</text>
+  <circle cx="562" cy="248" r="9" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="562" y="252" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#15803d">3</text>
+  <circle cx="928" cy="248" r="9" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="928" y="252" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#15803d">4</text>
+
+  <line x1="740" y1="332" x2="740" y2="341" stroke="#059669" stroke-width="2" marker-end="url(#arrG)"/>
+  <line x1="758" y1="341" x2="758" y2="332" stroke="#059669" stroke-width="2" marker-end="url(#arrG)"/>
+  <text x="770" y="341" font-size="9" fill="#047857">allocate / free</text>
+
+  <rect x="552" y="341" width="386" height="59" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+  <text x="564" y="362" font-size="12" font-weight="bold" fill="#065f46">KVCacheManager（v1/core/kv_cache_manager.py）</text>
+  <text x="564" y="379" font-size="10.5" fill="#334155">BlockPool 空闲块池 · BlockTable · 链式 hash（prefix cache）</text>
+  <text x="564" y="395" font-size="10.5" fill="#334155">allocate_slots() / free() —— O(1) 分配释放</text>
+
+  <line x1="745" y1="401" x2="745" y2="410" stroke="#059669" stroke-width="2" marker-end="url(#arrG)"/>
+  <text x="757" y="409" font-size="9" fill="#047857">block tables</text>
+
+  <rect x="552" y="411" width="386" height="59" rx="6" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+  <text x="564" y="432" font-size="12" font-weight="bold" fill="#9a3412">GPUModelRunner（v1/worker/gpu_model_runner.py）</text>
+  <text x="564" y="449" font-size="10.5" fill="#334155">prefill chunk ＋ decode token 混排组 batch → 前向</text>
+  <text x="564" y="465" font-size="10.5" fill="#334155">decode 走 CUDA Graph 重放（Day 3 机制四）</text>
+  <circle cx="562" cy="411" r="9" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="562" y="415" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#c2410c">5</text>
+
+  <line x1="745" y1="471" x2="745" y2="480" stroke="#059669" stroke-width="2" marker-end="url(#arrG)"/>
+  <text x="757" y="479" font-size="9" fill="#047857">launch kernels</text>
+
+  <rect x="552" y="481" width="386" height="56" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="564" y="502" font-size="12" font-weight="bold" fill="#334155">Worker / GPU 显存</text>
+  <text x="564" y="520" font-size="10.5" fill="#334155">KV block 物理池 · PagedAttention kernel · GEMM / MoE kernel</text>
+
+  <!-- update_from_output return corridor (left of inner boxes) -->
+  <path d="M 552 450 H 541 V 292 H 548" fill="none" stroke="#059669" stroke-width="1.8" marker-end="url(#arrG)"/>
+  <text transform="rotate(-90 533 380)" x="533" y="380" text-anchor="middle" font-size="8.5" fill="#047857">update_from_output()</text>
+
+  <!-- ============ Legend ============ -->
+  <rect x="40" y="585" width="920" height="105" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="60" y="606" font-size="12.5" font-weight="bold" fill="#1e293b">请求生命周期（①→⑦，面试 30 秒版）</text>
+  <g font-size="10.5" fill="#334155">
+    <text x="60"  y="628">① POST /v1/chat/completions —— 参数校验、渲染 chat template</text>
+    <text x="60"  y="648">② Processor tokenize → Request，经 ZMQ 送 EngineCore</text>
+    <text x="60"  y="668">③ add_request：Request 入 waiting 队列</text>
+    <text x="60"  y="688">④ schedule()：先 running（decode）后 waiting（prefill 准入）</text>
+    <text x="510" y="628">⑤ execute_model：混排 batch → 前向 → 采样（每 step）</text>
+    <text x="510" y="648">⑥ 新 token 打包 EngineCoreOutputs，经 ZMQ 回 API 进程</text>
+    <text x="510" y="668">⑦ 增量 detokenize → SSE 流式推送；完成后 free() 回收 block</text>
+    <text x="510" y="688">（⑤→④ 之间：update_from_output() 结果回流，驱动下一轮调度）</text>
+  </g>
+
+  <!-- three reasons -->
+  <g font-size="9.5" fill="#334155">
+    <rect x="40" y="700" width="296" height="32" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="52" y="720">拆进程理由一：绕过 GIL，tokenize/detokenize 与调度执行并行</text>
+    <rect x="352" y="700" width="296" height="32" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="364" y="720">理由二：故障隔离 —— 引擎崩溃不拖死 API 层</text>
+    <rect x="664" y="700" width="296" height="32" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="676" y="720">理由三：为 data-parallel / P-D 分离铺路（多引擎共享入口）</text>
+  </g>
+
+  <text x="60" y="755" font-size="11.5" font-weight="bold" fill="#1e293b">对照 Day 1：⑤ 的前向就是 prefill（compute-bound）＋ decode（memory-bound）；⑦ 的 free() 就是 PagedAttention 引用计数回收。Day 3 将把 ④ 里的三个机制逐个拆开</text>
+
+  <defs>
+    <marker id="arrK" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#475569"/></marker>
+    <marker id="arrG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#059669"/></marker>
+    <marker id="arrP" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#7c3aed"/></marker>
+    <marker id="arrO" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#ea580c"/></marker>
+  </defs>
+</svg>

@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="740" viewBox="0 0 1060 740" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="dtG" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#475569"/>
+    </marker>
+    <marker id="dtR" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#dc2626"/>
+    </marker>
+    <marker id="dtB" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#2563eb"/>
+    </marker>
+    <marker id="dtO" markerWidth="9" markerHeight="9" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#ea580c"/>
+    </marker>
+  </defs>
+
+  <rect width="1060" height="740" fill="#ffffff"/>
+  <text x="530" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">白板第 4 件 · 性能诊断树：从症状到处方（目标 3 分钟讲完）</text>
+  <text x="530" y="52" text-anchor="middle" font-size="12" fill="#64748b">开口第一句永远是「先分诊」：三个观测点定症状，再沿枝走到处方——每个处方必须带代价</text>
+
+  <!-- ================= Root ================= -->
+  <rect x="300" y="66" width="460" height="60" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="530" y="89" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">第一步 · 分诊：看三个观测点</text>
+  <text x="530" y="109" text-anchor="middle" font-size="10.5" fill="#475569">① Waiting 深度　② GPU KV cache usage　③ preemption 计数（V1 周期日志行 / /metrics，字段以版本为准）</text>
+
+  <line x1="430" y1="126" x2="200" y2="166" stroke="#dc2626" stroke-width="2" marker-end="url(#dtR)"/>
+  <line x1="530" y1="126" x2="530" y2="166" stroke="#2563eb" stroke-width="2" marker-end="url(#dtB)"/>
+  <line x1="630" y1="126" x2="860" y2="166" stroke="#ea580c" stroke-width="2" marker-end="url(#dtO)"/>
+
+  <!-- ================= Branch headers ================= -->
+  <rect x="40" y="170" width="300" height="46" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="190" y="190" text-anchor="middle" font-size="13" font-weight="bold" fill="#991b1b">症状 1 · TTFT 高，TPOT 正常</text>
+  <text x="190" y="208" text-anchor="middle" font-size="10.5" fill="#b91c1c">→ 排队 / prefill 侧的问题</text>
+
+  <rect x="380" y="170" width="300" height="46" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="530" y="190" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e40af">症状 2 · TPOT 高（decode 慢）</text>
+  <text x="530" y="208" text-anchor="middle" font-size="10.5" fill="#1d4ed8">→ 执行侧的问题</text>
+
+  <rect x="720" y="170" width="300" height="46" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="870" y="190" text-anchor="middle" font-size="13" font-weight="bold" fill="#9a3412">症状 3 · preemption 持续增长</text>
+  <text x="870" y="208" text-anchor="middle" font-size="10.5" fill="#c2410c">→ KV 池小于工作集</text>
+
+  <!-- ================= Column 1 sub-branches ================= -->
+  <rect x="40" y="234" width="300" height="80" rx="7" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+  <text x="55" y="255" font-size="11" font-weight="bold" fill="#991b1b">① Waiting 堆积 + KV usage 低（&lt;50%）</text>
+  <text x="55" y="274" font-size="10.5" fill="#334155">病因：准入保守 → 处方：调大 max_num_seqs</text>
+  <text x="55" y="291" font-size="10" fill="#64748b">代价：TPOT 抖动 / 抢占风险↑</text>
+
+  <rect x="40" y="326" width="300" height="80" rx="7" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+  <text x="55" y="347" font-size="11" font-weight="bold" fill="#991b1b">② Waiting 堆积 + KV usage 高（&gt;90%）</text>
+  <text x="55" y="366" font-size="10.5" fill="#334155">病因：KV 超配 → 处方：FP8 KV / 缩 max_model_len</text>
+  <text x="55" y="383" font-size="10.5" fill="#334155">/ 降 max_num_seqs / 加卡（每个都带代价）</text>
+
+  <rect x="40" y="418" width="300" height="80" rx="7" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+  <text x="55" y="439" font-size="11" font-weight="bold" fill="#991b1b">③ prefill 拥塞（长 prompt 占比高）</text>
+  <text x="55" y="458" font-size="10.5" fill="#334155">处方：调大 max_num_batched_tokens；</text>
+  <text x="55" y="475" font-size="10.5" fill="#334155">查 prefix 命中率；结构性干扰 → P/D 分离</text>
+
+  <!-- ================= Column 2 sub-branches ================= -->
+  <rect x="380" y="234" width="300" height="80" rx="7" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="395" y="255" font-size="11" font-weight="bold" fill="#1e40af">① batch 太大 → 撞算力墙</text>
+  <text x="395" y="274" font-size="10.5" fill="#334155">证据：吞吐-时延曲线拐点（Day 2 实测）</text>
+  <text x="395" y="291" font-size="10.5" fill="#334155">处方：限 max_num_seqs（代价：吞吐↓）</text>
+
+  <rect x="380" y="326" width="300" height="80" rx="7" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="395" y="347" font-size="11" font-weight="bold" fill="#1e40af">② TP 通信占比高</text>
+  <text x="395" y="366" font-size="10.5" fill="#334155">证据：nsys 看 NCCL 时间占比</text>
+  <text x="395" y="383" font-size="10.5" fill="#334155">处方：降 TP 度 / 别跨节点（Day 4：18× 衰减）</text>
+
+  <rect x="380" y="418" width="300" height="80" rx="7" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="395" y="439" font-size="11" font-weight="bold" fill="#1e40af">③ CPU bound（GPU 有空闲间隙）</text>
+  <text x="395" y="458" font-size="10.5" fill="#334155">处方：确认 CUDA Graph / async scheduling 生效</text>
+  <text x="395" y="475" font-size="10" fill="#64748b">（V1 默认 piecewise CUDA Graph）</text>
+
+  <rect x="380" y="510" width="300" height="80" rx="7" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="395" y="531" font-size="11" font-weight="bold" fill="#1e40af">④ 长上下文 → attention 访存涨</text>
+  <text x="395" y="550" font-size="10.5" fill="#334155">处方：KV 量化 / 更快的 attention 后端</text>
+  <text x="395" y="567" font-size="10" fill="#64748b">（对照 Day 1：KV 读取随上下文线性涨）</text>
+
+  <!-- ================= Column 3 sub-branches ================= -->
+  <rect x="720" y="234" width="300" height="80" rx="7" fill="#ffffff" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="735" y="255" font-size="11" font-weight="bold" fill="#9a3412">① KV 池 &lt; 工作集</text>
+  <text x="735" y="274" font-size="10.5" fill="#334155">处方：调低 max_num_seqs</text>
+  <text x="735" y="291" font-size="10.5" font-weight="bold" fill="#c2410c">原则：宁可排队，不可抢占</text>
+
+  <rect x="720" y="326" width="300" height="80" rx="7" fill="#ffffff" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="735" y="347" font-size="11" font-weight="bold" fill="#9a3412">② 抢占的代价（要能报数字）</text>
+  <text x="735" y="366" font-size="10.5" fill="#334155">全量重算 = prompt + 已生成（4896 tok 例）</text>
+  <text x="735" y="383" font-size="10.5" fill="#334155">Day 5 实测浪费 39.5% ≫ 排队等待的代价</text>
+
+  <rect x="720" y="418" width="300" height="80" rx="7" fill="#fffbeb" stroke="#d97706" stroke-width="1.3" stroke-dasharray="6,3"/>
+  <text x="735" y="439" font-size="11" font-weight="bold" fill="#92400e">③ 症状 3 ≈ 症状 1-② 的进阶形态</text>
+  <text x="735" y="458" font-size="10.5" fill="#334155">先治 KV 超配（FP8 KV / 缩 max_model_len），</text>
+  <text x="735" y="475" font-size="10.5" fill="#334155">抢占计数自然回落——治因不治症</text>
+
+  <!-- connector lines within columns -->
+  <line x1="190" y1="216" x2="190" y2="232" stroke="#f87171" stroke-width="1.6" marker-end="url(#dtR)"/>
+  <line x1="530" y1="216" x2="530" y2="232" stroke="#60a5fa" stroke-width="1.6" marker-end="url(#dtB)"/>
+  <line x1="870" y1="216" x2="870" y2="232" stroke="#fb923c" stroke-width="1.6" marker-end="url(#dtO)"/>
+
+  <!-- ================= Bottom principles ================= -->
+  <rect x="40" y="630" width="980" height="70" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="1.8"/>
+  <text x="530" y="655" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e293b">通用工程原则（评分点，背下来）</text>
+  <text x="530" y="675" text-anchor="middle" font-size="11" fill="#475569">先分诊再开方 · 指标名要具体（Waiting 深度 / KV usage / 命中率 / preemption 计数） · 每个处方带代价 · 一次只动一个参数、动完重测</text>
+  <text x="530" y="692" text-anchor="middle" font-size="11" fill="#475569">数据挂钩：「这个曲线形状我在 Day 2 压测里见过——TTFT 随并发先平后陡，拐点就是 waiting 开始堆积」</text>
+</svg>

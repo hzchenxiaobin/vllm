@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="760" viewBox="0 0 1000 760" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrD" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#475569"/>
+    </marker>
+    <marker id="arrO" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#ea580c"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="760" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">Prefix Caching：链式 Block Hash、引用计数与 COW</text>
+  <text x="500" y="50" text-anchor="middle" font-size="12" fill="#64748b">hash_i = H(hash_{i-1}, tokens_i, extra_keys)，只哈希满块（block_size=16）· Merkle 性质：前缀变一块，其后全变 · 缓存即容量（ref_cnt=0 → LRU 可逐出）</text>
+
+  <!-- ================= Panel 1: hit ================= -->
+  <rect x="40" y="70" width="560" height="330" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="56" y="94" font-size="13" font-weight="bold" fill="#14532d">① 前缀命中：请求 B 复用请求 A 的 system prompt 块</text>
+  <text x="56" y="114" font-size="10.5" fill="#166534" font-family="monospace">hash_1=H(seed,tok_1,extra) → hash_2=H(hash_1,tok_2) → hash_3=H(hash_2,tok_3) → …</text>
+
+  <!-- row A -->
+  <text x="56" y="140" font-size="10.5" fill="#334155">请求 A</text>
+  <g>
+    <rect x="130" y="126" width="84" height="32" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
+    <rect x="228" y="126" width="84" height="32" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
+    <rect x="326" y="126" width="84" height="32" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
+    <rect x="424" y="126" width="84" height="32" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/>
+    <rect x="522" y="126" width="60" height="32" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+  <g font-size="11" font-family="monospace" text-anchor="middle" fill="#14532d">
+    <text x="172" y="146">h1</text><text x="270" y="146">h2</text><text x="368" y="146">h3</text>
+  </g>
+  <g font-size="11" font-family="monospace" text-anchor="middle" fill="#1e3a8a">
+    <text x="466" y="146">h4</text><text x="552" y="146">h5</text>
+  </g>
+  <g stroke="#475569" stroke-width="1.5" marker-end="url(#arrD)">
+    <line x1="214" y1="142" x2="226" y2="142"/>
+    <line x1="312" y1="142" x2="324" y2="142"/>
+    <line x1="410" y1="142" x2="422" y2="142"/>
+    <line x1="508" y1="142" x2="520" y2="142"/>
+  </g>
+  <text x="230" y="170" text-anchor="middle" font-size="9.5" fill="#166534">system prompt（3 个满块，已注册进缓存表）</text>
+  <text x="483" y="170" text-anchor="middle" font-size="9.5" fill="#1e3a8a">A 的问题 1（A 私有）</text>
+
+  <!-- row B -->
+  <text x="56" y="212" font-size="10.5" fill="#334155">请求 B</text>
+  <g>
+    <rect x="130" y="198" width="84" height="32" fill="#86efac" stroke="#16a34a" stroke-width="2.5"/>
+    <rect x="228" y="198" width="84" height="32" fill="#86efac" stroke="#16a34a" stroke-width="2.5"/>
+    <rect x="326" y="198" width="84" height="32" fill="#86efac" stroke="#16a34a" stroke-width="2.5"/>
+    <rect x="424" y="198" width="84" height="32" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <rect x="522" y="198" width="60" height="32" fill="#ddd6fe" stroke="#7c3aed" stroke-width="1.5"/>
+  </g>
+  <g font-size="10" font-family="monospace" text-anchor="middle" fill="#14532d">
+    <text x="172" y="218">h1 ✓</text><text x="270" y="218">h2 ✓</text><text x="368" y="218">h3 ✓</text>
+  </g>
+  <g font-size="10" font-family="monospace" text-anchor="middle" fill="#4c1d95">
+    <text x="466" y="218">h4'</text><text x="552" y="218">h5'</text>
+  </g>
+  <text x="230" y="242" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#166534">命中：ref_cnt=2，直接指向 A 的物理块（不重算、不占新块）</text>
+  <text x="483" y="242" text-anchor="middle" font-size="9.5" fill="#4c1d95">未命中 → 新块 + 重算</text>
+
+  <!-- COW box -->
+  <rect x="56" y="262" width="528" height="124" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="70" y="284" font-size="11.5" font-weight="bold" fill="#9a3412">COW：往共享块写入前先复制（SchedulerOutput.blocks_to_copy → 设备侧拷贝）</text>
+  <rect x="80" y="300" width="150" height="36" fill="#86efac" stroke="#16a34a" stroke-width="2"/>
+  <text x="155" y="322" text-anchor="middle" font-size="10.5" fill="#14532d">共享块 ref_cnt=2</text>
+  <line x1="230" y1="312" x2="300" y2="306" stroke="#475569" stroke-width="1.5" marker-end="url(#arrD)"/>
+  <line x1="230" y1="324" x2="300" y2="336" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arrO)"/>
+  <text x="308" y="310" font-size="10.5" fill="#334155">A：只读共享块，继续用（不复制）</text>
+  <text x="308" y="340" font-size="10.5" fill="#9a3412">B：要往块里追加写 → 先复制私有副本再写</text>
+  <text x="70" y="372" font-size="10" fill="#9a3412">触发：命中链的尾块被部分覆盖 / 前缀分叉落在块中间 —— 类比 OS 的 fork COW</text>
+
+  <!-- ================= Panel 2: salt ================= -->
+  <rect x="620" y="70" width="340" height="330" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="636" y="94" font-size="13" font-weight="bold" fill="#4c1d95">② cache_salt：多租户隔离</text>
+
+  <text x="650" y="122" font-size="10.5" fill="#334155">租户 X（salt_X）：</text>
+  <g>
+    <rect x="650" y="130" width="70" height="28" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
+    <rect x="728" y="130" width="70" height="28" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
+    <rect x="806" y="130" width="70" height="28" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
+  </g>
+  <g font-size="10" font-family="monospace" text-anchor="middle" fill="#14532d">
+    <text x="685" y="148">h1</text><text x="763" y="148">h2</text><text x="841" y="148">h3</text>
+  </g>
+
+  <text x="650" y="186" font-size="10.5" fill="#334155">租户 Y（salt_Y，token 相同）：</text>
+  <g>
+    <rect x="650" y="194" width="70" height="28" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <rect x="728" y="194" width="70" height="28" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <rect x="806" y="194" width="70" height="28" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+  </g>
+  <g font-size="10" font-family="monospace" text-anchor="middle" fill="#9a3412">
+    <text x="685" y="212">h1'</text><text x="763" y="212">h2'</text><text x="841" y="212">h3'</text>
+  </g>
+  <text x="920" y="178" text-anchor="middle" font-size="22" font-weight="bold" fill="#dc2626">≠</text>
+
+  <text x="636" y="252" font-size="9.5" fill="#4c1d95" font-family="monospace">h1 = H(seed, tok, ("cache_salt", salt))</text>
+  <text x="636" y="278" font-size="10" fill="#334155">· 盐只掺进第一块，经链式传播 →</text>
+  <text x="636" y="294" font-size="10" fill="#334155">　 整条前缀链的 hash 全部不同</text>
+  <text x="636" y="320" font-size="10" fill="#334155">· 防：TTFT 侧信道探测（「快 = 有人问过」）</text>
+  <text x="636" y="336" font-size="10" fill="#334155">　 + 跨租户 KV 复用（合规要求）</text>
+  <text x="636" y="362" font-size="10" font-weight="bold" fill="#7c3aed">· 代价：隔离 vs 复用是 trade-off，</text>
+  <text x="636" y="378" font-size="10" font-weight="bold" fill="#7c3aed">　 小租户命中率 ≈ 0 —— 由产品决定，不由引擎决定</text>
+
+  <!-- ================= Panel 3: granularity ================= -->
+  <rect x="40" y="420" width="920" height="300" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="56" y="444" font-size="13" font-weight="bold" fill="#1e3a8a">③ 命中粒度是 block（16 token）：对齐才有命中</text>
+
+  <text x="56" y="482" font-size="10.5" fill="#334155">共享前缀 1001 tok，对齐：</text>
+  <rect x="250" y="468" width="594" height="30" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
+  <rect x="844" y="468" width="10" height="30" fill="#fecaca" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="545" y="487" text-anchor="middle" font-size="10.5" fill="#14532d">命中 ⌊1001/16⌋ = 62 块 = 992 token ✓</text>
+  <text x="862" y="516" font-size="9.5" fill="#b91c1c">尾 9 tok 不满一块 → 不命中</text>
+
+  <text x="56" y="542" font-size="10.5" fill="#334155">同一前缀，开头多 1 tok（错位）：</text>
+  <rect x="250" y="528" width="604" height="30" fill="#fecaca" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="552" y="547" text-anchor="middle" font-size="10.5" fill="#991b1b">从第 1 块起 hash 全部不同 → 命中 0（Merkle 性质：错一块，其后全变）</text>
+
+  <text x="56" y="592" font-size="10.5" fill="#334155">· 收益只落在 TTFT 的 prefill 项：<tspan font-family="monospace">TTFT ≈ T_queue + (1−h)·2PN/(ηF) + T_overhead</tspan> —— 命中率 50% ≠ TTFT 减半</text>
+  <text x="56" y="616" font-size="10.5" fill="#334155">· 附带收益：并发的同前缀请求共享物理块 —— 4K 前缀 × 144 KiB/token ≈ 590 MB/份只存一份</text>
+  <text x="56" y="640" font-size="10.5" fill="#334155">· 工作集 &gt; KV 池 → LRU 在重用前逐出 → 命中率随负载震荡（缓存抖动；「缓存即容量」的另一面）</text>
+  <text x="56" y="664" font-size="10.5" fill="#334155">· 工程：共享 system prompt 长度凑成 16 的倍数；观测看引擎日志 <tspan font-family="monospace">Prefix cache hit rate</tspan>（random 数据集 ≈0% 是正常的）</text>
+</svg>

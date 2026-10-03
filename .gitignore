@@ -4,3 +4,4 @@
 public/
 __pycache__/
 build/__pycache__/
+logs/

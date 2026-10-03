@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="620" fill="#ffffff"/>
+  <text x="500" y="34" text-anchor="middle" font-size="21" font-weight="bold" fill="#1e293b">Prefill vs Decode：同一次权重读取的两种命运</text>
+  <text x="500" y="54" text-anchor="middle" font-size="12" fill="#64748b">算术强度 AI = FLOPs / Bytes（FLOP/Byte）；与硬件脊点比较即可判定瓶颈</text>
+
+  <!-- ================= Left panel: Prefill ================= -->
+  <rect x="20" y="76" width="470" height="308" rx="10" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="255" y="102" text-anchor="middle" font-size="16" font-weight="bold" fill="#047857">Prefill · 预填充（N 个 prompt token 一次并行）</text>
+
+  <!-- token row -->
+  <g font-size="12" fill="#065f46">
+    <rect x="60"  y="118" width="52" height="26" rx="4" fill="#ffffff" stroke="#059669"/><text x="86"  y="135" text-anchor="middle">t₁</text>
+    <rect x="120" y="118" width="52" height="26" rx="4" fill="#ffffff" stroke="#059669"/><text x="146" y="135" text-anchor="middle">t₂</text>
+    <rect x="180" y="118" width="52" height="26" rx="4" fill="#ffffff" stroke="#059669"/><text x="206" y="135" text-anchor="middle">t₃</text>
+    <rect x="240" y="118" width="52" height="26" rx="4" fill="#ffffff" stroke="#059669"/><text x="266" y="135" text-anchor="middle">t₄</text>
+    <text x="312" y="136" font-size="13">…</text>
+    <rect x="330" y="118" width="52" height="26" rx="4" fill="#d1fae5" stroke="#059669" stroke-width="2"/><text x="356" y="135" text-anchor="middle">t_N</text>
+  </g>
+  <text x="410" y="136" font-size="12" fill="#047857">N 个 token 同时算</text>
+
+  <line x1="255" y1="150" x2="255" y2="172" stroke="#059669" stroke-width="2" marker-end="url(#arrG)"/>
+
+  <!-- forward box -->
+  <rect x="70" y="176" width="370" height="52" rx="6" fill="#059669"/>
+  <text x="255" y="197" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">Transformer 前向 ×64 层</text>
+  <text x="255" y="215" text-anchor="middle" font-size="11" fill="#d1fae5">权重 W = P·b_w 只读 1 次，被 N 个 token 摊销</text>
+
+  <line x1="160" y1="228" x2="160" y2="250" stroke="#059669" stroke-width="2" marker-end="url(#arrG)"/>
+  <line x1="350" y1="228" x2="350" y2="250" stroke="#059669" stroke-width="2" marker-end="url(#arrG)"/>
+
+  <!-- outputs -->
+  <rect x="70" y="254" width="180" height="46" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1.5"/>
+  <text x="160" y="273" text-anchor="middle" font-size="12" font-weight="bold" fill="#047857">KV cache × N</text>
+  <text x="160" y="290" text-anchor="middle" font-size="11" fill="#047857">全量生成（含最后一个块）</text>
+  <rect x="270" y="254" width="170" height="46" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1.5"/>
+  <text x="355" y="273" text-anchor="middle" font-size="12" font-weight="bold" fill="#047857">第 1 个输出 token</text>
+  <text x="355" y="290" text-anchor="middle" font-size="11" fill="#047857">决定 TTFT</text>
+
+  <!-- metrics -->
+  <rect x="40" y="316" width="430" height="52" rx="6" fill="#ffffff" stroke="#059669" stroke-dasharray="4 3"/>
+  <text x="255" y="336" text-anchor="middle" font-size="12" fill="#0f172a">每步计算 ≈ 2·P·N ｜ 每步访存 ≈ W（读 1 次）</text>
+  <text x="255" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#047857">AI ≈ 2N / b_w（N=2048, FP16 → 2048）→ Compute-bound</text>
+
+  <!-- ================= Right panel: Decode ================= -->
+  <rect x="510" y="76" width="470" height="308" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="745" y="102" text-anchor="middle" font-size="16" font-weight="bold" fill="#c2410c">Decode · 自回归解码（每步每序列 1 个 token）</text>
+
+  <!-- loop -->
+  <rect x="540" y="122" width="150" height="40" rx="6" fill="#ffffff" stroke="#ea580c"/>
+  <text x="615" y="139" text-anchor="middle" font-size="12" fill="#9a3412">上一步输出 token</text>
+  <text x="615" y="155" text-anchor="middle" font-size="11" fill="#9a3412">（第 1 个来自 prefill）</text>
+
+  <line x1="690" y1="142" x2="740" y2="142" stroke="#ea580c" stroke-width="2" marker-end="url(#arrO)"/>
+
+  <rect x="745" y="114" width="200" height="58" rx="6" fill="#ea580c"/>
+  <text x="845" y="137" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">Transformer 前向</text>
+  <text x="845" y="156" text-anchor="middle" font-size="10.5" fill="#ffedd5">每步重读：全部权重 W + 全部历史 KV</text>
+
+  <line x1="845" y1="172" x2="845" y2="198" stroke="#ea580c" stroke-width="2" marker-end="url(#arrO)"/>
+  <rect x="770" y="202" width="150" height="36" rx="6" fill="#ffffff" stroke="#ea580c"/>
+  <text x="845" y="225" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">新 token → 追加 KV</text>
+
+  <!-- feedback arrow -->
+  <path d="M 770 220 H 615 V 166" fill="none" stroke="#ea580c" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrO)"/>
+  <text x="688" y="212" text-anchor="middle" font-size="11" fill="#c2410c">自回归循环，直到 EOS</text>
+
+  <!-- KV strip -->
+  <text x="545" y="272" font-size="12" fill="#9a3412">第 t 步要读的 KV（全量回看）：</text>
+  <g font-size="10" fill="#9a3412">
+    <rect x="545" y="280" width="42" height="24" rx="3" fill="#ffedd5" stroke="#ea580c"/><text x="566" y="296" text-anchor="middle">K₁V₁</text>
+    <rect x="591" y="280" width="42" height="24" rx="3" fill="#ffedd5" stroke="#ea580c"/><text x="612" y="296" text-anchor="middle">K₂V₂</text>
+    <rect x="637" y="280" width="42" height="24" rx="3" fill="#ffedd5" stroke="#ea580c"/><text x="658" y="296" text-anchor="middle">K₃V₃</text>
+    <rect x="683" y="280" width="42" height="24" rx="3" fill="#ffedd5" stroke="#ea580c"/><text x="704" y="296" text-anchor="middle">…</text>
+    <rect x="729" y="280" width="46" height="24" rx="3" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/><text x="752" y="296" text-anchor="middle">KₜVₜ</text>
+  </g>
+  <text x="800" y="296" font-size="11" fill="#c2410c">← t 随生成线性增长</text>
+
+  <!-- metrics -->
+  <rect x="530" y="316" width="430" height="52" rx="6" fill="#ffffff" stroke="#ea580c" stroke-dasharray="4 3"/>
+  <text x="745" y="336" text-anchor="middle" font-size="12" fill="#0f172a">每步计算 ≈ 2·P ｜ 每步访存 ≈ W + KV(t)</text>
+  <text x="745" y="356" text-anchor="middle" font-size="13" font-weight="bold" fill="#c2410c">AI ≈ 2 / b_w（FP16 → ≈1，与模型大小无关）→ Memory-bound</text>
+
+  <!-- ================= Bottom: log-scale axis ================= -->
+  <text x="500" y="424" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e293b">算术强度谱系（对数轴，FP16）</text>
+
+  <!-- regions -->
+  <rect x="70" y="448" width="597" height="70" fill="#ffedd5" opacity="0.55"/>
+  <rect x="667" y="448" width="263" height="70" fill="#d1fae5" opacity="0.55"/>
+  <text x="200" y="470" font-size="12" font-weight="bold" fill="#c2410c">Memory-bound 区（撞带宽墙）</text>
+  <text x="720" y="470" font-size="12" font-weight="bold" fill="#047857">Compute-bound 区（撞算力墙）</text>
+
+  <!-- axis line -->
+  <line x1="70" y1="518" x2="930" y2="518" stroke="#1e293b" stroke-width="2"/>
+  <!-- ticks: 0.1, 1, 10, 100, 1000, 10000 -->
+  <g font-size="11" fill="#475569" text-anchor="middle">
+    <line x1="70"  y1="518" x2="70"  y2="526" stroke="#1e293b"/><text x="70"  y="542">0.1</text>
+    <line x1="242" y1="518" x2="242" y2="526" stroke="#1e293b"/><text x="242" y="542">1</text>
+    <line x1="414" y1="518" x2="414" y2="526" stroke="#1e293b"/><text x="414" y="542">10</text>
+    <line x1="586" y1="518" x2="586" y2="526" stroke="#1e293b"/><text x="586" y="542">100</text>
+    <line x1="758" y1="518" x2="758" y2="526" stroke="#1e293b"/><text x="758" y="542">1000</text>
+    <line x1="930" y1="518" x2="930" y2="526" stroke="#1e293b"/><text x="930" y="542">10⁴ FLOP/Byte</text>
+  </g>
+
+  <!-- ridge line at 296 -> x=667 -->
+  <line x1="667" y1="440" x2="667" y2="518" stroke="#334155" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="667" y="436" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">H100 脊点 ≈ 296（990 TFLOPS ÷ 3.35 TB/s）</text>
+
+  <!-- decode marker at 1 -> x=242 -->
+  <circle cx="242" cy="498" r="9" fill="#ea580c"/>
+  <text x="242" y="502" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">D</text>
+  <text x="242" y="483" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#c2410c">Decode(b=1)：AI≈1</text>
+
+  <!-- prefill marker at 2048 -> x=811 -->
+  <circle cx="811" cy="498" r="9" fill="#059669"/>
+  <text x="811" y="502" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">P</text>
+  <text x="811" y="483" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#047857">Prefill(N=2048)：AI≈2048</text>
+
+  <text x="500" y="578" text-anchor="middle" font-size="12" fill="#475569">Decode 即使打满 HBM 带宽，算力利用率也仅 ≈ 1/296 ≈ 0.3% —— 这就是 memory-bound 的定量含义</text>
+  <text x="500" y="598" text-anchor="middle" font-size="12" fill="#475569">推论：优化 decode = 减少字节读取（量化 / batching / 投机解码）；优化 prefill = 提升算力利用率（更大 batch、更好 kernel）</text>
+
+  <defs>
+    <marker id="arrG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#059669"/></marker>
+    <marker id="arrO" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#ea580c"/></marker>
+  </defs>
+</svg>
