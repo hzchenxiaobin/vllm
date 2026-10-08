@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="810" viewBox="0 0 1000 810" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="810" fill="#ffffff"/>
+  <text x="500" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">MHA · GQA · MQA：Q 头与 KV 头的三种配对方式</text>
+  <text x="500" y="54" text-anchor="middle" font-size="12" fill="#64748b">以 q_heads = 8 为例：变的是 kv_heads（8 → 2 → 1），不变的是 Q 头数、head_dim 与输出维度</text>
+
+  <!-- ================= Panel 1: MHA ================= -->
+  <rect x="30" y="76" width="940" height="204" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="50" y="104" font-size="15.5" font-weight="bold" fill="#1e40af">① MHA · Multi-Head Attention</text>
+  <text x="50" y="124" font-size="11" fill="#3b5bdb">2017 · Transformer 原始设计：每个 Q 头独占一组 K/V</text>
+  <text x="52" y="148" font-size="10.5" fill="#1e40ab" font-weight="bold">Q 头 ×8</text>
+
+  <g fill="#dbeafe" stroke="#2563eb" stroke-width="1.5">
+    <circle cx="105" cy="170" r="15"/><circle cx="167" cy="170" r="15"/><circle cx="229" cy="170" r="15"/><circle cx="291" cy="170" r="15"/>
+    <circle cx="353" cy="170" r="15"/><circle cx="415" cy="170" r="15"/><circle cx="477" cy="170" r="15"/><circle cx="539" cy="170" r="15"/>
+  </g>
+  <g font-size="9.5" fill="#1e40af" text-anchor="middle">
+    <text x="105" y="174">Q₁</text><text x="167" y="174">Q₂</text><text x="229" y="174">Q₃</text><text x="291" y="174">Q₄</text>
+    <text x="353" y="174">Q₅</text><text x="415" y="174">Q₆</text><text x="477" y="174">Q₇</text><text x="539" y="174">Q₈</text>
+  </g>
+  <g stroke="#2563eb" stroke-width="1.6">
+    <line x1="105" y1="185" x2="105" y2="219"/><line x1="167" y1="185" x2="167" y2="219"/>
+    <line x1="229" y1="185" x2="229" y2="219"/><line x1="291" y1="185" x2="291" y2="219"/>
+    <line x1="353" y1="185" x2="353" y2="219"/><line x1="415" y1="185" x2="415" y2="219"/>
+    <line x1="477" y1="185" x2="477" y2="219"/><line x1="539" y1="185" x2="539" y2="219"/>
+  </g>
+  <g fill="#bfdbfe" stroke="#2563eb" stroke-width="2">
+    <circle cx="105" cy="240" r="17"/><circle cx="167" cy="240" r="17"/><circle cx="229" cy="240" r="17"/><circle cx="291" cy="240" r="17"/>
+    <circle cx="353" cy="240" r="17"/><circle cx="415" cy="240" r="17"/><circle cx="477" cy="240" r="17"/><circle cx="539" cy="240" r="17"/>
+  </g>
+  <g font-size="9" fill="#1e3a8a" text-anchor="middle" font-weight="bold">
+    <text x="105" y="244">KV₁</text><text x="167" y="244">KV₂</text><text x="229" y="244">KV₃</text><text x="291" y="244">KV₄</text>
+    <text x="353" y="244">KV₅</text><text x="415" y="244">KV₆</text><text x="477" y="244">KV₇</text><text x="539" y="244">KV₈</text>
+  </g>
+  <text x="52" y="270" font-size="10.5" fill="#1e40af">q_heads = kv_heads = 8（一对一）</text>
+
+  <rect x="600" y="92" width="132" height="26" rx="13" fill="#ffffff" stroke="#2563eb"/>
+  <text x="666" y="109" text-anchor="middle" font-size="11.5" font-family="Menlo, Consolas, monospace" fill="#1e40af">kv_heads = 8</text>
+  <text x="600" y="148" font-size="11" fill="#334155">每 token 存 K/V 的份数：</text>
+  <g fill="#2563eb">
+    <rect x="600" y="158" width="26" height="26" rx="4"/><rect x="630" y="158" width="26" height="26" rx="4"/>
+    <rect x="660" y="158" width="26" height="26" rx="4"/><rect x="690" y="158" width="26" height="26" rx="4"/>
+    <rect x="720" y="158" width="26" height="26" rx="4"/><rect x="750" y="158" width="26" height="26" rx="4"/>
+    <rect x="780" y="158" width="26" height="26" rx="4"/><rect x="810" y="158" width="26" height="26" rx="4"/>
+  </g>
+  <text x="600" y="228" font-size="19" font-weight="bold" fill="#1e40af">1×（基准）</text>
+  <text x="600" y="250" font-size="11" fill="#475569">代表：GPT-2/3 · Llama-1/2 · BERT</text>
+  <text x="600" y="268" font-size="11" fill="#475569">质量上限；KV 显存最大</text>
+
+  <!-- ================= Panel 2: GQA ================= -->
+  <rect x="30" y="296" width="940" height="204" rx="10" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+  <text x="50" y="324" font-size="15.5" font-weight="bold" fill="#047857">② GQA · Grouped-Query Attention</text>
+  <text x="50" y="344" font-size="11" fill="#059669">2023 · 组内 Q 头共享一组 K/V：质量 ≈ MHA，显存 ÷4~8</text>
+  <text x="52" y="368" font-size="10.5" fill="#047857" font-weight="bold">Q 头 ×8</text>
+
+  <g fill="#dbeafe" stroke="#2563eb" stroke-width="1.5">
+    <circle cx="105" cy="390" r="15"/><circle cx="167" cy="390" r="15"/><circle cx="229" cy="390" r="15"/><circle cx="291" cy="390" r="15"/>
+    <circle cx="353" cy="390" r="15"/><circle cx="415" cy="390" r="15"/><circle cx="477" cy="390" r="15"/><circle cx="539" cy="390" r="15"/>
+  </g>
+  <g font-size="9.5" fill="#1e40af" text-anchor="middle">
+    <text x="105" y="394">Q₁</text><text x="167" y="394">Q₂</text><text x="229" y="394">Q₃</text><text x="291" y="394">Q₄</text>
+    <text x="353" y="394">Q₅</text><text x="415" y="394">Q₆</text><text x="477" y="394">Q₇</text><text x="539" y="394">Q₈</text>
+  </g>
+  <g stroke="#059669" stroke-width="1.6">
+    <line x1="105" y1="405" x2="198" y2="438"/><line x1="167" y1="405" x2="198" y2="438"/>
+    <line x1="229" y1="405" x2="198" y2="438"/><line x1="291" y1="405" x2="198" y2="438"/>
+    <line x1="353" y1="405" x2="446" y2="438"/><line x1="415" y1="405" x2="446" y2="438"/>
+    <line x1="477" y1="405" x2="446" y2="438"/><line x1="539" y1="405" x2="446" y2="438"/>
+  </g>
+  <g fill="#a7f3d0" stroke="#059669" stroke-width="2">
+    <circle cx="198" cy="460" r="19"/><circle cx="446" cy="460" r="19"/>
+  </g>
+  <g font-size="9.5" fill="#065f46" text-anchor="middle" font-weight="bold">
+    <text x="198" y="464">KV₁</text><text x="446" y="464">KV₂</text>
+  </g>
+  <text x="52" y="492" font-size="10.5" fill="#047857">q_heads=8，kv_heads=2：每 4 个 Q 头共享 1 组 K/V</text>
+
+  <rect x="600" y="312" width="132" height="26" rx="13" fill="#ffffff" stroke="#059669"/>
+  <text x="666" y="329" text-anchor="middle" font-size="11.5" font-family="Menlo, Consolas, monospace" fill="#047857">kv_heads = 2</text>
+  <text x="600" y="368" font-size="11" fill="#334155">每 token 存 K/V 的份数：</text>
+  <g>
+    <rect x="600" y="378" width="26" height="26" rx="4" fill="#059669"/>
+    <rect x="630" y="378" width="26" height="26" rx="4" fill="#059669"/>
+    <rect x="660" y="378" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="690" y="378" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="720" y="378" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="750" y="378" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="780" y="378" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="810" y="378" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+  </g>
+  <text x="600" y="448" font-size="19" font-weight="bold" fill="#047857">1/4 ×</text>
+  <text x="600" y="470" font-size="11" fill="#475569">代表：Llama-3 · Qwen2/3 · Mistral · Gemma-2</text>
+  <text x="600" y="488" font-size="11" fill="#475569">现代主流（g 常取 4~8）</text>
+
+  <!-- ================= Panel 3: MQA ================= -->
+  <rect x="30" y="516" width="940" height="204" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="50" y="544" font-size="15.5" font-weight="bold" fill="#c2410c">③ MQA · Multi-Query Attention</text>
+  <text x="50" y="564" font-size="11" fill="#ea580c">2019 · 全部 Q 头共享唯一一组 K/V：显存最省，质量受损</text>
+  <text x="52" y="588" font-size="10.5" fill="#c2410c" font-weight="bold">Q 头 ×8</text>
+
+  <g fill="#dbeafe" stroke="#2563eb" stroke-width="1.5">
+    <circle cx="105" cy="610" r="15"/><circle cx="167" cy="610" r="15"/><circle cx="229" cy="610" r="15"/><circle cx="291" cy="610" r="15"/>
+    <circle cx="353" cy="610" r="15"/><circle cx="415" cy="610" r="15"/><circle cx="477" cy="610" r="15"/><circle cx="539" cy="610" r="15"/>
+  </g>
+  <g font-size="9.5" fill="#1e40af" text-anchor="middle">
+    <text x="105" y="614">Q₁</text><text x="167" y="614">Q₂</text><text x="229" y="614">Q₃</text><text x="291" y="614">Q₄</text>
+    <text x="353" y="614">Q₅</text><text x="415" y="614">Q₆</text><text x="477" y="614">Q₇</text><text x="539" y="614">Q₈</text>
+  </g>
+  <g stroke="#ea580c" stroke-width="1.6">
+    <line x1="105" y1="625" x2="322" y2="656"/><line x1="167" y1="625" x2="322" y2="656"/>
+    <line x1="229" y1="625" x2="322" y2="656"/><line x1="291" y1="625" x2="322" y2="656"/>
+    <line x1="353" y1="625" x2="322" y2="656"/><line x1="415" y1="625" x2="322" y2="656"/>
+    <line x1="477" y1="625" x2="322" y2="656"/><line x1="539" y1="625" x2="322" y2="656"/>
+  </g>
+  <circle cx="322" cy="680" r="21" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/>
+  <text x="322" y="684" text-anchor="middle" font-size="10" font-weight="bold" fill="#9a3412">KV₁</text>
+  <text x="52" y="712" font-size="10.5" fill="#c2410c">q_heads=8，kv_heads=1：8 个 Q 头全共享</text>
+
+  <rect x="600" y="532" width="132" height="26" rx="13" fill="#ffffff" stroke="#ea580c"/>
+  <text x="666" y="549" text-anchor="middle" font-size="11.5" font-family="Menlo, Consolas, monospace" fill="#c2410c">kv_heads = 1</text>
+  <text x="600" y="588" font-size="11" fill="#334155">每 token 存 K/V 的份数：</text>
+  <g>
+    <rect x="600" y="598" width="26" height="26" rx="4" fill="#ea580c"/>
+    <rect x="630" y="598" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="660" y="598" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="690" y="598" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="720" y="598" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="750" y="598" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="780" y="598" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+    <rect x="810" y="598" width="26" height="26" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="3 2"/>
+  </g>
+  <text x="600" y="668" font-size="19" font-weight="bold" fill="#c2410c">1/8 ×</text>
+  <text x="600" y="690" font-size="11" fill="#475569">代表：PaLM · Falcon-7B · StarCoder</text>
+  <text x="600" y="708" font-size="11" fill="#475569">显存最省；质量下降明显</text>
+
+  <!-- ================= Summary ================= -->
+  <rect x="30" y="740" width="940" height="54" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.2"/>
+  <text x="500" y="762" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">质量：MHA ≈ GQA ＞ MQA ｜ KV cache：MHA 1× ＞ GQA 1/4~1/8 ＞ MQA 1/q_heads ｜ Q 头数与输出维度：三者相同</text>
+  <text x="500" y="784" text-anchor="middle" font-size="11.5" fill="#475569">工程默认解是 GQA（Llama-2-70B 起被旗舰模型广泛采用，Llama-3 全系）；MQA 追求极致显存但伤质量；MLA（DeepSeek）另走低秩压缩路线</text>
+</svg>

@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" viewBox="0 0 1000 700" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="700" fill="#ffffff"/>
+  <text x="500" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">Q/K/V 投影与切头：q_heads 与 kv_heads 数的是什么</text>
+  <text x="500" y="54" text-anchor="middle" font-size="12" fill="#64748b">示例：d_model=1024，q_heads=8，kv_heads=8（MHA 情形），head_dim=128 ｜ 真实模型如 Llama-3-8B：4096 维、32 个 Q 头</text>
+
+  <!-- hidden state -->
+  <rect x="30" y="230" width="118" height="100" rx="8" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+  <text x="89" y="270" text-anchor="middle" font-size="16" font-weight="bold" fill="#1e293b">x_t</text>
+  <text x="89" y="292" text-anchor="middle" font-size="10.5" fill="#475569">当前 token</text>
+  <text x="89" y="308" text-anchor="middle" font-size="10.5" fill="#475569">隐状态 1024 维</text>
+
+  <!-- arrows x -> projections -->
+  <line x1="150" y1="274" x2="168" y2="128" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrS)"/>
+  <line x1="150" y1="280" x2="168" y2="280" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrS)"/>
+  <line x1="150" y1="286" x2="168" y2="434" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrS)"/>
+
+  <!-- projection boxes -->
+  <rect x="172" y="98" width="158" height="52" rx="6" fill="#2563eb"/>
+  <text x="251" y="119" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">W_Q 投影</text>
+  <text x="251" y="137" text-anchor="middle" font-size="10.5" fill="#dbeafe">1024 × 1024</text>
+
+  <rect x="172" y="254" width="158" height="52" rx="6" fill="#b45309"/>
+  <text x="251" y="275" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">W_K 投影</text>
+  <text x="251" y="293" text-anchor="middle" font-size="10.5" fill="#fef3c7">1024 × (kv_heads·128)</text>
+
+  <rect x="172" y="410" width="158" height="52" rx="6" fill="#7c3aed"/>
+  <text x="251" y="431" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">W_V 投影</text>
+  <text x="251" y="449" text-anchor="middle" font-size="10.5" fill="#ede9fe">1024 × (kv_heads·128)</text>
+
+  <!-- fan lines W -> head cells -->
+  <g stroke="#2563eb" stroke-width="1.2" opacity="0.65">
+    <line x1="330" y1="124" x2="386" y2="120"/><line x1="330" y1="124" x2="457" y2="120"/>
+    <line x1="330" y1="124" x2="528" y2="120"/><line x1="330" y1="124" x2="599" y2="120"/>
+    <line x1="330" y1="124" x2="670" y2="120"/><line x1="330" y1="124" x2="741" y2="120"/>
+    <line x1="330" y1="124" x2="812" y2="120"/><line x1="330" y1="124" x2="883" y2="120"/>
+  </g>
+  <g stroke="#b45309" stroke-width="1.2" opacity="0.65">
+    <line x1="330" y1="280" x2="386" y2="276"/><line x1="330" y1="280" x2="457" y2="276"/>
+    <line x1="330" y1="280" x2="528" y2="276"/><line x1="330" y1="280" x2="599" y2="276"/>
+    <line x1="330" y1="280" x2="670" y2="276"/><line x1="330" y1="280" x2="741" y2="276"/>
+    <line x1="330" y1="280" x2="812" y2="276"/><line x1="330" y1="280" x2="883" y2="276"/>
+  </g>
+  <g stroke="#7c3aed" stroke-width="1.2" opacity="0.65">
+    <line x1="330" y1="436" x2="386" y2="432"/><line x1="330" y1="436" x2="457" y2="432"/>
+    <line x1="330" y1="436" x2="528" y2="432"/><line x1="330" y1="436" x2="599" y2="432"/>
+    <line x1="330" y1="436" x2="670" y2="432"/><line x1="330" y1="436" x2="741" y2="432"/>
+    <line x1="330" y1="436" x2="812" y2="432"/><line x1="330" y1="436" x2="883" y2="432"/>
+  </g>
+
+  <!-- row captions -->
+  <text x="388" y="84" font-size="11.5" fill="#1e40af">Q 切成 q_heads = 8 份 · 每份 128 维 · config 字段：num_attention_heads</text>
+  <text x="388" y="240" font-size="11.5" fill="#92400e">K 切成 kv_heads 份 · config 字段：num_key_value_heads（本图 MHA：= 8；GQA/MQA 时更少）</text>
+  <text x="388" y="396" font-size="11.5" fill="#6d28d9">V 同 K：kv_heads 份 —— 每 token 只缓存 K/V 各 kv_heads × 128 个数，这就是 KV cache</text>
+
+  <!-- head cells -->
+  <g font-size="12.5" font-weight="bold" text-anchor="middle">
+    <g fill="#dbeafe" stroke="#2563eb">
+      <rect x="388" y="96" width="62" height="48" rx="5"/><rect x="459" y="96" width="62" height="48" rx="5"/>
+      <rect x="530" y="96" width="62" height="48" rx="5"/><rect x="601" y="96" width="62" height="48" rx="5"/>
+      <rect x="672" y="96" width="62" height="48" rx="5"/><rect x="743" y="96" width="62" height="48" rx="5"/>
+      <rect x="814" y="96" width="62" height="48" rx="5"/><rect x="885" y="96" width="62" height="48" rx="5"/>
+    </g>
+    <g fill="#1e40af">
+      <text x="419" y="125">Q₁</text><text x="490" y="125">Q₂</text><text x="561" y="125">Q₃</text><text x="632" y="125">Q₄</text>
+      <text x="703" y="125">Q₅</text><text x="774" y="125">Q₆</text><text x="845" y="125">Q₇</text><text x="916" y="125">Q₈</text>
+    </g>
+    <g fill="#fef3c7" stroke="#b45309">
+      <rect x="388" y="252" width="62" height="48" rx="5"/><rect x="459" y="252" width="62" height="48" rx="5"/>
+      <rect x="530" y="252" width="62" height="48" rx="5"/><rect x="601" y="252" width="62" height="48" rx="5"/>
+      <rect x="672" y="252" width="62" height="48" rx="5"/><rect x="743" y="252" width="62" height="48" rx="5"/>
+      <rect x="814" y="252" width="62" height="48" rx="5"/><rect x="885" y="252" width="62" height="48" rx="5"/>
+    </g>
+    <g fill="#92400e">
+      <text x="419" y="281">K₁</text><text x="490" y="281">K₂</text><text x="561" y="281">K₃</text><text x="632" y="281">K₄</text>
+      <text x="703" y="281">K₅</text><text x="774" y="281">K₆</text><text x="845" y="281">K₇</text><text x="916" y="281">K₈</text>
+    </g>
+    <g fill="#ede9fe" stroke="#7c3aed">
+      <rect x="388" y="408" width="62" height="48" rx="5"/><rect x="459" y="408" width="62" height="48" rx="5"/>
+      <rect x="530" y="408" width="62" height="48" rx="5"/><rect x="601" y="408" width="62" height="48" rx="5"/>
+      <rect x="672" y="408" width="62" height="48" rx="5"/><rect x="743" y="408" width="62" height="48" rx="5"/>
+      <rect x="814" y="408" width="62" height="48" rx="5"/><rect x="885" y="408" width="62" height="48" rx="5"/>
+    </g>
+    <g fill="#6d28d9">
+      <text x="419" y="437">V₁</text><text x="490" y="437">V₂</text><text x="561" y="437">V₃</text><text x="632" y="437">V₄</text>
+      <text x="703" y="437">V₅</text><text x="774" y="437">V₆</text><text x="845" y="437">V₇</text><text x="916" y="437">V₈</text>
+    </g>
+  </g>
+
+  <!-- attention band -->
+  <rect x="388" y="496" width="559" height="50" rx="8" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
+  <text x="667" y="516" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">每个头独立做注意力（8 路并行）：</text>
+  <text x="667" y="536" text-anchor="middle" font-size="12" fill="#334155">Attn_i = softmax( Q_i · K_iᵀ / √128 ) · V_i → 8 个 128 维输出</text>
+
+  <line x1="667" y1="546" x2="667" y2="560" stroke="#334155" stroke-width="2" marker-end="url(#arrD)"/>
+
+  <!-- concat band -->
+  <rect x="388" y="564" width="559" height="46" rx="8" fill="#ffffff" stroke="#334155" stroke-dasharray="4 3"/>
+  <text x="667" y="583" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0f172a">Concat(head₁ … head₈) = 1024 维 → W_O 投影 → 输出</text>
+  <text x="667" y="601" text-anchor="middle" font-size="11" fill="#475569">输出宽度 = q_heads × head_dim，无论 MHA/GQA/MQA 都不变</text>
+
+  <!-- config code box -->
+  <rect x="30" y="500" width="330" height="110" rx="8" fill="#0f172a"/>
+  <text x="48" y="524" font-size="11" fill="#94a3b8">config.json（HuggingFace 格式）</text>
+  <g font-family="Menlo, Consolas, monospace" font-size="12" fill="#e2e8f0">
+    <text x="48" y="546">"num_attention_heads": 8,  // ← q_heads</text>
+    <text x="48" y="566">"num_key_value_heads": 8, // ← kv_heads</text>
+    <text x="48" y="586">"head_dim": 128</text>
+  </g>
+  <text x="195" y="632" text-anchor="middle" font-size="11" fill="#475569">缺省 num_key_value_heads 时取 num_attention_heads → 即 MHA</text>
+
+  <text x="500" y="676" text-anchor="middle" font-size="12" fill="#475569">本图展示 MHA（kv_heads = q_heads = 8）。GQA / MQA 只把 K/V 的份数减少 —— 见下一张图</text>
+
+  <defs>
+    <marker id="arrS" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#64748b"/></marker>
+    <marker id="arrD" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#334155"/></marker>
+  </defs>
+</svg>

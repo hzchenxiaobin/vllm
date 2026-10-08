@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="560" fill="#ffffff"/>
+  <text x="500" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">控制变量对比：只改 kv_heads，KV cache 缩多少</text>
+  <text x="500" y="52" text-anchor="middle" font-size="12" fill="#64748b">固定 32 层 · head_dim 128 · FP16 KV（Llama-3-8B 同款层数配置），上下文 128K</text>
+
+  <rect x="150" y="66" width="700" height="34" rx="17" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="500" y="88" text-anchor="middle" font-size="13" font-family="Menlo, Consolas, monospace" fill="#0f172a">每 token KV = 2 × layers × kv_heads × head_dim × 2B ｜ 128K 总量 = 每 token × 131,072</text>
+
+  <!-- ================= Chart A ================= -->
+  <text x="255" y="128" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">每 token KV cache（KiB）</text>
+
+  <rect x="78" y="140" width="72" height="280" fill="#2563eb"/>
+  <rect x="176" y="350" width="72" height="70" fill="#059669"/>
+  <rect x="274" y="385" width="72" height="35" fill="#10b981"/>
+  <rect x="372" y="411" width="72" height="9" fill="#ea580c"/>
+
+  <g text-anchor="middle">
+    <text x="114" y="122" font-size="14" font-weight="bold" fill="#1e3a8a">512 KiB</text>
+    <text x="114" y="137" font-size="11" fill="#475569">1×（基准）</text>
+    <text x="212" y="332" font-size="14" font-weight="bold" fill="#047857">128 KiB</text>
+    <text x="212" y="346" font-size="11" fill="#475569">1/4</text>
+    <text x="310" y="367" font-size="14" font-weight="bold" fill="#047857">64 KiB</text>
+    <text x="310" y="381" font-size="11" fill="#475569">1/8</text>
+    <text x="408" y="393" font-size="14" font-weight="bold" fill="#c2410c">16 KiB</text>
+    <text x="408" y="407" font-size="11" fill="#475569">1/32</text>
+  </g>
+
+  <line x1="70" y1="420" x2="450" y2="420" stroke="#334155" stroke-width="1.5"/>
+  <text x="70" y="436" font-size="10" fill="#64748b">0</text>
+
+  <g text-anchor="middle">
+    <text x="114" y="442" font-size="12.5" font-weight="bold" fill="#1e293b">MHA</text>
+    <text x="114" y="458" font-size="10.5" fill="#64748b">kv_heads=32</text>
+    <text x="212" y="442" font-size="12.5" font-weight="bold" fill="#1e293b">GQA-8</text>
+    <text x="212" y="458" font-size="10.5" fill="#64748b">kv_heads=8</text>
+    <text x="310" y="442" font-size="12.5" font-weight="bold" fill="#1e293b">GQA-4</text>
+    <text x="310" y="458" font-size="10.5" fill="#64748b">kv_heads=4</text>
+    <text x="408" y="442" font-size="12.5" font-weight="bold" fill="#1e293b">MQA</text>
+    <text x="408" y="458" font-size="10.5" fill="#64748b">kv_heads=1</text>
+  </g>
+
+  <!-- ================= Chart B ================= -->
+  <text x="745" y="128" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">128K 上下文 · 单条序列总 KV（GiB）</text>
+
+  <rect x="568" y="140" width="72" height="280" fill="#2563eb"/>
+  <rect x="666" y="350" width="72" height="70" fill="#059669"/>
+  <rect x="764" y="385" width="72" height="35" fill="#10b981"/>
+  <rect x="862" y="411" width="72" height="9" fill="#ea580c"/>
+
+  <g text-anchor="middle">
+    <text x="604" y="122" font-size="14" font-weight="bold" fill="#1e3a8a">64 GiB</text>
+    <text x="604" y="137" font-size="11" fill="#475569">1×（基准）</text>
+    <text x="702" y="332" font-size="14" font-weight="bold" fill="#047857">16 GiB</text>
+    <text x="702" y="346" font-size="11" fill="#475569">1/4</text>
+    <text x="800" y="367" font-size="14" font-weight="bold" fill="#047857">8 GiB</text>
+    <text x="800" y="381" font-size="11" fill="#475569">1/8</text>
+    <text x="898" y="393" font-size="14" font-weight="bold" fill="#c2410c">2 GiB</text>
+    <text x="898" y="407" font-size="11" fill="#475569">1/32</text>
+  </g>
+
+  <line x1="560" y1="420" x2="940" y2="420" stroke="#334155" stroke-width="1.5"/>
+  <text x="560" y="436" font-size="10" fill="#64748b">0</text>
+
+  <g text-anchor="middle">
+    <text x="604" y="442" font-size="12.5" font-weight="bold" fill="#1e293b">MHA</text>
+    <text x="604" y="458" font-size="10.5" fill="#64748b">kv_heads=32</text>
+    <text x="702" y="442" font-size="12.5" font-weight="bold" fill="#1e293b">GQA-8</text>
+    <text x="702" y="458" font-size="10.5" fill="#64748b">kv_heads=8</text>
+    <text x="800" y="442" font-size="12.5" font-weight="bold" fill="#1e293b">GQA-4</text>
+    <text x="800" y="458" font-size="10.5" fill="#64748b">kv_heads=4</text>
+    <text x="898" y="442" font-size="12.5" font-weight="bold" fill="#1e293b">MQA</text>
+    <text x="898" y="458" font-size="10.5" fill="#64748b">kv_heads=1</text>
+  </g>
+
+  <text x="500" y="476" text-anchor="middle" font-size="10" fill="#94a3b8">※ GQA-8 即 Llama-3-8B / Mistral-7B 的真实配置；GQA-4 / MQA 为假想对照（同层数同维度）</text>
+
+  <!-- ================= Punchline ================= -->
+  <rect x="30" y="490" width="940" height="56" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="500" y="512" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#9a3412">MHA 跑 128K：单条序列 KV 64 GiB + 约 15 GB 权重（FP16）→ 一张 80 GB 卡放不下一条！</text>
+  <text x="500" y="532" text-anchor="middle" font-size="12" fill="#c2410c">GQA-8 只要 16 GiB，同一张卡还能再装几条序列 —— 这就是 Llama-2-70B 起改用 GQA、Llama-3 全系 GQA 的直接原因</text>
+</svg>
