@@ -2,16 +2,17 @@
 
 > **定位**：Day 1 模块二 §2.3「注意力变体对 KV cache 的影响」的展开篇——那一节只有一张表，面试真考起来远远不够
 > **阅读时长**：45-60 分钟
-> **学完标准**：不看资料画出三种变体的结构图；说清 Llama-3 为什么全系 GQA；说清 `kv_heads` 对 TP、并发、TPOT 的硬约束
+> **学完标准**：不看资料画出三种变体的结构图；说清 Llama-3 为什么全系 GQA；说清 `kv_heads` 对 TP、并发、TPOT 的硬约束；一句话讲清 MLA 与 GQA 的本质区别（压头数 vs 压维度）
 > **回扣主线**：Day 1 公式卡 ① `KV_token = 2 × layers × kv_heads × head_dim × dtype_bytes` 里的 `kv_heads` 项，就是本文全部内容的落点
 
 ---
 
-## 0. 三句话版本（赶时间只看这个）
+## 0. 四句话版本（赶时间只看这个）
 
 1. **q_heads / kv_heads 是两个独立配置**：Q 投影切几份、K/V 投影切几份，各数各的——MHA 只是「碰巧相等」的历史默认
 2. **KV cache 显存只由 kv_heads 决定**（q_heads 根本不进公式）：7B 级模型把 KV 头从 32 压到 8，128K 上下文的 KV 显存就从 64 GiB 降到 16 GiB
 3. **GQA 是质量与显存的甜点位**：组内共享 KV，质量 ≈ MHA、显存 ÷4~8——所以 Llama-3 / Qwen / Mistral 全系采用；MQA 一步压到 1 个头太狠，质量受损，已基本被 GQA 取代
+4. **MLA 换赛道**：不压头数、压维度——每 token 的 K/V 压成一份 512 维潜向量（+64 维 RoPE）再配矩阵吸收，671B 的 DeepSeek-V3 每 token KV 比 32B 的 Qwen3-32B 还小（§六）
 
 ---
 
@@ -24,6 +25,7 @@
 | **MHA** | kv_heads = q_heads，每个 Q 头独占一组 K/V | 质量基准；128K 显存爆炸 |
 | **GQA** | 组内共享（g = q_heads/kv_heads = 4~8） | 为什么不掉点；为什么全系采用 |
 | **MQA** | kv_heads = 1，全部 Q 头共享唯一一组 K/V | 为什么掉点；显存 1/q_heads |
+| **MLA** | K/V 共用一份低秩潜向量（512+64 维），上投影被矩阵吸收（DeepSeek-V2/V3） | 「和 GQA 的本质区别？」；DP attention 的动机 |
 
 ---
 
@@ -214,26 +216,65 @@ $$
 
 ---
 
-## 六、推理工程师视角：这两个参数如何决定部署
+## 六、延伸：MLA——压维度而非压头数
 
-### 6.1 并发上限（公式 ③ 的隐藏杠杆）
+MHA → MQA → GQA 这条线始终在「**KV 头数**」上做文章（32 → 1 → 中间值）。MLA（Multi-head Latent Attention，DeepSeek-V2 提出、V3 沿用）换了赛道：**头数一个不减，把每个 token 的 KV 表示本身压成一个低秩潜向量**——这正是 Day 1 §2.3 表格里 MLA「相对 MHA 低一个数量级」的来源。
+
+### 6.1 机制：一份潜向量 + 矩阵吸收
+
+$$
+c^{KV}_t = W^{DKV} h_t \in \mathbb{R}^{512},\qquad k_t = W^{UK} c^{KV}_t,\qquad v_t = W^{UV} c^{KV}_t
+$$
+
+- **下投影（唯一要缓存的）**：把 4096 维的 h_t 压成 512 维潜向量 `c_KV`——这是每 token KV cache 的主体。外加 64 维 RoPE key 单独缓存：位置编码随位置变化，进不了与位置无关的潜向量
+- **上投影（被吸收，不用算）**：从潜向量还原每头的 K/V。妙处在矩阵乘结合律——`W^UK` 可以吸收进 `W^Q`、`W^UV` 吸收进 `W^O`，attention 直接对潜向量计算，上投影既不用存也不用真正展开
+- **K/V 共用一份潜向量**：K 和 V 由同一个 `c_KV` 上投影得到，所以缓存**没有 ×2**——每 token 每层 = 512 + 64 = **576 个数**
+
+![MLA 机制：潜向量压缩与矩阵吸收](assets/day01a_mla_compress.svg)
+
+### 6.2 数字：GQA 的极限之外，再压一个量级
+
+以 DeepSeek-V3 为例（61 层，128 个 Q 头，kv_lora_rank=512 + RoPE 64）：
+
+| 模型（层数） | 注意力 | 每 token KV（BF16） | 128K 单条序列 |
+|---|---|---|---|
+| 假想 MHA 版（61 层 · 128 头同宽） | MHA | 3.8 MiB | ≈ 488 GiB |
+| Llama-3.1-405B（126 层） | GQA-8 | 504 KiB | ≈ 64 GiB |
+| Qwen3-32B（64 层） | GQA-8 | 256 KiB | ≈ 32 GiB |
+| **DeepSeek-V3（61 层 · 671B 总参）** | **MLA** | **≈ 70 KiB** | **≈ 8.6 GiB** |
+
+一眼结论：**KV cache 大小与模型规模脱钩了**——671B 的 DeepSeek-V3，每 token KV 比 32B 的 Qwen3-32B 还小 3.6 倍。这就是 DeepSeek 敢给 671B 模型配 128K 上下文 + MoE 稀疏激活的底牌，也是「压缩 KV cache」这条主线目前的终点站。
+
+### 6.3 代价：为什么它没有取代 GQA
+
+1. **训练复杂**：Q 侧也有低秩压缩（q_lora_rank）+ RoPE 解耦设计，超参多、收益要靠足够大的训练规模才兑现——中小模型上性价比不如 GQA
+2. **kernel 生态**：吸收后的 attention 不是标准 MHA 形状。早期 vLLM 只能「反吸收」回标准形状去迁就 FlashAttention，后来 DeepSeek 开源 FlashMLA、FlashInfer 跟进，vLLM V1 才有原生 MLA 后端——新硬件接入同样要先啃这块（vllm-ascend 也专门实现了 MLA 路径）
+3. **TP 困境**：潜向量是「单份」，无法按头切分——相当于 kv_heads=1 的 MQA 困境放大版，TP 时每卡都要复制全量 latent。这是 vLLM 引入 **DP attention** 的头号动机（呼应 §七 7.2）
+
+> 📌 **与 GQA 的关系一句话**：GQA 压「份数」（kv_heads 32→8，每份维度不变），MLA 压「每 token 的 KV 总维度」（2048→576）；两者维度正交、理论上可叠加，但 MLA 一出手就覆盖了 GQA 的量级，实际模型二选一。
+
+---
+
+## 七、推理工程师视角：这两个参数如何决定部署
+
+### 7.1 并发上限（公式 ③ 的隐藏杠杆）
 
 单卡可服务并发 ≈ 可用 KV 显存 ÷（每 token KV × 平均上下文长度）。**每 token KV ÷g，并发就 ×g**，不用加一张卡。80 GB 卡、50 GB KV 预算、32K 上下文的 7B 级模型：MHA 只能 ~3 条，GQA-8 能到 ~12 条。
 
-### 6.2 TP 切分的硬约束（vLLM 实际行为）
+### 7.2 TP 切分的硬约束（vLLM 实际行为）
 
 TP 按头切分模型，Q 头和 KV 头都要切到各卡上，于是：
 
 - **tp ≤ kv_heads 时**：要求 kv_heads 能被 tp 整除，每卡分到 kv_heads/tp 个独立 KV 头（Llama-3-70B kv=8：TP=2/4/8 都合法，TP=8 时每卡 1 个 KV 头）
-- **tp > kv_heads 时**：没有足够的 KV 头可分，vLLM 只能让多张卡**复制**同一份 KV 头（`num_kv_replicas` 机制），KV 显存收益开始打折——这正是 **DP attention**（按请求切分而非按头切分，`--enable-dp-attention`）的动机之一（细节归 Day 4 分布式专题）
+- **tp > kv_heads 时**：没有足够的 KV 头可分，vLLM 只能让多张卡**复制**同一份 KV 头（`num_kv_replicas` 机制），KV 显存收益开始打折——这正是 **DP attention**（按请求切分而非按头切分，`--enable-dp-attention`）的动机之一（MLA 模型把这一困境推到极端——潜向量单份完全不可切，见 §六；细节归 Day 4 分布式专题）
 
 一句话记住：**kv_heads 决定了「TP 还能继续加卡」的上限**。Llama-3-70B 想 TP=16？只能靠 KV 头复制、DP attention 或 TP+PP 组合。
 
-### 6.3 TPOT：每步 KV 读取量 ÷g
+### 7.3 TPOT：每步 KV 读取量 ÷g
 
 decode 每步要读全量历史 KV：`KV_read(t) = 2 × L × kv_heads × head_dim × b × t`。7B 级 MHA 在 32K 上下文时每步读 ≈16 GiB——**比读一遍 15 GB 的权重还多**，纯带宽杀手；GQA-8 降到 4 GiB。长上下文 decode 的 TPOT 对 kv_heads 高度敏感。
 
-### 6.4 vLLM 里的落点
+### 7.4 vLLM 里的落点
 
 - 启动时读 config 的 `num_key_value_heads` → attention 层的 `num_kv_heads` → 决定 KV cache 池**每个 token 槽位**的大小（vLLM V1 按 `num_kv_heads × head_size` 组织每层 block）
 - fused kernel（FlashAttention / FlashInfer / vLLM-Ascend 后端）**原生支持分组**：KV 只物化存储 kv_heads 份，kernel 内按组映射到 q_heads，不做真实展开
@@ -252,7 +293,7 @@ def repeat_kv(x, n_rep):                  # x: [batch, kv_heads, seq, head_dim]
 
 ---
 
-## 七、面试问答卡（每题 3 分钟版）
+## 八、面试问答卡（每题 3 分钟版）
 
 **Q1：GQA 为什么省显存但几乎不掉点？**
 省显存：每 token 只存 kv_heads 份 K/V，显存 ÷g（公式代入）。不掉点：表达力来自 Q 视角数（不变）+ KV 头本就冗余（组内共享去冗余不去信息）+ uptraining 让 K/V 学会服务多 Q。边界：g 压到极限就是 MQA，那时才掉点。
@@ -267,7 +308,7 @@ def repeat_kv(x, n_rep):                  # x: [batch, kv_heads, seq, head_dim]
 长上下文下小模型的 KV cache 相对更夸张：7B 权重才 15 GB，MHA 跑 128K 单条序列 KV 就要 64 GiB（权重的 4 倍+）。GQA 质量代价 ≈ 0，没有理由不用。
 
 **Q5：一句话对比 MLA？**
-GQA 压「头数」（kv_heads: 32→8），MLA 压「每头维度」（低秩压缩成潜向量 + 权重吸收），存储还能再降一个量级，但机制复杂、kernel 适配成本高——展开见 Day 1 §2.3 表格，细节不追。
+GQA 压「头数」（kv_heads: 32→8，每份维度不变）；MLA 压「维度」——每 token 的 K/V 整体压成 512+64 维潜向量，K/V 还共用一份，再靠矩阵吸收省掉上投影。存储再降一个量级（DeepSeek-V3 每 token ≈70 KiB），但训练复杂、kernel 要专门适配、TP 无法按头切分——机制展开见 §六。
 
 ---
 
@@ -281,7 +322,9 @@ GQA 压「头数」（kv_heads: 32→8），MLA 压「每头维度」（低秩�
    （答：8。kv_heads=8，TP 超过它就要复制 KV 头；TP≤8 时还需整除）
 4. 为什么 MQA 掉点而 GQA-8 基本不掉？
    （答：表达力来自 q_heads 不变；MQA 把全部 Q 压到单一 KV 表征，瓶颈过窄；GQA 组内共享去掉的是 KV 头间的冗余）
+5. MLA 每 token 每层缓存多少个数？为什么没有 ×2？
+   （答：kv_lora_rank 512 + RoPE 64 = 576；K 和 V 由同一份潜向量 c_KV 上投影得到，共用缓存，上投影还被吸收不用算）
 
 ---
 
-> **回收主线**：现在回头看 Day 1 公式卡 ①——`kv_heads` 那一项从 32（MHA 时代）变成 8（GQA 时代），就是「现代模型架构演进 = 压缩 KV cache」这条主线的第一站；下一站是 KV cache 量化（Day 4），再下一站是 MLA（读论文时再看）。面试时把这张图讲成故事，比背参数值值钱得多。
+> **回收主线**：现在回头看 Day 1 公式卡 ①——`kv_heads` 那一项从 32（MHA 时代）变成 8（GQA 时代），是「现代模型架构演进 = 压缩 KV cache」主线的前两站（都在压头数）；第三站 MLA 压维度已在 §六补全；再往后是部署侧的 KV cache 量化（Day 4）。面试时把这条演进线讲成故事，比背参数值值钱得多。
