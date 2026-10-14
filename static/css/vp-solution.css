@@ -519,6 +519,88 @@ html.dark .vp-switch .moon {
     font-size: 16px;
 }
 
+/* 元信息卡片：教程开头的 总时长/今日目标/产出物 等「标签：内容」引用块，
+   由 vp-solution.js 的 enhanceMetaCards() 升级为两列对齐的卡片。 */
+.vp-doc blockquote.meta-card {
+    display: grid;
+    grid-template-columns: fit-content(10em) 1fr;
+    column-gap: 14px;
+    padding: 14px 18px;
+    border: 1px solid var(--vp-c-divider);
+    border-left: 3px solid var(--vp-c-brand-2);
+    border-radius: 8px;
+    background: var(--vp-c-bg-soft);
+    color: var(--vp-c-text-1);
+}
+
+.vp-doc blockquote.meta-card .meta-row {
+    display: contents;
+}
+
+/* 混入卡片的普通段落 / 列表等非标签内容占满整行 */
+.vp-doc blockquote.meta-card > :not(.meta-row) {
+    grid-column: 1 / -1;
+}
+
+.vp-doc blockquote.meta-card > p {
+    padding: 7px 0;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.vp-doc blockquote.meta-card > ul,
+.vp-doc blockquote.meta-card > ol {
+    margin: 4px 0 8px;
+}
+
+.vp-doc blockquote.meta-card .meta-label,
+.vp-doc blockquote.meta-card .meta-value {
+    padding: 7px 0;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.vp-doc blockquote.meta-card .meta-row + .meta-row .meta-label,
+.vp-doc blockquote.meta-card .meta-row + .meta-row .meta-value {
+    border-top: 1px dashed var(--vp-c-divider);
+}
+
+.vp-doc blockquote.meta-card .meta-label {
+    font-weight: 600;
+    color: var(--vp-c-brand-1);
+}
+
+.vp-doc blockquote.meta-card .meta-value {
+    color: var(--vp-c-text-2);
+    min-width: 0;
+}
+
+@media (max-width: 640px) {
+    .vp-doc blockquote.meta-card {
+        grid-template-columns: 1fr;
+        row-gap: 2px;
+        padding: 12px 14px;
+    }
+
+    .vp-doc blockquote.meta-card .meta-label,
+    .vp-doc blockquote.meta-card .meta-value {
+        padding: 2px 0;
+    }
+
+    .vp-doc blockquote.meta-card .meta-row + .meta-row .meta-label {
+        border-top: 1px dashed var(--vp-c-divider);
+        padding-top: 8px;
+    }
+
+    .vp-doc blockquote.meta-card .meta-row + .meta-row .meta-value {
+        border-top: none;
+    }
+
+    .vp-doc blockquote.meta-card .meta-row .meta-value {
+        padding-bottom: 8px;
+    }
+}
+
 .vp-doc ul,
 .vp-doc ol {
     padding-left: 1.25rem;

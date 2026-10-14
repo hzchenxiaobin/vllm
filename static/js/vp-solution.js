@@ -65,6 +65,35 @@ window.VPPage = (function () {
     }
 
     /* ------------------------------------------------------------------
+     * 元信息块预处理：教程开头的 "> **标签**：内容" 引用行，
+     * 在标准 Markdown 里与前后的引用行合并成一个段落（密不透风）。
+     * 在标签行之前插入空引用行，让每条元信息渲染为独立段落，
+     * 供 enhanceMetaCards() 进一步升级为卡片。
+     * 标签写法兼容：`**标签**：` / `**标签**（说明）：` / `**标签** ｜ `
+     * ------------------------------------------------------------------ */
+    var META_LINE_RE = /^>\s*\*\*[^*\n]+\*\*(?:（[^）\n]*）)?\s*[：:｜]/;
+    var QUOTE_CONTENT_RE = /^>(?![>\s]*$)/; /* 非空引用行 */
+
+    function splitMetaBlockquoteLines(markdownText) {
+        var lines = markdownText.split('\n');
+        var out = [];
+        var inFence = false;
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            if (/^\s*```/.test(line)) inFence = !inFence;
+            if (
+                !inFence && out.length &&
+                META_LINE_RE.test(line) &&
+                QUOTE_CONTENT_RE.test(out[out.length - 1])
+            ) {
+                out.push('>');
+            }
+            out.push(line);
+        }
+        return out.join('\n');
+    }
+
+    /* ------------------------------------------------------------------
      * Markdown 渲染
      * ------------------------------------------------------------------ */
     function renderMarkdown(markdownText) {
@@ -91,7 +120,73 @@ window.VPPage = (function () {
             sanitize: false
         });
 
-        document.getElementById('doc-content').innerHTML = marked.parse(markdownText);
+        document.getElementById('doc-content').innerHTML =
+            marked.parse(splitMetaBlockquoteLines(markdownText));
+    }
+
+    /* ------------------------------------------------------------------
+     * 元信息卡片：把「**标签**：内容」形式的引用段落升级为
+     * 标签/内容两列对齐的卡片行（教程开头的 总时长/今日目标 等）。
+     * 升级条件（满足其一）：
+     *   - 引用块全是段落且每段都是标签行（纯元信息块，单段也算）；
+     *   - 引用块里有 ≥2 个标签段落（允许混入普通段落/列表，
+     *     非标签子元素占满整行宽度，见 CSS :not(.meta-row) 规则）。
+     * ------------------------------------------------------------------ */
+    var META_SEP_RE = /^(（[^）\n]*）)?\s*[：:｜]\s*/;
+
+    function enhanceMetaCards() {
+        document.querySelectorAll('.vp-doc blockquote').forEach(function (bq) {
+            var children = Array.prototype.slice.call(bq.children);
+            if (!children.length) return;
+
+            var rows = [];
+            children.forEach(function (el) {
+                if (el.tagName !== 'P') return;
+                var strong = el.firstElementChild;
+                if (!strong || strong.tagName !== 'STRONG' || el.firstChild !== strong) {
+                    return;
+                }
+                var label = strong.textContent.trim();
+                if (!label || label.length > 16) return;
+                var after = strong.nextSibling;
+                if (!after || after.nodeType !== 3 || !META_SEP_RE.test(after.textContent)) {
+                    return;
+                }
+                rows.push({ p: el, strong: strong, after: after });
+            });
+
+            var allParagraphs = children.every(function (el) {
+                return el.tagName === 'P';
+            });
+            var isMeta =
+                rows.length >= 2 ||
+                (rows.length > 0 && allParagraphs && rows.length === children.length);
+            if (!isMeta) return;
+
+            bq.classList.add('meta-card');
+            rows.forEach(function (row) {
+                var label = document.createElement('span');
+                label.className = 'meta-label';
+                label.textContent = row.strong.textContent.trim();
+
+                /* 标签后的（说明）移到内容列，保持标签列窄而整齐 */
+                var sep = row.after.textContent.match(META_SEP_RE);
+                var note = sep[1] || '';
+                row.after.textContent = note + row.after.textContent.replace(META_SEP_RE, '');
+
+                var value = document.createElement('span');
+                value.className = 'meta-value';
+                while (row.strong.nextSibling) {
+                    value.appendChild(row.strong.nextSibling);
+                }
+
+                var rowEl = document.createElement('div');
+                rowEl.className = 'meta-row';
+                rowEl.appendChild(label);
+                rowEl.appendChild(value);
+                bq.replaceChild(rowEl, row.p);
+            });
+        });
     }
 
     /* ------------------------------------------------------------------
@@ -433,6 +528,7 @@ window.VPPage = (function () {
         /* 各增强步骤相互隔离：单个组件异常不影响页面其余部分 */
         [
             enhanceCodeBlocks,
+            enhanceMetaCards,
             function () {
                 if (window.Prism) Prism.highlightAll();
             },

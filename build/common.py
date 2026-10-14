@@ -292,7 +292,7 @@ def solution_page_template(
         }} catch (e) {{}}
     }})();
     </script>
-    <link rel="stylesheet" href="{root_prefix}css/vp-solution.css?v=4">
+    <link rel="stylesheet" href="{root_prefix}css/vp-solution.css?v=6">
     <link rel="stylesheet" href="{root_prefix}css/kimi-chat.css?v=1">
     <!-- Marked.js for Markdown rendering -->
     <script src="{root_prefix}js/marked.min.js"></script>
@@ -368,7 +368,7 @@ def solution_page_template(
 
     <button class="vp-back-to-top" aria-label="回到顶部">↑</button>
 
-    <script src="{root_prefix}js/vp-solution.js?v=3"></script>
+    <script src="{root_prefix}js/vp-solution.js?v=5"></script>
     <script>
         window.pageMarkdown = `{escaped_markdown}`;
 
