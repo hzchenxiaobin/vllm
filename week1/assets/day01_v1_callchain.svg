@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 830" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="830" fill="#ffffff"/>
+  <text x="620" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#0f172a">vLLM V1：一次 decode step 的完整调用链（多进程架构）</text>
+
+  <!-- ===== API process ===== -->
+  <rect x="320" y="52" width="600" height="96" rx="10" fill="#fafafa" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="340" y="74" font-size="12" font-weight="bold" fill="#475569">API 进程</text>
+  <rect x="360" y="84" width="520" height="44" rx="6" fill="#eff6ff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="620" y="111" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1e3a8a">AsyncLLM.generate()（OpenAI / LLM 入口）</text>
+
+  <line x1="620" y1="148" x2="620" y2="188" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="632" y="172" font-size="11" fill="#334155">(ZMQ) 消息队列</text>
+
+  <!-- ===== EngineCore process ===== -->
+  <rect x="90" y="192" width="1060" height="560" rx="10" fill="#fafafa" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="110" y="216" font-size="13" font-weight="bold" fill="#475569">EngineCore 进程</text>
+  <text x="1130" y="216" text-anchor="end" font-size="11" fill="#64748b">vllm/v1/engine/llm_engine.py</text>
+
+  <!-- Processor -->
+  <rect x="130" y="232" width="980" height="66" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="150" y="254" font-size="12.5" font-weight="bold" fill="#0f172a">Processor.process_inputs()</text>
+  <text x="1090" y="254" text-anchor="end" font-size="10" fill="#64748b">vllm/v1/engine/processor.py</text>
+  <text x="150" y="276" font-size="11" fill="#334155">tokenize → 构造 Request → add_request()</text>
+
+  <line x1="620" y1="298" x2="620" y2="318" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- Scheduler -->
+  <rect x="130" y="322" width="980" height="138" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="150" y="344" font-size="12.5" font-weight="bold" fill="#0f172a">Scheduler.schedule()</text>
+  <text x="1090" y="344" text-anchor="end" font-size="10" fill="#64748b">vllm/v1/core/scheduler.py</text>
+  <text x="150" y="366" font-size="11" fill="#334155">· 维护 waiting / running 两个队列（FCFS ＋ 优先级）</text>
+  <text x="150" y="386" font-size="11" fill="#334155">· 按 max_num_batched_tokens 的 token budget 决定本 step 调谁</text>
+  <text x="150" y="406" font-size="11" fill="#334155">· 决定谁做 prefill（长 prompt 会被切块）、谁做 decode</text>
+  <text x="150" y="427" font-size="11" font-weight="bold" fill="#c2410c">—— prefill 块与 decode token 可以混排在同一个 batch！</text>
+  <text x="150" y="448" font-size="11" font-weight="bold" fill="#0f172a">→ SchedulerOutput（含各请求新分配的 KV block）</text>
+
+  <line x1="620" y1="460" x2="620" y2="480" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="632" y="474" font-size="11" fill="#334155">SchedulerOutput</text>
+
+  <!-- Worker -->
+  <rect x="130" y="484" width="980" height="250" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="150" y="508" font-size="12.5" font-weight="bold" fill="#0f172a">Worker.execute_model(scheduler_output)</text>
+  <text x="1090" y="508" text-anchor="end" font-size="10" fill="#64748b">vllm/v1/worker/gpu_worker.py</text>
+
+  <rect x="160" y="524" width="450" height="96" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="176" y="546" font-size="11.5" font-weight="bold" fill="#0f172a">GPUModelRunner.prepare_model_input()</text>
+  <text x="594" y="546" text-anchor="end" font-size="9.5" fill="#64748b">gpu_model_runner.py</text>
+  <text x="176" y="568" font-size="10.5" fill="#334155">· 把本 step 所有 token 拼成 input_ids / positions</text>
+  <text x="176" y="588" font-size="10.5" fill="#334155">· 构建 attn_metadata（区分 extend / decode 两条路径）</text>
+
+  <line x1="610" y1="572" x2="636" y2="572" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="640" y="524" width="450" height="96" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="656" y="546" font-size="11.5" font-weight="bold" fill="#0f172a">model.forward(...)（PyTorch 模型本体）</text>
+  <text x="1074" y="546" text-anchor="end" font-size="9.5" fill="#64748b">vllm/v1/attention/backends/*.py</text>
+  <text x="656" y="568" font-size="10.5" font-weight="bold" fill="#7c3aed">forward_extend()：prefill —— 大 GEMM ＋ 批量写 KV block</text>
+  <text x="656" y="588" font-size="10.5" font-weight="bold" fill="#2563eb">forward_decode()：decode —— GEMV ＋ gather 读非连续 KV block</text>
+
+  <line x1="865" y1="620" x2="865" y2="636" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="160" y="640" width="930" height="72" rx="6" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="176" y="662" font-size="12" font-weight="bold" fill="#0f172a">LogitsProcessor ＋ Sampler</text>
+  <text x="1074" y="662" text-anchor="end" font-size="10" fill="#64748b">vllm/v1/sample/</text>
+  <text x="176" y="684" font-size="11" fill="#334155">logits 处理与采样全部留在 GPU 上 → 采出的 next token</text>
+  <text x="176" y="702" font-size="10" fill="#64748b">（若每 token 一次 GPU↔CPU 同步，decode 的毫秒级步长会被同步开销淹没）</text>
+
+  <!-- ===== autoregressive loop ===== -->
+  <path d="M 250 752 V 795 H 60 V 100 H 314" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="270" y="780" font-size="11" font-weight="bold" fill="#475569">输出 token 回传给上层，同时作为下一步输入 —— 自回归闭环</text>
+
+  <text x="1230" y="815" text-anchor="end" font-size="10" fill="#64748b">紫色 = prefill 路径（extend）｜蓝色 = decode 路径｜虚线框 = 进程边界</text>
+</svg>

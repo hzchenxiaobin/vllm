@@ -116,30 +116,7 @@ $$
 
 ![Decode 迭代张量流](assets/day01_decode_iteration_tensor_flow.svg)
 
-以 batch=1、第 $i$ 步、Qwen3-8B（$L{=}36$，$H{=}4096$，$H_q{=}32$，$H_{kv}{=}8$，$d{=}128$，词表 151936，BF16）为例，逐层走一遍（**建议照着右侧账单，在白纸上画一遍**）：
-
-```text
-token_id(i-1)                          # 标量
-  │  Embedding 查表：读词表 1 行 ≈ 8 KB（表不全读）
-  ▼
-h ∈ R^{1×4096}
-  │
-  ├─► 对每一层 ℓ = 0..35（串行）：
-  │     ├─ RMSNorm
-  │     ├─ QKV 投影（GEMV）             # ★ 读 W_qkv[4096×6144] = 50 MB
-  │     ├─ q_i 供本层 attention 使用
-  │     ├─ k_i, v_i 追加写入该层 KV cache 槽位（4 KiB）
-  │     ├─ Attention（gather kernel）   # ★ 读该层全部 K[0..i], V[0..i]
-  │     │    scores = q_i·K^T/√d → softmax → ·V
-  │     ├─ O 投影（GEMV）               # ★ 读 W_o[4096×4096] = 34 MB
-  │     ├─ 残差 + RMSNorm
-  │     └─ MLP：gate/up GEMV → SwiGLU → down GEMV
-  │          # ★ 读 W_gate,W_up 2×[4096×12288] = 201 MB，W_down[12288×4096] = 101 MB
-  ▼
-final RMSNorm → lm_head（GEMV）         # ★ 读 W_lm[4096×151936] = 1.24 GB
-  ▼
-logits [1×151936] → sample → token_id(i)   # 回到顶部：自回归闭环
-```
+以 batch=1、第 $i$ 步、Qwen3-8B（$L{=}36$，$H{=}4096$，$H_q{=}32$，$H_{kv}{=}8$，$d{=}128$，词表 151936，BF16）为例——上图从 Embedding 查表到 lm_head 采样，逐层标注了 shape 与每个 ★ 的字节来源（**建议照着右侧账单，在白纸上画一遍**）。
 
 **画完图要能回答的问题**：这一步总共从 HBM 读了多少字节？
 
@@ -331,30 +308,7 @@ for i in range(s_gen - 1):
 
 V1 是多进程架构：API 进程里的 `AsyncLLM` 通过消息队列与独立的 `EngineCore` 进程通信。一次 decode step 的完整链路：
 
-```text
-AsyncLLM.generate()                              # API 进程（OpenAI/LLM 入口）
-  └─(ZMQ)──► EngineCore 进程                     # vllm/v1/engine/llm_engine.py
-       ├─ Processor.process_inputs()             # vllm/v1/engine/processor.py
-       │    tokenize → 构造 Request → add_request()
-       ├─ Scheduler.schedule()                   # vllm/v1/core/scheduler.py
-       │    · 维护 waiting / running 两个队列（FCFS + 优先级）
-       │    · 按 max_num_batched_tokens 的 token budget 决定本 step 调谁
-       │    · 本 step 谁做 prefill（长 prompt 会被切块）、谁做 decode
-       │      —— prefill 块与 decode token 可以混排在同一个 batch！
-       │    → SchedulerOutput（含各请求新分配的 KV block）
-       └─ Worker.execute_model(scheduler_output) # vllm/v1/worker/gpu_worker.py
-            ├─ GPUModelRunner.prepare_model_input()
-            │    # vllm/v1/worker/gpu_model_runner.py
-            │    · 把本 step 所有 token 拼成 input_ids / positions
-            │    · 构建 attn_metadata（区分 extend / decode 两条路径）
-            └─ model.forward(...)                # PyTorch 模型本体
-                 └─ Attention 层 → vllm/v1/attention/backends/*.py
-                      · forward_extend()：prefill —— 大 GEMM + 批量写 KV block
-                      · forward_decode()：decode —— GEMV + gather 读非连续 KV block
-            └─ LogitsProcessor + Sampler          # vllm/v1/sample/
-                 logits 处理与采样全部留在 GPU 上 → 采出的 next token
-       ──► 输出 token 回传给上层，同时作为下一步输入 —— 自回归闭环
-```
+![vLLM V1 一次 decode step 的调用链](assets/day01_v1_callchain.svg)
 
 用今天的两阶段视角，能直接读出 V1 的四个设计动机（对应 SVG3 右侧的账单）：
 
