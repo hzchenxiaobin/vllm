@@ -567,7 +567,7 @@ ZOS 下的双行甘特图（今日第二张图）：
   <text x="175" y="462" font-size="12" fill="#334155">③ schedule(N+1) 落在 GPU 跑 sample(N) 的窗口内：C++ 调度器 + GIL 释放保证 CPU 侧足够快</text>
   <text x="175" y="486" font-size="12" fill="#334155">④ prefill 步不走延迟路径（is_prompt → 当场 post-process），ZOS 只在 decode 生效</text>
   <text x="175" y="510" font-size="12" fill="#334155">⑤ 代价：收尾要 flush_inflight_reqs() 排水；输出晚一步；RequestOutput 必须显式 clone</text>
-  <text x="175" y="534" font-size="12" fill="#334155">⑥ 官方 Q&A 的表述："CPU concurrently runs schedule(N+1) → launch_forward(N+1) → post-process(N−1) → launch_sample(N+1)"——与代码等价（编号相差一步是计数口径不同，代码以 prev_step_state 为准）</text>
+  <text x="175" y="534" font-size="12" fill="#334155">⑥ 官方 Q&amp;A 的表述："CPU concurrently runs schedule(N+1) → launch_forward(N+1) → post-process(N−1) → launch_sample(N+1)"——与代码等价（编号相差一步是计数口径不同，代码以 prev_step_state 为准）</text>
 </svg>
 ```
 
@@ -654,5 +654,208 @@ def _correct_seqlens_qk(self, seq_metadata_list, is_prompt, total_q):
 
 一句话总结异同：**两者都把 schedule(N+1) 与 post-process 挪出 GPU 关键路径；vLLM 靠"独立线程 + 结构化并发"，DeepInfer 靠"C++ 调度器 + worker 内穿插 + GPU 侧修正"**。后者对 DSpark varlen（输入长度依赖 confidence）的场景是唯一可行解——CPU 在 schedule 时拿不到 per-request 接受数，只能定总额、把分配推迟到 GPU。
 
-<!-- PART3 -->
+---
+
+## 五、`shm_broadcast`：driver → CP slaves 的方法广播（关键问题 3）
+
+### 5.1 它替代了什么
+
+引擎要驱动 CP 组的所有 worker 执行同名方法。朴素做法是 `dist.broadcast_object_list`（pickle + 集合通信），但那要求**所有 rank 同时进入同一个 collective**，且 Python 对象要走 CPU 侧的序列化/反序列化和 gloo/NCCL——放在每步都执行的关键路径上太贵。`deepinfer/distributed/shm_broadcast.py`（文件头 `# Derived from vLLM`——vLLM 用同款机制给 DP attention 副本广播）提供了**基于共享内存的无锁广播**：
+
+```python
+# worker/base.py:290-302  run_workers —— 每次引擎调用的实际分发路径
+def run_workers(self, method, driver_kwargs=None, **kwargs):
+    with cpu_timer.record("broadcast_method", enable=False):
+        assert self.is_driver_worker
+        cp_group = PG.cpu_cp_group
+        if cp_group and cp_group.size() > 1:
+            cp_broadcast_object((method, kwargs))     # 只广播 (method, kwargs)！
+    return getattr(self, method)(**(driver_kwargs or {}), **kwargs)
+```
+
+三个关键观察：
+
+1. **只有 `kwargs` 被广播，`driver_kwargs` 不广播**。`execute_model_step` 的 `seq_metadata_list / scheduler_outputs` 是 driver 独有的 C++ 对象（本 DP rank 的调度结果），CP slave 收到的是 `(method, {is_prompt, is_placeholder})`，以 `seq_metadata_list=None` 进入——**slave 侧的输入构建是独立路径**（CP 广播/对称推导，Day 3/5 展开）。这是"调度只在 driver 发生"的直接证据；
+2. `cp_size == 1` 时（DP 部署的常态）**根本不广播**——driver worker 就是唯一的 worker；
+3. 广播走 `PG.mq`——挂在 **gloo 的 `cpu_cp_group`** 上的 `MessageQueue(1MB × 10 chunks)`（`parallel_state.py:122-124`）。
+
+### 5.2 `ShmRingBuffer`：一个 chunk 一份 metadata 的无锁队列
+
+单写多读的环形缓冲，布局与状态机（`shm_broadcast.py:33-135` 注释原文）：
+
+```
+buffer: [ chunk0 | chunk1 | ... | chunkN || metadata0 | metadata1 | ... | metadataN ]
+         \------- max_chunks × max_chunk_bytes ---/   \-- max_chunks × (1+n_reader) --/
+
+metadata（每 chunk 1+n_reader 字节，每字节一个 flag）：
+        [ written_flag | reader0_flag | ... | readerN_flag ]
+
+状态机（w=written_flag, r=各 reader flag）：
+  (1) 0???...???  未写入：可写不可读
+  (2) 1000...000  刚写入：可读不可写
+  (3) 1???...???  部分读者已读：没读的还能读，不能写
+  (4) 1111...111  全员已读：可写不可读
+```
+
+两个精妙的顺序约束（写错了就是数据竞争）：
+
+- **写者**：先置 `written_flag=0` → 调用者写数据 → **先清零所有 reader flag，再置 `written_flag=1`**（反过来的话，中间态会被读者误认为 case 3"部分已读"）；
+- **读者**：读完才置自己的 flag 1（只置位、由写者清零）。全靠字节级原子性，无锁无 futex；
+- 写者复用 chunk 前要自旋等所有读者读完（`_spin_wait`：`os.sched_yield()` 让出 CPU，`DEEPINFER_RINGBUFFER_WARNING_INTERVAL` 控制告警频率，可选 `TimeoutError`）。
+
+### 5.3 `MessageQueue`：shm 快路径 + ZMQ 溢出通道
+
+`MessageQueue` 在 ring buffer 之上解决"**消息大于 chunk 怎么办**"和"**读者不在本机怎么办**"：
+
+- 本地读者：payload < `max_chunk_bytes`（PG 用 1MB）直接内联进 chunk；**溢出则置 overflow 标志位，本体走 ZMQ XPUB/SUB socket**（`tcp://127.0.0.1:<port>`）；
+- 远程读者：总是走 ZMQ（`tcp://*:<port>`，支持 IPv6）；
+- 建队：`create_from_process_group(pg, ...)` 由 writer rank 创建，**用一次 `dist.broadcast_object_list` 把 handle（shm 名字 + 端口 + reader ranks）发给组内所有人**，然后 `wait_until_ready()` 做订阅握手（writer 等到所有 SUB 的订阅消息后回 `b"READY"`）；
+- `__reduce__` 支持把对象 pickle 到其他进程；打开他人 shm 时 patch 掉 `resource_tracker.register`（绕开 Python 对非本进程创建的 shm 的错误追踪，链接里的 SO 问题）；
+- 一个务实的假设写在注释里："assume the group does not cross nodes, so every reader is a local reader"——**CP 组按设计不跨节点**（balanced CP 在超节点内部），所以远程 socket 通道基本是备用。
+
+**它在请求下发中的角色**（week9 关键问题 3 的答案）：`engine.step() → _run_workers → run_workers` 的每次方法分发，`execute_model_step` 的 `(method, {is_prompt, is_placeholder})` 就是通过这条 shm 通道广播给 CP slaves 的；slave 进程的 `start_slave_worker_loop` 阻塞在 `cp_broadcast_object(None)` 上等活。对比 vLLM 的 multiproc RPC（pipe + pickle）：**无 collective 握手、小消息零拷贝、写者不被最慢读者卡死超过 10 个 chunk**。
+
+---
+
+## 六、统计上报：`stats_logger.py`
+
+`StatsLogger` 由 `LLMEngine.__init__` 构造，注入 `tflops_limit = get_bf16_tflops_limit() * 2`（**FP8 等效峰值 = BF16 × 2**，MFU 的分母）。每步的 `StepStats`（`llm_engine.py:765-780` 组装）：
+
+| 字段 | 含义 |
+|---|---|
+| `prompt_run / num_seqs / num_batched_tokens` | 步型与规模 |
+| `sum_seqlen_qxk / max_seqlen_k / min_seqlen_k` | attention 工作量（Q×K） |
+| `attn_tflops / total_tflops` | C++ `FlopsEstimator` 估算（YoCo 模式感知） |
+| `first_token_latencies` | TTFT 样本 |
+| `num_cached_tokens_gpu` | 前缀缓存命中 token 数 |
+| `num_generated_tokens / num_verified_tokens` | 按 nextn-idx 分桶的生成/验证 token 数（DSpark 效率） |
+| `batch_confidence_error` | `Σ|accept_prob − confidence|`：confidence head 的在线校准误差 |
+| `moe_load_balance_ratio` | (avg_tokens, max_tokens) 对，滑窗聚合出 `moe_lb` |
+
+几个工程细节：
+
+- **独立日志线程**：`_log_worker` 消费 `SimpleQueue`，格式化/IO 不占引擎线程；
+- **滑动窗口**：`Window` 按 `max_age` 步裁剪；`moe_lb = Σmax / max(1, Σavg)`（最慢 rank / 均值，与 Q&A 口径一致）；prefill 与 decode 用不同窗口长度；
+- **指标语义与 benchmark 对齐**（Day 7 详述）：`avg_SPS` 是 benchmark "decode avg_SPS" 的来源；`moe_lb` 从 logged steps 读取（`DEEPINFER_MOE_LB_STAT_INTERVAL` 控制统计 flush 频率，benchmark 显式设 10）；测量窗口内 `DEEPINFER_LOGGING_INTERVAL_STEP=0` 静默；
+- `_merge_cuda_timers`：把 `cpu_timer / cuda_timer / cuda_graph_timer` 三套计时合并成 per-kernel 耗时表，`max_TTFT / mean_TTFT` 直接进日志。
+
+---
+
+## 七、动手实验
+
+### 实验 1（无硬件替代）：从 `tests/engine/` 反推引擎接口契约
+
+week9 README 指定的无硬件路径。三个测试文件各反推一类契约：
+
+| 测试 | 反推出的契约 |
+|---|---|
+| `test_sequence.py` | `Sequence` 构造**只接受 int32、C-contiguous 的 ndarray**（`noconvert + check_`，非 int32 / 非连续 / list 一律 TypeError，**无静默转换**）；`compressed_prompt_token_ids` 同样严格；表内 id 映射 ×2、表外（如图片 token 100）映射 −1 哨兵。→ 引擎边界上的数据契约是"调用方负责规整"，不付运行时检查的钱 |
+| `test_flops_estimator.py` | `FlopsEstimator` 有逐层、逐 query 位置的参考实现对照；YoCo `compact` 模式下被裁掉的 query 行不计 FLOPs（`queries = positions[positions > cutoff]`，全裁 chunk 仍执行最后一行）——**调度器的准入模型 = 物理执行的计算量**，两者必须逐 token 对齐 |
+| `test_mm_overwrite_prompt.py` | `overwrite_prompt` 永不原地修改调用方数组；`[1, IMG, 2, IMG, 3] + 尺寸表 {10×20:3, 30×40:2}` → `[1, IMG, PAD, PAD, 2, IMG, PAD, 3]`；文本段按长度、图片段按 (w,h,是否剥离二进制) 描述 |
+
+外加 `tests/test_cuda_sync_guards.py`（在 tests 根目录）：`forbid/allow_cuda_sync` 的嵌套语义（内层覆盖外层、外部 baseline 恢复、多线程交错退出不泄漏）——**用测试锁死框架不变量**，这是 ZOS 这种"靠纪律维持的正确性"的标准保障方式。
+
+### 实验 2：抄画/复现今日两张图
+
+合上文档，白板复现 4.2 节甘特图，重点检验：能否说清 `post-process(N−1)` 里那次 `sample_end_evt.synchronize()` **为什么不会造成 GPU 等待**（答案：同步发生在 forward(N+1) 已入队之后，等的是早已完成的 event；GPU 队列里永远有活）。
+
+### 实验 3（有硬件）：跑通 + MTP 对比
+
+```bash
+python examples/offline_inference.py                 # 默认 --ep 8
+DEEPINFER_ENABLE_MTP_VARLEN=1 python examples/offline_inference.py
+```
+
+观察输出行的 `accept_rate=` 字段（`offline_inference.py:82-86` 从 RequestOutput 的 `draft_tok/accept_tok` 统计）与 `avg_SPS` 的变化。无硬件则精读 `offline_inference.py` 的 `print_output`：`num_target_tokens = sum(1 for x in output if x.draft_tok > 0)`——**每个输出 token 都带着 draft/accept 簿记**，这就是 Day 6a 投机解码统计的原始数据。
+
+---
+
+## 八、面试高频问题
+
+**Q1：DeepInfer 的 zero-overhead scheduling 具体怎么实现？和 vLLM V1 的异步调度有什么区别？**
+
+A：问题出在 decode 步的 `post-process(N)` 需要同步 `sample(N)` 的结果，导致 GPU 在 `post-process(N)+schedule(N+1)` 期间闲置。DeepInfer 的解法是把 post-process 推迟一步：worker 每次调用固定执行"launch forward(N) → post-process(N−1) → launch sample(N)"，ZOS decode 步把本步 state 存进 `prev_step_state` 留给下一次。唯一的同步点（`sample_end_evt`）发生在 forward(N+1) 已入队之后，等的是已完成的 event。与 vLLM 的区别：vLLM 用独立线程（async output processor）+ 结构化并发，调度器仍是 Python；DeepInfer 调度器是 C++ 且调度期间释放 GIL，输出对象全在 C++ 池里（Python 只拿 uint64 句柄），且把 DP 组投票挪到 gloo CPU 组避免碰 CUDA。最深的一步是 seqlens 修正：DSpark varlen 下 per-request 输入长度依赖上一步 confidence，CPU 调度时拿不到，于是 CPU 只定 total_q，per-request 分配由 TileLang kernel 在 GPU 上做（累积率 + 全局排序 + remap scatter），结果 D2H 回 pinned buffer 喂采样。
+
+**Q2：引擎进程模型是怎样的？对照 vLLM 保留了什么砍掉了什么？**
+
+A：三层：launch_dp spawn 的 DP-rank 顶层进程（每个是完整引擎）→ 引擎进程内的 C++ 调度器 + driver Worker → CP 维度的 slave Worker 子进程（daemon，靠 shm 广播收方法调用）。对照 vLLM：砍掉了 API server/EngineCore 进程分离（无 online wrapper）、asyncio 前端、独立 output processor 线程；保留了 vLLM 式 Worker 抽象和 shm_broadcast（vLLM 拿它广播 DP attention 控制消息）；新增 C++ 调度器/对象池、EngineCallbacks 回调注入（worker 直接回调引擎的 post_process/pre_sampler_sync）、PROMPT/COMPLETION 引擎类型（PD 分离的钩子：init_pd_split、send_processed_prompts、pe_*_save_kvcache）。
+
+**Q3：`shm_broadcast` 在请求下发中扮演什么角色？**
+
+A：它是 driver worker → CP slaves 的方法广播通道。每次 `engine.step()` 的 `_run_workers("execute_model_step")` 通过 `MessageQueue`（挂在 gloo CP 组上，1MB×10 chunk）广播 `(method, kwargs)`；slave 进程死循环 `cp_broadcast_object` 等活。实现是共享内存环形缓冲：每 chunk 一组 flag（written + 每 reader 一个），无锁单写多读，写者先清 reader flag 再置 written（顺序错了读者会误判状态）；大消息溢出走 ZMQ XPUB/SUB。要点：只广播 kwargs，driver 独有的调度结果（seq_metadata_list 等）不广播，CP slave 自行构建输入——调度只在 driver 发生。cp=1 时完全不走这条路径。
+
+**Q4：为什么 PROMPT 引擎默认关闭 ZOS？**
+
+A：两个原因。一是 prefill 是 compute-bound，单步 forward 几百毫秒，CPU 调度+post-process 占比可忽略，收益小；二是 PROMPT 引擎的输出要尽快流转给 COMPLETION 引擎（`send_processed_prompts`）以压 TTFT，压一步反而坏事。代码依据：`EngineType.default_zero_overhead_scheduling` 只含 NORMAL/COMPLETION，`worker.py` 里 `if is_prompt or not ZOS: 当场 post-process`。
+
+**Q5：NORMAL 引擎怎么决定这一步做 prefill 还是 decode？为什么需要投票？**
+
+A：attention DP 下各 rank 独立调度，但 MoE EP 的 all-to-all 要求全组步型一致，所以调度器持有 DP group 做两轮 all_reduce(MIN) 投票。触发点有两类：ALL 点（每 70 个 decode step）要求全员都有 prefill 活才切，防止一个 rank 干活其他人陪跑空 prompt step；ANY 点（每 100 步）任一 rank 有活就切，给孤立 rank 兜底。第二轮投票确认真有 rank 排出了 prefill（want 只看 waiting 非空，slot/KV 不足时可能空手），全组空手就转 decode——否则会陷入"投票→空手→decode_step 清零→再投票"的死循环。投票用的 DP group 在 ZOS 下是 gloo CPU 组。
+
+**Q6：RequestOutput 为什么返回的是 uint64 数组？这个设计的代价是什么？**
+
+A：`execute_model_step` 返回 `np.ndarray[np.uint64]`——C++ `RequestOutputPool` 持有的 RequestOutput 对象的**序列化指针**。收益：每 token 零 Python 对象分配、跨引擎/worker 边界零拷贝（指针传值）、池化复用无 GC 压力。代价是生命周期纪律：step 返回的输出在下一次 step 会自动回收，跨 step 保留必须显式 `RequestOutput.clone`（LLM._run_engine 就是这么做的），忘了 clone 就是 use-after-free；引擎用 `DeferredRelease` 把句柄归还推迟到下一步 pre_sampler_sync，保证调用方有一整个 step 的窗口读完。
+
+---
+
+## 九、今日总结（三分钟电梯版）
+
+> DeepInfer 的引擎是"vLLM 的骨架 + 生产级改造"：入口只有离线 LLM（无 API server），DP rank 是顶层进程、CP slave 是子进程、调度器和热路径对象全在 C++（`deepinfer._C.engine`），引擎与 driver worker 之间不走 RPC 而是回调注入（`EngineCallbacks`）。异步调度的实现是 worker 四段式管线：每次 `execute_model_step` 先 launch forward(N)，再处理上一步的输出（post-process(N−1)，同步的是早已完成的 event），再 launch sample(N)，ZOS decode 步把本步 state 留给下一次——GPU 队列永远有活，输出整体晚一步，收尾用 `flush_inflight_reqs` 排水。最难的 seqlens 修正：DSpark varlen 的 per-request 长度依赖上一步 confidence，CPU 只定总预算，分配在 GPU 上由 TileLang kernel 完成（累积率+排序+remap scatter），D2H 回 pinned buffer。配套三道防线：C++ 调度器释放 GIL、对象池化+延迟释放、`forbid_cuda_sync` 把隐式同步变成异常。CP 组方法广播走无锁 shm 环形缓冲（1MB×10），DP 投票和 unfinished 检查走 gloo CPU 组——**一切设计都在避免 CPU 阻塞 CUDA 或 CUDA 阻塞 CPU**。
+
+---
+
+## 十、今日自测题
+
+1. `--ep 8` 不加 `--dp` 时，`dp_size` 是多少？`world_size` 呢？断言 `world_size % ep_size == 0` 检查的是什么约束？
+2. ZOS 下 `engine.step()` 第 N 次调用返回的是第几步的 token？调用方要跨 step 保留输出必须做什么？
+3. `execute_model_step` 里唯一的 `sample_end_evt.synchronize()` 发生在什么位置（哪两段之间）？为什么它不阻塞 GPU？
+4. `prepare_zos_inputs` 返回的 `remap[i] = -1` 表示什么？`has_overlap=False` 时会发生什么？
+5. `compute_seqlens_q_by_confidence_rates` 的四个输入输出各是什么？为什么新请求的 confidence 视为 0？
+6. `run_workers` 广播了什么、没广播什么？没广播的部分 CP slave 怎么办？
+7. ShmRingBuffer 写者写完一个 chunk 后，置位的顺序为什么是"先清 reader flag 再置 written flag"？
+8. `forbid_cuda_sync()` 的实现机制是什么？为什么 ZOS 需要它？
+9. NORMAL 引擎切 prefill 的两轮投票各解决什么问题？第二轮不做会发生什么？
+10. `stats_logger` 的 MFU 分母为什么是 `get_bf16_tflops_limit() * 2`？
+
+<details>
+<summary>参考答案（先自测再展开）</summary>
+
+1. `dp_size = max(ep/cp, 1) = 8`，`world_size = dp × cp = 8`。断言保证 EP 组能由整数个进程覆盖（EP 切分以 world 为基础），且 DP/CP/EP 三种切分不冲突。
+2. 第 N−1 步的 token（`process_output` docstring："ZOS=True: 处理上一个 step 输出的 token"）。必须 `RequestOutput.clone(raw_output)`——step 返回的句柄在下次 step 会被 `DeferredRelease`/池自动回收。
+3. 在 `_post_process_step`（第 2 段，处理 prev_step_state）的开头。此时本步 forward(N) 已入队、GPU 正在跑它；同步等的是上一步的 `sample_end_evt`，该 event 在上一步结束时早已完成，`synchronize()` 秒回——CPU 等待不产生 GPU 空闲。
+4. `remap[i] = -1` 表示当前 batch 的第 i 个请求不在上一步 batch 里（新进入 decode 的请求）；`has_overlap=False`（两批请求完全换血）时无需修正，直接返回 None 走常规路径。
+5. 输入：`total_q`（CPU 定的总预算）、`remap`（当前↔上一步映射）、`prev_confidence_rates`（上一步 confidence head 输出 `[n_prev, nextn]`）；输出：`seqlens_q`（每请求 query 长度，总和 = total_q）。新请求没有历史 confidence，视为 0 接受率——它们不参与 varlen 验证，只拿基础的 1 token。
+6. 只广播 `(method, kwargs)`（如 `execute_model_step` + `is_prompt/is_placeholder`）；`driver_kwargs`（seq_metadata_list、scheduler_outputs 等 C++ 调度结果）不广播。CP slave 以 `seq_metadata_list=None` 进入方法，输入构建是独立路径（CP 对称推导，Day 3/5）。调度只在 driver 发生。
+7. 若先置 written=1 再清 reader flag，中间状态会被读者误判为 case 3（"written 且部分已读"），新读者会跳过这个实际未读完的 chunk。先清 reader 再置 written，状态原子地从 case 4 转到 case 2，不存在有害中间态。
+8. 把 `torch.cuda.set_sync_debug_mode("error")` 打开（嵌套作用域由 arbiter 栈管理，`tests/test_cuda_sync_guards.py` 锁死其语义），launch 路径上任何隐式同步（如 `.item()`、`torch.cuda.synchronize`、错误的 non_blocking 使用）直接抛异常而不是悄悄拖慢——ZOS 的正确性靠"launch 阶段零同步"这条纪律维持。
+9. 第一轮决定"要不要尝试 prefill"（ALL/ANY 点 + KV watermark + waiting 非空，全员步型对齐）；第二轮确认"真有 rank 排出了请求"（slot 满/KV 块不足时 `_schedule_prefill` 可能空手）。不做第二轮：全员空手时做硬空 prompt step 会把 decode_step 清零，下一步又落在 ALL 点接着投票、接着空手——running 满 + waiting 非空就死循环。
+10. V4.1 的主力计算（MLA/GEMM）在 FP8 精度，峰值算力是 BF16 的 2 倍；用 BF16 峰值会系统性低估 MFU 一倍。
+
+</details>
+
+---
+
+## 十一、今日产出物
+
+1. **请求生命周期时序图**（3.5 节 SVG）+ **ZOS 双行甘特图**（4.2 节 SVG）——今日核心交付，Day 3 会在其上叠加 model_runner 内部（`_prepare_input` → forward → sample 的 kernel 细节）。
+2. **引擎接口契约表**（实验 1 的整理）：
+
+| 契约 | 内容 | 出处 |
+|---|---|---|
+| Sequence 构造 | int32 + C-contiguous ndarray，noconvert，无静默转换 | tests/engine/test_sequence.py |
+| launch 路径 | `execute_main_model` / `execute_sample` 禁止任何 CUDA 同步 | model_runner.py docstring + forbid_cuda_sync |
+| 输出生命周期 | step 返回的句柄下一步回收，跨 step 必须 clone | llm.py `_run_engine` / RequestOutputPool |
+| sampler 收尾 | CPU 需要的字段在最终 sync 前 non_blocking D2H | sequence.py `sampler_epilogue` |
+| 修正时序 | H2D→GPU 修正→D2H 都排在当前 stream，只有 varlen 改写 pinned 源 | worker.py `_correct_seqlens_qk` 注释 |
+
+3. **差异清单 v1.1**（在 Day 1 的 12 条之上补充 3 条）：
+
+| # | 维度 | vLLM V1 | DeepInfer | 源码证据 |
+|---|---|---|---|---|
+| 13 | 异步调度机制 | 独立 output 线程 + 结构化并发 | worker 内四段穿插 + GPU 侧 seqlens 修正 | worker/worker.py:88-189、csrc/engine/zos.cpp |
+| 14 | 上一步结果进本步输入 | pinned CPU 张量（output processor D2H） | GPU 常驻副本 + TileLang kernel 分配 | sequence.py `*_gpu` 字段、schedule_mtp_varlen.py |
+| 15 | DP 组调度协作 | 无步型投票 | 两轮 all_reduce(MIN) 投票 + gloo CPU 组 | scheduler.hpp `_schedule()` NORMAL 分支 |
+
+**明日预告（Day 3）**：Worker 层——`model_runner.py` 的 `_prepare_input` 与三套 `input_metadata`（base/dflash/yoco/zos）分别服务什么场景；`cache_engine.py` 的 KV 布局与开源边界；CUDA graph 的 capture 集合怎么定；`dflash_cuda_graph_runner` 为什么单独存在。今日时序图中的 `execute_main_model` 一行将被展开成完整的调用链。
+
 
