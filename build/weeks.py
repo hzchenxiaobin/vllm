@@ -26,6 +26,7 @@ WEEK_TITLES = {
     6: "项目 A · vLLM-Ascend / 源码贡献（上）",
     7: "项目 A（下）+ 项目 C 消融实验",
     8: "面试冲刺",
+    9: "DeepInfer 源码精读 —— DeepSeek 生产级推理框架",
 }
 
 WEEK_GOALS = {
@@ -38,6 +39,7 @@ WEEK_GOALS = {
     6: "向 vLLM-Ascend 提交第一个 PR",
     7: "完成开源贡献与消融实验报告",
     8: "八大专题手撕与全真模拟面试",
+    9: "讲清 DeepInfer 相对 vLLM 的生产级改造，落到源码级细节",
 }
 
 WEEK_HEADING_ANCHOR_PATTERN = re.compile(

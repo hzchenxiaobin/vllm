@@ -18,6 +18,7 @@ on:
       - 'week6/**'
       - 'week7/**'
       - 'week8/**'
+      - 'week9/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
