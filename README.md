@@ -248,3 +248,15 @@
 1. 每天结束打勾并写一句话收获（哪怕是"今天没搞懂 X，明天继续"）
 2. 允许±1 天弹性，但复盘日不许跳过——复盘产出的图和总结才是面试时真正带得走的东西
 3. 第 6-7 周如果 vllm-ascend 环境有客观阻碍，降级方案：在 GPU 上用 Triton 做项目 D（paged attention decode kernel + ncu roofline 分析），同样能讲"跨平台方法论"
+
+---
+
+## 配套学习网站（website/）
+
+本仓库附带一个配套的闭环学习网站，把这份八周计划落成「读笔记 → 自测 → 闪卡 → 复盘 → 模拟面试」的打卡系统：
+
+- **功能**：按天打卡与连续天数统计、自测题评分、SM-2 间隔重复闪卡、每周复盘存档、AI 模拟面试（围绕当周笔记与自测题出题追问）
+- **技术栈**：React + Vite + Tailwind + shadcn/ui 前端；Hono + tRPC + Drizzle + MySQL 后端，登录后多端同步进度
+- **内容管线**：`python3 website/scripts/build_content.py` 自动把本仓库的 `week*/day*.md` 笔记编译为网站内容，笔记更新后重跑即可
+
+源码与本地运行方式见 [`website/`](./website)。
