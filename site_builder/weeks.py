@@ -5,10 +5,10 @@ import shutil
 from pathlib import Path
 
 from .common import (
+    CONTENT_DIR,
     GITHUB_REPO_URL,
     PLAN_SOURCE,
     PROMPT_SOURCE,
-    REPO_ROOT,
     build_day_cards_html,
     discover_days,
     parse_week_readme,
@@ -48,7 +48,7 @@ WEEK_HEADING_ANCHOR_PATTERN = re.compile(
 
 
 def _week_dir(week_num: int) -> Path:
-    return REPO_ROOT / f"week{week_num}"
+    return CONTENT_DIR / f"week{week_num}"
 
 
 def _day_pills(days: list, current_day=None, overview_active: bool = False, prefix: str = "") -> list:

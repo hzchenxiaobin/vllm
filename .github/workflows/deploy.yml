@@ -4,21 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'build.py'
-      - 'build/**'
-      - 'static/**'
+      - 'site_builder/**'
+      - 'content/**'
       - 'README.md'
-      - 'prompt.md'
-      - 'week0/**'
-      - 'week1/**'
-      - 'week2/**'
-      - 'week3/**'
-      - 'week4/**'
-      - 'week5/**'
-      - 'week6/**'
-      - 'week7/**'
-      - 'week8/**'
-      - 'week9/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
@@ -51,7 +39,7 @@ jobs:
 
       - name: Build website
         run: |
-          python3 build.py
+          python3 -m site_builder
           echo "--- public directory structure ---"
           ls -la public/
           echo "--- file count ---"

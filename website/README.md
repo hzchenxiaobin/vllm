@@ -1,6 +1,6 @@
 # vLLM 推理系统优化 · 学习训练营（website/）
 
-基于本仓库 `week0` ~ `week9` 学习笔记构建的闭环学习网站：读笔记 → 打卡 → 自测 → 闪卡间隔复习 → 每周复盘 → AI 模拟面试，进度云端同步、多端一致。
+基于本仓库 `content/week0` ~ `content/week9` 学习笔记构建的闭环学习网站：读笔记 → 打卡 → 自测 → 闪卡间隔复习 → 每周复盘 → AI 模拟面试，进度云端同步、多端一致。
 
 ## 功能
 
@@ -18,7 +18,7 @@
 python3 website/scripts/build_content.py
 ```
 
-从仓库根目录读取 `week*/day*.md`，生成 `website/public/content/`：
+从 `content/` 读取 `week*/day*.md`，生成 `website/public/content/`：
 
 - `manifest.json` — 周/天清单（标题、目标、题目数）
 - `days/{key}.json` — 每日笔记原文 + 自测题（`**Qn**：…<details>参考答案</details>` 解析题与编号开放题）+ 闪卡（"核心概念速览"表格）

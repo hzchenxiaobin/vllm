@@ -3,10 +3,10 @@
 import json, os, re, shutil, sys
 
 # 在本仓库内运行：python3 website/scripts/build_content.py
-# SRC = 仓库根目录（week0~week9 所在）；OUT = website/public/content
+# SRC = content/（week0~week9 所在）；OUT = website/public/content
 import pathlib
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-SRC = str(_REPO_ROOT)
+SRC = str(_REPO_ROOT / "content")
 OUT = str(pathlib.Path(__file__).resolve().parents[1] / "public" / "content")
 ASSET_OUT = os.path.join(OUT, "assets")
 DAY_OUT = os.path.join(OUT, "days")

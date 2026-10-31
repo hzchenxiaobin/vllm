@@ -18,23 +18,24 @@
 #     （默认共 3 轮），轮间同样冷却。
 #
 # 用法：
-#   ./generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
-#   START_DAY=5 END_DAY=10 ./generate_tutorials.sh
-#   JOBS=2 ./generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
-#   COOLDOWN=600 ./generate_tutorials.sh    # 可选：每天之间冷却秒数（默认 0，不冷却）
-#   CANNBOT_VARIANT=medium ./generate_tutorials.sh   # 调整思考强度（默认 low）
-#   MAX_PASSES=5 ./generate_tutorials.sh    # 最多补跑轮数（默认 3）
+#   ./scripts/generate_tutorials.sh                 # 从第一个未完成的 Day 开始，直到 Day 56
+#   START_DAY=5 END_DAY=10 ./scripts/generate_tutorials.sh
+#   JOBS=2 ./scripts/generate_tutorials.sh          # 双线程并发（默认 1，单线程串行）
+#   COOLDOWN=600 ./scripts/generate_tutorials.sh    # 可选：每天之间冷却秒数（默认 0，不冷却）
+#   CANNBOT_VARIANT=medium ./scripts/generate_tutorials.sh   # 调整思考强度（默认 low）
+#   MAX_PASSES=5 ./scripts/generate_tutorials.sh    # 最多补跑轮数（默认 3）
 #
 # 重写某一整周（例如 week0 的 7 天冲刺计划）：
-#   WEEK=0 FORCE=1 START_DAY=1 END_DAY=7 ./generate_tutorials.sh
-#   - WEEK=N：把 Day 1~7 固定映射到 weekN 目录，并以 weekN/README.md 作为
+#   WEEK=0 FORCE=1 START_DAY=1 END_DAY=7 ./scripts/generate_tutorials.sh
+#   - WEEK=N：把 Day 1~7 固定映射到 content/weekN 目录，并以其中的 README.md 作为
 #     当周学习计划（而不是根 README.md 的 56 天计划）；
 #   - FORCE=1：即使该 Day 已有产出文件也重新生成，prompt 会指示 cannbot
 #     覆盖重写原文件（保持原文件名不变），而不是另建英文新文件。
 #
 set -u
 
-WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONTENT_DIR="$WORKDIR/content"
 cd "$WORKDIR"
 
 START_DAY="${START_DAY:-1}"
@@ -59,8 +60,8 @@ log() {
 }
 
 # 找出该 Day 产出文件的存放目录：
-#   - WEEK 非空：固定为 week${WEEK}（目录不存在则用根目录）；
-#   - 否则按 56 天计划组织（week1..week8），目录不存在则用根目录。
+#   - WEEK 非空：固定为 content/week${WEEK}（目录不存在则用 content/）；
+#   - 否则按 56 天计划组织（content/week1..week8），目录不存在则用 content/。
 day_dir() {
   local day="$1"
   local week
@@ -69,10 +70,10 @@ day_dir() {
   else
     week=$(( (day - 1) / 7 + 1 ))
   fi
-  if [[ -d "$WORKDIR/week${week}" ]]; then
-    echo "week${week}"
+  if [[ -d "$CONTENT_DIR/week${week}" ]]; then
+    echo "content/week${week}"
   else
-    echo "."
+    echo "content"
   fi
 }
 
@@ -96,9 +97,9 @@ day_done() {
     [[ -n "$(day_file "$day")" ]]
     return
   fi
-  find "$WORKDIR" -type f \
+  find "$CONTENT_DIR" -type f \
     \( -iname "day${padded}_*.md" -o -iname "day${day}_*.md" \) \
-    ! -path '*/.git/*' | grep -q .
+    | grep -q .
 }
 
 # 构造发给 cannbot 的当天任务提示
@@ -109,7 +110,7 @@ build_prompt() {
   local outdir
   outdir="$(day_dir "$day")"
 
-  # WEEK 模式：以 weekN/README.md 为当周计划，重写时覆盖已有文件
+  # WEEK 模式：以 content/weekN/README.md 为当周计划，重写时覆盖已有文件
   if [[ -n "$WEEK" ]]; then
     local existing=""
     existing="$(day_file "$day")"
@@ -120,9 +121,9 @@ build_prompt() {
       target_line="- 输出一个 Markdown 文件到 ${outdir}/ 目录下，文件名形如 day${padded}_<主题小写下划线>.md（与本周已有文件命名风格保持一致）。"
     fi
     cat <<EOF
-请阅读当前目录下的 prompt.md 和 ${outdir}/README.md。
+请阅读当前目录下的 content/prompt.md 和 ${outdir}/README.md。
 
-${outdir}/README.md 中是本周（第 ${WEEK} 周）Day 1 ~ Day 7 的学习计划，prompt.md 中是教程的格式与深度要求（一日一文、章节结构、SVG 图、vLLM V1 主线、代码与源码调用链、面试问题等），请严格遵守；格式要求中的「Day 1~56 / 根 README.md」等表述，对本周任务均替换为「本周 Day 1~7 / ${outdir}/README.md」。
+${outdir}/README.md 中是本周（第 ${WEEK} 周）Day 1 ~ Day 7 的学习计划，content/prompt.md 中是教程的格式与深度要求（一日一文、章节结构、SVG 图、vLLM V1 主线、代码与源码调用链、面试问题等），请严格遵守；格式要求中的「Day 1~56 / 根 README.md」等表述，对本周任务均替换为「本周 Day 1~7 / ${outdir}/README.md」。
 
 本次任务：只生成 Day ${day} 这一天的教程，严格对应 ${outdir}/README.md 中 Day ${day} 的主题、学习目标、实验和产出，不要生成其他天的内容。
 
@@ -137,9 +138,9 @@ EOF
   fi
 
   cat <<EOF
-请阅读当前目录下的 prompt.md 和 README.md。
+请阅读当前目录下的 content/prompt.md 和 README.md。
 
-README.md 中是 Day 1 ~ Day 56 的学习计划，prompt.md 中是教程的格式与深度要求（一日一文、章节结构、SVG 图、vLLM V1 主线、代码与源码调用链、面试问题等），请严格遵守。
+README.md 中是 Day 1 ~ Day 56 的学习计划，content/prompt.md 中是教程的格式与深度要求（一日一文、章节结构、SVG 图、vLLM V1 主线、代码与源码调用链、面试问题等），请严格遵守。
 
 本次任务：只生成 Day ${day} 这一天的教程，严格对应 README.md 中 Day ${day} 的主题、学习目标、实验和产出，不要生成其他天的内容。
 
@@ -204,7 +205,7 @@ run_pass() {
   for (( day = START_DAY; day <= END_DAY; day++ )); do
     day_done "$day" || missing+=("$day")
   done
-  echo "${missing[*]}"
+  echo "${missing[*]-}"
 }
 
 main() {

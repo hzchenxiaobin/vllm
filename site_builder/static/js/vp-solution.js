@@ -1,7 +1,7 @@
 /**
  * vp-solution.js
  * VitePress 风格独立页面（题解/文章）的渲染与交互脚本，
- * 与 vp-solution.css 配套使用（由 build/common.py 的 solution_page_template 生成页面）。
+ * 与 vp-solution.css 配套使用（由 site_builder/common.py 的 solution_page_template 生成页面）。
  *
  * 页面需先加载：marked.min.js、markdown-math.js、KaTeX、Prism（各语言组件）。
  * 本文件提供 window.VPPage.render(markdown)，完成：

@@ -251,12 +251,32 @@
 
 ---
 
+## 仓库结构
+
+```text
+├── content/               # 学习教程、配图与教程生成提示词
+│   ├── week0/ … week9/
+│   └── prompt.md
+├── site_builder/          # GitHub Pages 静态站点构建器与前端资源
+├── scripts/               # 教程生成等维护脚本
+├── website/               # React + Hono 闭环学习应用
+└── resume.md              # 个人简历
+```
+
+常用命令（均在仓库根目录执行）：
+
+```bash
+python3 -m site_builder                  # 构建 GitHub Pages 到 public/
+python3 website/scripts/build_content.py # 编译 website/ 所需内容包
+./scripts/generate_tutorials.sh          # 生成缺失的每日教程
+```
+
 ## 配套学习网站（website/）
 
 本仓库附带一个配套的闭环学习网站，把这份八周计划落成「读笔记 → 自测 → 闪卡 → 复盘 → 模拟面试」的打卡系统：
 
 - **功能**：按天打卡与连续天数统计、自测题评分、SM-2 间隔重复闪卡、每周复盘存档、AI 模拟面试（围绕当周笔记与自测题出题追问）
 - **技术栈**：React + Vite + Tailwind + shadcn/ui 前端；Hono + tRPC + Drizzle + MySQL 后端，登录后多端同步进度
-- **内容管线**：`python3 website/scripts/build_content.py` 自动把本仓库的 `week*/day*.md` 笔记编译为网站内容，笔记更新后重跑即可
+- **内容管线**：`python3 website/scripts/build_content.py` 自动把 `content/week*/day*.md` 笔记编译为网站内容，笔记更新后重跑即可
 
 源码与本地运行方式见 [`website/`](./website)。

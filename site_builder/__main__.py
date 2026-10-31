@@ -3,22 +3,22 @@
 Build the website for GitHub Pages.
 
 Generates public/ (deployment root):
-  - Shared css/js (copied from static/)
-  - Landing page index.html (built by build.home)
-  - Plan page plan.html + prompt page prompt.html (built by build.weeks)
-  - week1~weekN overview + day pages (built by build.weeks)
+  - Shared css/js (copied from site_builder/static/)
+  - Landing page index.html (built by site_builder.home)
+  - Plan page plan.html + prompt page prompt.html (built by site_builder.weeks)
+  - week1~weekN overview + day pages (built by site_builder.weeks)
 """
 
 import shutil
 from pathlib import Path
 
-from build.common import (
+from site_builder.common import (
     WEEK_DIR_PATTERN,
     copy_static_assets,
     discover_week_dirs,
 )
-from build.home import build_home
-from build.weeks import (
+from site_builder.home import build_home
+from site_builder.weeks import (
     build_plan_page,
     build_prompt_page,
     build_week,
@@ -26,7 +26,7 @@ from build.weeks import (
 
 
 def main() -> None:
-    repo_root = Path(__file__).parent
+    repo_root = Path(__file__).resolve().parent.parent
     public_dir = repo_root / "public"
 
     if public_dir.exists():

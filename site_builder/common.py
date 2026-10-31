@@ -13,9 +13,10 @@ GITHUB_REPO_URL = "https://github.com/hzchenxiaobin/vllm"
 SITE_BRAND_HTML = 'vLLM <span>Notes</span>'
 SITE_NAME = "vLLM Notes"
 
+CONTENT_DIR = REPO_ROOT / "content"
 PLAN_SOURCE = REPO_ROOT / "README.md"
-PROMPT_SOURCE = REPO_ROOT / "prompt.md"
-STATIC_DIR = REPO_ROOT / "static"
+PROMPT_SOURCE = CONTENT_DIR / "prompt.md"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 WEEK_DIR_PATTERN = re.compile(r"^week(\d+)$")
 WEEK_TITLE_PATTERN = re.compile(r"^#\s*(第\s*\d+\s*周|Week\s*\d+)[：:]\s*(.+)$")
@@ -112,13 +113,13 @@ def escape_for_template_string(text: str) -> str:
 
 
 def discover_week_dirs() -> list:
-    """Return sorted [Path] of weekN/ directories in the repo root.
+    """Return sorted [Path] of weekN/ directories in content/.
 
     A weekN/ dir is valid only if it contains a README.md or at least one
     day*.md file; stray weekN/ dirs without tutorial content are skipped.
     """
     weeks = []
-    for path in REPO_ROOT.iterdir():
+    for path in CONTENT_DIR.iterdir():
         if path.is_dir() and WEEK_DIR_PATTERN.match(path.name):
             has_readme = (path / "README.md").exists()
             has_days = any(path.glob("day*.md"))
