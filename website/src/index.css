@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 深色工程工作台：navy 近黑底 + 电蓝单强调色（ref: #12141f / #3667f6） */
+    --background: 228 20% 7%;
+    --foreground: 220 18% 93%;
+    --card: 228 17% 10%;
+    --card-foreground: 220 18% 94%;
+    --popover: 228 17% 9%;
+    --popover-foreground: 220 18% 94%;
+    --primary: 226 91% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 228 14% 14%;
+    --secondary-foreground: 220 15% 85%;
+    --muted: 228 14% 14%;
+    --muted-foreground: 222 10% 58%;
+    --accent: 226 91% 59%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 228 13% 17%;
+    --input: 228 13% 20%;
+    --ring: 226 91% 62%;
+    --radius: 0.5rem;
+    --sidebar-background: 228 20% 6%;
+    --sidebar-foreground: 222 12% 70%;
+    --sidebar-primary: 226 91% 59%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 228 15% 13%;
+    --sidebar-accent-foreground: 220 18% 93%;
+    --sidebar-border: 228 13% 14%;
+    --sidebar-ring: 226 91% 62%;
+    --success: 162 63% 45%;
+    --warning: 38 95% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family:
+      "Inter",
+      -apple-system,
+      "PingFang SC",
+      "Hiragino Sans GB",
+      "Microsoft YaHei",
+      "Noto Sans CJK SC",
+      sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+  .font-tech {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+      monospace;
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.35);
+  }
+}
+
+/* ---------- Markdown 阅读排版 ---------- */
+.md-body {
+  @apply text-[15px] leading-[1.85] text-foreground/90;
+  max-width: 75ch;
+}
+.md-body h1 {
+  @apply mt-2 mb-6 text-2xl font-bold tracking-tight text-foreground;
+}
+.md-body h2 {
+  @apply mb-4 mt-10 border-b border-border pb-2 text-xl font-semibold text-foreground;
+}
+.md-body h3 {
+  @apply mb-3 mt-8 text-lg font-semibold text-foreground;
+}
+.md-body h4 {
+  @apply mb-2 mt-6 text-base font-semibold text-foreground;
+}
+.md-body p {
+  @apply my-3;
+}
+.md-body ul {
+  @apply my-3 list-disc space-y-1.5 pl-6;
+}
+.md-body ol {
+  @apply my-3 list-decimal space-y-1.5 pl-6;
+}
+.md-body blockquote {
+  @apply my-4 border-l-2 border-primary/60 bg-secondary/40 px-4 py-2 text-foreground/80;
+}
+.md-body code {
+  @apply rounded bg-secondary px-1.5 py-0.5 font-tech text-[0.85em] text-[#8fb0ff];
+}
+.md-body pre {
+  @apply my-4 overflow-x-auto rounded-lg border border-border bg-[#0a0c12] p-4;
+}
+.md-body pre code {
+  @apply bg-transparent p-0 text-[13px] leading-relaxed text-foreground/85;
+}
+.md-body table {
+  @apply my-4 block w-full overflow-x-auto border-collapse text-sm;
+}
+.md-body th {
+  @apply border-b-2 border-border px-3 py-2 text-left font-semibold text-foreground;
+}
+.md-body td {
+  @apply border-b border-border/60 px-3 py-2 align-top text-foreground/85;
+}
+.md-body tr:hover td {
+  @apply bg-secondary/30;
+}
+.md-body img {
+  @apply my-4 max-w-full rounded-lg border border-border bg-white/95 p-2;
+}
+.md-body a {
+  @apply text-primary underline-offset-4 hover:underline;
+}
+.md-body hr {
+  @apply my-8 border-border;
+}
+.md-body details {
+  @apply my-3 rounded-lg border border-border bg-card;
+}
+.md-body summary {
+  @apply cursor-pointer select-none px-4 py-2.5 text-sm font-medium text-primary hover:bg-secondary/40;
+}
+.md-body details > *:not(summary) {
+  @apply px-4 pb-3 pt-1;
+}
+.md-body strong {
+  @apply font-semibold text-foreground;
+}
+.md-body .katex-display {
+  @apply my-4 overflow-x-auto;
+}
+
+/* 闪卡 3D 翻面 */
+.flip-card {
+  perspective: 1200px;
+}
+.flip-inner {
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
+  transform-style: preserve-3d;
+}
+.flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-back {
+  transform: rotateY(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-inner {
+    transition: none;
+  }
+}
