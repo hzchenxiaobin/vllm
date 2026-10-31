@@ -17,6 +17,12 @@ export const users = mysqlTable("users", {
   name: varchar("name", { length: 255 }),
   email: varchar("email", { length: 320 }),
   avatar: text("avatar"),
+  // ---- 邮箱账号体系 ----
+  // 邮箱注册用户的 unionId 形如 "email:<邮箱小写>"，与 Kimi OAuth 用户共用一套会话
+  passwordHash: varchar("passwordHash", { length: 255 }),
+  emailVerifiedAt: timestamp("emailVerifiedAt"),
+  // 改密/重置密码时 +1，旧 JWT 因 sv 不匹配立即失效
+  sessionVersion: int("sessionVersion").notNull().default(0),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt")
@@ -30,6 +36,21 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // ---------- 学习闭环数据表 ----------
+
+/** 邮件验证码（注册验证 / 找回密码共用，只存 sha256 哈希） */
+export const emailTokens = mysqlTable("email_tokens", {
+  id: serial("id").primaryKey(),
+  userId: bigint("userId", { mode: "number", unsigned: true })
+    .notNull()
+    .references(() => users.id),
+  tokenHash: varchar("tokenHash", { length: 64 }).notNull(),
+  purpose: mysqlEnum("purpose", ["verify", "reset"]).notNull(),
+  /** 连续输错 5 次作废 */
+  attempts: int("attempts").notNull().default(0),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
 
 /** 每日打卡 */
 export const checkins = mysqlTable(
