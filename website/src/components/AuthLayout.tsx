@@ -87,7 +87,7 @@ export default function AuthLayout({
             size="lg"
             className="w-full"
           >
-            使用 Kimi 账号登录
+            使用邮箱登录 / 注册
           </Button>
         </div>
       </div>

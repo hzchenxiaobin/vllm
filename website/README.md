@@ -29,7 +29,7 @@ python3 website/scripts/build_content.py
 ## 技术栈
 
 - 前端：React 19 + TypeScript + Vite + Tailwind CSS v3 + shadcn/ui；react-markdown + remark-math + KaTeX 渲染笔记
-- 后端：Hono + tRPC 11 + Drizzle ORM + MySQL；Kimi OAuth 登录
+- 后端：Hono + tRPC 11 + Drizzle ORM + MySQL；独立邮箱账号体系（邮箱 + 密码注册，邮件验证码校验）
 - AI：平台网关 OpenAI 兼容接口（`KIMI_AGENTGW_*` 环境变量注入，仅服务端）
 
 ## 目录结构
@@ -45,6 +45,8 @@ website/
 ├── api/
 │   ├── study-router.ts        # tRPC：打卡、成绩、闪卡 SRS、复盘、面试存档
 │   ├── routes/interview.ts    # AI 面试流式接口（Hono REST）
+│   ├── routes/auth.ts         # 邮箱注册/验证/登录/找回密码（Hono REST）
+│   ├── auth/                  # scrypt 密码哈希、邮件发送（Resend）、限流、会话签发
 │   └── ai-client.ts           # 模型清单 + 错误归类
 ├── db/schema.ts               # checkins / quiz_attempts / card_states / week_reviews / interview_sessions
 └── contracts/                 # 前后端共享常量
@@ -59,4 +61,23 @@ npm run db:push   # 同步数据库表结构（需要 DATABASE_URL，见 .env.ex
 npm run dev       # http://localhost:3000
 ```
 
-`.env` 不要提交；本地开发复制 `.env.example` 并按需填写。本项目依赖 Kimi 网站的托管能力（OAuth、数据库、AI 网关），完整功能需在 Kimi 网站环境运行；纯前端浏览笔记可在构建后用任意静态服务器查看。
+`.env` 不要提交；本地开发复制 `.env.example` 并按需填写。本项目依赖 Kimi 网站的托管能力（数据库、AI 网关），完整功能需在 Kimi 网站环境运行；纯前端浏览笔记可在构建后用任意静态服务器查看。
+
+## 账号体系（邮箱注册）
+
+不依赖第三方登录，邮箱 + 密码即可开户：
+
+- **注册**：邮箱 + 密码（≥8 位，含字母和数字）→ 6 位邮件验证码（15 分钟有效，错 5 次作废）→ 验证通过即登录
+- **登录/找回密码**：验证码重置新密码，成功后 `sessionVersion` +1，该用户全部旧会话立即失效
+- **密码存储**：Node 内置 scrypt（memory-hard，N=16384/r=8/p=1），哈希串自带参数与盐；验证码只存 sha256
+- **会话**：httpOnly JWT cookie（HS256，`APP_SECRET` 签名），与业务表通过 `users.unionId = "email:<邮箱>"` 关联
+- **限流**：注册/登录/发码按 IP + 邮箱双维度滑动窗口限流
+
+邮件投递走 [Resend](https://resend.com)（HTTPS API，免费档 100 封/天）：
+
+```bash
+RESEND_API_KEY=re_xxx       # 留空则降级：注册自动验证、找回密码提示未配置
+EMAIL_FROM=学习训练营 <onboarding@resend.dev>   # 正式使用请在 Resend 验证自有域名
+```
+
+> 若 `npm run db:push` 询问"是否为已有表重建唯一索引/截断数据"，一律选不截断（No）。
